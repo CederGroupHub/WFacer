@@ -1,3 +1,5 @@
+from monty.json import MSONable
+
 import numpy as np
 from itertools import combinations
 
