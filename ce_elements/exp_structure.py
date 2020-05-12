@@ -80,4 +80,17 @@ class Sublattice(MSONable):
         return enum_comps
 
 class ExpansionStructure(MSONable)
-    def __init__(self,lattice,an_sublats,ca_sublats=None,)
+    def __init__(self,lattice,an_sublats,ca_sublats=None):
+        """
+        This class is a prototype used to generate cluster expansion sample structures.
+        Inputs:
+            lattice: 
+                A pymatgen.Lattice object, defining the primitive cell vecs of the cluster expansion.
+            an_sublats:
+                Sublattices that are considered as anion sublattices. For a non-charged CE, all
+                sublattices fall into this type.
+                Will be crucial in the anion framework matcher.
+                A list of ce_elements.Sublattice objects.
+            ca_sublatices:
+                A list of cation sublattices.
+        """
