@@ -60,6 +60,8 @@ class Sublattice(MSONable):
 
         if type(possible_sps)==dict:
             self.species = [k for k,v in sorted(possible_sps.items())]
+            #In the cleaned-up version of CEAuto, species will be sorted on their string order only.
+            #including 'Vac'
             self.constraints = [v for k,v in sorted(possible_sps_items())]
         elif type(possible_sps)==list:
             self.species = sorted(possible_sps)
@@ -98,7 +100,7 @@ class Sublattice(MSONable):
         return enum_comps
 
 class ExpansionStructure(MSONable)
-    def __init__(self,lattice,sublats):
+    def __init__(self,lattice,sublats,markings=None):
         """
         This class is a prototype used to generate cluster expansion sample structures.
         Also contains a socket to mapping methods that returns the occupation array.
@@ -113,6 +115,10 @@ class ExpansionStructure(MSONable)
         """
         self.lattice = lattice
         self.sublats = sublats
+        if markings is not None and len(markings)==len(sublats):
+            self.markings = markings
+        else:
+            self.markings = [sl.is_anion for sl in sublats]
         
     @classmethod
     def from_lat_frac_species(cls,lattice,frac_coords,species,sublat_merge_rule=None,anionic_markings=None)
@@ -137,7 +143,7 @@ class ExpansionStructure(MSONable)
                 Or can be a dict:
                 {'Na+':(0.0,0.1),'K+':(0.0,1.0)}
             anionic_markings:
-                A list of booleans that specifies whether this site is considered anionic or not.
+                A list of booleans that specifies whether this sublattice is considered anionic or not.
         """
         if not sublat_merge_rule:
             if len(frac_coords)!=len(species):
@@ -165,3 +171,48 @@ class ExpansionStructure(MSONable)
         sublats = [Sublattice(lattice,frac_coords[sl_ids],sl_species,is_anion=mk) \
                        for sl_ids,sl_species,mk in zip(sublat_list,species,markings)]
 
+        return cls(lattice,sublats,anionic_markings)
+
+    @classmethod
+    def from_prim_struct(cls,prim,max_vac=0.2,sublat_merge_rule=None,anionic_markings=None):
+        """
+        Initialize a cluster expansion with a pymatgen.structure that has partially occupied
+        sites. Not very recommended because this may reduce your flexibility of defining
+        sublattices.
+        Inputs:
+            prim: disordered primitive cell
+            max_vac: if vacancy is allowed, this defines the maximum vacancy molar fraction
+            sublat_merge_rule: specifies which sites are in the same sublattice
+            anionic_markings: specifies whether a sublattice is considered anionic or not.
+        """
+        sublat_list = sublat_merge_rule if sublat_merge_rule is not None else \
+                      [[i] for i in range(len(prim))]
+        
+        species = []
+        for sl_site_ids in sublat_list:
+            st_id = sl_site_ids[0]
+            sl_species = {str(sp):(0.0,1.0) for sp in prim[st_id].species.keys()}
+            if 1.0-prim[st_id].species.num_atoms>1E-3:
+                sl_species['Vac']=(0.0,max_vac)
+         
+            species.append(sorted(sl_species))
+
+        return cls.from_lat_frac_species(prim.lattice,prim.frac_coords,species,\
+                                         sublat_merge_rule=sublat_merge_rule,\
+                                         anionic_markings=anionic_markings)
+            
+    def enum_compositions(self,fold=8):
+        """
+        Enumerate and get all possible charge neutral compositions,
+        for a given supercell size.
+
+        Inputs:
+            fold: same as in ce_elements.exp_structure.Sublattice.
+            Can be an interger, then all sublattices use the same fold;
+            Can also be a list, then different sublattices use diffrenet
+            folds.
+        Outputs:
+            a list of compositions, represented in dictionary form.
+        """
+        if type(fold)=int:
+            folds = [fold for i in range(len(self.sublats))]
