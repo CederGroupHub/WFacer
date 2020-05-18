@@ -12,4 +12,3 @@ def get_oxi(ion):
         return int(-1)*int(ion[-2]) if ion[-2].isdigit() else -1
     else:
         return 0
-
