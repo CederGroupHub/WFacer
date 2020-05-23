@@ -1,3 +1,23 @@
+"""
+This file contains functions related to implementing and navigating the 
+compositional space.
+
+In CEAuto, we first define a starting, charge-neutral, and fully occupied
+('Vac' is also an occupation) composition in the compositional space.
+
+Then we find all possible unitary, charge and number conserving flipping 
+combinations of species, and define them as axis in the compositional space.
+
+A composition is then defined as a vector, with each component corresponding
+to the number of filps that have to be done on a 'flip axis' in order to get 
+the target composition from the defined, starting composition.
+
+For some supercell size, a composition might not be 'reachable' be cause 
+supercell_size*atomic_ratioo is not an integer. For this case, you need to 
+select a proper enumeration fold for your compositions(see enum_utils.py),
+or choose a proper supercell size.
+"""
+
 def get_sublat_list(N_sts_prim,sc_size=1,sublat_merge_rule=None,sc_making_rule='pmg'):
     """
     Get site indices in each sublattice.
@@ -30,7 +50,8 @@ def get_sublat_list(N_sts_prim,sc_size=1,sublat_merge_rule=None,sc_making_rule='
             sublat_sts_in_sc = []
             for sublat_st_in_prim in sublat_sts_in_prim:
                 idx = sublat_st_in_prim
-                sublat_sts_in_sc.extend(list(range(idx*sc_size,(idx+1)*sc_size)))                   sublat_list.append(sublat_sts_in_sc)
+                sublat_sts_in_sc.extend(list(range(idx*sc_size,(idx+1)*sc_size)))                   
+            sublat_list.append(sublat_sts_in_sc)
     return sublat_list
 
 def get_bits(structure,sc_size=1,sublat_merge_rule=None):
@@ -39,6 +60,9 @@ def get_bits(structure,sc_size=1,sublat_merge_rule=None):
     Structure object.
     Previous pyabinito used pymatgen.specie order.
     Now using string order for all species, including 'Vac'.
+    Note:
+        We recommend you to define 'bits' on your own, rather
+    than getting in from a pymatgen.structure.
     Inputs:
         structure: pymatgen.structure
         sc_size: supercell size if this structure is a 
@@ -50,7 +74,8 @@ def get_bits(structure,sc_size=1,sublat_merge_rule=None):
         raise ValueError("Supercell size wrong! Number of sites in structure\
                           can not be divided by super cell size!")
     N_sts_prim = len(structure)//sc_size
-    sublat_list = get_sublat_list(N_sts_prim,sc_size,sublat_merge_rule)
+    sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
+                  sublat_merge_rule=sublat_merge_rule)
 
     all_bits = []
     for group in sublat_list:
@@ -147,4 +172,215 @@ def get_all_axis(bits):
         operations.append(operation)
 
     return neutral_combs,operations
+
+def visualize_operations(operations,bits):
+    """
+    This function turns an operation dict into an string for easy visualization,
+    """
+    operation_strs = []
+    for operation in operations:
+        from_strs = []
+        to_strs = []
+        for (swp_from,sl_id),n in operation['from'].items():
+            from_name = bits[sl_id][swp_from]
+            from_strs.append('{} {}({})'.format(n,from_name,sl_id))
+        for (swp_to,sl_id),n in operation['to'] .items():
+            to_name = bits[sl_id][swp_to]
+            to_strs.append('{} {}({})'.format(n,to_name,sl_id)) 
+        from_str = ' + '.join(from_strs)
+        to_str = ' + '.join(to_strs)
+        operation_strs.append(from_str+' -> '+to_str) 
+    return '\n'.join(operation_strs)
+
+def vec_to_comp(vec,init_comp,neutral_combs, bits):
+    """
+    Turns a CEAuto composition vector into composition dictionary.
+    For example, in Ca/MgO: vec = (1.0) -> comp=
+    [{'Ca2+':1.0},{'O2-':1.0}]
+    The input init_comp should also have the same form as output comp,
+    namely a list of dictionaries, each item in list corresponds to 
+    the composition on a sub-lattice.
+    """
+    comp = deepcopy(init_comp)
+    for dx,comb in zip(vec,neutral_combs):
+        for (swp_to,swp_from,sl_id),n in comb:
+            to_name = bits[sl_id][swp_to]
+            from_name = bits[sl_id][swp_from]      
+            comp[sl_id][from_name]-=dx*n
+            comp[sl_id][to_name]+=dx*n
+    is_legal_comp = True
+    for sl in comp:
+        for sp in sl:
+            if sl[sp]<0:  
+               is_legal_comp = False
+               break
+    
+    if not is_legal_comp:
+        raise ValueError('The replacement vector can not be converted into a reachable compostion.')
+
+    else:
+        return comp
+
+def comp_to_vec(comp,init_comp, neutral_combs, bits):
+    """
+        Get the composition vector from a composition vector.
+    """
+    #flatten the composition into a vector
+    n_bits = get_n_bits(bits)
+
+    dcomp_flat = []
+    n_sl = len(bits)
+    for sl_id in range(n_sl):
+        for sp in bits[sl_id][:-1]:
+            if sp in comp[sl_id] and sp in init_comp[sl_id]:
+                dn = comp[sl_id][sp]-init_comp[sl_id][sp]
+            else:
+                if sp in init_comp[sl_id]:
+                    dn = -init_comp[sl_id][sp]
+                elif sp in comp[sl_id]:
+                    dn = comp[sl_id][sp]
+            dcomp_flat.append(dn)
+    #flatten the unitary swappings into basis vectors.
+    #print("dcomp_flat:",dcomp_flat)
+    Nb = len(dcomp_flat)
+    combs_flat = []
+    for comb in neutral_combs:
+        comb_flat = [0 for i in range(Nb)]
+        for (swp_to,swp_from,sl_id),n in comb:
+            bit_id = sum([len(n_bits[i])-1 for i in range(sl_id)])+swp_to
+            comb_flat[bit_id]+=n
+        combs_flat.append(comb_flat)
+
+    n = len(combs_flat)
+    A = np.zeros((n,n))
+    b = np.zeros(n)
+    for i in range(n):
+        b[i] = float(np.dot(combs_flat[i],dcomp_flat))
+        for j in range(n):
+            A[i][j] = float(np.dot(combs_flat[i],combs_flat[j]))
+    try:
+        comp_vec = np.linalg.inv(A)@b
+    except:
+        raise ValueError("Given composition not reachable by unitary replacements!")
+   
+    return comp_vec
+
+def occu_to_comp(occu, bits,sc_size=1,sublat_merge_rule=None):
+    """
+        Get composition values from an occupation state list given by the monte carlo part.
+        But in charge-conserved semigrand, the composition will be processed in the program
+        as a vertor on the 'unitary swapping basis'
+    Inputs:
+        occu: len(occu)=num_of_sites, not num_of_sublats
+        bits: the bits table given by get_bits
+        sc_size: size of the supercell, in interger
+    Outputs:
+        Comp: form [{'Li+':5,'Ti4+':1},{'O2-':6}], etc. len(Comp)=len(sublat_list)
+    """
+    comp = []
+    N_sts_prim = len(occu)//sc_size
+    sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
+                  sublat_merge_rule=sublat_merge_rule)
+    for sublat in bits:
+        comp.append({})
+
+    for i,sp in enumerate(occu):
+        idx = get_sublat_id(i,sublat_list)
+        sp_name = bits[idx][sp]
+        if sp_name not in comp[idx]:
+            comp[idx][sp_name]=1
+        else:
+            comp[idx][sp_name]+=1
+    return comp
+
+def get_flip(bits, N_sts_prim, neutral_combs, occu, sc_size=1,\
+             sublat_merge_rule = None):
+    """
+    Apply, or reverse apply a neutral flip combination.
+    Will continue random searching until an available flip is found.
+    """
+    flip = None
+    n_bits = get_n_bits(bits)
+    sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
+                  sublat_merge_rule=sublat_merge_rule)    
+    n_sls = len(sublat_list)
+
+#    sl_sizes = [len(sublat) for sublat in sublat_list]
+#    sl_sites = []
+#    for sl_id in range(n_sls):
+#        sl_site = []
+#        for st_id in sublat_list[sl_id]:
+#            sl_site.extend(list(range(st_id*sc_size,(st_id+1)*sc_size)))
+#        sl_sites.append(sl_site)
+    sl_sites = sublat_list
+
+    sl_stats_init = [[[] for i in range(len(n_bits[sl_id]))] for sl_id in range(n_sls)]
+
+    for sl_id in range(n_sls):
+        for st_id in sl_sites[sl_id]:
+            bit = int(occu[st_id])
+            sl_stats_init[sl_id][bit].append(st_id)
+
+    sl_nums_init = [[len(sl_sp) for sl_sp in sl] for sl in sl_stats_init]
+
+    #list all possible unitary operations on this occupation, then randomly choose one of them
+    #since you have to list all operations, the number of which usually goes in O(N^3), 
+    #the usage of a large supercell is highly discouraged!
+
+    valid_flips = []
+    valid_dvecs = []
+
+    for comb_id,comb in enumerate(neutral_combs):
+        #When sampling flips, make sure to check that all flips have a equal probability to be sampled!
+        #In the previous implementation, I made a mistake. I sampled compositional direction first, then
+        #enumerated flips that goes in the chosen direction, therefore adding a prefactor to each flip's
+        #probability to be sampled. You can verify that this prefactor ridiculously amplifies flips that
+        #goes back to pure state, so you almost can't reach mixed states at all!
+        valid_pos_flips_forswps = []
+        valid_neg_flips_forswps = []
+        for swp,n in comb:
+            if n>0:
+                swp_to,swp_from,sl_id = swp
+                n_swp = n
+            elif n<0:
+                swp_from,swp_to,sl_id = swp
+                n_swp = -n
+            else:
+                continue
+            #We can do this because all the flips should be number conserved.
+
+            valid_pos_flips_forswp= [(swped_sites,swp_to) for swped_sites in \
+                         combinations(sl_stats_init[sl_id][swp_from],n_swp)]
+            valid_pos_flips_forswps.append(valid_pos_flips_forswp)
+
+            valid_neg_flips_forswp= [(swped_sites,swp_from) for swped_sites in \
+                         combinations(sl_stats_init[sl_id][swp_to],n_swp)]
+            valid_neg_flips_forswps.append(valid_neg_flips_forswp)
+
+        valid_pos_flips = list(product(*valid_pos_flips_forswps))
+        valid_neg_flips = list(product(*valid_neg_flips_forswps))
+
+        #Sorting formats out to del_corr acceptable format
+        for flip in valid_pos_flips:
+            reformatted_flip = []
+            for flipped_sts,flip_to_sp in flip:
+                reformatted_flip.extend([(flipped_st,flip_to_sp) for flipped_st in flipped_sts])
+            valid_flips.append(reformatted_flip)
+            valid_dvecs.append((comb_id,1))
+                  
+        for flip in valid_neg_flips:
+            reformatted_flip = []
+            for flipped_sts,flip_to_sp in flip:
+                reformatted_flip.extend([(flipped_st,flip_to_sp) for flipped_st in flipped_sts])
+            valid_flips.append(reformatted_flip)
+            valid_dvecs.append((comb_id,-1))
+
+    chosen_flip_id = random.randint(0,len(valid_flips)-1)
+    chosen_flip = valid_flips[chosen_flip_id]
+
+    chosen_comb_id, chosen_direction = valid_dvecs[chosen_flip_id]
+    dvec = np.zeros(len(neutral_combs))
+    dvec[chosen_comb_id] = chosen_direction
+    
+    return chosen_flip,dvec
 
