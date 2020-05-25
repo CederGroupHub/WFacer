@@ -305,13 +305,6 @@ def get_flip(bits, N_sts_prim, neutral_combs, occu, sc_size=1,\
                   sublat_merge_rule=sublat_merge_rule)    
     n_sls = len(sublat_list)
 
-#    sl_sizes = [len(sublat) for sublat in sublat_list]
-#    sl_sites = []
-#    for sl_id in range(n_sls):
-#        sl_site = []
-#        for st_id in sublat_list[sl_id]:
-#            sl_site.extend(list(range(st_id*sc_size,(st_id+1)*sc_size)))
-#        sl_sites.append(sl_site)
     sl_sites = sublat_list
 
     sl_stats_init = [[[] for i in range(len(n_bits[sl_id]))] for sl_id in range(n_sls)]
