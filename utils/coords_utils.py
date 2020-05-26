@@ -22,62 +22,54 @@ def Is_Nonlinear(coords):
     coords[0] and coords[1]
     """
     if len(coords)<2:
-        return False,None
+        return False
     elif len(coords)==2:
-        retuen False,1
+        return False
     else:
         shifted = np.array(coords)-np.average(coords,axis=0)
         for i in range(2,len(coords)):
             if np.linalg.norm(np.cross(coords[1]-coords[0],coords[i]-coords[0]))!=0:
-                return True,i
-        return False,1
+                return True
+        return False
 
-def Standardize_Coords(atom_coords):
+def Standardize_Coords(atom_coords,z_id=0,x_id=1):
     """
     Given a set of catesian atomic coordinates, this function trys to 'standardize'
-    the coordinates by aligning the center of coordinates, the first atom, and the
-    second atom into xz plane, and the vector from the center to the first atom into
-    the z-axis direction.
+    the coordinates by aligning the vector from the center to the id=z_id atom 
+    to z-axis direction, align the vector from the center to the id=x_id atom onto
+    xz plane, with projection on x_axis >=0.
+
     If the atomic coordinate set only has one atom, then we just shift it to [0,0,0]
+
+    Note: the marking atom indices z_id and x_id should be chosen carefully, so that
+    none of the two pointing vectors is 0.
     """
     untransformed_coords = np.array(atom_coords)-np.average(atom_coords,axis=0)
     if len(atom_coords)<2:
         return untransformed_coords
     else:
-        v_ref0 = untransformed_coords[0]
-        
-        is_linear,ref1_id=is_linear(untransformed_coords)
-        v_ref1 = untransformed_coords[ref1_id]
+        v_ref0 = untransformed_coords[z_id]
+        v_ref1 = untransformed_coords[x_id]
 
-        ex = np.array([1,0,0])
-        ey = np.array([0,1,0])
-        ez = np.array([0,0,1])
-    
-        ex_p = np.cross(v_ref0,ez)/np.linalg.norm(np.cross(v_ref0,ez))\
-               if np.linalg.norm(np.cross(v_ref0,ez))!=0 else ex
+        if np.linalg.norm(v_ref0)==0:
+            raise ValueError("z-axis reference atom not chosen correctly.")
+        ez = v_ref0/np.linalg.norm(v_ref0)
 
-        alpha_t = np.arccos(np.dot(np.cross(v_ref0,ez),ex)/np.linalg.norm(np.cross(v_ref0,ez)))\
-                  if np.linalg.norm(np.cross(v_ref0,ez))!=0 else 0
-        alpha_sgn = np.sign(np.dot(np.cross(ex_p,ex),ez))
-        #rotation_result x roration_start_point * rotation_axis
-
-        beta_t  = np.arccos(np.dot(v_ref0,ez)/np.linalg.norm(v_ref0))
-        beta_sgn  = np.sign(np.dot(np.cross(v_ref0,ez),ex_p))
-
-        n = np.cross(v_ref0,v_ref1)
-        if np.linalg.norm(n) == 0:
-            gamma_t = 0
-            gamma_sgn = 0
+        if Is_Nonlinear(untransformed_coords):
+            ey = np.cross(ez,v_ref1)
+            if np.linalg.norm(ey)==0:
+                raise ValueError("x-axis reference atom not chosen correctly.")
+            ey = ey/np.linalg.norm(ey)
         else:
-            en = n/np.linalg.norm(n)
-            ex_pp = ex_p-np.dot(ex_p,en)*en
-            ex_pp = ex_pp/np.linalg.norm(ex_pp)
-            gamma_t = np.arccos(np.dot(ex_p,ex_pp))
-            gamma_sgn = np.sign(np.dot(np.cross(ex_pp,ex_p),v_ref0))
-    
-        Rz_a = Rz(-1.0*alpha_t*alpha_sgn)
-        Rx_b = Rx(-1.0*beta_t*beta_sgn)
-        Rz_g = Rz(-1.0*gamma_t*gamma_sgn)
-        transmat = Rz_a@Rx_b@Rz_g
+            if ez[2]==0:
+                ey = np.array([0.0,0.0,1.0])
+            else:
+                eyx = 0.0
+                eyy = np.sqrt(ez[2]**2/(ez[1]**2+ez[2]**2))
+                eyz = -ez[1]/ez[2]*eyy
+                ey = np.array([eyx,eyy,eyz])                
 
+        ex = np.cross(ey,ez)
+        transmat = np.linalg.inv(np.vstack((ex,ey,ez)))
+    
         return untransformed_coords@transmat

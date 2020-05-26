@@ -1,4 +1,4 @@
-from coords_util import *
+from coords_utils import *
 
 from monty.json import MSONable
 from pymatgen.core.periodic_table import Specie
@@ -7,7 +7,7 @@ from pymatgen.core.structure import Molecule
 
 import numpy as np
 
-def get_oxi(ion):
+def get_element_oxi(ion):
     """
     This tool function helps to read the charge from a given specie(in string format).
     Inputs:
@@ -15,12 +15,16 @@ def get_oxi(ion):
     """
     #print(ion)
     if ion[-1]=='+':
-        return int(ion[-2]) if ion[-2].isdigit() else 1
+        oxi =  int(ion[-2]) if ion[-2].isdigit() else 1
+        element = ion[:-2] if ion[-2].isdigit() else ion[:-1]
     elif ion[-1]=='-':
         #print(ion[-2])
-        return int(-1)*int(ion[-2]) if ion[-2].isdigit() else -1
+        oxi = int(-1)*int(ion[-2]) if ion[-2].isdigit() else -1
+        element = ion[:-2] if ion[-2].isdigit() else ion[:-1]      
     else:
-        return 0
+        oxi = 0
+        element = ion
+    return element,oxi
 
 def element_to_ion(element_str,oxi=0):
     """
@@ -42,14 +46,15 @@ def element_to_ion(element_str,oxi=0):
 class CESpecie(MSONable):
     supported_properties = ['spin']
 
-    def __init__(self,atom_symbols:list,atom_coords=np.array([0.0,0.0,0.0]),\
-                 #ref_atoms=[0,0], \
+    def __init__(self,atom_symbols:list,atom_coords=np.array([[0.0,0.0,0.0]]),\
+                 z_ref=0, x_ref=1, \
                  heading=np.array([0.0,0.0,0.0]),\
                  oxidation_state:int=0,\
-                 other_properties:dict=None):
+                 other_properties:dict={}):
         """
         This class defines a 'specie' in CE, which can be a group of closely
-        connected atoms, such as PO4 3-, O2 -, etc, or just a single ion.
+        connected atoms (molecular fragments), such as PO4 3-, O2 -, etc, 
+        or just a single atom/ion.
 
         Inputs:
             atom_coords: 
@@ -57,6 +62,11 @@ class CESpecie(MSONable):
                 only!)
                 In the initialization, all the atom_coords will be standardized.
                 See coords_utils.py for the rule of standardization.
+            z_ref:
+                The atom index used to calibrate z-axis in standardization
+            x_ref:
+                The atom index used to calibrate x-axis.
+                Both z-ref and x-ref should be carefully chosen.
             atom_symbols: 
                 Element symbol of the atoms, written in a list of strings;
             heading:
@@ -79,48 +89,61 @@ class CESpecie(MSONable):
                  we don't,so the value of 'spin' can only be +1 or -1; 
                  Also, currently we don't support properties other than 'spin')
 
-            Note that only two CESpecies object with the same atom_symbols,
+            Note:
+            1, only two CESpecies object with the same atom_symbols,
             equivalent atom_coords , the same oxidation_state, symmetrically equivalent 
             headings, and equivalent other_properties dictionary are considered equivalent.
             Otherwise they will be expanded as two different species.
+
+            2, Since we did not implement auto-detection of atomic permutational invariance,
+            when you define a molecular fragment, please choose the ordering
+            of atoms carefully! If you want two fagments to be recognized as the same, you'd
+            better use the same ordering of atoms when defining them!
         """
         if len(atom_symbols)!= len(atom_coords):
-            raise ValueError("The length of atomic symbols are not equvalent to that of 
-                              atomic coordinates!")
+            raise ValueError("The length of atomic symbols are not equvalent to that of"+\
+                              " atomic coordinates!")
 
         self.symbols = atom_symbols
         self.oxidation_state = oxidation_state
-        self.coords = Standardize_Coords(np.array(atom_coords))
+        self.z_ref = z_ref
+        self.x_ref = x_ref
+
+        self.coords = Standardize_Coords(np.array(atom_coords),z_ref,x_ref)
 
         self.heading = np.array(heading)
 
-        if len(atom_symbols)==1:
+        if len(self.symbols)==1:
             self.heading = np.array([0.0,0.0,0.0])
             #An atom has no heading.
-            if atom_symbols[0]!='Vac':
+            if self.symbols[0]!='Vac':
                 try:
-                    self.pmg_specie = Specie(symbol,float(oxidation_state))
+                    self.pmg_specie = Specie(self.symbols[0],float(oxidation_state))
                 except:
                     raise ValueError("The input symbol is not a valid element!")  
             elif oxidation_state==0:
                     self.pmg_specie = None
             else:
-                raise ValueError("Vacancy specie can not have non-zero charge!")           
+                raise ValueError("Vacancy specie can not have non-zero charge!")        
 
         else:
-            if not Is_Nonlinear(self.coords):
+            is_nonlinear = Is_Nonlinear(self.coords)
+            if not is_nonlinear:
                 self.heading[2]=0.0
             #Linear atomic clusters have no rolls.
             self.pmg_specie = None
 
         for k in other_properties.keys():
-            if k not in supported_properties:
+            if k not in CESpecie.supported_properties:
                 raise ValueError('Property {} not yet supported!'.format(k))
-            if k == 'spin' and (other_propertie[k] not in [-1,1]):
-                raise ValueError('Magnetization type not supported!')
+            #Currently only support integer spin, namely z-axis polarized 
+            #calculations only.
 
         self.other_properties = other_properties
-        self.molecule = Molecule(self.symbols,self.coords,charge=self.oxidation_state)
+        if len(self.symbols)>1 or self.symbols[0]!='Vac':
+            self.molecule = Molecule(self.symbols,self.coords,charge=self.oxidation_state)
+        else:
+            self.molecule = None
 
     def coords_in_supercell(self,lattice_point,sc_lat_matrix):
         """
@@ -141,6 +164,11 @@ class CESpecie(MSONable):
         return coords_frac
 
     def __eq__(self,other):
+        """
+        Warning:
+            Since we did not implement smart detection of rotational and 
+            translational invariance between fragments,
+        """
         symbols_eq = (self.symbols == other.symbols)
         ox_eq = (self.oxidation_state == other.oxidation_state) 
         geo_eq = np.allclose(self.coords,other.coords)
@@ -161,8 +189,27 @@ class CESpecie(MSONable):
         return symbols_eq and ox_eq and geo_eq and props_eq and heading_eq
 
     def __str__(self):
-        return self.molecule.__str__()+'\nHeading direction:{}'.format(self.heading)+\
+        if self.molecule is not None:
+            return self.molecule.__str__()+'\nHeading direction:{}'.format(self.heading)+\
+               '\nOther properties:\n {}'.format(self.other_properties)
+        else:
+            return 'Vacancy'+'\nHeading direction:{}'.format(self.heading)+\
                '\nOther properties:\n {}'.format(self.other_properties)
 
     def __repr__(self):
         return self.__str__()
+
+    @classmethod
+    def from_string(cls,sp_string,other_properties:dict={}):
+        """
+        Initialize a specie from its string representation.
+        Molecular fragments are marked with a prefix f-.
+        This
+        """
+        if len(sp_string)>=2 and sp_string[:2]=='f-':
+            raise NotImplementedError
+            #Will be implemented as a standard storage dictionary
+        else:
+            #Mono-atomic species
+            symbol,oxi = get_element_oxi(sp_string) 
+            return cls([symbol],oxidation_state=oxi,other_properties=other_properties)
