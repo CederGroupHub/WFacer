@@ -2,6 +2,9 @@ from coords_util import *
 
 from monty.json import MSONable
 from pymatgen.core.periodic_table import Specie
+from pymatgen.symmetry.analyzer import PointGroupAnalyzer
+from pymatgen.core.structure import Molecule
+
 import numpy as np
 
 def get_oxi(ion):
@@ -87,12 +90,14 @@ class CESpecie(MSONable):
 
         self.symbols = atom_symbols
         self.oxidation_state = oxidation_state
-        self.coords = standardize_coords(atom_coords)
+        self.coords = Standardize_Coords(np.array(atom_coords))
 
         self.heading = np.array(heading)
 
         if len(atom_symbols)==1:
-            if symbol!='Vac':
+            self.heading = np.array([0.0,0.0,0.0])
+            #An atom has no heading.
+            if atom_symbols[0]!='Vac':
                 try:
                     self.pmg_specie = Specie(symbol,float(oxidation_state))
                 except:
@@ -103,4 +108,61 @@ class CESpecie(MSONable):
                 raise ValueError("Vacancy specie can not have non-zero charge!")           
 
         else:
-                        
+            if not Is_Nonlinear(self.coords):
+                self.heading[2]=0.0
+            #Linear atomic clusters have no rolls.
+            self.pmg_specie = None
+
+        for k in other_properties.keys():
+            if k not in supported_properties:
+                raise ValueError('Property {} not yet supported!'.format(k))
+            if k == 'spin' and (other_propertie[k] not in [-1,1]):
+                raise ValueError('Magnetization type not supported!')
+
+        self.other_properties = other_properties
+        self.molecule = Molecule(self.symbols,self.coords,charge=self.oxidation_state)
+
+    def coords_in_supercell(self,lattice_point,sc_lat_matrix):
+        """
+        This will give the fractional coordnates of the atoms
+        on a specified lattice point.
+        Inputs:
+            lattice point: array_like, in fractional coordinates
+            sc_lat_matrix: lattice matrix of the SUPERCELL
+        Outputs:
+            a set of fractional coordinates, representing atom loacations in the
+            supercell
+        """
+        alpha,beta,gamma = self.heading*np.pi 
+        
+        coords_cart = self.coords@Rot_Matrix(alpha,beta,gamma)
+        coords_frac = coords_cart@np.linalg.inv(sc_lat_matrix)+lattice_point
+
+        return coords_frac
+
+    def __eq__(self,other):
+        symbols_eq = (self.symbols == other.symbols)
+        ox_eq = (self.oxidation_state == other.oxidation_state) 
+        geo_eq = np.allclose(self.coords,other.coords)
+        props_eq = (self.other_properties==other.other_properties)
+        
+        if len(self.coords)<2:
+            heading_eq = True
+        else:
+            point_group = PointGroupAnalyzer(self.molecule)
+            symops = point_group.get_symmetry_operations()
+
+            heading_eq = False
+            for symop in symops:
+                if np.allclose(symop.operate(other.heading),self.heading):
+                    heading_eq = True
+                    break
+        
+        return symbols_eq and ox_eq and geo_eq and props_eq and heading_eq
+
+    def __str__(self):
+        return self.molecule.__str__()+'\nHeading direction:{}'.format(self.heading)+\
+               '\nOther properties:\n {}'.format(self.other_properties)
+
+    def __repr__(self):
+        return self.__str__()

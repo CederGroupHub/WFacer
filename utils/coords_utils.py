@@ -1,7 +1,38 @@
 import numpy as np
 
+def Rz(theta):
+    return np.array([[np.cos(theta),-np.sin(theta),0],[np.sin(theta),np.cos(theta),0],\
+                             [0,0,1]])
+def Rx(theta):
+    return np.array([[1,0,0],[0,np.cos(theta),-np.sin(theta)],\
+                             [0,np.sin(theta),np.cos(theta)]])
 
-def standardize_coords(atom_coords):
+def Rot_Matrix(alpha,beta,gamma):
+    """
+    Gives the transformation matrix of a Euler rotation.
+    transformed_coords (shape=N*3) = untransformed_coords (shape=N*3) @ Rot_matrix
+    (Right multiplied)
+    """
+    return Rz(-1.0*alpha)@Rx(-1.0*beta)@Rz(-1.0*gamma)
+
+def Is_Nonlinear(coords):
+    """
+    This function checks whether the given atomic cluster is a linear one, and 
+    also returns the index of the first atom that lies out of the line of 
+    coords[0] and coords[1]
+    """
+    if len(coords)<2:
+        return False,None
+    elif len(coords)==2:
+        retuen False,1
+    else:
+        shifted = np.array(coords)-np.average(coords,axis=0)
+        for i in range(2,len(coords)):
+            if np.linalg.norm(np.cross(coords[1]-coords[0],coords[i]-coords[0]))!=0:
+                return True,i
+        return False,1
+
+def Standardize_Coords(atom_coords):
     """
     Given a set of catesian atomic coordinates, this function trys to 'standardize'
     the coordinates by aligning the center of coordinates, the first atom, and the
@@ -14,7 +45,10 @@ def standardize_coords(atom_coords):
         return untransformed_coords
     else:
         v_ref0 = untransformed_coords[0]
-        v_ref1 = untransformed_coords[1]
+        
+        is_linear,ref1_id=is_linear(untransformed_coords)
+        v_ref1 = untransformed_coords[ref1_id]
+
         ex = np.array([1,0,0])
         ey = np.array([0,1,0])
         ez = np.array([0,0,1])
@@ -40,13 +74,6 @@ def standardize_coords(atom_coords):
             ex_pp = ex_pp/np.linalg.norm(ex_pp)
             gamma_t = np.arccos(np.dot(ex_p,ex_pp))
             gamma_sgn = np.sign(np.dot(np.cross(ex_pp,ex_p),v_ref0))
-    
-        def Rz(theta):
-            return np.array([[np.cos(theta),-np.sin(theta),0],[np.sin(theta),np.cos(theta),0],\
-                             [0,0,1]])
-        def Rx(theta):
-            return np.array([[1,0,0],[0,np.cos(theta),-np.sin(theta)],\
-                             [0,np.sin(theta),np.cos(theta)]])
     
         Rz_a = Rz(-1.0*alpha_t*alpha_sgn)
         Rx_b = Rx(-1.0*beta_t*beta_sgn)
