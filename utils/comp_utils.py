@@ -23,6 +23,13 @@ supercell_size*atomic_ratioo is not an integer. For this case, you need to
 select a proper enumeration fold for your compositions(see enum_utils.py),
 or choose a proper supercell size.
 """
+def GCD(a,b):
+    """ The Euclidean Algorithm """
+    a = abs(a)
+    b = abs(b)
+    while a:
+        a, b = b%a, a
+    return b    
 
 def get_sublat_list(N_sts_prim,sc_size=1,sublat_merge_rule=None,sc_making_rule='pmg'):
     """
@@ -88,7 +95,7 @@ def get_all_axis(bits):
     Vacancies 'Vac' are considered as a type of specie with 0 charge, thus in our
     formulation, the system is in number-conserved, semi-grand canonical ensemble.
     Inputs:
-        bits: a list yielded by utils.comp_util.get_bits
+        bits: a list of CESpecies on each sublattice.
     Outputs:
         neutral_combs:
             a list that stores all charge neutral filps. Species are encoded in their
@@ -106,7 +113,7 @@ def get_all_axis(bits):
         unit_n_swps.extend([(sp,n_bits[sl_id][-1],sl_id) for sp in n_bits[sl_id][:-1]])
         #(sp_before,sp_after,sublat_id)
 
-    chg_of_swps = [GetIonChg(p[1])-GetIonChg(p[0]) for p in unit_swps]
+    chg_of_swps = [p[0].oxidation_state-p[1].oxidation_state for p in unit_swps]
     
     #Dimensionality of the charge neutral space.
     zero_swps = [swp for swp,chg in zip(unit_n_swps,chg_of_swps) if chg==0]
@@ -121,8 +128,13 @@ def get_all_axis(bits):
             chg1 = non_zero_chgs[i]
             chg2 = non_zero_chgs[i+1]
             gcd = GCD(chg1,chg2)
-            n1 = chg2//gcd
-            n2 = -chg1//gcd
+            if chg1*chg2>0:
+                n1 = chg2//gcd
+                n2 = -chg1//gcd
+            else:
+                n1 = chg2//gcd
+                n2 = chg1//gcd
+
             neutral_combs.append([(swp1,n1),(swp2,n2)])
 
     operations = []
@@ -160,63 +172,58 @@ def visualize_operations(operations,bits):
         from_strs = []
         to_strs = []
         for (swp_from,sl_id),n in operation['from'].items():
-            from_name = bits[sl_id][swp_from]
+            from_name = bits[sl_id][swp_from].specie_string
             from_strs.append('{} {}({})'.format(n,from_name,sl_id))
         for (swp_to,sl_id),n in operation['to'] .items():
-            to_name = bits[sl_id][swp_to]
+            to_name = bits[sl_id][swp_to].specie_string
             to_strs.append('{} {}({})'.format(n,to_name,sl_id)) 
         from_str = ' + '.join(from_strs)
         to_str = ' + '.join(to_strs)
         operation_strs.append(from_str+' -> '+to_str) 
     return '\n'.join(operation_strs)
 
-def vec_to_comp(vec,init_comp,neutral_combs, bits):
+def vec_to_comp(vec,init_comp,neutral_combs):
     """
-    Turns a CEAuto composition vector into composition dictionary.
-    For example, in Ca/MgO: vec = (1.0) -> comp=
-    [{'Ca2+':1.0},{'O2-':1.0}]
-    The input init_comp should also have the same form as output comp,
-    namely a list of dictionaries, each item in list corresponds to 
-    the composition on a sub-lattice.
+    Turns a CEAuto composition vector into a CEAuto composition
+    object.
+    Init comp: ex. comp=[[1.0],[1.0]]
+                   bits = [[CESpecie.from_string('Ca2+')],\
+                    [CESpecie.from_string('O2-')]]
+                   means:
+                   [{'Ca2+':1.0},{'02-':1.0}] in old CEAuto
+    Therefore, when decoding a composition, you must combine both
+    the comp list, and the bits list.
     """
     comp = deepcopy(init_comp)
     for dx,comb in zip(vec,neutral_combs):
         for (swp_to,swp_from,sl_id),n in comb:
-            to_name = bits[sl_id][swp_to]
-            from_name = bits[sl_id][swp_from]      
-            comp[sl_id][from_name]-=dx*n
-            comp[sl_id][to_name]+=dx*n
+            comp[sl_id][swp_from]-=dx*n
+            comp[sl_id][swp_to]+=dx*n
+
     is_legal_comp = True
     for sl in comp:
-        for sp in sl:
-            if sl[sp]<0:  
+        for sp_id,n in enumerate(sl):
+            if n<0:  
                is_legal_comp = False
                break
     
     if not is_legal_comp:
         raise ValueError('The replacement vector can not be converted into a reachable compostion.')
-
     else:
         return comp
 
-def comp_to_vec(comp,init_comp, neutral_combs, bits):
+def comp_to_vec(comp,init_comp, neutral_combs):
     """
         Get the composition vector from a composition vector.
     """
     #flatten the composition into a vector
-    n_bits = get_n_bits(bits)
+    #n_bits = get_n_bits(bits)
 
     dcomp_flat = []
-    n_sl = len(bits)
+    n_sl = len(init_comp)
     for sl_id in range(n_sl):
-        for sp in bits[sl_id][:-1]:
-            if sp in comp[sl_id] and sp in init_comp[sl_id]:
-                dn = comp[sl_id][sp]-init_comp[sl_id][sp]
-            else:
-                if sp in init_comp[sl_id]:
-                    dn = -init_comp[sl_id][sp]
-                elif sp in comp[sl_id]:
-                    dn = comp[sl_id][sp]
+        for sp_id in range(len(bits[sl_id])-1):
+            dn = comp[sl_id][sp_id]-init_comp[sl_id][sp_id]
             dcomp_flat.append(dn)
     #flatten the unitary swappings into basis vectors.
     #print("dcomp_flat:",dcomp_flat)
@@ -225,7 +232,7 @@ def comp_to_vec(comp,init_comp, neutral_combs, bits):
     for comb in neutral_combs:
         comb_flat = [0 for i in range(Nb)]
         for (swp_to,swp_from,sl_id),n in comb:
-            bit_id = sum([len(n_bits[i])-1 for i in range(sl_id)])+swp_to
+            bit_id = sum([len(init_comp[i])-1 for i in range(sl_id)])+swp_to
             comb_flat[bit_id]+=n
         combs_flat.append(comb_flat)
 
@@ -256,27 +263,33 @@ def occu_to_comp(occu, bits,sc_size=1,sublat_merge_rule=None):
         Comp: form [{'Li+':5,'Ti4+':1},{'O2-':6}], etc. len(Comp)=len(sublat_list)
     """
     comp = []
+    
+    if len(occu)%sc_size!=0:
+        raise ValueError("Supercell size not correct!")
+
     N_sts_prim = len(occu)//sc_size
     sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
                   sublat_merge_rule=sublat_merge_rule)
     for sublat in bits:
-        comp.append({})
+        comp.append([0 for i in range(len(sublat))])
 
     for i,sp in enumerate(occu):
         idx = get_sublat_id(i,sublat_list)
-        sp_name = bits[idx][sp]
-        if sp_name not in comp[idx]:
-            comp[idx][sp_name]=1
-        else:
-            comp[idx][sp_name]+=1
+        comp[idx][int(sp)]+=1
+
     return comp
 
-def get_flip_canonical(bits, N_sts_prim, occu, sc_size =1,\
+def get_flip_canonical(occu, bits, sc_size =1,\
                        sublat_merge_rule=None):
     """
     Find a flip operation to an occupation in canonical ensemble.
     """
     n_bits = get_n_bits(bits)
+
+    if len(occu)%sc_size!=0:
+        raise ValueError("Supercell size not correct!")
+
+    N_sts_prim = len(occu)//sc_size
     sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size),\
                   sublat_merge_rule=sublat_merge_rule)
     n_sls = len(sublat_list)
@@ -295,10 +308,10 @@ def get_flip_canonical(bits, N_sts_prim, occu, sc_size =1,\
     else:
         st1,st2 = random.choice(valid_combos)
         #Swap
-        return [(st1,occu[st2]),(st2,occu[st1])]
+        return [(st1,int(occu[st2])),(st2,int(occu[st1]))]
     
 
-def get_flip_semigrand(bits, N_sts_prim, neutral_combs, occu, sc_size=1,\
+def get_flip_semigrand(bits, neutral_combs, occu, sc_size=1,\
              sublat_merge_rule = None):
     """
     Find a flip operation to an occupation in charge-neutral semi 
@@ -306,6 +319,11 @@ def get_flip_semigrand(bits, N_sts_prim, neutral_combs, occu, sc_size=1,\
     """
     flip = None
     n_bits = get_n_bits(bits)
+
+    if len(occu)%sc_size!=0:
+        raise ValueError("Supercell size not correct!")
+
+    N_sts_prim = len(occu)//sc_size
     sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
                   sublat_merge_rule=sublat_merge_rule)    
     n_sls = len(sublat_list)

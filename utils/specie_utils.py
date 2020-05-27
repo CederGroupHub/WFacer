@@ -192,11 +192,11 @@ class CESpecie(MSONable):
     def specie_string(self):
         """
         Returns a string rep of the composition of this specie.
-        Note: This string will be used as one of the factors 
-              in comparing species!
         """
         if len(self.symbols)==1:
-            return element_to_ion(self.symbols[0],oxi=self.oxidation_state)
+            sp_string = element_to_ion(self.symbols[0],oxi=self.oxidation_state)
+            oxi_string = ''
+
         else:
             element_cnt = {}
             for el in self.symbols:
@@ -214,7 +214,9 @@ class CESpecie(MSONable):
                 oxi_string = ' {}-'.format(int(abs(self.oxidation_state)))
             else:
                 oxi_string = ' {}+'.format(int(abs(self.oxidation_state)))
-            return sp_string + oxi_string
+        #This does not give support encoding of other properties.
+
+        return sp_string + oxi_string
 
     def __str__(self):
         if self.molecule is not None:
