@@ -1,3 +1,9 @@
+import random
+
+import numpy as np
+
+from itertools import combinations,product
+
 """
 This file contains functions related to implementing and navigating the 
 compositional space.
@@ -54,40 +60,12 @@ def get_sublat_list(N_sts_prim,sc_size=1,sublat_merge_rule=None,sc_making_rule='
             sublat_list.append(sublat_sts_in_sc)
     return sublat_list
 
-def get_bits(structure,sc_size=1,sublat_merge_rule=None):
-    """
-    Get species occupying each sublattice from a pymatgen.
-    Structure object.
-    Previous pyabinito used pymatgen.specie order.
-    Now using string order for all species, including 'Vac'.
-    Note:
-        We recommend you to define 'bits' on your own, rather
-    than getting in from a pymatgen.structure.
-    Inputs:
-        structure: pymatgen.structure
-        sc_size: supercell size if this structure is a 
-                 supercell
-        sublat_merge_rule: 
-                 rules used to merge sites into sublattice
-    """
-    if len(structure)%sc_size!=0:
-        raise ValueError("Supercell size wrong! Number of sites in structure\
-                          can not be divided by super cell size!")
-    N_sts_prim = len(structure)//sc_size
-    sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
-                  sublat_merge_rule=sublat_merge_rule)
+#    Now 'bits' are represented in utils.specie_utils.CESpecies, and are 
+#    Generated in ce_elements.exp_structure.ExpansionStructure
 
-    all_bits = []
-    for group in sublat_list:
-        bits = []
-        site = structure[group[0]]
-        bits = [str(sp) for sp in site.species.keys()]
-        if site.species.num_atoms < 0.99:
-            bits.append("Vac")
-        bits = sorted(bits)
-
-        all_bits.append(bits)
-    return all_bits
+#    bits shall be a 2D list, with the first dimension equals to the number of 
+#    sublattices, and the second dimension equals to num of species occupying this
+#    sublattice. Each element will be an object of CESpecies.
 
 def get_n_bits(bits):
     """
@@ -293,11 +271,38 @@ def occu_to_comp(occu, bits,sc_size=1,sublat_merge_rule=None):
             comp[idx][sp_name]+=1
     return comp
 
-def get_flip(bits, N_sts_prim, neutral_combs, occu, sc_size=1,\
+def get_flip_canonical(bits, N_sts_prim, occu, sc_size =1,\
+                       sublat_merge_rule=None):
+    """
+    Find a flip operation to an occupation in canonical ensemble.
+    """
+    n_bits = get_n_bits(bits)
+    sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size),\
+                  sublat_merge_rule=sublat_merge_rule)
+    n_sls = len(sublat_list)
+
+    valid_combos = []
+    for sublat in sublat_list:
+        valid_sublat_combos = []
+        for i in range(len(sublat)-1):
+            for j in range(i,len(sublat)):
+                if occu[i]!=occu[j]:
+                    valid_sublat_combos.append((i,j))
+        valid_combos.extend(valid_sublat_combos)
+
+    if len(valid_combos)==0:
+        return None
+    else:
+        st1,st2 = random.choice(valid_combos)
+        #Swap
+        return [(st1,occu[st2]),(st2,occu[st1])]
+    
+
+def get_flip_semigrand(bits, N_sts_prim, neutral_combs, occu, sc_size=1,\
              sublat_merge_rule = None):
     """
-    Apply, or reverse apply a neutral flip combination.
-    Will continue random searching until an available flip is found.
+    Find a flip operation to an occupation in charge-neutral semi 
+    grand canonical ensemble.
     """
     flip = None
     n_bits = get_n_bits(bits)

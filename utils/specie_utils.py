@@ -188,6 +188,34 @@ class CESpecie(MSONable):
         
         return symbols_eq and ox_eq and geo_eq and props_eq and heading_eq
 
+    @property
+    def specie_string(self):
+        """
+        Returns a string rep of the composition of this specie.
+        Note: This string will be used as one of the factors 
+              in comparing species!
+        """
+        if len(self.symbols)==1:
+            return element_to_ion(self.symbols[0],oxi=self.oxidation_state)
+        else:
+            element_cnt = {}
+            for el in self.symbols:
+                if el not in element_cnt:
+                    element_cnt[el]=1
+                else:
+                    element_cnt[el]+=1
+            sp_string = ''
+            for k,v in element_cnt.items():
+                sp_string+=k+str(v)
+
+            if self.oxidation_state = 0:
+                oxi_string = ''
+            elif self.oxidation_state < 0:
+                oxi_string = ' {}-'.format(int(abs(self.oxidation_state)))
+            else:
+                oxi_string = ' {}+'.format(int(abs(self.oxidation_state)))
+            return sp_string + oxi_string
+
     def __str__(self):
         if self.molecule is not None:
             return self.molecule.__str__()+'\nHeading direction:{}'.format(self.heading)+\
