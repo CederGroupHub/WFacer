@@ -208,7 +208,7 @@ class CESpecie(MSONable):
             for k,v in element_cnt.items():
                 sp_string+=k+str(v)
 
-            if self.oxidation_state = 0:
+            if self.oxidation_state == 0:
                 oxi_string = ''
             elif self.oxidation_state < 0:
                 oxi_string = ' {}-'.format(int(abs(self.oxidation_state)))
