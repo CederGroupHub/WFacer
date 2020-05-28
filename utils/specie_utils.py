@@ -36,7 +36,7 @@ def element_to_ion(element_str,oxi=0):
         if oxi==-1:
             return element_str+'-'
         else:
-            return elelemt_str+str(int(abs(oxi)))+'-'
+            return element_str+str(int(abs(oxi)))+'-'
     else:
         if oxi==1:
             return element_str+'+'

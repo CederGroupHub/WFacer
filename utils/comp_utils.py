@@ -4,6 +4,7 @@ import numpy as np
 
 from itertools import combinations,product
 
+from copy import deepcopy
 """
 This file contains functions related to implementing and navigating the 
 compositional space.
@@ -23,6 +24,12 @@ supercell_size*atomic_ratioo is not an integer. For this case, you need to
 select a proper enumeration fold for your compositions(see enum_utils.py),
 or choose a proper supercell size.
 """
+NUMCONERROR = ValueError("Operation error, flipping not number conserved.") 
+OUTOFSUBLATERROR = ValueError("Operation error, flipping between different sublattices.")
+
+####
+# Basic mathematics
+####
 def GCD(a,b):
     """ The Euclidean Algorithm """
     a = abs(a)
@@ -30,6 +37,20 @@ def GCD(a,b):
     while a:
         a, b = b%a, a
     return b    
+
+def concat_tuples(l):
+    s = ()
+    for sub_tup in l:
+        s = s+sub_tup
+    return s
+
+def tuple_diff(l1,l2):
+    #returns l1-l2
+    return tuple([e for e in l1 if e not in l2])
+
+####
+# Composition related tools
+####
 
 def get_sublat_list(N_sts_prim,sc_size=1,sublat_merge_rule=None,sc_making_rule='pmg'):
     """
@@ -140,26 +161,54 @@ def get_all_axis(bits):
     operations = []
     for swp_combo in neutral_combs:
         operation = {'to':{},'from':{}}
-        for swp,n in swp_combo:
-            if n>0:
-                swp_to,swp_from,sl_id = swp
-                n_swp = n
-            elif n<0:
-                swp_from,swp_to,sl_id = swp
-                n_swp = -n
-            else:
-                continue            
+        if len(swp_combo)==1:
+            swp,n = swp_combo[0]
+            swp_to,swp_from,sl_id = swp
+            operation['from'][(swp_from,sl_id)] = n
+            operation['to'][(swp_to,sl_id)] = n
+            operations.append(operation)
 
-            if (swp_to,sl_id) not in operation['to']:
-                operation['to'][(swp_to,sl_id)] = n_swp
-            else:
-                operation['to'][(swp_to,sl_id)] += n_swp
-            if (swp_from,sl_id) not in operation['from']:
-                operation['from'][(swp_from,sl_id)] = n_swp
-            else:
-                operation['from'][(swp_from,sl_id)] += n_swp
+        else:
+            for swp,n in swp_combo:
+                if n>0:
+                    swp_to,swp_from,sl_id = swp
+                    n_swp = n
+                elif n<0:
+                    swp_from,swp_to,sl_id = swp
+                    n_swp = -n
+                else:
+                    continue            
+    
+                if (swp_to,sl_id) not in operation['to']:
+                    operation['to'][(swp_to,sl_id)] = n_swp
+                else:
+                    operation['to'][(swp_to,sl_id)] += n_swp
+                if (swp_from,sl_id) not in operation['from']:
+                    operation['from'][(swp_from,sl_id)] = n_swp
+                else:
+                    operation['from'][(swp_from,sl_id)] += n_swp
+            #deduplicate 'from' and 'to'
+            operation_dedup = {'to':{},'from':deepcopy(operation['from'])}
+
+            for sp_to,sl_id in operation['to']:
+                if (sp_to,sl_id) in operation_dedup['from']:
+                    if operation['from'][(sp_to,sl_id)]>\
+                       operation['to'][(sp_to,sl_id)]:
+                        operation_dedup['from'][(sp_to,sl_id)]-=\
+                        operation['to'][(sp_to,sl_id)]
+                    elif operation['from'][(sp_to,sl_id)]<\
+                       operation['to'][(sp_to,sl_id)]:
+                        operation_dedup['to'][(sp_to,sl_id)]=\
+                        operation['to'][(sp_to,sl_id)]-\
+                        operation['from'][(sp_to,sl_id)]
+                        operation_dedup['from'].pop((sp_to,sl_id))
+                    else:
+                        operation_dedup['from'].pop((sp_to,sl_id))
+                else:
+                    operation_dedup['to'][(sp_to,sl_id)]=\
+                    operation['to'][(sp_to,sl_id)]
         #adjust the operation dictionary to make all values positive.
-        operations.append(operation)
+            operations.append(operation_dedup)
 
     return neutral_combs,operations
 
@@ -220,9 +269,9 @@ def comp_to_vec(comp,init_comp, neutral_combs):
     #n_bits = get_n_bits(bits)
 
     dcomp_flat = []
-    n_sl = len(init_comp)
-    for sl_id in range(n_sl):
-        for sp_id in range(len(bits[sl_id])-1):
+
+    for sl_id in range(len(init_comp)):
+        for sp_id in range(len(init_comp[sl_id])-1):
             dn = comp[sl_id][sp_id]-init_comp[sl_id][sp_id]
             dcomp_flat.append(dn)
     #flatten the unitary swappings into basis vectors.
@@ -279,6 +328,11 @@ def occu_to_comp(occu, bits,sc_size=1,sublat_merge_rule=None):
 
     return comp
 
+####
+# Ensemble related tools
+####
+
+
 def get_flip_canonical(occu, bits, sc_size =1,\
                        sublat_merge_rule=None):
     """
@@ -290,7 +344,7 @@ def get_flip_canonical(occu, bits, sc_size =1,\
         raise ValueError("Supercell size not correct!")
 
     N_sts_prim = len(occu)//sc_size
-    sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size),\
+    sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
                   sublat_merge_rule=sublat_merge_rule)
     n_sls = len(sublat_list)
 
@@ -299,9 +353,12 @@ def get_flip_canonical(occu, bits, sc_size =1,\
         valid_sublat_combos = []
         for i in range(len(sublat)-1):
             for j in range(i,len(sublat)):
-                if occu[i]!=occu[j]:
-                    valid_sublat_combos.append((i,j))
+                i_sc_id = sublat[i]
+                j_sc_id = sublat[j]
+                if occu[i_sc_id]!=occu[j_sc_id]:
+                    valid_sublat_combos.append((i_sc_id,j_sc_id))
         valid_combos.extend(valid_sublat_combos)
+        #print('valid_combos:',valid_combos)
 
     if len(valid_combos)==0:
         return None
@@ -311,12 +368,13 @@ def get_flip_canonical(occu, bits, sc_size =1,\
         return [(st1,int(occu[st2])),(st2,int(occu[st1]))]
     
 
-def get_flip_semigrand(bits, neutral_combs, occu, sc_size=1,\
+def get_flip_semigrand(occu, bits, operations, sc_size=1,\
              sublat_merge_rule = None):
     """
     Find a flip operation to an occupation in charge-neutral semi 
     grand canonical ensemble.
     """
+    #requires check!
     flip = None
     n_bits = get_n_bits(bits)
 
@@ -346,35 +404,102 @@ def get_flip_semigrand(bits, neutral_combs, occu, sc_size=1,\
     valid_flips = []
     valid_dvecs = []
 
-    for comb_id,comb in enumerate(neutral_combs):
+    for op_id,operation in enumerate(operations):
         #When sampling flips, make sure to check that all flips have a equal probability to be sampled!
         #In the previous implementation, I made a mistake. I sampled compositional direction first, then
         #enumerated flips that goes in the chosen direction, therefore adding a prefactor to each flip's
         #probability to be sampled. You can verify that this prefactor ridiculously amplifies flips that
         #goes back to pure state, so you almost can't reach mixed states at all!
-        valid_pos_flips_forswps = []
-        valid_neg_flips_forswps = []
-        for swp,n in comb:
-            if n>0:
-                swp_to,swp_from,sl_id = swp
-                n_swp = n
-            elif n<0:
-                swp_from,swp_to,sl_id = swp
-                n_swp = -n
+        if len(operation['from'])==1 and len(operation['to'])==1:
+            #Then this must be a single flip.
+            (swp_from,sl_id1),n1 = list(operation['from'].items())[0]
+            (swp_to,sl_id2),n2 = list(operation['to'].items())[0]
+            if sl_id1!=sl_id2:
+                raise OUTOFSUBLATERROR
+            if n1 != n2:
+                raise NUMCONERROR
+            valid_pos_flips = [[(combo,swp_to)] for combo in combinations(sl_stats_init[sl_id1][swp_from],n1)]
+            valid_neg_flips = [[(combo,swp_from)] for combo in combinations(sl_stats_init[sl_id1][swp_to],n1)]
+
+        elif len(operation['from'])==2 and len(operation['to'])==2:
+            #Then this flip is a combination of two flips on diffrent sublattices
+            (swp_from_1,sl_id1),n1 = list(operation['from'].items())[0]
+            (swp_from_2,sl_id2),n2 = list(operation['from'].items())[1]
+            (swp_to_1,sl_id3),n3 = list(operation['to'].items())[0]
+            (swp_to_2,sl_id4),n4 = list(operation['to'].items())[1]
+                
+            flipped_combos_on_sl1 = list(combinations(sl_stats_init[sl_id1][swp_from_1],n1))
+            flipped_combos_on_sl2 = list(combinations(sl_stats_init[sl_id2][swp_from_2],n2))
+            flipped_combos_on_sl3 = list(combinations(sl_stats_init[sl_id3][swp_to_1],n3))
+            flipped_combos_on_sl4 = list(combinations(sl_stats_init[sl_id4][swp_to_2],n4))
+                                           
+            if sl_id1 == sl_id3 and sl_id2 == sl_id4:
+                if n1!=n3 or n2!=n4:
+                    raise NUMCONERROR
+                valid_pos_flips = [[(combo1,swp_to_1),(combo2,swp_to_2)] for combo1,combo2 in \
+                  product(flipped_combos_on_sl1,flipped_combos_on_sl2)]                   
+                valid_neg_flips = [[(combo1,swp_from_1),(combo2,swp_from_2)] for combo1,combo2 in \
+                  product(flipped_combos_on_sl3,flipped_combos_on_sl4)] 
+
+            elif sl_id1 == sl_id4 and sl_id2 == sl_id3:
+                if n1!=n4 or n2!=n3:
+                    raise NUMCONERROR
+                valid_pos_flips = [[(combo1,swp_to_2),(combo2,swp_to_1)] for combo1,combo2 in \
+                  product(flipped_combos_on_sl1,flipped_combos_on_sl2)]                   
+                valid_neg_flips = [[(combo1,swp_from_2),(combo2,swp_from_1)] for combo1,combo2 in \
+                  product(flipped_combos_on_sl3,flipped_combos_on_sl4)]
+
             else:
-                continue
-            #We can do this because all the flips should be number conserved.
+                raise OUTOFSUBLATERROR
 
-            valid_pos_flips_forswp= [(swped_sites,swp_to) for swped_sites in \
-                         combinations(sl_stats_init[sl_id][swp_from],n_swp)]
-            valid_pos_flips_forswps.append(valid_pos_flips_forswp)
+        elif len(operation['from'])==1 and len(operation['to'])==2:
+            (swp_from_1,sl_id1),n1 = list(operation['from'].items())[0]
+            (swp_to_1,sl_id3),n3 = list(operation['to'].items())[0]
+            (swp_to_2,sl_id4),n4 = list(operation['to'].items())[1]
+            if sl_id1 != sl_id3 or sl_id1 !=sl_id4:
+                raise OUTOFSUBLATERROR
+            if n1!=n3+n4:
+                raise NUMCONERROR
 
-            valid_neg_flips_forswp= [(swped_sites,swp_from) for swped_sites in \
-                         combinations(sl_stats_init[sl_id][swp_to],n_swp)]
-            valid_neg_flips_forswps.append(valid_neg_flips_forswp)
+            flipped_combos_on_sl1 = list(combinations(sl_stats_init[sl_id1][swp_from_1],n1))
+            flipped_combos_on_sl3 = list(combinations(sl_stats_init[sl_id3][swp_to_1],n3))
+            flipped_combos_on_sl4 = list(combinations(sl_stats_init[sl_id4][swp_to_2],n4))
 
-        valid_pos_flips = list(product(*valid_pos_flips_forswps))
-        valid_neg_flips = list(product(*valid_neg_flips_forswps))
+            valid_pos_flips = []
+            for combo in flipped_combos_on_sl1:
+                to_1_combs = list(combinations(combo,n3))
+                to_2_combs = [tuple_diff(combo,to_1_comb) for to_1_comb in to_1_combs]
+                valid_pos_flips.extend([[(to_1_comb,swp_to_1),(to_2_comb,swp_to_2)] \
+                                        for to_1_comb,to_2_comb in zip(to_1_combs,to_2_combs)])
+
+            valid_neg_flips = [[(combo3, swp_from_1),(combo4,swp_from_1)] for combo3,combo4 in\
+                               zip(flipped_combos_on_sl3,flipped_combos_on_sl4)]
+
+        elif len(operation['to'])==1 and len(operation['from'])==2:
+            (swp_to_1,sl_id3),n3 = list(operation['to'].items())[0]
+            (swp_from_1,sl_id1),n1 = list(operation['from'].items())[0]
+            (swp_from_2,sl_id2),n2 = list(operation['from'].items())[1]
+            if sl_id1 != sl_id3 or sl_id2 !=sl_id3:
+                raise OUTOFSUBLATERROR
+            if n3!=n1+n2:
+                raise NUMCONERROR
+
+            flipped_combos_on_sl1 = list(combinations(sl_stats_init[sl_id1][swp_from_1],n1))
+            flipped_combos_on_sl2 = list(combinations(sl_stats_init[sl_id2][swp_from_2],n2))
+            flipped_combos_on_sl3 = list(combinations(sl_stats_init[sl_id3][swp_to_1],n3))
+
+            valid_neg_flips = []
+            for combo in flipped_combos_on_sl3:
+                to_1_combs = list(combinations(combo,n1))
+                to_2_combs = [tuple_diff(combo,to_1_comb) for to_1_comb in to_1_combs]
+                valid_neg_flips.extend([[(to_1_comb,swp_from_1),(to_2_comb,swp_from_2)] \
+                                        for to_1_comb,to_2_comb in zip(to_1_combs,to_2_combs)])
+
+            valid_pos_flips = [[(combo1, swp_to_1),(combo2,swp_to_1)] for combo3,combo4 in\
+                               zip(flipped_combos_on_sl1,flipped_combos_on_sl2)]
+
+        else:
+            raise ValueError("Composition axis not given in standard format!")
 
         #Sorting formats out to del_corr acceptable format
         for flip in valid_pos_flips:
@@ -382,20 +507,23 @@ def get_flip_semigrand(bits, neutral_combs, occu, sc_size=1,\
             for flipped_sts,flip_to_sp in flip:
                 reformatted_flip.extend([(flipped_st,flip_to_sp) for flipped_st in flipped_sts])
             valid_flips.append(reformatted_flip)
-            valid_dvecs.append((comb_id,1))
+            valid_dvecs.append((op_id,1))
                   
         for flip in valid_neg_flips:
             reformatted_flip = []
             for flipped_sts,flip_to_sp in flip:
                 reformatted_flip.extend([(flipped_st,flip_to_sp) for flipped_st in flipped_sts])
             valid_flips.append(reformatted_flip)
-            valid_dvecs.append((comb_id,-1))
+            valid_dvecs.append((op_id,-1))
+
+    #print(valid_flips)
+    #print(valid_dvecs)
 
     chosen_flip_id = random.randint(0,len(valid_flips)-1)
     chosen_flip = valid_flips[chosen_flip_id]
 
     chosen_comb_id, chosen_direction = valid_dvecs[chosen_flip_id]
-    dvec = np.zeros(len(neutral_combs))
+    dvec = np.zeros(len(operations))
     dvec[chosen_comb_id] = chosen_direction
     
     return chosen_flip,dvec
