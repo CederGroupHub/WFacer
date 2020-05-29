@@ -107,6 +107,12 @@ def get_sublat_id(st_id_in_sc,sublat_list):
             return sl_id
     return None
 
+def get_init_comp(bits):
+    """
+    This generates a charge neutral initial composition in the comp space.
+    """
+    raise NotImplementedError
+
 def get_all_axis(bits):
     """
     Get all axis in a charge-neutral composition space.
@@ -328,6 +334,14 @@ def occu_to_comp(occu, bits,sc_size=1,sublat_merge_rule=None):
 
     return comp
 
+def visualize_comp(comp,bits):
+    vis_comp = []
+    for sl_id,sl_bts in enumerate(bits):
+        vis_comp.append({})
+        for b_id,b in enumerate(sl_bts):
+            vis_comp[sl_id][b.specie_string]=comp[sl_id][b_id]
+    
+    return vis_comp
 ####
 # Ensemble related tools
 ####
