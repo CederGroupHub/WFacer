@@ -188,6 +188,15 @@ class CESpecie(MSONable):
         
         return symbols_eq and ox_eq and geo_eq and props_eq and heading_eq
 
+    def __lt__(self,other):
+        """
+        Defines comparisons between two generalized species.
+        """
+        if self.oxidation_state<other.oxidation_state:
+            return True
+        else:
+            return self.specie_string<other.specie_string
+
     @property
     def specie_string(self):
         """

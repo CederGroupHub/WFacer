@@ -1,10 +1,13 @@
 import random
 
 import numpy as np
+import polytope as pc
 
 from itertools import combinations,product
 
 from copy import deepcopy
+
+from monty.json import MSONable
 """
 This file contains functions related to implementing and navigating the 
 compositional space.
@@ -26,6 +29,7 @@ or choose a proper supercell size.
 """
 NUMCONERROR = ValueError("Operation error, flipping not number conserved.") 
 OUTOFSUBLATERROR = ValueError("Operation error, flipping between different sublattices.")
+CHGBALANCEERROR = ValueError("Charge balance cannot be achieved with these species.")
 
 ####
 # Basic mathematics
@@ -47,6 +51,89 @@ def concat_tuples(l):
 def tuple_diff(l1,l2):
     #returns l1-l2
     return tuple([e for e in l1 if e not in l2])
+
+def integerize_vector(v, dim_limiter=7,dtol=1E-5):
+    """
+    Given vector v, find a vector whose components are co-primal
+    integers.
+    Inputs:
+        dim_limiter: 
+            Maximum allowed integer component. Set to 7 by default,
+            because maximum possible charge of an ion is 7.
+            Must be an integer!
+        dtol:
+            point-to-line distance tolerance. If the distance from 
+            the detected grid point to line r = tv is larger than 
+            dtol, then v is not intergerizable.
+    Outputs:
+        v_int:
+            Intergerized v.
+    """
+    max_comp = np.max(np.abs(v))
+    max_c_id = np.argmax(np.abs(v))
+    if max_comp == 0:
+        raise ValueError("Vector is zero, can not be integerized.")
+
+    v_scaled = np.array(v)/max_comp
+    ev = np.array(v)/np.linalg.norm(v)   
+
+    d = len(v)
+    all_dim_ids = list(range(d))
+    init_branch = np.zeros(d)
+
+    for magnif in range(1,dim_limiter+1):    
+        for n_ones in range(d+1):
+            for combo in combinations(all_dim_ids,n_ones):
+                branch = deepcopy(init_branch)
+                branch[list(combo)] = 1
+                grid = np.floor(v_scaled*maginf)+branch
+
+                h_vec = grid-np.dot(ev,grid)*ev
+                h = np.linalg.norm(h_vec)
+                if h<dtol:
+                    return np.array(grid,dtype=int64)
+
+    print("Warning: given vector {} can not be integerized!".format(v))
+    return None
+
+def edges_from_vertices(vertices,p):
+    """
+    Find edges from combinations of vertices.
+    """
+    valid_edges = []
+    N_v = len(vertices)
+    v_ids = list(range(N_v))
+    is_simplex = True
+    for i,j in combinations(v_ids,2):
+        if not (vertices[i]+vertices[j])/2 in p:
+            valid_edges.append((i,j))
+        else:
+            is_simplex = False
+
+    return valid_edges, is_simplex
+
+def gram_schmidt(A):
+    """
+    Do Gram-schmidt orthonormalization to row vectors of a, and returns the result.
+    If matrix is over-ranked, will remove redundacies automatically.
+    Inputs:
+        A: array-like
+    Returns:
+        A_ortho: array-like, orthonormal matrix.
+    """
+    n,d = A.shape
+
+    if np.allclose(A[0],np.zeros(d)):
+        raise ValueError("First row is a zero vector, can not run algorithm.")
+
+    new_rows = [A[0]/np.linalg.norm(A[0])]
+    for row in A[1:]:
+        new_row = row
+        for other_new_row in new_rows:
+            new_row = new_row - np.dot(other_new_row,new_row)*other_new_row
+        if not np.allclose(new_row,np.zeros(d)):
+            new_rows.append( new_row/np.linalg.norm(new_row) )
+    return np.vstack(new_rows)
 
 ####
 # Composition related tools
@@ -342,11 +429,146 @@ def visualize_comp(comp,bits):
             vis_comp[sl_id][b.specie_string]=comp[sl_id][b_id]
     
     return vis_comp
+
 ####
 # Ensemble related tools
 ####
+def get_comp_space(bits):
+    """
+        This function generates a compositional space from a bits list, will include vertices of 
+        and unit vectors along edges of the charge neutral composition space. 
+        Inputs:
+            bits: bit list, same as appeared in get_n_bits
+        Outputs:
+            v_comps: compositions corresponding to vertices
+            edges: edges of the compositional space, give in a list of tuples, each refering to 
+                   two adjacent vertices on an edge.
+    """
+    n_bits = get_n_bits(bits)
+
+    unit_swps = []
+    unit_n_swps = []
+    #facets are sublattice normalization constraints, and variable normalization
+    #constraints
+    facets = []
+    unit_swp_id = 0
+
+    for sl_id,sl_sps in enumerate(bits):
+        if len(sl_sps) < 1:
+            raise ValueError('Sublattice bits should not be empty.')
+        unit_swps.extend([(sp,sl_sps[-1],sl_id) for sp in sl_sps[:-1]])
+        unit_n_swps.extend([(sp,n_bits[sl_id][-1],sl_id) for sp in n_bits[sl_id][:-1]])
+        facets.append( [unit_swp_id+idx for idx in range(len(sl_sps)-1)] )
+        unit_swp_id+=(len(sl_sps)-1)
+        #(sp_before,sp_after,sublat_id)
+
+    chg_of_swps = [p[0].oxidation_state-p[1].oxidation_state for p in unit_swps]
+    d = len(unit_swps)
+
+    tot_bkgrnd_chg = sum([sl[-1].oxidation_state for sl in bits])
+    
+    #If charge neutral constraint forms a valid hyperplane, then we should reduce the 
+    #dimensionality formed by the compotional space by doing a translation and a hyper-
+    #rotation, to make one of the original axis perpendicular to this constraned hyper-
+    #plane, and all other axis falls in this hyperplane. Then we find vertices in this
+    #hyperplane.
+    #We have to reduce dimensionality first, because polytope.Polytope can not deal with 
+    #polytopes in subspaces of a higher-dimensional space. It will treat this subspace
+    #as an empty set.
+    #H representation of a polytope can be written as Ax <= b where A is a n*d matrix, 
+    #while x is a d dimensional vector.
+
+    if tot_bkgrnd_chg==0 and np.allclose(chg_of_swps,np.zeros(d)):
+        print("Given specie table does not constitute a charged cluster expansion.")
+        is_charged = False
+        A_rows = []
+        b_rows = []
+        for constrained_ids in facets:
+            row = np.zeros(d)
+            row[constrained_ids] = 1
+            A_rows.append(row)
+            b_rows.append(1)
+        A = np.vstack(A_rows)
+        b = np.array(b_rows)
+        A = np.concatenate((A,-1*np.identity(d)),axis=0)
+        b = np.concatenate((b,np.zeros(d)),axis=0)
+        p = pc.Polytope(A,b)
+        vertices = pc.extreme(p)
+        edges = edges_from_vertices(vertices,p)
+
+    elif not np.allclose(chg_of_swps,np.zeros(d)):
+        #Charge constraint is valid. Should reduce a dimension
+        print("Given specie table constitutes a charged cluster expansion.")
+        is_charged = True
+        #Choose an axis cross point with the constrained subspace
+        #Do transformation x' = R(x-t) to rotate and translate the compositional
+        #space into the constrained hyperplane.
+        subspc_norm = np.array(chg_of_swps)
+        t = None
+        for idx, slope in enumerate(subspc_norm):
+            if slope!=0 and t is None:
+                intercept = float(tot_bkgrnd_chg)/slope
+                t = np.zeros(d)
+                t[idx]=intercept
+        #Get rotation matrix with G-S orthogonalization.(Just concatenate the original basis
+        #to en, and do G-S algorithm. Any excessive parts will be removed.
+        new_basis = np.vstack((subspc_norm,np.identity(d)))
+        new_basis = gram_schmidt(new_basis)
+        R = new_basis       
+        A_trans = A@R.T
+        b_trans = b-A@t
+        #Subspace is r_trans = [0,...,...]
+        A_sub = A_trans[:,1:]
+        b_sub = b_trans
+        #In subspace, this polytope has non-zero volume, and therefore can be properly handled.
+        p_sub = pc.Polytope(A_sub,b_sub)
+        vertices_sub = pc.extreme(p)
+        N_v = len(vertices_sub)
+        edges = edges_from_vertices(vertices_sub,p)
+        vertices_trans = np.hstack((np.zeros(N_v),vertices_sub))
+        vertices = vertices_trans@R + t
+    else:
+        raise CHGBALANCEERROR
+    print("Compositonal space vertices:\n",vertices)
+    print("Edges:")
+
+    edge_vecs = []
+    for edge in edges:  
+        #get irreducible unitary flips ("integerized edge vectors")
+        limiter = int(np.max(np.abs(chg_of_swps)))
+        edge_vec = integerize_vector(vertices[edge[0]]-vertices[edge[1]],dim_limiter=limiter)
+        print(edge,' ',edge_vec)
+        edge_vecs.append(edge_vec)
+    
+    #Rewrite edge vectors as specie operations
+    operations = []
+    for ev in edge_vecs:
+        operation = {'from':{},'to':{}}
+        #'from' side: annihilate species, 'to' side: generate species
+        for f_id,flip_num in enumerate(ev):
+            if flip_num>0:
+                flip_to,flip_from,sl_id = unit_n_swps[f_id]
+            elif flip_num<0:
+                flip_from,flip_to,sl_id = unit_n_swps[f_id]
+            else:
+                continue
+
+            if sl_id not in operation['from']:
+                operation['from'][sl_id]={}
+            if sl_id not in operation['to']:
+                operation['to'][sl_id]={}
+            if flip_from not in operation['from'][sl_id]:
+                operation['from'][sl_id][flip_from]=flip_num
+            if flip_to not in operation['to'][sl_id]:
+                operation['to'][sl_id][flip_to]=flip_num
+
+    operations.append(operation)
+    return unit_n_swps,vertices,edges,operations
 
 
+####
+# Flip enumerations
+####
 def get_flip_canonical(occu, bits, sc_size =1,\
                        sublat_merge_rule=None):
     """
@@ -380,9 +602,8 @@ def get_flip_canonical(occu, bits, sc_size =1,\
         st1,st2 = random.choice(valid_combos)
         #Swap
         return [(st1,int(occu[st2])),(st2,int(occu[st1]))]
-    
 
-def get_flip_semigrand(occu, bits, operations, sc_size=1,\
+def get_flip_semigrand_new(occu, bits, operations, sc_size=1,\
              sublat_merge_rule = None):
     """
     Find a flip operation to an occupation in charge-neutral semi 
@@ -417,128 +638,4 @@ def get_flip_semigrand(occu, bits, operations, sc_size=1,\
 
     valid_flips = []
     valid_dvecs = []
-
-    for op_id,operation in enumerate(operations):
-        #When sampling flips, make sure to check that all flips have a equal probability to be sampled!
-        #In the previous implementation, I made a mistake. I sampled compositional direction first, then
-        #enumerated flips that goes in the chosen direction, therefore adding a prefactor to each flip's
-        #probability to be sampled. You can verify that this prefactor ridiculously amplifies flips that
-        #goes back to pure state, so you almost can't reach mixed states at all!
-        if len(operation['from'])==1 and len(operation['to'])==1:
-            #Then this must be a single flip.
-            (swp_from,sl_id1),n1 = list(operation['from'].items())[0]
-            (swp_to,sl_id2),n2 = list(operation['to'].items())[0]
-            if sl_id1!=sl_id2:
-                raise OUTOFSUBLATERROR
-            if n1 != n2:
-                raise NUMCONERROR
-            valid_pos_flips = [[(combo,swp_to)] for combo in combinations(sl_stats_init[sl_id1][swp_from],n1)]
-            valid_neg_flips = [[(combo,swp_from)] for combo in combinations(sl_stats_init[sl_id1][swp_to],n1)]
-
-        elif len(operation['from'])==2 and len(operation['to'])==2:
-            #Then this flip is a combination of two flips on diffrent sublattices
-            (swp_from_1,sl_id1),n1 = list(operation['from'].items())[0]
-            (swp_from_2,sl_id2),n2 = list(operation['from'].items())[1]
-            (swp_to_1,sl_id3),n3 = list(operation['to'].items())[0]
-            (swp_to_2,sl_id4),n4 = list(operation['to'].items())[1]
-                
-            flipped_combos_on_sl1 = list(combinations(sl_stats_init[sl_id1][swp_from_1],n1))
-            flipped_combos_on_sl2 = list(combinations(sl_stats_init[sl_id2][swp_from_2],n2))
-            flipped_combos_on_sl3 = list(combinations(sl_stats_init[sl_id3][swp_to_1],n3))
-            flipped_combos_on_sl4 = list(combinations(sl_stats_init[sl_id4][swp_to_2],n4))
-                                           
-            if sl_id1 == sl_id3 and sl_id2 == sl_id4:
-                if n1!=n3 or n2!=n4:
-                    raise NUMCONERROR
-                valid_pos_flips = [[(combo1,swp_to_1),(combo2,swp_to_2)] for combo1,combo2 in \
-                  product(flipped_combos_on_sl1,flipped_combos_on_sl2)]                   
-                valid_neg_flips = [[(combo1,swp_from_1),(combo2,swp_from_2)] for combo1,combo2 in \
-                  product(flipped_combos_on_sl3,flipped_combos_on_sl4)] 
-
-            elif sl_id1 == sl_id4 and sl_id2 == sl_id3:
-                if n1!=n4 or n2!=n3:
-                    raise NUMCONERROR
-                valid_pos_flips = [[(combo1,swp_to_2),(combo2,swp_to_1)] for combo1,combo2 in \
-                  product(flipped_combos_on_sl1,flipped_combos_on_sl2)]                   
-                valid_neg_flips = [[(combo1,swp_from_2),(combo2,swp_from_1)] for combo1,combo2 in \
-                  product(flipped_combos_on_sl3,flipped_combos_on_sl4)]
-
-            else:
-                raise OUTOFSUBLATERROR
-
-        elif len(operation['from'])==1 and len(operation['to'])==2:
-            (swp_from_1,sl_id1),n1 = list(operation['from'].items())[0]
-            (swp_to_1,sl_id3),n3 = list(operation['to'].items())[0]
-            (swp_to_2,sl_id4),n4 = list(operation['to'].items())[1]
-            if sl_id1 != sl_id3 or sl_id1 !=sl_id4:
-                raise OUTOFSUBLATERROR
-            if n1!=n3+n4:
-                raise NUMCONERROR
-
-            flipped_combos_on_sl1 = list(combinations(sl_stats_init[sl_id1][swp_from_1],n1))
-            flipped_combos_on_sl3 = list(combinations(sl_stats_init[sl_id3][swp_to_1],n3))
-            flipped_combos_on_sl4 = list(combinations(sl_stats_init[sl_id4][swp_to_2],n4))
-
-            valid_pos_flips = []
-            for combo in flipped_combos_on_sl1:
-                to_1_combs = list(combinations(combo,n3))
-                to_2_combs = [tuple_diff(combo,to_1_comb) for to_1_comb in to_1_combs]
-                valid_pos_flips.extend([[(to_1_comb,swp_to_1),(to_2_comb,swp_to_2)] \
-                                        for to_1_comb,to_2_comb in zip(to_1_combs,to_2_combs)])
-
-            valid_neg_flips = [[(combo3, swp_from_1),(combo4,swp_from_1)] for combo3,combo4 in\
-                               zip(flipped_combos_on_sl3,flipped_combos_on_sl4)]
-
-        elif len(operation['to'])==1 and len(operation['from'])==2:
-            (swp_to_1,sl_id3),n3 = list(operation['to'].items())[0]
-            (swp_from_1,sl_id1),n1 = list(operation['from'].items())[0]
-            (swp_from_2,sl_id2),n2 = list(operation['from'].items())[1]
-            if sl_id1 != sl_id3 or sl_id2 !=sl_id3:
-                raise OUTOFSUBLATERROR
-            if n3!=n1+n2:
-                raise NUMCONERROR
-
-            flipped_combos_on_sl1 = list(combinations(sl_stats_init[sl_id1][swp_from_1],n1))
-            flipped_combos_on_sl2 = list(combinations(sl_stats_init[sl_id2][swp_from_2],n2))
-            flipped_combos_on_sl3 = list(combinations(sl_stats_init[sl_id3][swp_to_1],n3))
-
-            valid_neg_flips = []
-            for combo in flipped_combos_on_sl3:
-                to_1_combs = list(combinations(combo,n1))
-                to_2_combs = [tuple_diff(combo,to_1_comb) for to_1_comb in to_1_combs]
-                valid_neg_flips.extend([[(to_1_comb,swp_from_1),(to_2_comb,swp_from_2)] \
-                                        for to_1_comb,to_2_comb in zip(to_1_combs,to_2_combs)])
-
-            valid_pos_flips = [[(combo1, swp_to_1),(combo2,swp_to_1)] for combo3,combo4 in\
-                               zip(flipped_combos_on_sl1,flipped_combos_on_sl2)]
-
-        else:
-            raise ValueError("Composition axis not given in standard format!")
-
-        #Sorting formats out to del_corr acceptable format
-        for flip in valid_pos_flips:
-            reformatted_flip = []
-            for flipped_sts,flip_to_sp in flip:
-                reformatted_flip.extend([(flipped_st,flip_to_sp) for flipped_st in flipped_sts])
-            valid_flips.append(reformatted_flip)
-            valid_dvecs.append((op_id,1))
-                  
-        for flip in valid_neg_flips:
-            reformatted_flip = []
-            for flipped_sts,flip_to_sp in flip:
-                reformatted_flip.extend([(flipped_st,flip_to_sp) for flipped_st in flipped_sts])
-            valid_flips.append(reformatted_flip)
-            valid_dvecs.append((op_id,-1))
-
-    #print(valid_flips)
-    #print(valid_dvecs)
-
-    chosen_flip_id = random.randint(0,len(valid_flips)-1)
-    chosen_flip = valid_flips[chosen_flip_id]
-
-    chosen_comb_id, chosen_direction = valid_dvecs[chosen_flip_id]
-    dvec = np.zeros(len(operations))
-    dvec[chosen_comb_id] = chosen_direction
     
-    return chosen_flip,dvec
-

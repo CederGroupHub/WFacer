@@ -126,4 +126,5 @@ class ExpansionStructure(MSONable)
                    comp_limits=comp_limits,\
                    sublat_merge_rule=sublat_merge_rule,\
                    anionic_markings=anionic_markings)
-   
+
+    
