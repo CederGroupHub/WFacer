@@ -603,39 +603,5 @@ def get_flip_canonical(occu, bits, sc_size =1,\
         #Swap
         return [(st1,int(occu[st2])),(st2,int(occu[st1]))]
 
-def get_flip_semigrand_new(occu, bits, operations, sc_size=1,\
-             sublat_merge_rule = None):
-    """
-    Find a flip operation to an occupation in charge-neutral semi 
-    grand canonical ensemble.
-    """
-    #requires check!
-    flip = None
-    n_bits = get_n_bits(bits)
-
-    if len(occu)%sc_size!=0:
-        raise ValueError("Supercell size not correct!")
-
-    N_sts_prim = len(occu)//sc_size
-    sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
-                  sublat_merge_rule=sublat_merge_rule)    
-    n_sls = len(sublat_list)
-
-    sl_sites = sublat_list
-
-    sl_stats_init = [[[] for i in range(len(n_bits[sl_id]))] for sl_id in range(n_sls)]
-
-    for sl_id in range(n_sls):
-        for st_id in sl_sites[sl_id]:
-            bit = int(occu[st_id])
-            sl_stats_init[sl_id][bit].append(st_id)
-
-    sl_nums_init = [[len(sl_sp) for sl_sp in sl] for sl in sl_stats_init]
-
-    #list all possible unitary operations on this occupation, then randomly choose one of them
-    #since you have to list all operations, the number of which usually goes in O(N^3), 
-    #the usage of a large supercell is highly discouraged!
-
-    valid_flips = []
-    valid_dvecs = []
-    
+class 
+   

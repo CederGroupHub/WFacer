@@ -104,21 +104,21 @@ class CESpecie(MSONable):
             raise ValueError("The length of atomic symbols are not equvalent to that of"+\
                               " atomic coordinates!")
 
-        self.symbols = atom_symbols
+        self.atom_symbols = atom_symbols
         self.oxidation_state = oxidation_state
         self.z_ref = z_ref
         self.x_ref = x_ref
 
-        self.coords = Standardize_Coords(np.array(atom_coords),z_ref,x_ref)
+        self.atom_coords = Standardize_Coords(np.array(atom_coords),z_ref,x_ref)
 
         self.heading = np.array(heading)
 
-        if len(self.symbols)==1:
+        if len(self.atom_symbols)==1:
             self.heading = np.array([0.0,0.0,0.0])
             #An atom has no heading.
-            if self.symbols[0]!='Vac':
+            if self.atom_symbols[0]!='Vac':
                 try:
-                    self.pmg_specie = Specie(self.symbols[0],float(oxidation_state))
+                    self.pmg_specie = Specie(self.atom_symbols[0],float(oxidation_state))
                 except:
                     raise ValueError("The input symbol is not a valid element!")  
             elif oxidation_state==0:
@@ -127,7 +127,7 @@ class CESpecie(MSONable):
                 raise ValueError("Vacancy specie can not have non-zero charge!")        
 
         else:
-            is_nonlinear = Is_Nonlinear(self.coords)
+            is_nonlinear = Is_Nonlinear(self.atom_coords)
             if not is_nonlinear:
                 self.heading[2]=0.0
             #Linear atomic clusters have no rolls.
@@ -140,8 +140,8 @@ class CESpecie(MSONable):
             #calculations only.
 
         self.other_properties = other_properties
-        if len(self.symbols)>1 or self.symbols[0]!='Vac':
-            self.molecule = Molecule(self.symbols,self.coords,charge=self.oxidation_state)
+        if len(self.atom_symbols)>1 or self.atom_symbols[0]!='Vac':
+            self.molecule = Molecule(self.atom_symbols,self.atom_coords,charge=self.oxidation_state)
         else:
             self.molecule = None
 
@@ -158,7 +158,7 @@ class CESpecie(MSONable):
         """
         alpha,beta,gamma = self.heading*np.pi 
         
-        coords_cart = self.coords@Rot_Matrix(alpha,beta,gamma)
+        coords_cart = self.atom_coords@Rot_Matrix(alpha,beta,gamma)
         coords_frac = coords_cart@np.linalg.inv(sc_lat_matrix)+lattice_point
 
         return coords_frac
@@ -169,12 +169,12 @@ class CESpecie(MSONable):
             Since we did not implement smart detection of rotational and 
             translational invariance between fragments,
         """
-        symbols_eq = (self.symbols == other.symbols)
+        symbols_eq = (self.atom_symbols == other.atom_symbols)
         ox_eq = (self.oxidation_state == other.oxidation_state) 
-        geo_eq = np.allclose(self.coords,other.coords)
+        geo_eq = np.allclose(self.atom_coords,other.atom_coords)
         props_eq = (self.other_properties==other.other_properties)
         
-        if len(self.coords)<2:
+        if len(self.atom_coords)<2:
             heading_eq = True
         else:
             point_group = PointGroupAnalyzer(self.molecule)
@@ -202,13 +202,13 @@ class CESpecie(MSONable):
         """
         Returns a string rep of the composition of this specie.
         """
-        if len(self.symbols)==1:
-            sp_string = element_to_ion(self.symbols[0],oxi=self.oxidation_state)
+        if len(self.atom_symbols)==1:
+            sp_string = element_to_ion(self.atom_symbols[0],oxi=self.oxidation_state)
             oxi_string = ''
 
         else:
             element_cnt = {}
-            for el in self.symbols:
+            for el in self.atom_symbols:
                 if el not in element_cnt:
                     element_cnt[el]=1
                 else:
