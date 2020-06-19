@@ -34,14 +34,6 @@ CHGBALANCEERROR = ValueError("Charge balance cannot be achieved with these speci
 ####
 # Basic mathematics
 ####
-def GCD(a,b):
-    """ The Euclidean Algorithm """
-    a = abs(a)
-    b = abs(b)
-    while a:
-        a, b = b%a, a
-    return b    
-
 def concat_tuples(l):
     s = ()
     for sub_tup in l:
