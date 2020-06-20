@@ -146,28 +146,31 @@ def get_integer_basis(normal_vec,sublat_list=None):
         sorted_table = sorted(table,key=(lambda pair:pair[1]))
         nv_sorted = np.array([n for ori_id,n in sorted_table],dtype=np.int64)
         order_sorted = np.array([ori_id for ori_id,n in sorted_table],dtype=np.int64)
+        #print('nv_sorted:',nv_sorted,'order_sorted:',order_sorted)
 
         #Estimate limiters
         d_nonzero = len(nv_partial)
         limiter_vectors = []
-        for i,j in combinations(list(range(d_non_zero))):
+        for i,j in combinations(list(range(d_nonzero)),2):
             gcd = GCD(nv_sorted[i],nv_sorted[j])
             lcm = (nv_sorted[i]*nv_sorted[j])//gcd
             limiter_v = np.zeros(d_nonzero,dtype=np.int64)
             limiter_v[i] = lcm//nv_sorted[i]
-            limiter_v[j] = lcm//nv_sorted[j]
+            limiter_v[j] = -lcm//nv_sorted[j]
             limiter_vectors.append(limiter_v)
+        #print('limiter_vectors:',limiter_vectors)
 
-        limiter_lbs = np.min(np.vstack(limiter_vectors),axis=0)
         limiter_ubs = np.max(np.vstack(limiter_vectors),axis=0)
+        limiter_lbs = np.min(np.vstack(limiter_vectors),axis=0)
         limiters = list(zip(limiter_lbs,limiter_ubs))
+        #print('limiters:',limiters)
 
         integer_grid = get_integer_grid(nv_sorted,limiters=limiters)
         
         basis_pool = []
         for point in integer_grid:
             reversely_ordered_point = reverse_ordering(point,order_sorted)
-            basis = np.zeros(d,dtype=int64)
+            basis = np.zeros(d,dtype=np.int64)
             for part_id,ori_id in enumerate(non_zero_ids):
                 if ori_id in pos_ids:
                     basis[ori_id]=reversely_ordered_point[part_id]
