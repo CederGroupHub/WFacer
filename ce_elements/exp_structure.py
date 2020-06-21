@@ -8,7 +8,6 @@ parent_dir = os.dirname(this_file_dir)
 sys.path.append(parent_dir)
 from utils.specie_utils import *
 from utils.enum_utils import *
-from utils.comp_utils import *
 
 from monty.json import MSONable
 

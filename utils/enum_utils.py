@@ -1,11 +1,14 @@
 import numpy as np
 from itertools import combinations
+from functools import reduce
 
 ####
 # Number theory tools
 ####
 def GCD(a,b):
     """ The Euclidean Algorithm, giving positive GCD's """
+    if round(a)!=a or round(b)!=b:
+        raise ValueError("GCD input must be integers!")
     a = abs(a)
     b = abs(b)
     while a:
@@ -19,10 +22,25 @@ def GCD_list(l):
     elif len(l)==1:
         return l[0]
     else:
-        gcd = GCD(l[0],l[1])
-        for i in range(2,len(l)):
-            gcd = GCD(gcd,l[i])
-        return gcd
+        return reduce(lambda a,b:GCD(a,b),l)
+
+def LCM(a,b):
+    if a==0 and b==0:
+        return 0
+    elif a==0 and b!=0:
+        return b
+    elif a!=0 and b==0:
+        return a
+    else:
+        return a*b // GCD(a,b)
+
+def LCM_list(l):
+    if len(l)<1:
+        return None
+    elif len(l)==1:
+        return l[0]
+    else:
+        return reduce(LCM,l)
 
 def reverse_ordering(l,ordering):
     original_l = [0 for i in range(len(l))]
