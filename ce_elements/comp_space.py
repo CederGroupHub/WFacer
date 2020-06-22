@@ -1,5 +1,3 @@
-import random
-
 import numpy as np
 import polytope as pc
 
@@ -52,59 +50,6 @@ def tuple_diff(l1,l2):
     #returns l1-l2
     return tuple([e for e in l1 if e not in l2])
 
-def rationalize_number(a,dim_limiter=100,dtol=1E-5):
-    """
-    Find a rational number near a within dtol.
-    Returns the rational number in numerator/denominator
-    form.
-    Inputs:
-        a: 
-            float, a number to be rationalized
-        dim_limiter: 
-            maximum allowed denoninator. By default, 100
-        dtol:
-            maximum allowed difference of a to its rational
-            form
-    """
-    if a==0:
-        return 0,1
-    for magnif in range(1,dim_limiter+1):
-        a_prime = int(round(magnif*a))
-        if abs(a_prime/magnif-a)<dtol:
-            return a_prime,magnif
-    raise ValueError("Can't find a rational number near {} within tolerance!".format(a))
-
-def integerize_vector(v, dim_limiter=100,dtol=1E-5):
-    """
-    Ratioanlize all components of a vector v, and multiply the vector
-    by lcm of all the component's denominator
-    Inputs:
-        Same as rationalize_number.
-    Outputs:
-        v_int: 
-            integerized vector. np.array(dtype=np.int64)
-        magnification: 
-            lcm of all the component's denominator. The magnification
-            required to turn v into an integer vector.
-    """
-    denos = []
-    for c in v:
-        _,deno = rationalize_number(c,dim_limiter=dim_limiter,dtol=dtol)
-        denos.append(deno)
-    lcm = lcm_list(denos)
-
-
-    
-
-def integerize_polytope(vertices,dim_limiter=7,dtol=1E-5):
-    """
-    Integerize all vertices coordinates of a polytope.
-    Inputs:
-        vertices: coordinates of all vertices in a polytope.
-    Outputs:
-        
-    """
-
 def edges_from_vertices(vertices,p):
     """
     Find edges from combinations of vertices.
@@ -147,7 +92,6 @@ def gram_schmidt(A):
 ####
 # Composition related tools
 ####
-
 def get_sublat_list(N_sts_prim,sc_size=1,sublat_merge_rule=None,sc_making_rule='pmg'):
     """
     Get site indices in each sublattice.
@@ -203,116 +147,112 @@ def get_sublat_id(st_id_in_sc,sublat_list):
             return sl_id
     return None
 
-def get_init_comp(bits):
+def get_unit_swps(bits):
     """
-    This generates a charge neutral initial composition in the comp space.
-    """
-    raise NotImplementedError
-
-def get_all_axis(bits):
-    """
-    Get all axis in a charge-neutral composition space.
-    Each axis represents a charge and site-conserved, elementary flip combination.
-    For example:
-    'Ca2+ -> Mg2+', and 'Li+ -> Mn2+'+'F- -> O2-'.
-    Vacancies 'Vac' are considered as a type of specie with 0 charge, thus in our
-    formulation, the system is in number-conserved, semi-grand canonical ensemble.
+    Get all possible single site flips on each sublattice, and the charge changes that 
+    they gives rise to.
+    For example, 'Ca2+ -> Mg2+', and 'Li+ -> Mn2+'+'F- -> O2-' are all such type of 
+    flips.
     Inputs:
-        bits: a list of CESpecies on each sublattice.
+        bits: 
+            a list of CESpecies on each sublattice. For example:
+            [[CESpecie.from_string('Ca2+'),CESpecie.from_string('Mg2+'))],
+             [CESpecie.from_string('O2-')]]
     Outputs:
-        neutral_combs:
-            a list that stores all charge neutral filps. Species are encoded in their
-            n_bit form.
-        operations:
-            this list also stores flip informations, but usually we don't use it in
-            other parts of CEAuto. it's created for easy visualization only.
+        unit_n_swps: 
+            a flatten list of all possible, single site flips represented in n_bits, 
+            each term written as:
+            (flip_to_nbit,flip_from_nbit,sublattice_id_of_flip)
+        chg_of_swps: 
+            change of charge caused by each flip. A flatten list of integers
+        swp_ids_in_sublat:
+             a list specifying which sublattice should each flip belongs to. Will
+             be used to set normalization constraints in comp space.
     """
     n_bits = get_n_bits(bits)
 
     unit_swps = []
     unit_n_swps = []
+    swp_ids_in_sublat = []
+    cur_swp_id = 0
     for sl_id,sl_sps in enumerate(bits):
         unit_swps.extend([(sp,sl_sps[-1],sl_id) for sp in sl_sps[:-1]])
         unit_n_swps.extend([(sp,n_bits[sl_id][-1],sl_id) for sp in n_bits[sl_id][:-1]])
+        swp_ids_in_sublat.extend([cur_swp_id+i for i in range(len(sl_sps)-1)])
+        cur_swp_id += (len(sl_sps)-1)
         #(sp_before,sp_after,sublat_id)
 
     chg_of_swps = [p[0].oxidation_state-p[1].oxidation_state for p in unit_swps]
-    
-    #Dimensionality of the charge neutral space.
-    zero_swps = [swp for swp,chg in zip(unit_n_swps,chg_of_swps) if chg==0]
-    non_zero_swps = [swp for swp,chg in zip(unit_n_swps,chg_of_swps) if chg!=0]
-    non_zero_chgs = [chg for swp,chg in zip(unit_n_swps,chg_of_swps) if chg!=0]
-    dim = len(non_zero_swps)-1
-    neutral_combs = [[(swp,1)] for swp in zero_swps] #list[[(swp_1,n_swp_1),(swp_2,n_swp_2)],...]
-    if dim>0:
-        for i in range(dim):
-            swp1 = non_zero_swps[i]
-            swp2 = non_zero_swps[i+1]
-            chg1 = non_zero_chgs[i]
-            chg2 = non_zero_chgs[i+1]
-            gcd = GCD(chg1,chg2)
-            if chg1*chg2>0:
-                n1 = chg2//gcd
-                n2 = -chg1//gcd
-            else:
-                n1 = chg2//gcd
-                n2 = chg1//gcd
 
-            neutral_combs.append([(swp1,n1),(swp2,n2)])
+    return unit_n_swps,chg_of_swps,swp_ids_in_sublat
 
+def flipvec_to_operations(unit_n_swps,prim_lat_vecs):
+    """
+    This function translates flips from their vector from into their dictionary
+    form.
+    Each dictionary is written in the form below:
+    {
+     'from': 
+           {sublattice_id:
+               {specie_nbit_id: 
+                   number_of_this_specie_to_be_anihilated_from_this_sublat
+               }
+                ...
+           }
+           ...
+     'to':
+           { 
+           ...     numbr_of_this_specie_to_be_generated_on_this_sublat
+           }
+    }
+    """
     operations = []
-    for swp_combo in neutral_combs:
-        operation = {'to':{},'from':{}}
-        if len(swp_combo)==1:
-            swp,n = swp_combo[0]
-            swp_to,swp_from,sl_id = swp
-            operation['from'][(swp_from,sl_id)] = n
-            operation['to'][(swp_to,sl_id)] = n
-            operations.append(operation)
-
-        else:
-            for swp,n in swp_combo:
-                if n>0:
-                    swp_to,swp_from,sl_id = swp
-                    n_swp = n
-                elif n<0:
-                    swp_from,swp_to,sl_id = swp
-                    n_swp = -n
-                else:
-                    continue            
-    
-                if (swp_to,sl_id) not in operation['to']:
-                    operation['to'][(swp_to,sl_id)] = n_swp
-                else:
-                    operation['to'][(swp_to,sl_id)] += n_swp
-                if (swp_from,sl_id) not in operation['from']:
-                    operation['from'][(swp_from,sl_id)] = n_swp
-                else:
-                    operation['from'][(swp_from,sl_id)] += n_swp
-            #deduplicate 'from' and 'to'
-            operation_dedup = {'to':{},'from':deepcopy(operation['from'])}
-
-            for sp_to,sl_id in operation['to']:
-                if (sp_to,sl_id) in operation_dedup['from']:
-                    if operation['from'][(sp_to,sl_id)]>\
-                       operation['to'][(sp_to,sl_id)]:
-                        operation_dedup['from'][(sp_to,sl_id)]-=\
-                        operation['to'][(sp_to,sl_id)]
-                    elif operation['from'][(sp_to,sl_id)]<\
-                       operation['to'][(sp_to,sl_id)]:
-                        operation_dedup['to'][(sp_to,sl_id)]=\
-                        operation['to'][(sp_to,sl_id)]-\
-                        operation['from'][(sp_to,sl_id)]
-                        operation_dedup['from'].pop((sp_to,sl_id))
+    for flip_vec in prim_lat_vecs:
+        operation = {'from':{},'to':{}}
+        for n_flip,flip in zip(prim_lat_vecs,unit_n_swps):
+            flip_to,flip_from,sl_id = flip
+            if sl_id not in operation['from']:
+                operaiton['from'][sl_id]={}
+            if sl_id not in operation['to']:
+                operation['to'][sl_id]={}
+            if flip_from not in operation['from'][sl_id]:
+                operation['from'][sl_id][flip_from]=0
+            if flip_to not in operation['to'][sl_id]:
+                operation['to'][sl_id][flip_to]=0
+            operation['from'][sl_id][flip_from]+=n_flip
+            operation['to'][sl_id][flip_to]+=n_flip
+            #deduplicate
+            operation_dedup = {'from':deepcopy(operation['from']),'to':{}}
+            for sl_id in operation['to']:
+                operation_dedup['to'][sl_id]={}
+                for sp_id in operation['to'][sl_id]:
+                    if sp_id in operation['from'][sl_id]:
+                        left = operation['from'][sl_id][sp_id]
+                        right = operation['to'][sl_id][sp_id]
+                        if left > right:
+                            operation_dedup['from'][sl_id][sp_id]-=right
+                        elif left == right:
+                            operation_dedup['from'][sl_id].pop(sp_id)
+                        else:
+                            operation_dedup['to'][sl_id][sp_id]=(right-left)
+                            operation_dedup['from'][sl_id].pop(sp_id)
                     else:
-                        operation_dedup['from'].pop((sp_to,sl_id))
-                else:
-                    operation_dedup['to'][(sp_to,sl_id)]=\
-                    operation['to'][(sp_to,sl_id)]
-        #adjust the operation dictionary to make all values positive.
-            operations.append(operation_dedup)
+                        operation_dedup['to'][sl_id][sp_id]=\
+                        operation['to'][sl_id][sp_id]
+            #Remove empty terms
+            operation_clean = {'from':{},'to':{}}
+            for sl_id in operation_dedup['from']:
+                if len(operation_dedup['from'][sl_id])!=0:
+                    operation_clean['from'][sl_id]=\
+                    deepcopy(operation_dedup['from'][sl_id])
+            for sl_id in operation_dedup['to']:
+                if len(operation_dedup['to'][sl_id])!=0:
+                    operation_clean['to'][sl_id]=\
+                    deepcopy(operation_dedup['to'][sl_id])
 
-    return neutral_combs,operations
+        operations.append(operation_clean)
+
+    return operations    
 
 def visualize_operations(operations,bits):
     """
@@ -322,257 +262,188 @@ def visualize_operations(operations,bits):
     for operation in operations:
         from_strs = []
         to_strs = []
-        for (swp_from,sl_id),n in operation['from'].items():
-            from_name = bits[sl_id][swp_from].specie_string
-            from_strs.append('{} {}({})'.format(n,from_name,sl_id))
-        for (swp_to,sl_id),n in operation['to'] .items():
-            to_name = bits[sl_id][swp_to].specie_string
-            to_strs.append('{} {}({})'.format(n,to_name,sl_id)) 
+        for sl_id in operation['from']:
+            for swp_from,n in operation['from'][sl_id].items():
+                from_name = bits[sl_id][swp_from].specie_string
+                from_strs.append('{} {}({})'.format(n,from_name,sl_id))
+        for sl_id in operation['to']:
+            for swp_to,n in operation['to'][sl_id].items():
+                to_name = bits[sl_id][swp_to].specie_string
+                to_strs.append('{} {}({})'.format(n,to_name,sl_id))
+
         from_str = ' + '.join(from_strs)
         to_str = ' + '.join(to_strs)
         operation_strs.append(from_str+' -> '+to_str) 
+
     return '\n'.join(operation_strs)
 
-def vec_to_comp(vec,init_comp,neutral_combs):
+class CompSpace(MSONable):
     """
-    Turns a CEAuto composition vector into a CEAuto composition
-    object.
-    Init comp: ex. comp=[[1.0],[1.0]]
-                   bits = [[CESpecie.from_string('Ca2+')],\
-                    [CESpecie.from_string('O2-')]]
-                   means:
-                   [{'Ca2+':1.0},{'02-':1.0}] in old CEAuto
-    Therefore, when decoding a composition, you must combine both
-    the comp list, and the bits list.
+        This class generates a CN-compositional space from a list of CESpecies and sublattice
+        sizes.
+
+        A composition in CEAuto can be expressed in two forms:
+        1, A Coordinate in unconstrained space, with 'single site flips' as basis vectors, and
+           a 'background occupation' as the origin.
+        2, A Coordinate in constrained, charge neutral subspace, with 'charge neutral, number
+           conserving elementary flips as basis vectors, and a charge neutral composition as 
+           the origin.(Usually selected as one vertex of the constrained space.)
+
+        For example, if bits = [[Li+,Mn3+,Ti4+],[P3-,O2-]] and sl_sizes = [1,1] (LMTOF rock-salt), then:
+           'single site flips' basis are:
+                Ti4+ -> Li+, Ti4+ -> Mn3+, O2- -> P3-
+           'Background occupation' origin shall be:
+                (Ti4+ | O-),supercell size =1
+            The unconstrained space's dimensionality is 3.
+
+           'charge neutral, number conserving elementary flips' bais shall be:
+                3 Mn3+ -> 2 Ti4+ + Li+, Ti4+ + P3- -> O2- + Mn3+
+           'charge neutral composition' origin can be chosen as:
+                (Mn3+ | P-),supercell size = 1
+            The constrained subspace's dimensionality is 2.
+
+        Given composition:
+            (Li0.5 Mn0.5| O), supercell size=1
+            It's coordinates in the 1st system will be (0.5,0.5,0)
+            In the second system that will be (0.5,1.0)
+
+        When the system is always charge balanced (all the flips are charge conserved, background occu
+        has 0 charge), then representation 1 and 2 are the same.
+
+        Compspace class provides methods for you to convert between these two representations easily,
+        write them into human readable form. It will also allow you to enumerate all possible integer 
+        compositions given supercell size. Most importantly, it defines the CEAuto composition 
+        enumeration method. For the exact way we do enumeration, please refer to the documentation of 
+        each class methods.
+            
+
     """
-    comp = deepcopy(init_comp)
-    for dx,comb in zip(vec,neutral_combs):
-        for (swp_to,swp_from,sl_id),n in comb:
-            comp[sl_id][swp_from]-=dx*n
-            comp[sl_id][swp_to]+=dx*n
-
-    is_legal_comp = True
-    for sl in comp:
-        for sp_id,n in enumerate(sl):
-            if n<0:  
-               is_legal_comp = False
-               break
-    
-    if not is_legal_comp:
-        raise ValueError('The replacement vector can not be converted into a reachable compostion.')
-    else:
-        return comp
-
-def comp_to_vec(comp,init_comp, neutral_combs):
-    """
-        Get the composition vector from a composition vector.
-    """
-    #flatten the composition into a vector
-    #n_bits = get_n_bits(bits)
-
-    dcomp_flat = []
-
-    for sl_id in range(len(init_comp)):
-        for sp_id in range(len(init_comp[sl_id])-1):
-            dn = comp[sl_id][sp_id]-init_comp[sl_id][sp_id]
-            dcomp_flat.append(dn)
-    #flatten the unitary swappings into basis vectors.
-    #print("dcomp_flat:",dcomp_flat)
-    Nb = len(dcomp_flat)
-    combs_flat = []
-    for comb in neutral_combs:
-        comb_flat = [0 for i in range(Nb)]
-        for (swp_to,swp_from,sl_id),n in comb:
-            bit_id = sum([len(init_comp[i])-1 for i in range(sl_id)])+swp_to
-            comb_flat[bit_id]+=n
-        combs_flat.append(comb_flat)
-
-    n = len(combs_flat)
-    A = np.zeros((n,n))
-    b = np.zeros(n)
-    for i in range(n):
-        b[i] = float(np.dot(combs_flat[i],dcomp_flat))
-        for j in range(n):
-            A[i][j] = float(np.dot(combs_flat[i],combs_flat[j]))
-    try:
-        comp_vec = np.linalg.inv(A)@b
-    except:
-        raise ValueError("Given composition not reachable by unitary replacements!")
-   
-    return comp_vec
-
-def occu_to_comp(occu, bits,sc_size=1,sublat_merge_rule=None):
-    """
-        Get composition values from an occupation state list given by the monte carlo part.
-        But in charge-conserved semigrand, the composition will be processed in the program
-        as a vertor on the 'unitary swapping basis'
-    Inputs:
-        occu: len(occu)=num_of_sites, not num_of_sublats
-        bits: the bits table given by get_bits
-        sc_size: size of the supercell, in interger
-    Outputs:
-        Comp: form [{'Li+':5,'Ti4+':1},{'O2-':6}], etc. len(Comp)=len(sublat_list)
-    """
-    comp = []
-    
-    if len(occu)%sc_size!=0:
-        raise ValueError("Supercell size not correct!")
-
-    N_sts_prim = len(occu)//sc_size
-    sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
-                  sublat_merge_rule=sublat_merge_rule)
-    for sublat in bits:
-        comp.append([0 for i in range(len(sublat))])
-
-    for i,sp in enumerate(occu):
-        idx = get_sublat_id(i,sublat_list)
-        comp[idx][int(sp)]+=1
-
-    return comp
-
-def visualize_comp(comp,bits):
-    vis_comp = []
-    for sl_id,sl_bts in enumerate(bits):
-        vis_comp.append({})
-        for b_id,b in enumerate(sl_bts):
-            vis_comp[sl_id][b.specie_string]=comp[sl_id][b_id]
-    
-    return vis_comp
-
-####
-# Ensemble related tools
-####
-def get_comp_space(bits):
-    """
-        This function generates a compositional space from a bits list, will include vertices of 
-        and unit vectors along edges of the charge neutral composition space. 
+    def __init__(self,bits,sl_sizes=None):
+        """
         Inputs:
-            bits: bit list, same as appeared in get_n_bits
-        Outputs:
-            v_comps: compositions corresponding to vertices
-            edges: edges of the compositional space, give in a list of tuples, each refering to 
-                   two adjacent vertices on an edge.
-    """
-    n_bits = get_n_bits(bits)
+            bits: 
+                bit list, same as appeared in get_n_bits. 
+                Sorting bits before using is highly recommended.
+            sl_sizes: 
+                Sublattice sizes in a PRIMITIVE cell. A list of integers. 
+                len(bits)=# of sublats=len(sl_sizes).
+                If None given, sl_sizes will be reset to [1,1,....]
+        """
+        self.bits = bits
+        self.nbits = get_n_bits(bits)
+        if sl_sizes is None:
+            self.sl_sizes = [1 for i in range(len(self.bits))]
+        elif len(sl_sizes)==len(bits):
+            self.sl_sizes = sl_sizes
+        else:
+            raise ValueError("Sublattice number mismatch: check bits and sl_sizes parameters.")
+  
+        self.unit_n_swps,self.chg_of_swps,self.swp_ids_in_sublat = get_unit_swps(self.bits)
 
-    unit_swps = []
-    unit_n_swps = []
-    #facets are sublattice normalization constraints, and variable normalization
-    #constraints
-    facets = []
-    unit_swp_id = 0
-
-    for sl_id,sl_sps in enumerate(bits):
-        if len(sl_sps) < 1:
-            raise ValueError('Sublattice bits should not be empty.')
-        unit_swps.extend([(sp,sl_sps[-1],sl_id) for sp in sl_sps[:-1]])
-        unit_n_swps.extend([(sp,n_bits[sl_id][-1],sl_id) for sp in n_bits[sl_id][:-1]])
-        facets.append( [unit_swp_id+idx for idx in range(len(sl_sps)-1)] )
-        unit_swp_id+=(len(sl_sps)-1)
-        #(sp_before,sp_after,sublat_id)
-
-    chg_of_swps = [p[0].oxidation_state-p[1].oxidation_state for p in unit_swps]
-    d = len(unit_swps)
-
-    tot_bkgrnd_chg = sum([sl[-1].oxidation_state for sl in bits])
+        self._constr_spc_basis = None
+        self._constr_spc_vertices = None
+        #Minimum supercell size required to make vetices coordinates all integer.
+        self._min_scsize = None
+        self._polytope = None
+        #self._constr_spc_origin = self._constr_spc_vertices[0]
     
-    #If charge neutral constraint forms a valid hyperplane, then we should reduce the 
-    #dimensionality formed by the compotional space by doing a translation and a hyper-
-    #rotation, to make one of the original axis perpendicular to this constraned hyper-
-    #plane, and all other axis falls in this hyperplane. Then we find vertices in this
-    #hyperplane.
-    #We have to reduce dimensionality first, because polytope.Polytope can not deal with 
-    #polytopes in subspaces of a higher-dimensional space. It will treat this subspace
-    #as an empty set.
-    #H representation of a polytope can be written as Ax <= b where A is a n*d matrix, 
-    #while x is a d dimensional vector.
+    @property
+    def bkgrnd_chg(self):
+        chg = 0
+        for sl_bits,sl_size in zip(self.bits,self.sl_sizes):
+            chg += sl_bits[-1].oxidation_state*sl_size
+        return chg
 
-    if tot_bkgrnd_chg==0 and np.allclose(chg_of_swps,np.zeros(d)):
-        print("Given specie table does not constitute a charged cluster expansion.")
-        is_charged = False
-        A_rows = []
-        b_rows = []
-        for constrained_ids in facets:
-            row = np.zeros(d)
-            row[constrained_ids] = 1
-            A_rows.append(row)
-            b_rows.append(1)
-        A = np.vstack(A_rows)
-        b = np.array(b_rows)
-        A = np.concatenate((A,-1*np.identity(d)),axis=0)
-        b = np.concatenate((b,np.zeros(d)),axis=0)
-        p = pc.Polytope(A,b)
-        vertices = pc.extreme(p)
-        edges = edges_from_vertices(vertices,p)
+    @property
+    def unconstr_dim(self):
+        return len(self.unit_n_swps)
+ 
+    @property
+    def is_charge_constred(self):
+        return not(np.allclose(np.zeros(d),self.chg_of_swps) and self.bkgrnd_chg==0)
 
-    elif not np.allclose(chg_of_swps,np.zeros(d)):
-        #Charge constraint is valid. Should reduce a dimension
-        print("Given specie table constitutes a charged cluster expansion.")
-        is_charged = True
-        #Choose an axis cross point with the constrained subspace
-        #Do transformation x' = R(x-t) to rotate and translate the compositional
-        #space into the constrained hyperplane.
-        subspc_norm = np.array(chg_of_swps)
-        t = None
-        for idx, slope in enumerate(subspc_norm):
-            if slope!=0 and t is None:
-                intercept = float(tot_bkgrnd_chg)/slope
-                t = np.zeros(d)
-                t[idx]=intercept
-        #Get rotation matrix with G-S orthogonalization.(Just concatenate the original basis
-        #to en, and do G-S algorithm. Any excessive parts will be removed.
-        new_basis = np.vstack((subspc_norm,np.identity(d)))
-        new_basis = gram_schmidt(new_basis)
-        R = new_basis       
-        A_trans = A@R.T
-        b_trans = b-A@t
-        #Subspace is r_trans = [0,...,...]
-        A_sub = A_trans[:,1:]
-        b_sub = b_trans
-        #In subspace, this polytope has non-zero volume, and therefore can be properly handled.
-        p_sub = pc.Polytope(A_sub,b_sub)
-        vertices_sub = pc.extreme(p)
-        N_v = len(vertices_sub)
-        edges = edges_from_vertices(vertices_sub,p)
-        vertices_trans = np.hstack((np.zeros(N_v),vertices_sub))
-        vertices = vertices_trans@R + t
-    else:
-        raise CHGBALANCEERROR
-    print("Compositonal space vertices:\n",vertices)
-    print("Edges:")
+    @property
+    def dim(self):
+        """
+        Dimensionality of the constrained space.
+        """
+        d = self.unconstr_dim
+        if not self.is_charge_constred:
+            return d
+        else:
+            return d-1
 
-    edge_vecs = []
-    for edge in edges:  
-        #get irreducible unitary flips ("integerized edge vectors")
-        limiter = int(np.max(np.abs(chg_of_swps)))
-        edge_vec = integerize_vector(vertices[edge[0]]-vertices[edge[1]],dim_limiter=limiter)
-        print(edge,' ',edge_vec)
-        edge_vecs.append(edge_vec)
-    
-    #Rewrite edge vectors as specie operations
-    operations = []
-    for ev in edge_vecs:
-        operation = {'from':{},'to':{}}
-        #'from' side: annihilate species, 'to' side: generate species
-        for f_id,flip_num in enumerate(ev):
-            if flip_num>0:
-                flip_to,flip_from,sl_id = unit_n_swps[f_id]
-            elif flip_num<0:
-                flip_from,flip_to,sl_id = unit_n_swps[f_id]
+    @property
+    def constr_spc_basis(self):
+        """
+        Get 'minimal charge-neutral flips basis' in vector representation. 
+        Given any compositional space, all valid, charge-neutral compoisitons are 
+        integer grids on this space or its subspace. What we do is to get the primitive
+        lattice vectors of the lattice defined by these grid points.
+        For example:
+        [[Li+,Mn3+,Ti4+],[P3-,O2-]] system, minimal charge and number conserving flips 
+        are:
+        3 Mn3+ <-> Li+ + 2 Ti4+, 
+        Ti4+ + P3- <-> Mn3+ + O2- 
+        Their vector forms are:
+        (1,-3,0), (0,1,-1)  
+        """        
+        if self._constr_spc_basis is None:
+            self._constr_spc_basis = \
+                 get_integer_basis(self.chg_of_swps,sl_flips_list=self.swp_ids_in_sublat)
+        return self._constr_spc_basis
+
+    @property
+    def polytopes(self):
+        """
+        Express the configurational space (supercellsize=1) as a polytope.Polytope object.
+        Shall be expressed in type 2 basis
+        """
+        if self._polytope is None:
+            facets_unconstred = []
+            for sl_flp_ids in self.swp_ids_in_sublat:
+                a = np.zeros(self.unconstr_dim)
+                a[sl_flp_ids]=1
+                bi = 1
+                facets_unconstred.append((a,bi))
+            #sum(x_i) for i in sublattice <= 1
+            A_n = np.vstack([a for a,bi in facets_unconstred])
+            b_n = np.array([bi for a,bi in facets_unconstred])
+            # x_i >=0 for all i
+            A = np.vstack(A_n,-1*np.identity(self.unconstr_dim))
+            b = np.concatenate((b_n,np.zeros(self.unconstr_dim)))
+ 
+            if not self.is_charge_constred:
+                #polytope = pc.Polytope(A,b) Ax<=b.
+                R = np.idendity(self.unconstr_dim)
+                t = np.zeros(self.unconstr_dim)
+                self._polytope = (A,b,R,t)          
             else:
-                continue
+                # x-t = R.T * x', where x'[-1]=0. Dimension reduced by 1.
+                # We have to reduce dimension first because polytope package
+                # can not handle polytope in a subspace. It will consider the
+                # subspace as an empty set.
+                R = np.vstack(self.constr_spc_basis+[np.array(self.chg_of_swps)])
+                t = np.zeros(self.unconstr_dim)
+                t[0] = -self.bkgrnd_chg/self.chg_of_swps[0]
+                A_sub = A@R.T
+                A_sub = A_sub[:,:-1]
+                #slice A, remove last col, because the last component of x' will
+                #always be 0
+                b_sub = b-A@t
+                self._polytope = (A_sub,b_sub,R,t)
+    return self._polytope
 
-            if sl_id not in operation['from']:
-                operation['from'][sl_id]={}
-            if sl_id not in operation['to']:
-                operation['to'][sl_id]={}
-            if flip_from not in operation['from'][sl_id]:
-                operation['from'][sl_id][flip_from]=flip_num
-            if flip_to not in operation['to'][sl_id]:
-                operation['to'][sl_id][flip_to]=flip_num
+    @property
+    def constr_spc_vertices(self):
+        """
+        Find extremums of the constrained compositional space, when supercell size = 1.
+        Shall be expressed in type 1 basis
+        """
+        if self._constr_spc_vertices is None:
+        
 
-    operations.append(operation)
-    return unit_n_swps,vertices,edges,operations
+        return self._constr_spc_vertices
 
 
 ####

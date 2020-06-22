@@ -48,6 +48,62 @@ def reverse_ordering(l,ordering):
         original_l[ori_id]=l[cur_id]
     return original_l
 
+def rationalize_number(a,dim_limiter=100,dtol=1E-5):
+    """
+    Find a rational number near a within dtol.
+    Returns the rational number in numerator/denominator
+    form.
+    Inputs:
+        a: 
+            float, a number to be rationalized
+        dim_limiter: 
+            maximum allowed denoninator. By default, 100
+        dtol:
+            maximum allowed difference of a to its rational
+            form
+    """
+    if a==0:
+        return 0,1
+    for magnif in range(1,dim_limiter+1):
+        a_prime = int(round(magnif*a))
+        if abs(a_prime/magnif-a)<dtol:
+            return a_prime,magnif
+    raise ValueError("Can't find a rational number near {} within tolerance!".format(a))
+
+def integerize_vector(v, dim_limiter=100,dtol=1E-5):
+    """
+    Ratioanlize all components of a vector v, and multiply the vector
+    by lcm of all the component's denominator, so that all vector 
+    components are converted to integers.
+    We call this process 'intergerization' of a vector.
+    Inputs:
+        Same as rationalize_number.
+    Outputs:
+        v_int: 
+            integerized vector. np.array(dtype=np.int64)
+        magnification: 
+            lcm of all the component's denominator. The magnification
+            required to turn v into an integer vector.
+    """
+    denos = []
+    for c in v:
+        _,deno = rationalize_number(c,dim_limiter=dim_limiter,dtol=dtol)
+        denos.append(deno)
+    lcm = lcm_list(denos)
+    return np.array(np.round(v*lcm),dtype=int64),lcm
+
+def integerize_multiple(vs, dim_limiter=100,dtol=1E-5):
+    """
+    Integerize multiple vectors as a flattened vector.
+    """
+    vs = np.array(vs)
+    shp = vs.shape
+    vs_flatten = np.flatten(vs)
+    vs_flat_int,mul = integerize_vector(vs_flatten,dim_limiter=dim_limiter,\
+                                        dtol=dtol)
+    vs_int = np.reshape(vs_flat_int,shp)
+    return vs_int, mul
+
 ####
 # Combinatoric tools for compositional space and flip selection
 ####
@@ -111,7 +167,7 @@ def get_integer_grid(subspc_normv,right_side=0,limiters=None):
     #print('Grids:\n',grids,'\ndim:',d)
     return grids
       
-def get_integer_basis(normal_vec,sublat_list=None):
+def get_integer_basis(normal_vec,sl_flips_list=None):
     """
     The integer points on a hyperplane n x = 0 can form a lattice. This function can find
     the primitive lattice vectors with smallest norm, and are closest to orthogonal.
@@ -119,9 +175,9 @@ def get_integer_basis(normal_vec,sublat_list=None):
         L=sum_over_sublats(max_in_sublat(x_i))
     Inputs:
         normal_vec: normal vector of hyperplane. An arraylike of integers.
-        sublat_list: define which components of x belong to the same sublattice. A list 
-                     of indices. If none, each component will be considered as a
-                     sublattice.
+        sl_flips_list: define which components of x belong to flips on the same 
+                     sublattice. A list of indices. If none, each flip will be 
+                     considered to happend in an independent sublattice.
     OUtputs:
         Primitive lattice vectors. A list of np.int64 arrays
     """
@@ -138,8 +194,8 @@ def get_integer_basis(normal_vec,sublat_list=None):
     else:
         D = d-1
 
-    if sublat_list is None:
-        sublat_list = [[i] for i in range(d)]
+    if sl_flips_list is None:
+        sl_flips_list = [[i] for i in range(d)]
 
     #Single out dimensions where normal vec components are 0. On these directions, basis
     #Is just a unit vector.
@@ -197,7 +253,7 @@ def get_integer_basis(normal_vec,sublat_list=None):
             basis_pool.append(basis)
 
         basis_pool = sorted(basis_pool,\
-                            key=lambda v:formula_norm(v,sublat_list=sublat_list))
+                            key=lambda v:formula_norm(v,sl_flips_list=sl_flips_list))
         basis_pool = np.array(basis_pool)
 
         chosen_basis = []
@@ -211,12 +267,12 @@ def get_integer_basis(normal_vec,sublat_list=None):
 
         return unit_basis+chosen_basis
 
-def formula_norm(v,sublat_list=None):
+def formula_norm(v,sl_flips_list=None):
     """L=sum_over_sublats(max_in_sublat(|x_i|))=total number of atoms flipped"""
     v = np.array(v)
-    if sublat_list is None:
-        sublat_list = [[i] for i in range(d)]  
-    return np.sum([np.max(np.abs(v[sl])) for sl in sublat_list])
+    if sl_flips_list is None:
+        sl_flips_list = [[i] for i in range(d)]  
+    return np.sum([np.max(np.abs(v[sl])) for sl in sl_flips_list])
 
 ####
 # Partition tools
