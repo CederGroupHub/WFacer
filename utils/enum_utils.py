@@ -151,9 +151,13 @@ def get_integer_grid(subspc_normv,right_side=0,limiters=None):
 
     elif d==1:
         k = subspc_normv[-1]
-        if right_side%k ==0 and right_side//k>=limiters[-1][0] and\
-           right_side//k<=limiters[-1][1]:
-            grids.append([right_side//k])    
+        if k!=0:
+            if right_side%k ==0 and right_side//k>=limiters[-1][0] and\
+               right_side//k<=limiters[-1][1]:
+                grids.append([right_side//k])    
+        else:
+            if right_side == 0:
+                grids.append([1])
 
     else:
         new_limiters = limiters[:-1]

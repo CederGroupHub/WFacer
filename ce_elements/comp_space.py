@@ -13,6 +13,7 @@ parent_dir = os.dirname(this_file_dir)
 sys.path.append(parent_dir)
 
 from utils.enum_utils import *
+from utils.specie_utils import *
 
 """
 This file contains functions related to implementing and navigating the 
@@ -36,6 +37,7 @@ or choose a proper supercell size.
 NUMCONERROR = ValueError("Operation error, flipping not number conserved.") 
 OUTOFSUBLATERROR = ValueError("Operation error, flipping between different sublattices.")
 CHGBALANCEERROR = ValueError("Charge balance cannot be achieved with these species.")
+OUTOFSUBSPACEERROR = ValueError("Given coordinate falls outside the subspace.")
 
 ####
 # Basic mathematics
@@ -147,6 +149,32 @@ def get_sublat_id(st_id_in_sc,sublat_list):
             return sl_id
     return None
 
+def occu_to_compstat(occu,nbits,sublat_merge_rule=None,\
+                           sc_size=1,sc_making_rule='pmg'):
+    """
+    Turns a digital occupation array into species statistic list, which
+    has the same shape as nbits.
+    """
+    if sublat_merge_rule is not None:
+        N_sts_prim = sum([len(sl) for sl in sublat_merge_rule])  
+    else:
+        N_sts_prim = len(nbits)
+    
+    sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
+                                  sublat_merge_rule=sublat_merge_rule,\
+                                  sc_making_rule=sc_making_rule)
+
+    compstat = [[0 for i in range(len(sl))] for sl in nbits]
+    for site_id,sp_id in enumerate(occu):
+        sl_id = get_sublat_id(site_id,sublat_list)
+        compstat[sl_id][sp_id]+=1
+
+    return compstat
+
+####
+# Finding minimun charge-conserved, number-conserved flips to establish constrained
+# coords system.
+####
 def get_unit_swps(bits):
     """
     Get all possible single site flips on each sublattice, and the charge changes that 
@@ -277,6 +305,10 @@ def visualize_operations(operations,bits):
 
     return '\n'.join(operation_strs)
 
+####
+# Compsitional space class
+####
+
 class CompSpace(MSONable):
     """
         This class generates a CN-compositional space from a list of CESpecies and sublattice
@@ -285,9 +317,11 @@ class CompSpace(MSONable):
         A composition in CEAuto can be expressed in two forms:
         1, A Coordinate in unconstrained space, with 'single site flips' as basis vectors, and
            a 'background occupation' as the origin.
+           We call this 'unconstr_coord'
         2, A Coordinate in constrained, charge neutral subspace, with 'charge neutral, number
            conserving elementary flips as basis vectors, and a charge neutral composition as 
            the origin.(Usually selected as one vertex of the constrained space.)
+           We call this 'constr_coord'.
 
         For example, if bits = [[Li+,Mn3+,Ti4+],[P3-,O2-]] and sl_sizes = [1,1] (LMTOF rock-salt), then:
            'single site flips' basis are:
@@ -338,13 +372,18 @@ class CompSpace(MSONable):
         else:
             raise ValueError("Sublattice number mismatch: check bits and sl_sizes parameters.")
   
+        self.N_sts_prim = sum(self.sl_sizes)
+
         self.unit_n_swps,self.chg_of_swps,self.swp_ids_in_sublat = get_unit_swps(self.bits)
 
         self._constr_spc_basis = None
         self._constr_spc_vertices = None
         #Minimum supercell size required to make vetices coordinates all integer.
-        self._min_scsize = None
         self._polytope = None
+
+        self._min_sc_size = None
+        self._min_int_vertices = None
+        self._min_grid = None
         #self._constr_spc_origin = self._constr_spc_vertices[0]
     
     @property
@@ -387,6 +426,8 @@ class CompSpace(MSONable):
         Ti4+ + P3- <-> Mn3+ + O2- 
         Their vector forms are:
         (1,-3,0), (0,1,-1)  
+
+        Type: list of np.arrays.
         """        
         if self._constr_spc_basis is None:
             self._constr_spc_basis = \
@@ -401,10 +442,10 @@ class CompSpace(MSONable):
         """
         if self._polytope is None:
             facets_unconstred = []
-            for sl_flp_ids in self.swp_ids_in_sublat:
+            for sl_flp_ids,sl_size in zip(self.swp_ids_in_sublat,self.sl_sizes):
                 a = np.zeros(self.unconstr_dim)
                 a[sl_flp_ids]=1
-                bi = 1
+                bi = sl_size
                 facets_unconstred.append((a,bi))
             #sum(x_i) for i in sublattice <= 1
             A_n = np.vstack([a for a,bi in facets_unconstred])
@@ -434,17 +475,244 @@ class CompSpace(MSONable):
                 self._polytope = (A_sub,b_sub,R,t)
     return self._polytope
 
+    # A, b , R, t all np.arrays.
+    @property
+    def A(self):
+        return self.polytope[0]
+
+    @property
+    def b(self):
+        return self.polytope[1]
+   
+    #R and t are only valid in unit comp space (sc_size=1)!!!
+    @property
+    def R(self):
+        return self.polytope[2]
+
+    @property
+    def t(self):
+        return self.polytope[3]
+
+    def is_in_subspace(self,x,sc_size=1,slack_tol=1E-5):
+        """
+        Given an unconstrained coordinate and its corresponding supercell size,
+        check if it is in the constraint subspace.
+        Returns a boolean.
+
+        slack_tol:
+            Maximum allowed slack to constraints
+        """
+        x = np.array(x)/sc_size
+
+        if not self.is_charge_constred:
+            b = self.A@x
+            for bi_p,bi in zip(b,self.b):
+                if bi_p-bi > slack_tol:
+                    return False
+
+        else:
+            x_prime = np.linalg.inv((self.R).T)@(x_prime-self.t)
+            if abs(x_prime[-1]) > slack_tol:
+                return False
+            b = self.A@x_prime[:-1]
+            for bi_p,bi in zip(b,self.b):
+                if bi_p-bi > slack_tol:
+                    return False
+
+        return True
+
     @property
     def constr_spc_vertices(self):
         """
         Find extremums of the constrained compositional space, when supercell size = 1.
         Shall be expressed in type 1 basis
+
+        Type: np.array
         """
         if self._constr_spc_vertices is None:
-        
+            if not self.is_charge_constred:
+                A,b,_,_=self._polytope
+                poly = pc.Polytope(A,b)
+                self._constr_spc_vertices = pc.extreme(poly)
+            else:
+                A,b,R,t=self._polytope
+                poly_sub = pc.Polytope(A,b)
+                vert_sub = pc.extreme(poly_sub)
+                n = vert_sub.shape[0]
+                vert = np.hstack(vert_sub,np.zeros(n))
+                #Transform back into original space
+                self._constr_spc_vertices = vert@R + t
+
+        if len(self._constr_spc_vertices)==0:
+            raise CHGBALANCEERROR
 
         return self._constr_spc_vertices
 
+    @property
+    def min_sc_size(self):
+        """
+        Minimal supercell size to get integer composition.
+        In this function we also vertices of the compositional space after all coordinates
+        are multiplied by self.min_sc_size. 
+        """
+        if self._min_sc_size or self._min_int_vertices is None:
+            self._min_int_vertices, self._min_sc_size = \
+                integerize_multiple(self.constr_spc_vertices)
+        return self._min_sc_size
+
+    @property
+    def min_int_vertices(self):
+        """
+        Type: np.array
+        """
+        if self._min_sc_size or self._min_int_vertices is None:
+            min_sc_size = self.min_sc_size
+        return self._min_int_vertices
+
+    @property
+    def min_grid(self):
+        """
+        Get the minimum compositional grid: multiply the primitive cell compositional space
+        by self.min_sc_size, and find all the integer grids in the new, magnified space.
+
+        The way we enumerate compositions in CEAuto will be, we simply choose a supercell
+        size that is a multiple of self.min_sc_size, and magnify min_grid by 
+        (sc//self.min_sc_size)
+
+        Type: a list of lists
+        """
+        if self._min_grid is None:
+            limiters_ub = np.max(self.min_int_vertices,axis=0)
+            limiters_lb = np.min(self.min_int_vertices,axis=0)
+            limiters = list(zip(limiters_lb,limiters_ub))
+            right_side = -1*self.bkgrnd_chg*self.min_sc_size
+        
+            grid = get_integer_grid(self.chg_of_swps,right_side=right_side,\
+                                limiters = limiters)
+
+            self._min_grid = []
+            for p in grid:
+                if self.is_in_subspace(p,sc_size=self.min_sc_size):
+                    self._min_grid.append(p)
+
+        return self._min_grid
+
+    def enumerate_comps(self,magnif=1):
+        """
+        Enumerate sampled compositions by magnifying minimal grid by a magnification.
+        Supercell size = self.min_sc_size*magnification.
+        """
+        return [[c*magnif for c in cp] for cp in self.min_grid]
+
+    def unconstr_to_constr_coords(self,x,sc_size=1,to_int=False):
+        """
+        Unconstrained coordinate system to constrained coordinate system.
+        In constrained coordinate system, a composition will be written as
+        number of flips required to reach this composition from a starting 
+        composition.        
+
+        to_int: if true, round coords to integers.
+        """
+        if not self.is_in_subspace(x,sc_size=sc_size):
+            raise OUTOFSUBSPACEERROR
+
+        #scale down to unit comp space
+        x = np.array(x)/sc_size
+        if not self.is_charge_constred:
+            x_prime = deepcopy(x)
+        else:
+            x_prime = np.linalg.inv((self.R).T)@(x-self.t)
+            x_prime = x_prime[:-1]
+
+        #scale back up to sc_size
+        x_prime = x_prime*sc_size
+
+        if to_int:
+            x_prime = np.round(x_prime)
+            x_prime = np.array(x_prime,dtype=np.int64)
+
+        return x_prime
+
+    def constr_to_unconstr_coords(self,x_prime,sc_size=1,to_int=False):
+        """
+        Constrained coordinate system to unconstrained coordinate system.
+        """
+        #scale down to unit comp space
+        x_prime = np.array(x_prime)/sc_size
+        if not self.is_charge_constred:
+            x = deepcopy(x_prime)
+        else:
+            x = deepcopy(x_prime)
+            x = np.concatenate((x,np.array([0])))
+            x = (self.R).T@x + self.t
+       
+        #scale back up
+        x = x*sc_size
+        if not self.is_in_subspace(x,sc_size=sc_size):
+            raise OUTOFSUBSPACEERROR
+
+        if to_int:
+            x = np.round(x)
+            x = np.array(x_prime,dtype=np.int64)
+
+        return x
+ 
+    def as_dict(self):
+        bits_d = [[sp.as_dict() for sp in sl_sps] for sl_sps in self.bits]
+        # constr_spc_basis is a list of np.arrays
+        constr_spc_basis = [ev.tolist() for ev in self.constr_spc_basis]
+        # constr_spc_vertices is a np.array
+        constr_spc_vertices = self.conste_spc_vertices.tolist()
+        # polytope is a tuple of np.arrays        
+        poly = [item.tolist() for item in self.polytope]
+        #min_int_vertices is a np.array
+        min_int_vertices = self.min_int_vertices.tolist()
+        #min_grid is a list of lists
+
+        return {
+                'bits': bits_d,
+                'sl_sizes': self.sl_sizes,
+                'constr_spc_basis': constr_spc_basis,
+                'constr_spc_vertices': constr_spc_vertices,
+                'polytope': poly,
+                'min_sc_size': self.min_sc_size,
+                'min_int_vertices': min_int_vertices,
+                'min_grid': self.min_grid
+                '@module': self.__class__.__module__,
+                '@class': self.__class__.__name__
+               }
+
+    @classmethod
+    def from_dict(cls,d):
+        bits = [[CESpecie.from_dict(sp_d) for sp_d in sl_sps] for sl_sps in d['bits']]
+        
+        obj = cls(bits,d['sl_sizes'])        
+ 
+        if 'constr_spc_basis' in d:
+            constr_spc_basis = d['constr_spc_basis']
+            constr_spc_basis = [np.array(ev) for ev in constr_spc_basis]
+            obj._constr_spc_basis = constr_spc_basis
+
+        if 'constr_spc_vertices' in d:
+            constr_spc_vertices = d['constr_spc_vertices']          
+            obj._constr_spc_vertices = np.array(constr_spc_vertices)
+
+        if 'polytope' in d:            
+            poly = d['polytope']
+            poly = [np.array(item) for item in poly]
+            obj._polytope = poly
+
+        if 'min_sc_size' in d:
+            obj._min_sc_size = d['min_sc_size']
+
+        if 'min_int_vertices' in d:
+            min_int_vertices = d['min_int_vertices']
+            obj._min_int_vertices = np.array(min_int_vertices)
+
+        if 'min_grid' in d:
+            obj._min_grid = d['min_grid']
+
+        return obj
 
 ####
 # Flip enumerations
@@ -482,6 +750,4 @@ def get_flip_canonical(occu, bits, sc_size =1,\
         st1,st2 = random.choice(valid_combos)
         #Swap
         return [(st1,int(occu[st2])),(st2,int(occu[st1]))]
-
-class 
-   
+  
