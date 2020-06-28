@@ -73,3 +73,28 @@ def Standardize_Coords(atom_coords,z_id=0,x_id=1):
         transmat = np.linalg.inv(np.vstack((ex,ey,ez)))
     
         return untransformed_coords@transmat
+
+def gram_schmidt(A):
+    """
+    Do Gram-schmidt orthonormalization to row vectors of a, and returns the result.
+    If matrix is over-ranked, will remove redundacies automatically.
+    Inputs:
+        A: array-like
+    Returns:
+        A_ortho: array-like, orthonormal matrix.
+    """
+    n,d = A.shape
+
+    if np.allclose(A[0],np.zeros(d)):
+        raise ValueError("First row is a zero vector, can not run algorithm.")
+
+    new_rows = [A[0]/np.linalg.norm(A[0])]
+    for row in A[1:]:
+        new_row = row
+        for other_new_row in new_rows:
+            new_row = new_row - np.dot(other_new_row,new_row)*other_new_row
+        if not np.allclose(new_row,np.zeros(d)):
+            new_rows.append( new_row/np.linalg.norm(new_row) )
+    return np.vstack(new_rows)
+
+

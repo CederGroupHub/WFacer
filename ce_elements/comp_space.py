@@ -14,6 +14,7 @@ sys.path.append(parent_dir)
 
 from utils.enum_utils import *
 from utils.specie_utils import *
+from utils.comp_utils import *
 
 """
 This file contains functions related to implementing and navigating the 
@@ -39,142 +40,12 @@ OUTOFSUBLATERROR = ValueError("Operation error, flipping between different subla
 CHGBALANCEERROR = ValueError("Charge balance cannot be achieved with these species.")
 OUTOFSUBSPACEERROR = ValueError("Given coordinate falls outside the subspace.")
 
-####
-# Basic mathematics
-####
-def concat_tuples(l):
-    s = ()
-    for sub_tup in l:
-        s = s+sub_tup
-    return s
-
-def tuple_diff(l1,l2):
-    #returns l1-l2
-    return tuple([e for e in l1 if e not in l2])
-
-def edges_from_vertices(vertices,p):
-    """
-    Find edges from combinations of vertices.
-    """
-    valid_edges = []
-    N_v = len(vertices)
-    v_ids = list(range(N_v))
-    is_simplex = True
-    for i,j in combinations(v_ids,2):
-        if not (vertices[i]+vertices[j])/2 in p:
-            valid_edges.append((i,j))
-        else:
-            is_simplex = False
-
-    return valid_edges, is_simplex
-
-def gram_schmidt(A):
-    """
-    Do Gram-schmidt orthonormalization to row vectors of a, and returns the result.
-    If matrix is over-ranked, will remove redundacies automatically.
-    Inputs:
-        A: array-like
-    Returns:
-        A_ortho: array-like, orthonormal matrix.
-    """
-    n,d = A.shape
-
-    if np.allclose(A[0],np.zeros(d)):
-        raise ValueError("First row is a zero vector, can not run algorithm.")
-
-    new_rows = [A[0]/np.linalg.norm(A[0])]
-    for row in A[1:]:
-        new_row = row
-        for other_new_row in new_rows:
-            new_row = new_row - np.dot(other_new_row,new_row)*other_new_row
-        if not np.allclose(new_row,np.zeros(d)):
-            new_rows.append( new_row/np.linalg.norm(new_row) )
-    return np.vstack(new_rows)
-
-####
-# Composition related tools
-####
-def get_sublat_list(N_sts_prim,sc_size=1,sublat_merge_rule=None,sc_making_rule='pmg'):
-    """
-    Get site indices in each sublattice.
-    Inputs:
-        N_sts_prim: 
-            number of sites in a prim cell
-        sc_size: 
-            supercell size. If already primitive cell, should be 1.
-        sublat_merge_rule: 
-            rules used to merge sites into sublattice. if None, will
-            consider each site in a prim cell to be a sublattice.
-        sc_making_rule:
-            rules of creating supercell from primitive cell. this 
-            affects the indexing rule of duplicated prim sites in 
-            the supercell. Now only support the rule of pymatgen, which
-            duplicates each prim site by sc_size times, then stack the
-            duplicative blocks in their intial order as they were in 
-            prim cell.
-    """
-    if sc_making_rule != 'pmg':
-        raise NotImplementedError
-
-    if sublat_merge_rule is None:
-        sublat_list = [list(range(i*sc_size,(i+1)*sc_size)) \
-                       for i in range(N_sts_prim)]
-        #This is pymatgen indexing rule.
-    else:
-        sublat_list = []
-        for sublat_sts_in_prim in sublat_merge_rule:
-            sublat_sts_in_sc = []
-            for sublat_st_in_prim in sublat_sts_in_prim:
-                idx = sublat_st_in_prim
-                sublat_sts_in_sc.extend(list(range(idx*sc_size,(idx+1)*sc_size)))                   
-            sublat_list.append(sublat_sts_in_sc)
-    return sublat_list
-
-#    Now 'bits' are represented in utils.specie_utils.CESpecies, and are 
-#    Generated in ce_elements.exp_structure.ExpansionStructure
-
-#    bits shall be a 2D list, with the first dimension equals to the number of 
-#    sublattices, and the second dimension equals to num of species occupying this
-#    sublattice. Each element will be an object of CESpecies.
-
-def get_n_bits(bits):
-    """
-    Represent occupying species with integers
-    """
-    return [list(range(len(sublat))) for sublat in bits]
-
-def get_sublat_id(st_id_in_sc,sublat_list):
-    for sl_id,group in enumerate(sublat_list):
-        if st_id_in_sc in group:
-            return sl_id
-    return None
-
-def occu_to_compstat(occu,nbits,sublat_merge_rule=None,\
-                           sc_size=1,sc_making_rule='pmg'):
-    """
-    Turns a digital occupation array into species statistic list, which
-    has the same shape as nbits.
-    """
-    if sublat_merge_rule is not None:
-        N_sts_prim = sum([len(sl) for sl in sublat_merge_rule])  
-    else:
-        N_sts_prim = len(nbits)
-    
-    sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
-                                  sublat_merge_rule=sublat_merge_rule,\
-                                  sc_making_rule=sc_making_rule)
-
-    compstat = [[0 for i in range(len(sl))] for sl in nbits]
-    for site_id,sp_id in enumerate(occu):
-        sl_id = get_sublat_id(site_id,sublat_list)
-        compstat[sl_id][sp_id]+=1
-
-    return compstat
 
 ####
 # Finding minimun charge-conserved, number-conserved flips to establish constrained
 # coords system.
 ####
+
 def get_unit_swps(bits):
     """
     Get all possible single site flips on each sublattice, and the charge changes that 
@@ -433,6 +304,22 @@ class CompSpace(MSONable):
             self._constr_spc_basis = \
                  get_integer_basis(self.chg_of_swps,sl_flips_list=self.swp_ids_in_sublat)
         return self._constr_spc_basis
+
+    @property
+    def min_flips(self):
+        """
+        Dictionary representation of minimal charge conserving flips.
+        """
+        _operations = flipvec_to_operations(self.unit_n_swps,\
+                                           self.constr_spc_basis)
+        return _operations
+
+    @property
+    def min_flip_strings(self):
+        """
+        Human readable minial charge conserving flips, written in ionic equations.
+        """
+        return visualize_operations(self.min_flips,self.bits)
 
     @property
     def polytopes(self):
@@ -712,42 +599,4 @@ class CompSpace(MSONable):
         if 'min_grid' in d:
             obj._min_grid = d['min_grid']
 
-        return obj
-
-####
-# Flip enumerations
-####
-def get_flip_canonical(occu, bits, sc_size =1,\
-                       sublat_merge_rule=None):
-    """
-    Find a flip operation to an occupation in canonical ensemble.
-    """
-    n_bits = get_n_bits(bits)
-
-    if len(occu)%sc_size!=0:
-        raise ValueError("Supercell size not correct!")
-
-    N_sts_prim = len(occu)//sc_size
-    sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
-                  sublat_merge_rule=sublat_merge_rule)
-    n_sls = len(sublat_list)
-
-    valid_combos = []
-    for sublat in sublat_list:
-        valid_sublat_combos = []
-        for i in range(len(sublat)-1):
-            for j in range(i,len(sublat)):
-                i_sc_id = sublat[i]
-                j_sc_id = sublat[j]
-                if occu[i_sc_id]!=occu[j_sc_id]:
-                    valid_sublat_combos.append((i_sc_id,j_sc_id))
-        valid_combos.extend(valid_sublat_combos)
-        #print('valid_combos:',valid_combos)
-
-    if len(valid_combos)==0:
-        return None
-    else:
-        st1,st2 = random.choice(valid_combos)
-        #Swap
-        return [(st1,int(occu[st2])),(st2,int(occu[st1]))]
-  
+        return obj 

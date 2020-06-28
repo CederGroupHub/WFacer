@@ -151,7 +151,8 @@ class CESpecie(MSONable):
         on a specified lattice point.
         Inputs:
             lattice point: array_like, in fractional coordinates
-            sc_lat_matrix: lattice matrix of the SUPERCELL
+                           Is a lattice point in SUPERCELL
+            sc_lat_matrix: lattice vectors of the SUPERCELL
         Outputs:
             a set of fractional coordinates, representing atom loacations in the
             supercell
@@ -194,8 +195,10 @@ class CESpecie(MSONable):
         """
         if self.oxidation_state<other.oxidation_state:
             return True
-        else:
+        elif self.oxidation_state==other.oxidation_state:
             return self.specie_string<other.specie_string
+        else:
+            return False
 
     @property
     def specie_string(self):
