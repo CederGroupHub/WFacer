@@ -86,11 +86,12 @@ def integerize_vector(v, dim_limiter=100,dtol=1E-5):
             required to turn v into an integer vector.
     """
     denos = []
+    v = np.array(v)
     for c in v:
         _,deno = rationalize_number(c,dim_limiter=dim_limiter,dtol=dtol)
         denos.append(deno)
-    lcm = lcm_list(denos)
-    return np.array(np.round(v*lcm),dtype=int64),lcm
+    lcm = LCM_list(denos)
+    return np.array(np.round(v*lcm),dtype=np.int64),lcm
 
 def integerize_multiple(vs, dim_limiter=100,dtol=1E-5):
     """
@@ -98,7 +99,7 @@ def integerize_multiple(vs, dim_limiter=100,dtol=1E-5):
     """
     vs = np.array(vs)
     shp = vs.shape
-    vs_flatten = np.flatten(vs)
+    vs_flatten = vs.flatten()
     vs_flat_int,mul = integerize_vector(vs_flatten,dim_limiter=dim_limiter,\
                                         dtol=dtol)
     vs_int = np.reshape(vs_flat_int,shp)
@@ -157,17 +158,25 @@ def get_integer_grid(subspc_normv,right_side=0,limiters=None):
                 grids.append([right_side//k])    
         else:
             if right_side == 0:
+                grids.append([0])
                 grids.append([1])
 
     else:
         new_limiters = limiters[:-1]
         #Move the last variable to the right hand side of hyperplane expression
         grids = []
-        for val in range(limiters[-1][0],limiters[-1][1]+1):
-            partial_grids = get_integer_grid(subspc_normv[:-1],right_side-val*subspc_normv[-1],\
+        if subspc_normv[-1]!=0:
+            for val in range(limiters[-1][0],limiters[-1][1]+1):
+                partial_grids = get_integer_grid(subspc_normv[:-1],right_side-val*subspc_normv[-1],\
+                                                 limiters=new_limiters)
+                for p_grid in partial_grids:
+                    grids.append(p_grid+[val])
+        else:
+            partial_grids = get_integer_grid(subspc_normv[:-1],right_side,\
                                              limiters=new_limiters)
             for p_grid in partial_grids:
-                grids.append(p_grid+[val])
+                grids.append(p_grid+[0])
+                grids.append(p_grid+[1])
     #print('Grids:\n',grids,'\ndim:',d)
     return grids
       
