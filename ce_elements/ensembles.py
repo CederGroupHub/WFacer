@@ -114,3 +114,40 @@ def get_flip_semigrand(occu, operations, nbits, \
                                  sublat_merge_rule=sublat_merge_rule,\
                                  sc_size = sc_size,\
                                  sc_making_rule = sc_making_rule)
+
+    #Get the number of reachable configurations by a single semigrand flip
+    n_links_current_operations = get_n_links(comp_stat,operations)
+    n_links_current = sum(n_links_current_operations)
+
+    if n_links_current > max_n_links:
+        #print("A compositional node with higher number of out links other than extremum discovered.")
+        n_links_return = N_links_current
+    else:
+        n_links_return = max_n_links
+
+    p_semiflip = float(n_links_current)/n_links_return
+    p_canoflip = 1 - p_semiflip
+
+    if np.random.rand() <= p_canoflip:
+        #choose to do a canonical flip
+        ca_flip = get_flip_canonical(occu,sc_size=sc_size,\
+                                     sublat_merge_rule=sublat_merge_rule)
+    
+        return ca_flip, n_links_return
+
+    else:
+        #choose a random semigrand flip
+        #First choose from one of the operation directions:
+
+        chosen_f_id = choose_section_from_partitions(n_links_current_operations)
+        chosen_op = operations[chosen_f_id//2]
+        direction = chosen_f_id%2 # 0 forward, 1 backward.
+
+        sp_stat = occu_to_spstat(occu, nbits, sublat_merge_rule=sublat_merge_rule,\
+                                 sc_size = sc_size,\
+                                 sc_making_rule = sc_making_rule)
+        #occu_to_spstat should be implemented in utils.comp_utils like occu_to_compstat
+
+        chosen_sites_flip_from = []
+
+        #Do this tomorrow.

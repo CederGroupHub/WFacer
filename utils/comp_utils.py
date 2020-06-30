@@ -77,4 +77,3 @@ def occu_to_compstat(occu,nbits,sublat_merge_rule=None,\
         compstat[sl_id][sp_id]+=1
 
     return compstat
-

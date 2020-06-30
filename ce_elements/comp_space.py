@@ -544,6 +544,30 @@ class CompSpace(MSONable):
 
         return x
  
+    def unconstr_coords_to_compstat(self,x,sc_size=1,to_int=False):
+        """
+        Translate unconstrained coordinate to statistics of specie numbers on 
+        each sublattice. Will have the same shape as self.nbits
+        """
+        v_id = 0
+        compstat = [[0 for i in range(len(sl_nbits))] for sl_nbits in self.nbits]
+        for sl_id,sl_nbits in enumerate(self.nbits):
+            sl_sum = 0
+            for b_id,bit in enumerate(sl_nbits[:-1]):
+                compstat[sl_id][b_id] = x[v_id]
+                sl_sum += x[v_id]
+                v_id +=1
+            compstat[sl_id][-1] = self.sl_sizes[sl_id]*sc_size - sl_sum
+            if compstat[sl_id][-1] < 0:
+                raise OUTOFSUBSPACEERROR
+
+        if to_int:
+            for sl_id,sl_nbits in enumerate(self.nbits):
+                for b_id,bit in enumerate(sl_nbits):
+                    compstat[sl_id][b_id] = int(round(compstat[sl_id][b_id]))
+
+        return compstat
+
     def as_dict(self):
         bits_d = [[sp.as_dict() for sp in sl_sps] for sl_sps in self.bits]
         # constr_spc_basis is a list of np.arrays
