@@ -1,6 +1,10 @@
 ####
 # Composition related tools
 ####
+SCSIZEMISMATCH = \
+    ValueError("Length of occupation array can't match primitive cell size!")
+
+
 def get_sublat_list(N_sts_prim,sc_size=1,sublat_merge_rule=None,sc_making_rule='pmg'):
     """
     Get site indices in each sublattice.
@@ -68,7 +72,7 @@ def occu_to_compstat(occu,nbits,sublat_merge_rule=None,\
         N_sts_prim = len(nbits)
     
     if len(occu)%N_sts_prim != 0:
-        raise ValueError("Length of occupation array mismatches primitive cell size!")
+        raise SCSIZEMISMATCH
     sc_size = len(occu)//N_sts_prim
 
     sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
@@ -95,7 +99,7 @@ def occu_to_spstat(occu,nbits,sublat_merge_rule=None,\
         N_sts_prim = len(nbits)
 
     if len(occu)%N_sts_prim != 0:
-        raise ValueError("Length of occupation array mismatches primitive cell size!")
+        raise SCSIZEMISMATCH
     sc_size = len(occu)//N_sts_prim
     
     sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
