@@ -1,6 +1,7 @@
 import numpy as np
 
 from itertools import combinations,product,permutations
+import random
 
 from copy import deepcopy
 
@@ -16,10 +17,6 @@ from utils.comp_utils import *
 ####
 # Flips enumeration
 ####
-def get_n_links(occu):
-    raise NotImplementedError
-
-
 def get_flip_canonical(occu, sc_size =1,\
                        sublat_merge_rule=None):
     """
@@ -128,7 +125,7 @@ def get_flip_semigrand(occu, operations, nbits, \
     p_semiflip = float(n_links_current)/n_links_return
     p_canoflip = 1 - p_semiflip
 
-    if np.random.rand() <= p_canoflip:
+    if random.rand() <= p_canoflip:
         #choose to do a canonical flip
         ca_flip = get_flip_canonical(occu,sc_size=sc_size,\
                                      sublat_merge_rule=sublat_merge_rule)
@@ -148,6 +145,62 @@ def get_flip_semigrand(occu, operations, nbits, \
                                  sc_making_rule = sc_making_rule)
         #occu_to_spstat should be implemented in utils.comp_utils like occu_to_compstat
 
-        chosen_sites_flip_from = []
+        chosen_sites_flip_from = [[] for sl in self.nbits]
+        chosen_sps_flip_to = [[] for sl in self.nbits]
 
-        #Do this tomorrow.
+        if direction == 0:
+            for sl_id in operation['from']:
+                for sp_id in operation['from'][sl_id]:
+                    m_from = operation['from'][sl_id][sp_id]
+                    chosen_sites = random.sample(sp_stat[sl_id][sp_id],m_from)
+                    chosen_sites = sorted(chosen_sites)
+                    #remove duplicacy
+                    chosen_sites_flip_from[sl_id].extend(chosen_sites)
+
+            from_sites_for_sublats = [[i for i in range(len(sl))] for sl in chosen_sites_flip_from]
+            for sl_id in operation['to']:
+                chosen_sps_flip_to[sl_id] = [None for st in chosen_sites_flip_from[sl_id]]
+                for sp_id in operation['to'][sl_id]:
+                    m_to = operation['to'][sl_id][sp_id]
+                    from_sites = from_sites_for_sublats[sl_id]
+                    chosen_sites = random.sample(from_sites,m_to)
+                    chosen_sites = sorted(chosen_sites)
+                    for st_id in chosen_sites:
+                        chosen_sps_flips_to[sl_id][st_id] = sp_id
+                        from_sites_for_sublats[sl_id].remove(st_id)
+
+            for sl in from_sites_for_sublats:
+                if len(sl)>0:
+                    raise ValueError("Flip not number conserved!")
+
+        else:
+            for sl_id in operation['to']:
+                for sp_id in operation['to'][sl_id]:
+                    m_from = operation['to'][sl_id][sp_id]
+                    chosen_sites = random.sample(sp_stat[sl_id][sp_id],m_from)
+                    chosen_sites = sorted(chosen_sites)
+                    #remove duplicacy
+                    chosen_sites_flip_from[sl_id].extend(chosen_sites)
+
+            from_sites_for_sublats = [[i for i in range(len(sl))] for sl in chosen_sites_flip_from]
+            for sl_id in operation['from']:
+                chosen_sps_flip_to[sl_id] = [None for st in chosen_sites_flip_from[sl_id]]
+                for sp_id in operation['from'][sl_id]:
+                    m_to = operation['from'][sl_id][sp_id]
+                    from_sites = from_sites_for_sublats[sl_id]
+                    chosen_sites = random.sample(from_sites,m_to)
+                    chosen_sites = sorted(chosen_sites)
+                    for st_id in chosen_sites:
+                        chosen_sps_flips_to[sl_id][st_id] = sp_id
+                        from_sites_for_sublats[sl_id].remove(st_id)
+
+            for sl in from_sites_for_sublats:
+                if len(sl)>0:
+                    raise ValueError("Flip not number conserved!")
+
+        flip_list = []
+        for sl_id,sl_sites in chosen_sites_flip_from:
+            for st_id,site in sl_sites:
+                flip_list.append((site, chosen_sps_flip_to[sl_id][st_id]))
+
+    return flip_list,n_links_return

@@ -304,7 +304,7 @@ def get_n_links(comp_stat,operations):
             Even index 2*i : operation i forward direction
             Odd index 2*i+1: operation i reverse direction
     """
-    n_links = [0 for i in 2*range(len(operations))]
+    n_links = [0 for i in range(2*len(operations))]
 
     for op_id,operation in enumerate(operations):
         #Forward direction

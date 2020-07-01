@@ -57,7 +57,7 @@ def get_sublat_id(st_id_in_sc,sublat_list):
     return None
 
 def occu_to_compstat(occu,nbits,sublat_merge_rule=None,\
-                           sc_size=1,sc_making_rule='pmg'):
+                     sc_making_rule='pmg'):
     """
     Turns a digital occupation array into species statistic list, which
     has the same shape as nbits.
@@ -67,6 +67,10 @@ def occu_to_compstat(occu,nbits,sublat_merge_rule=None,\
     else:
         N_sts_prim = len(nbits)
     
+    if len(occu)%N_sts_prim != 0:
+        raise ValueError("Length of occupation array mismatches primitive cell size!")
+    sc_size = len(occu)//N_sts_prim
+
     sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
                                   sublat_merge_rule=sublat_merge_rule,\
                                   sc_making_rule=sc_making_rule)
@@ -77,3 +81,31 @@ def occu_to_compstat(occu,nbits,sublat_merge_rule=None,\
         compstat[sl_id][sp_id]+=1
 
     return compstat
+
+def occu_to_spstat(occu,nbits,sublat_merge_rule=None,\
+                   sc_making_rule='pmg'):
+    """
+    Turns a digital occupation array into species statistic list, which
+    has the same shape as nbits.
+    [[site_id_occupied_by_specie for specie in sublattice] for sublattice in nbits]
+    """
+    if sublat_merge_rule is not None:
+        N_sts_prim = sum([len(sl) for sl in sublat_merge_rule])  
+    else:
+        N_sts_prim = len(nbits)
+
+    if len(occu)%N_sts_prim != 0:
+        raise ValueError("Length of occupation array mismatches primitive cell size!")
+    sc_size = len(occu)//N_sts_prim
+    
+    sublat_list = get_sublat_list(N_sts_prim,sc_size=sc_size,\
+                                  sublat_merge_rule=sublat_merge_rule,\
+                                  sc_making_rule=sc_making_rule)
+
+    spstat = [[[] for i in range(len(sl))] for sl in nbits]
+
+    for site_id,sp_id in enumerate(occu):
+        sl_id = get_sublat_id(site_id,sublat_list)
+        spstat[sl_id][sp_id].append(site_id)
+
+    return spstat
