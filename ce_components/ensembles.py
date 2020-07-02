@@ -10,6 +10,7 @@ this_file_path = os.path.abspath(__file__)
 this_file_dir = os.path.dirname(this_file_path)
 parent_dir = os.path.dirname(this_file_dir)
 sys.path.append(parent_dir)
+sys.path.append(this_file_dir)
 
 from utils.enum_utils import *
 from utils.comp_utils import *

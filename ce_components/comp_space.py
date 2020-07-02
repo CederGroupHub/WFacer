@@ -12,9 +12,10 @@ this_file_path = os.path.abspath(__file__)
 this_file_dir = os.path.dirname(this_file_path)
 parent_dir = os.path.dirname(this_file_dir)
 sys.path.append(parent_dir)
+sys.path.append(this_file_dir)
 
 from utils.enum_utils import *
-from utils.specie_utils import *
+from specie import *
 from utils.comp_utils import *
 
 """
@@ -78,7 +79,7 @@ def get_unit_swps(bits):
     for sl_id,sl_sps in enumerate(bits):
         unit_swps.extend([(sp,sl_sps[-1],sl_id) for sp in sl_sps[:-1]])
         unit_n_swps.extend([(sp,n_bits[sl_id][-1],sl_id) for sp in n_bits[sl_id][:-1]])
-        swp_ids_in_sublat.extend([cur_swp_id+i for i in range(len(sl_sps)-1)])
+        swp_ids_in_sublat.append([cur_swp_id+i for i in range(len(sl_sps)-1)])
         cur_swp_id += (len(sl_sps)-1)
         #(sp_before,sp_after,sublat_id)
 
@@ -109,10 +110,10 @@ def flipvec_to_operations(unit_n_swps,prim_lat_vecs):
     operations = []
     for flip_vec in prim_lat_vecs:
         operation = {'from':{},'to':{}}
-        for n_flip,flip in zip(prim_lat_vecs,unit_n_swps):
+        for n_flip,flip in zip(flip_vec,unit_n_swps):
             flip_to,flip_from,sl_id = flip
             if sl_id not in operation['from']:
-                operaiton['from'][sl_id]={}
+                operation['from'][sl_id]={}
             if sl_id not in operation['to']:
                 operation['to'][sl_id]={}
             if flip_from not in operation['from'][sl_id]:
@@ -271,6 +272,7 @@ class CompSpace(MSONable):
  
     @property
     def is_charge_constred(self):
+        d = len(self.chg_of_swps)
         return not(np.allclose(np.zeros(d),self.chg_of_swps) and self.bkgrnd_chg==0)
 
     @property
@@ -361,7 +363,7 @@ class CompSpace(MSONable):
                 #always be 0
                 b_sub = b-A@t
                 self._polytope = (A_sub,b_sub,R,t)
-    return self._polytope
+        return self._polytope
 
     # A, b , R, t all np.arrays.
     @property
@@ -589,7 +591,7 @@ class CompSpace(MSONable):
                 'polytope': poly,
                 'min_sc_size': self.min_sc_size,
                 'min_int_vertices': min_int_vertices,
-                'min_grid': self.min_grid
+                'min_grid': self.min_grid,
                 '@module': self.__class__.__module__,
                 '@class': self.__class__.__name__
                }

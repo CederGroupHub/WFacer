@@ -1,11 +1,18 @@
-from coords_utils import *
-
 from monty.json import MSONable
 from pymatgen.core.periodic_table import Specie
 from pymatgen.symmetry.analyzer import PointGroupAnalyzer
 from pymatgen.core.structure import Molecule
 
 import numpy as np
+
+import os,sys
+this_file_path = os.path.abspath(__file__)
+this_file_dir = os.path.dirname(this_file_path)
+parent_dir = os.path.dirname(this_file_dir)
+sys.path.append(parent_dir)
+sys.path.append(this_file_dir)
+
+from utils.coords_utils import *
 
 def get_element_oxi(ion):
     """
