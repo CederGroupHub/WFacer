@@ -48,13 +48,13 @@ def test_func1():
 
 def test_func2():
     unit_n_swps, chg_of_swps, swp_ids_in_sublat = get_unit_swps(bits)
-    operations = flipvec_to_operations(unit_n_swps,prim_lat_vecs_test)
+    operations = flipvec_to_operations(unit_n_swps,nbits,prim_lat_vecs_test)
 
     assert operations == operations_true
 
 def test_func3():
     unit_n_swps, chg_of_swps, swp_ids_in_sublat = get_unit_swps(bits)
-    operations = flipvec_to_operations(unit_n_swps,prim_lat_vecs_test)
+    operations = flipvec_to_operations(unit_n_swps,nbits,prim_lat_vecs_test)
     vis_ops = visualize_operations(operations,bits)
     assert vis_ops == visualized_operations_true
 

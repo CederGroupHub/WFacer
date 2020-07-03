@@ -87,7 +87,7 @@ def get_unit_swps(bits):
 
     return unit_n_swps,chg_of_swps,swp_ids_in_sublat
 
-def flipvec_to_operations(unit_n_swps,prim_lat_vecs):
+def flipvec_to_operations(unit_n_swps, nbits, prim_lat_vecs):
     """
     This function translates flips from their vector from into their dictionary
     form.
@@ -107,49 +107,43 @@ def flipvec_to_operations(unit_n_swps,prim_lat_vecs):
            }
     }
     """
+    n_sls = len(nbits)
     operations = []
+
     for flip_vec in prim_lat_vecs:
         operation = {'from':{},'to':{}}
-        for n_flip,flip in zip(flip_vec,unit_n_swps):
-            flip_to,flip_from,sl_id = flip
-            if sl_id not in operation['from']:
-                operation['from'][sl_id]={}
-            if sl_id not in operation['to']:
-                operation['to'][sl_id]={}
-            if flip_from not in operation['from'][sl_id]:
-                operation['from'][sl_id][flip_from]=0
-            if flip_to not in operation['to'][sl_id]:
-                operation['to'][sl_id][flip_to]=0
-            operation['from'][sl_id][flip_from]+=n_flip
-            operation['to'][sl_id][flip_to]+=n_flip
-            #deduplicate
-            operation_dedup = {'from':deepcopy(operation['from']),'to':{}}
-            for sl_id in operation['to']:
-                operation_dedup['to'][sl_id]={}
-                for sp_id in operation['to'][sl_id]:
-                    if sp_id in operation['from'][sl_id]:
-                        left = operation['from'][sl_id][sp_id]
-                        right = operation['to'][sl_id][sp_id]
-                        if left > right:
-                            operation_dedup['from'][sl_id][sp_id]-=right
-                        elif left == right:
-                            operation_dedup['from'][sl_id].pop(sp_id)
-                        else:
-                            operation_dedup['to'][sl_id][sp_id]=(right-left)
-                            operation_dedup['from'][sl_id].pop(sp_id)
-                    else:
-                        operation_dedup['to'][sl_id][sp_id]=\
-                        operation['to'][sl_id][sp_id]
-            #Remove empty terms
-            operation_clean = {'from':{},'to':{}}
-            for sl_id in operation_dedup['from']:
-                if len(operation_dedup['from'][sl_id])!=0:
-                    operation_clean['from'][sl_id]=\
-                    deepcopy(operation_dedup['from'][sl_id])
-            for sl_id in operation_dedup['to']:
-                if len(operation_dedup['to'][sl_id])!=0:
-                    operation_clean['to'][sl_id]=\
-                    deepcopy(operation_dedup['to'][sl_id])
+        
+        operation['from']={sl_id:{sp_id:0 for sp_id in nbits[sl_id]} for sl_id in range(n_sls)}
+        operation['to'] = {sl_id:{sp_id:0 for sp_id in nbits[sl_id]} for sl_id in range(n_sls)}
+
+        for flip,n_flip in zip(unit_n_swps,flip_vec):
+            if n_flip > 0:
+                flp_to,flp_from,sl_id = flip
+                n = n_flip
+            elif n_flip < 0:
+                flp_from,flp_to,sl_id = flip
+                n = -n_flip
+            else:
+                continue
+
+            operation['from'][sl_id][flp_from] += n
+            operation['to'][sl_id][flp_to] += n
+
+        #Simplify ionic equations
+        operation_clean = {'from':{},'to':{}}
+        for sl_id in range(n_sls):
+            for sp_id in nbits[sl_id]:
+                del_n = operation['from'][sl_id][sp_id]-operation['to'][sl_id][sp_id]
+                if del_n > 0:
+                    if sl_id not in operation_clean['from']:
+                        operation_clean['from'][sl_id]={}
+                    operation_clean['from'][sl_id][sp_id]=del_n
+                elif del_n < 0:
+                    if sl_id not in operation_clean['to']:
+                        operation_clean['to'][sl_id]={}
+                    operation_clean['to'][sl_id][sp_id]= -del_n
+                else:
+                    continue
 
         operations.append(operation_clean)
 
@@ -314,7 +308,8 @@ class CompSpace(MSONable):
         Dictionary representation of minimal charge conserving flips.
         """
         _operations = flipvec_to_operations(self.unit_n_swps,\
-                                           self.constr_spc_basis)
+                                            self.nbits,\
+                                            self.constr_spc_basis)
         return _operations
 
     @property
@@ -325,7 +320,7 @@ class CompSpace(MSONable):
         return visualize_operations(self.min_flips,self.bits)
 
     @property
-    def polytopes(self):
+    def polytope(self):
         """
         Express the configurational space (supercellsize=1) as a polytope.Polytope object.
         Shall be expressed in type 2 basis
@@ -341,7 +336,7 @@ class CompSpace(MSONable):
             A_n = np.vstack([a for a,bi in facets_unconstred])
             b_n = np.array([bi for a,bi in facets_unconstred])
             # x_i >=0 for all i
-            A = np.vstack(A_n,-1*np.identity(self.unconstr_dim))
+            A = np.vstack((A_n,-1*np.identity(self.unconstr_dim)))
             b = np.concatenate((b_n,np.zeros(self.unconstr_dim)))
  
             if not self.is_charge_constred:
@@ -421,15 +416,15 @@ class CompSpace(MSONable):
         """
         if self._constr_spc_vertices is None:
             if not self.is_charge_constred:
-                A,b,_,_=self._polytope
+                A,b,_,_=self.polytope
                 poly = pc.Polytope(A,b)
                 self._constr_spc_vertices = pc.extreme(poly)
             else:
-                A,b,R,t=self._polytope
+                A,b,R,t=self.polytope
                 poly_sub = pc.Polytope(A,b)
                 vert_sub = pc.extreme(poly_sub)
                 n = vert_sub.shape[0]
-                vert = np.hstack(vert_sub,np.zeros(n))
+                vert = np.hstack((vert_sub,np.zeros((n,1))))
                 #Transform back into original space
                 self._constr_spc_vertices = vert@R + t
 
