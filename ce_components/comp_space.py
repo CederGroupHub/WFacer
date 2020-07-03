@@ -396,7 +396,7 @@ class CompSpace(MSONable):
                     return False
 
         else:
-            x_prime = np.linalg.inv((self.R).T)@(x_prime-self.t)
+            x_prime = np.linalg.inv((self.R).T)@(x-self.t)
             if abs(x_prime[-1]) > slack_tol:
                 return False
             b = self.A@x_prime[:-1]
@@ -460,34 +460,60 @@ class CompSpace(MSONable):
         Get the minimum compositional grid: multiply the primitive cell compositional space
         by self.min_sc_size, and find all the integer grids in the new, magnified space.
 
-        The way we enumerate compositions in CEAuto will be, we simply choose a supercell
-        size that is a multiple of self.min_sc_size, and magnify min_grid by 
-        (sc//self.min_sc_size)
-
         Type: a list of lists
         """
         if self._min_grid is None:
-            limiters_ub = np.max(self.min_int_vertices,axis=0)
-            limiters_lb = np.min(self.min_int_vertices,axis=0)
-            limiters = list(zip(limiters_lb,limiters_ub))
-            right_side = -1*self.bkgrnd_chg*self.min_sc_size
-        
-            grid = get_integer_grid(self.chg_of_swps,right_side=right_side,\
-                                limiters = limiters)
-
-            self._min_grid = []
-            for p in grid:
-                if self.is_in_subspace(p,sc_size=self.min_sc_size):
-                    self._min_grid.append(p)
+            self._min_grid = self.enum_int_comps(magnif=1)
 
         return self._min_grid
 
-    def enumerate_comps(self,magnif=1):
+    def enum_int_comps(self,magnif=1):
         """
-        Enumerate sampled compositions by magnifying minimal grid by a magnification.
-        Supercell size = self.min_sc_size*magnification.
+        Enumerate all possible compositions in charge-neutral space.
+        Magnif: 
+            magnify the unitary compositional space by min_sc_size*magnif,
+            enumerate all possible integer compositions within the magified 
+            space.
+
+            For example, if you have a sc_size = 40, min_sc_size = 1, dim=1, 
+            and you want to flip 4 sites in each enumeration step so that you
+            get 11 enumerated compositions, you can have magnif = 40//4 = 10.      
+
+            When self.dim and supercell size is large, do not use a very high
+            magnif, because computational cost for composition enum might be
+            too high.
         """
-        return [[c*magnif for c in cp] for cp in self.min_grid]
+        int_vertices = self.min_int_vertices*magnif
+        limiters_ub = np.max(int_vertices,axis=0)
+        limiters_lb = np.min(int_vertices,axis=0)
+        limiters = list(zip(limiters_lb,limiters_ub))
+        right_side = -1*self.bkgrnd_chg*self.min_sc_size*magnif
+        grid = get_integer_grid(self.chg_of_swps,right_side=right_side,\
+                                limiters = limiters)
+
+        enum_grid = []
+        for p in grid:
+            if self.is_in_subspace(p,sc_size=self.min_sc_size*magnif):
+                enum_grid.append(p)
+
+        return enum_grid
+
+    def enum_comps(self,magnif=1):
+        """
+        Enumerate integer compositions under a certain 'magnif', and turn it into
+        float form by dividing with sc_size.
+        """
+        int_comps = self.enum_int_comps(magnif=magnif)
+        sc_size = self.min_sc_size * magnif
+        N = len(int_comps)
+        d= len(int_comps[0])
+        comps = []
+        for i in range(N):
+            comps.append([])
+            for j in range(d):
+                comps[i].append(float(int_comps[i][j])/sc_size)
+
+        return comps
 
     def unconstr_to_constr_coords(self,x,sc_size=1,to_int=False):
         """
@@ -571,7 +597,7 @@ class CompSpace(MSONable):
         # constr_spc_basis is a list of np.arrays
         constr_spc_basis = [ev.tolist() for ev in self.constr_spc_basis]
         # constr_spc_vertices is a np.array
-        constr_spc_vertices = self.conste_spc_vertices.tolist()
+        constr_spc_vertices = self.constr_spc_vertices.tolist()
         # polytope is a tuple of np.arrays        
         poly = [item.tolist() for item in self.polytope]
         #min_int_vertices is a np.array

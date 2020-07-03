@@ -96,6 +96,8 @@ def integerize_vector(v, dim_limiter=100,dtol=1E-5):
 def integerize_multiple(vs, dim_limiter=100,dtol=1E-5):
     """
     Integerize multiple vectors as a flattened vector.
+    Return:
+        np.array, int
     """
     vs = np.array(vs)
     shp = vs.shape
