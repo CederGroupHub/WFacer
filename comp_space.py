@@ -2,6 +2,7 @@ __author__ = "Fengyu Xie"
 
 import numpy as np
 import polytope as pc
+from collections import OrderedDict
 
 from itertools import combinations,product
 
@@ -10,15 +11,8 @@ from copy import deepcopy
 from monty.json import MSONable, MontyDecoder
 import json
 
-import os,sys
-this_file_path = os.path.abspath(__file__)
-this_file_dir = os.path.dirname(this_file_path)
-parent_dir = os.path.dirname(this_file_dir)
-sys.path.append(parent_dir)
-sys.path.append(this_file_dir)
-
-from utils.enum_utils import *
-from utils.comp_utils import *
+from .utils.enum_utils import *
+from .utils.comp_utils import *
 
 """
 This file contains functions related to implementing and navigating the 
@@ -88,7 +82,7 @@ def get_unit_swps(bits):
         cur_swp_id += (len(sl_sps)-1)
         #(sp_before,sp_after,sublat_id)
 
-    chg_of_swps = [p[0].oxidation_state-p[1].oxidation_state for p in unit_swps]
+    chg_of_swps = [p[0].oxi_state-p[1].oxi_state for p in unit_swps]
 
     return unit_n_swps,chg_of_swps,swp_ids_in_sublat
 
@@ -227,9 +221,9 @@ class CompSpace(MSONable):
     def __init__(self,bits,sl_sizes=None):
         """
         Inputs:
-            bits: 
+            bits(List of Specie/DummySpecie): 
                 bit list, same as appeared in get_n_bits. 
-                Sorting bits before using is highly recommended.
+                Sorted before use.
             sl_sizes: 
                 Sublattice sizes in a PRIMITIVE cell. A list of integers. 
                 len(bits)=# of sublats=len(sl_sizes).
@@ -256,6 +250,7 @@ class CompSpace(MSONable):
         self._min_sc_size = None
         self._min_int_vertices = None
         self._min_grid = None
+        self._int_comps = {}
         #self._constr_spc_origin = self._constr_spc_vertices[0]
     
     @property
@@ -472,10 +467,17 @@ class CompSpace(MSONable):
 
         return self._min_grid
 
-    def enum_int_comps(self,magnif=1):
+    @property
+    def int_comps(self,magnif=1):
+        if magnif not in self._int_comps:
+            self._int_comps[magnif] = self._enum_int_comps(magnif)
+        return self._int_comps[magnif]
+
+    def _enum_int_comps(self,magnif=1):
         """
         Enumerate all possible compositions in charge-neutral space.
-        Magnif: 
+        Input:
+        magnif(int): 
             magnify the unitary compositional space by min_sc_size*magnif,
             enumerate all possible integer compositions within the magified 
             space.
@@ -503,12 +505,13 @@ class CompSpace(MSONable):
 
         return enum_grid
 
-    def enum_comps(self,magnif=1):
+    @property
+    def frac_comps(self,magnif=1):
         """
         Enumerate integer compositions under a certain 'magnif', and turn it into
-        float form by dividing with sc_size.
+        float form by normalizeing with sc_size.
         """
-        int_comps = self.enum_int_comps(magnif=magnif)
+        int_comps = self.int_comps[magnif]
         sc_size = self.min_sc_size * magnif
         N = len(int_comps)
         d= len(int_comps[0])
@@ -597,6 +600,33 @@ class CompSpace(MSONable):
 
         return compstat
 
+    def unconstr_coords_to_sitespaces(self,x,sc_size=1):
+        """
+        For convenience of StructureEnumerator.
+        Returns:
+            site_spaces (OrderedDict):
+                a list of site_spaces for each sublattice. Same as in
+                smol.cofe.config.domain
+        """
+        v_id = 0
+        sitespaces = [OrderedDict([(sp,0) for sp in sorted(sl_species)])
+                      for sl_species in self.bits]
+
+        for sl_id,sl_sps in enumerate(self.bits):
+            sl_sum = 0
+
+            for b_id,sp in enumerate(sorted(sl_sps)[:-1]):
+                sitespaces[sl_id][sp] = x[v_id]/(self.sl_sizes[sl_id]*sc_size)
+                sl_sum += x[v_id]/(self.sl_sizes[sl_id]*sc_size)
+                v_id +=1
+            last_sp_in_sl = sorted(sl_sps)[-1]
+
+            sitespaces[sl_id][last_sp_in_sl] = 1 - sl_sum
+            if sl_sum > 1:
+                raise OUTOFSUBSPACEERROR
+
+        return sitespaces
+
     def as_dict(self):
         bits_d = [[sp.as_dict() for sp in sl_sps] for sl_sps in self.bits]
         # constr_spc_basis is a list of np.arrays
@@ -618,6 +648,7 @@ class CompSpace(MSONable):
                 'min_sc_size': self.min_sc_size,
                 'min_int_vertices': min_int_vertices,
                 'min_grid': self.min_grid,
+                'int_comps': self._int_comps,
                 '@module': self.__class__.__module__,
                 '@class': self.__class__.__name__
                }
@@ -651,5 +682,8 @@ class CompSpace(MSONable):
 
         if 'min_grid' in d:
             obj._min_grid = d['min_grid']
+ 
+        if 'int_comps' in d:
+            obj._int_comps = d['int_comps']
 
-        return obj 
+        return obj

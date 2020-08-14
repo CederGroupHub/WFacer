@@ -63,7 +63,7 @@ def get_sublat_id(st_id_in_sc,sublat_list):
 def occu_to_compstat(occu,nbits,sublat_merge_rule=None,\
                      sc_making_rule='pmg'):
     """
-    Turns a digital occupation array into species statistic list, which
+    Turns an encoded digital occupation array into species statistic list, which
     has the same shape as nbits.
     """
     if sublat_merge_rule is not None:
