@@ -1,3 +1,5 @@
+__author__ = "Fengyu Xie"
+
 import numpy as np
 import polytope as pc
 
@@ -5,7 +7,8 @@ from itertools import combinations,product
 
 from copy import deepcopy
 
-from monty.json import MSONable
+from monty.json import MSONable, MontyDecoder
+import json
 
 import os,sys
 this_file_path = os.path.abspath(__file__)
@@ -15,7 +18,6 @@ sys.path.append(parent_dir)
 sys.path.append(this_file_dir)
 
 from utils.enum_utils import *
-from specie import *
 from utils.comp_utils import *
 
 """
@@ -42,6 +44,9 @@ OUTOFSUBLATERROR = ValueError("Operation error, flipping between different subla
 CHGBALANCEERROR = ValueError("Charge balance cannot be achieved with these species.")
 OUTOFSUBSPACEERROR = ValueError("Given coordinate falls outside the subspace.")
 
+def decode_from_dict(d):
+    return MontyDecoder.decode(json.dumps(d))
+
 
 ####
 # Finding minimun charge-conserved, number-conserved flips to establish constrained
@@ -56,9 +61,9 @@ def get_unit_swps(bits):
     flips.
     Inputs:
         bits: 
-            a list of CESpecies on each sublattice. For example:
-            [[CESpecie.from_string('Ca2+'),CESpecie.from_string('Mg2+'))],
-             [CESpecie.from_string('O2-')]]
+            a list of Species or DummySpecies on each sublattice. For example:
+            [[Specie.from_string('Ca2+'),Specie.from_string('Mg2+'))],
+             [Specie.from_string('O2-')]]
     Outputs:
         unit_n_swps: 
             a flatten list of all possible, single site flips represented in n_bits, 
@@ -178,8 +183,8 @@ def visualize_operations(operations,bits):
 
 class CompSpace(MSONable):
     """
-        This class generates a CN-compositional space from a list of CESpecies and sublattice
-        sizes.
+        This class generates a CN-compositional space from a list of Species or DummySpecies
+        and sublattice sizes.
 
         A composition in CEAuto can be expressed in two forms:
         1, A Coordinate in unconstrained space, with 'single site flips' as basis vectors, and
