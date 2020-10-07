@@ -1,10 +1,42 @@
+"""
+Combinatoric and compositional utilities used in multiple modules
+"""
+
+__author__ = 'Fengyu Xie'
+
 import numpy as np
-from itertools import combinations
+from itertools import combinations,product
 from functools import reduce
 
-####
-# Number theory tools
-####
+from sympy.ntheory import factorint
+
+def Get_diag_matrices(n,d=3):
+    """
+    Get d dimensional positive integer diagonal matrices with
+    det(M)=n
+    """
+    factors = factorint(n)
+    normv = [1 for i in range(d)]
+
+    prime_partitions = []
+    for factor,num in factors.items():
+        limiters = [(0,num) for i in range(d)]
+        partitions = get_integer_grid(normv,right_side=num,limiters=limiters)
+        prime_partitions.append(partitions)
+
+    factor_partitions = []
+    for p_combo in product(*prime_partitions):
+        factor_partition = [1 for i in range(d)]
+        for f_id,factor in enumerate(factors):
+            for p_id, power in enumerate(p_combo[f_id]):
+                factor_partition[p_id]*=(factor**p_combo[f_id][p_id])
+
+        if sorted(factor_partition) not in factor_partitions:
+            factor_partitions.append(sorted(factor_partition))
+
+    mats = [np.diag(f_part).tolist() for f_part in sorted(factor_partitions)]
+    return mats
+
 def GCD(a,b):
     """ The Euclidean Algorithm, giving positive GCD's """
     if round(a)!=a or round(b)!=b:
@@ -138,8 +170,10 @@ def get_integer_grid(subspc_normv,right_side=0,limiters=None):
         right_side: np.dot(subspc_normv,x) = right_side
         limiters: enumeration bounds of each dimension, list of tuples
                   [(lower_bound,upper_bound)]. Bounds will be taken.
+                  All sections are closed sections.
     Outputs:
-        A list of all integer grid points within limiter range.
+        A list of all integer grid points within limiter range, each in a list
+        form.
     Note:
         This algorithm is far from optimal, so do not abuse it with overly high
         dimensionality!
@@ -268,7 +302,9 @@ def get_integer_basis(normal_vec,sl_flips_list=None):
             basis_pool.append(basis)
 
         basis_pool = sorted(basis_pool,\
-                            key=lambda v:formula_norm(v,sl_flips_list=sl_flips_list))
+                            key=lambda v:\
+                            (formula_norm(v,sl_flips_list=sl_flips_list),\
+                             np.max(np.abs(v))))
         basis_pool = np.array(basis_pool)
 
         chosen_basis = []
@@ -287,8 +323,167 @@ def formula_norm(v,sl_flips_list=None):
     v = np.array(v)
     if sl_flips_list is None:
         sl_flips_list = [[i] for i in range(d)]  
-    return np.sum([np.max(np.abs(v[sl])) for sl in sl_flips_list])
+    sl_form_sizes = []
+    for sl in sl_flips_list:
+        flip_nums = v[sl].tolist()+[-1*sum(v[sl])]
+        sl_form_size = 0
+        for num in flip_nums:
+            if num>0:
+                sl_form_size += num
+        sl_form_sizes.append(sl_form_size)
+    return sum(sl_form_sizes)
 
+####
+# Partition tools
+####
+
+def choose_section_from_partition(probs):
+    """
+    This function choose one section from a partition based on each section's
+    normalized probability.
+    Input:
+        probs: 
+            array-like, probabilities of each sections. If not normalized, will
+            be normalized.
+    Output:
+        id: 
+            The id of randomly chosen section.   
+    """
+    N_secs = len(probs)
+    if N_secs<1:
+        raise ValueError("Segment can't be selected!")
+
+    norm_probs = np.array(probs)/np.sum(probs)
+    upper_bnds = np.array([sum(norm_probs[:i+1]) for i in range(N_secs)])
+    rand_seed = np.random.rand()
+
+    for sec_id,sec_upper in enumerate(upper_bnds):
+        if sec_id==0:
+            sec_lower = 0
+        else:
+            sec_lower = upper_bnds[sec_id-1]
+        if rand_seed>=sec_lower and rand_seed<sec_upper:
+            return sec_id
+    
+    raise ValueError("Segment can't be selected.")
+
+def enumerate_partitions(n_part,enum_fold,constrs=None,quota=1.0):
+    """
+    Recursivly enumerates possible partitions of a line section from 0.0 to 
+    quota or from lower-bound to upper-bound if constrs is not None.
+    Inputs:
+        n_part(Int): 
+            Number of partitions to be enumerated
+        enum_fold(Int):
+            Step of enumeration = quota/enum_fold.
+        constrs(List of float tuples):
+            lower and upper bound coustraints of each partition cut point.
+            If None, just choose (0.0,quota) for each tuple.
+        quota(float):
+            Length of the line section to cut on.
+    """
+    if constrs is None:
+        constrs = [(0.0,quota) for i in range(n_part)]
+
+    lb,ub = constrs[0]
+    ub = min(quota,ub)
+    lb_int = int(np.ceil(lb*enum_fold))
+    ub_int = int(np.floor(ub*enum_fold))
+
+    if n_part < 1:
+        raise ValueError("Can't partition less than 1 sections!")
+    if n_part == 1:
+        if quota == ub:
+            return [[float(ub_int)/enum_fold]]
+        else:
+            return []
+
+    this_level = [float(i)/enum_fold for i in range(lb_int,ub_int+1)]
+    accumulated_enums = []
+    for enum_x in this_level:
+        next_levels = enumerate_partitions(n_part-1,enum_fold,\
+                            constrs[1:],quota=quota-enum_x)
+        if len(next_levels)!=0 and len(next_levels[0])==n_part-1:
+            accumulated_enums.extend([[enum_x]+xs for xs in next_levels])
+
+    return accumulated_enums
+
+# Utilities for parsing occupation into composition
+def occu_to_species_stat(sublattices,occupancy,normalize=False):
+    """
+    Get a statistics table of each specie on sublattices from an encoded 
+    occupancy array.
+    Inputs:
+        sublattices(A list of Sublattice):
+            Sublattice objects of the current system, storing attibutes of
+            site indices and site spaces of each sublattice.
+        occupancy(np.ndarray):
+            An array representing encoded occupancy
+        normalize(Boolean):
+            Whether or not to normalize species_stat into fractional 
+            compositions. By default, we will not normalize.
+    Returns:
+        species_stat(2D list of ints/floats)
+            Is a statistics of number of species on each sublattice.
+            1st dimension: sublattices
+            2nd dimension: number of each specie on that specific sublattice.
+            Dimensions same as moca.sampler.mcushers.CorrelatedUsher.bits          
+    """
+    bits = [sl.species for sl in sublattices]
+    species_stat = [[0 for i in range(len(sl_bits))] for sl_bits in bits]
+    for s_id,sp_code in enumerate(occupancy):
+        sl_id = None
+        for i,sl in enumerate(sublattices):
+            if s_id in sl.sites:
+                sl_id = i
+                break
+        if sl_id is None:
+            raise ValueError("Occupancy site {} can not be matched to a sublattice!".format(s_id))   
+        species_stat[sl_id][sp_code]+=1
+     
+    if normalize:
+        species_stat_norm = \
+            [[float(species_stat[sl_id][sp_id])/sum(species_stat[sl_id])
+              for sp_id in range(len(bits[sl_id]))]
+              for sl_id in range(len(bits))]
+        species_stat = species_stat_norm
+
+    return species_stat
+
+def occu_to_species_list(sublattices,occupancy):
+    """
+    Get table of the indices of sites that are occupied by each specie on sublattices,
+    from an encoded occupancy array.
+    Inputs:
+        sublattices(A list of Sublattice):
+            Sublattice objects of the current system, storing attibutes of
+            site indices and site spaces of each sublattice.
+        occupancy(np.ndarray):
+            An array representing encoded occupancy
+    Returns:
+        species_list(3d list of ints):
+            Is a statistics of indices of sites occupied by each specie.
+            1st dimension: sublattices
+            2nd dimension: species on a sublattice
+            3rd dimension: site ids occupied by that specie
+    """
+    bits = [sl.species for sl in sublattices]
+    species_list = [[[] for i in range(len(sl_bits))] for sl_bits in bits]
+
+    for site_id,sp_id in enumerate(occupancy):
+        sl_id = None
+        for i,sl in enumerate(sublattices):
+            if s_id in sl.sites:
+                sl_id = i
+                break
+        if sl_id is None:
+            raise ValueError("Occupancy site {} can not be matched to a sublattice!".format(s_id))   
+
+        species_list[sl_id][sp_id].append(site_id)
+
+    return species_list
+
+# Utility for composition linkage
 def get_n_links(comp_stat,operations):
     """
     Get the total number of configurations reachable by a single flip in operations
@@ -355,67 +550,5 @@ def get_n_links(comp_stat,operations):
         n_links[2*op_id+1] = n_reverse
 
     return n_links
-
-####
-# Partition tools
-####
-
-def choose_section_from_partition(probs):
-    """
-    This function choose one section from a partition based on each section's
-    normalized probability.
-    Input:
-        probs: 
-            array-like, probabilities of each sections. If not normalized, will
-            be normalized.
-    Output:
-        id: 
-            The id of randomly chosen section.   
-    """
-    N_secs = len(probs)
-    if N_secs<1:
-        raise ValueError("Segment can't be selected!")
-
-    norm_probs = np.array(probs)/np.sum(probs)
-    upper_bnds = np.array([sum(norm_probs[:i+1]) for i in range(N_secs)])
-    rand_seed = np.random.rand()
-
-    for sec_id,sec_upper in enumerate(upper_bnds):
-        if sec_id==0:
-            sec_lower = 0
-        else:
-            sec_lower = upper_bnds[sec_id-1]
-        if rand_seed>=sec_lower and rand_seed<sec_upper:
-            return sec_id
-    
-    raise ValueError("Segment can't be selected.")
-
-def enumerate_partitions(n_part,enum_fold,constrs,quota=1.0):
-    """
-    Recursivly enumerates possible partitions of an axis from 0.0 to 1.0
-    or from lower-bound to upper-bound if constrs is not None.
-    """
-    lb,ub = constrs[0]
-    ub = min(quota,ub)
-    lb_int = int(np.ceil(lb*enum_fold))
-    ub_int = int(np.floor(ub*enum_fold))
-
-    if n_part < 1:
-        raise ValueError("Can't partition less than 1 sections!")
-    if n_part == 1:
-        if quota == ub:
-            return [[float(ub_int)/enum_fold]]
-        else:
-            return []
-
-    this_level = [float(i)/enum_fold for i in range(lb_int,ub_int+1)]
-    accumulated_enums = []
-    for enum_x in this_level:
-        next_levels = enumerate_partitions(n_part-1,enum_fold,\
-                            constrs[1:],quota=quota-enum_x)
-        if len(next_levels)!=0 and len(next_levels[0])==n_part-1:
-            accumulated_enums.extend([[enum_x]+xs for xs in next_levels])
-
-    return accumulated_enums
 
 
