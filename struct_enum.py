@@ -3,9 +3,12 @@ __author__="Fengyu Xie"
 """
 This module implements a StructureEnumerator class for CE sampling.
 """
+import warnings
 import numpy as np
 
 from monty.json import MSONable
+
+from pymatgen import Structure,Lattice
 
 from smol.cofe.extern.ewald import EwaldTerm
 from smol.cofe.configspace.clusterspace import ClusterSubspace
@@ -15,6 +18,81 @@ from smol.moca.processor import *
 
 from .comp_space import CompSpace
 from .utils import *
+
+def _is_proper_sc(sc_matrix,lat,max_cond=8,min_angle=30):
+    """
+    Assess the skewness of a given supercell matrix. If the skewness is 
+    too high, then this matrix will be dropped.
+    Inputs:
+        sc_matrix(Arraylike):
+            Supercell matrix
+        lat(pymatgen.Lattice):
+            Lattice vectors of a primitive cell
+        max_cond(float):
+            Maximum conditional number allowed of the supercell lattice
+            matrix. By default set to 8, to prevent overstretching in one
+            direction
+        min_angle(float):
+            Minmum allowed angle of the supercell lattice. By default set
+            to 30, to prevent over-skewing.
+    Output:
+       Boolean
+    """
+    newmat = np.matmul(lat.matrix, sc_matrix)
+    newlat = Lattice(newmat)
+    angles = [newlat.alpha,newlat.beta,newlat.gamma,\
+              180-newlat.alpha,180-newlat.beta,180-newlat.gamma]
+
+    return abs(np.linalg.cond(newmat))<=max_cond and \
+           min(angles)>min_angle
+
+def _enumerate_sc_matrices(max_det, lat,\
+                           transmat=[[1,0,0],[0,1,0],[0,0,1]],\
+                           max_sc_cond = 8,\
+                           min_sc_angle = 30,\
+                           n_select=20):
+    """
+    Enumerate proper supercell matrices with maximum size up to a number.
+    4 steps are used in the size enumeration.
+    Inputs:
+        max_det(int):
+            Maximum allowed determinant size of enumerated supercell
+            matrices
+        lat(pymatgen.Lattice):
+            Lattice vectors of a primitive cell
+        transmat(2D arraylike):
+            Symmetrizaiton matrix to apply on the primitive cell.
+        max_cond(float):
+            Maximum conditional number allowed of the supercell lattice
+            matrix. By default set to 8, to prevent overstretching in one
+            direction
+        min_angle(float):
+            Minmum allowed angle of the supercell lattice. By default set
+            to 30, to prevent over-skewing.
+        n_select(int):
+            Number of supercell matrices to select.
+    Outputs:
+        List of 2D lists.
+    """
+    scs=[]
+
+    if max_det>=4:
+        for det in range(max_det//4, max_det//4*4+1, max_det//4):
+            scs.extend(Get_diag_matrices(det))
+    else:
+        for det in range(1,max_det+1):
+            scs.extend(Get_diag_matrices(det))       
+
+    scs = [np.matmul(sc,transmat,dtype=np.int64).tolist() for sc in scs \
+           if _is_proper_sc(np.matmul(sc,transmat), lat,\
+                            max_sc_cond = max_sc_cond,\
+                            min_sc_angle = min_sc_angle)]
+
+    ns = min(n_select,len(scs))
+
+    selected_scs = random.sample(scs,ns)
+
+    return selected_scs
 
 class StructureEnumerator(MSONable):
     """
@@ -150,23 +228,43 @@ class StructureEnumerator(MSONable):
         self.enum_method = enum_method
         self.select_method = select_method
 
-    def _enumerate_sc_matrices(self,n_select=20):
-        """
-        Enumerate 20 proper supercell matrices.
-        """
-        scs=[]
-        trans_size = int(round(abs(np.linalg.det(self.transmat))))
-        max_det = max_natoms // (len(self.prim) * trans_size)
-    
-        for det in range(max_det//4, max_det//4*4+1, max_det//4):
-            scs.extend(Get_diagonal_matrices(det))
+        self._sc_matrices = None
 
-        #TODO
-        scs = [_int_matmul(sc,self.transmat) for sc in scs \
-               if self._is_proper_sc(_int_matmul(sc,self.transmat))]
-    
-        ns = min(n_select,len(scs))
-    
-        selected_scs = random.sample(scs,ns)
 
-        return selected_scs
+    @property
+    def sc_matrices(self):
+        """
+        Supercell matrices used for structural enumeration. If none yet, will be 
+        enumerated.
+        Return:
+            A list of 2D lists.
+        """
+        if self._sc_matrices is None:
+            trans_size = int(round(abs(np.linalg.det(self.transmat))))
+            max_det = self.max_natoms // (len(self.prim) * trans_size)
+            self._sc_matrices =  _enumerate_sc_matrices(max_det, self.prim.lattice,\
+                                                        transmat=self.transmat,\
+                                                        max_sc_cond = self.max_sc_cond,\
+                                                        min_sc_angle = self.min_sc_cond)
+        return self._sc_matrices
+
+    def set_sc_matrices(self,matrices):
+        """
+        Interface method to preset supercell matrices before enumeration. If no preset
+        is given, supercell matrices will be automatically enumerated.
+        Input:
+            matrices: A list of Arraylike. Should be np.ndarrays or 2D lists.
+        """
+        self._sc_matrices = []
+        for mat in matrices:
+            if type(mat) == list and type(mat[0])== list:
+                self._sc_matrices.append(mat)
+            elif type(mat) == np.ndarray:
+                self._sc_matrices.append(mat)
+            else:
+                warnings.warn('Given matrix {} is not in a valid input format.'.format(mat))
+        if len(self._sc_matrices)==0:
+            self._sc_matrices = None
+            raise ValueError('No supercell matrices added!')
+        else:
+            print("Reset supercell matrices to:\n",matrices)
