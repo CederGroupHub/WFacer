@@ -8,11 +8,11 @@ import numpy as np
 
 from monty.json import MSONable
 
-from pymatgen import Structure,Lattice
+from pymatgen import Structure,Lattice,Element
 
 from smol.cofe.extern.ewald import EwaldTerm
 from smol.cofe.configspace.clusterspace import ClusterSubspace
-from smol.cofe.configspace.domain import get_allowed_species,get_specie
+from smol.cofe.configspace.domain import get_allowed_species,get_specie, Vacancy
 from smol.cofe.expansion import ClusterExpansion
 from smol.moca.processor import *
 
@@ -135,7 +135,7 @@ class StructureEnumerator(MSONable):
         max_sc_cond and min_sc_angle controls the skewness of a supercell, so you
         can avoid potential structural instability during DFT structural relaxation.
 
-        comp_restrictions(Dict or List or Dict or None):
+        comp_restrictions(Dict or List of Dict or None):
             Restriction on certain species.
             If this is a dictionary, this dictionary provide constraint of the 
             atomic fraction of specified species in the whole structure;
@@ -154,17 +154,6 @@ class StructureEnumerator(MSONable):
             
             By default, is None (no constraint is applied.)
 
-        enum_method(string):
-            Occupation enumeration method. Currently supporting:
-            'full-mc':
-                Doing a monte-carlo sampling with full ce. If we don't have a 
-                previous ce, then do a mc with only the ewald term. (Default)
-            'ew-mc': 
-                Doing a monte-carlo sampling with only ewald term. States with 
-                high ewald energy will be dropped.
-            'random': 
-                Full random occupation (not recommended)
-
         select_method(string):
             Method used to select most uncorrelated structures from the monte-carlo
             sample pool. Currently supporting:
@@ -181,7 +170,6 @@ class StructureEnumerator(MSONable):
                  transmat=[[1,0,0],[0,1,0],[0,0,1]],max_natoms=200,\
                  max_sc_cond = 8, min_sc_angle = 30,\
                  comp_restrictions=None,\
-                 enum_method='full-mc',\
                  select_method='CUR'):
 
         self.prim = prim
@@ -203,17 +191,25 @@ class StructureEnumerator(MSONable):
                     self.bits.append(s_bits)
             self.sl_sizes = [len(sl) for sl in self.sublat_list]
 
-        #if enum_method = *-mc, processor will be used to sample structures.
-        self.ew_term = EwaldTerm()
+        #Check if this cluster expansion should be charged
+        self.is_charged_ce = False
+        for sl_bits in self.bits:
+            for bit in sl_bits:
+                if type(bit)!= Element and bit_oxi_state!=0:
+                    self.is_charged_ce = True
+                    break
 
         if previous_ce is not None:
             self.ce = previous_ce
         else:
-            #An empty cluster expansion with ewald term only
+            #An empty cluster expansion with the points and ewald term only
             c_spc = ClusterSubspace.from_radii(self.prim,{2:0.01})
-            c_spc.add_external_term(self.ew_term)
-            coef = np.zeros(c_spc.n_bit_orderings+1)
-            coef[-1] = 1
+            if self.is_charged_ce:
+                c_spc.add_external_term(EwaldTerm())
+                coef = np.zeros(c_spc.n_bit_orderings+1)
+                coef[-1] = 1.0
+            else:
+                coef = np.zeros(c_spc.n_bit_orderings)
 
             self.ce = ClusterExpansion(c_spc,coef,[])
             
@@ -223,13 +219,15 @@ class StructureEnumerator(MSONable):
         self.max_sc_cond = max_sc_cond
         self.min_sc_angle = min_sc_angle
 
+        self.comp_space = CompSpace(self.bits,sl_sizes = self.sl_sizes)
         self.comp_restrictions = comp_restrictions
 
-        self.enum_method = enum_method
         self.select_method = select_method
 
         self._sc_matrices = None
+        self._sc_comps = None
 
+        self._entry_pool = []
 
     @property
     def sc_matrices(self):
@@ -268,3 +266,33 @@ class StructureEnumerator(MSONable):
             raise ValueError('No supercell matrices added!')
         else:
             print("Reset supercell matrices to:\n",matrices)
+
+    @property
+    def sc_comps(self):
+        """
+        Enumerate proper compositions under each supercell matrix.
+        Return:
+            List of tuples, each tuple[0] is supercell matrix, tuple[1] is a list of composition
+            per sublattice. 
+            These will be used as keys to group structures, therefore to avoid unneccessary dedups 
+            between groups.
+        """
+        if self._sc_comps is None:
+            self._sc_comps = []
+            for mat in self.sc_matrices:
+                scs = int(round(abs(np.linalg.det(mat))))
+                self._sc_comps.extend([(mat,comp) for comp in 
+                                        self.comp_space.frac_grids(sc_size=scs,form='composition')])
+        return self._sc_comps
+
+    def _enumerate_under_sccomp(self,sc_mat,comp):
+        """
+        Built in method to generate structures under a supercell matrix and a fixed composition.
+        Inputs:
+            sc_mat(3*3 ArrayLike):
+                Supercell matrix
+            comp(Union([List[pymatgen.Composition],List[SiteSpace], List[dict] ])):
+                Compositions on each sublattice
+        Return:
+            List of deduped pymatgen.Structure under given sc_mat and comp
+        """

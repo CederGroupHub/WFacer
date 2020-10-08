@@ -612,7 +612,8 @@ class CompSpace(MSONable):
                 'constr': use constrained (type 2) coordinates.
                 'compstat': use compstat lists.(See self._unconstr_to_compstat doc)
                 'composition': use a pymatgen.composition for each sublattice 
-                               (vacancies not explicitly included)
+                               (vacancies not explicitly included, even if already in
+                                self.bits)
         Note: if you want to stepped enumeration, just divide sc_size by step, and multiply
               the resulted array with step. (You don't even need to multiply back, when
               formula = 'composition', because this automatically gives you fractional 
