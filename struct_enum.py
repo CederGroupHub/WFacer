@@ -162,6 +162,13 @@ class StructureEnumerator(MSONable):
                 Also known as Nystrom selection. (Default)
             'CX':
                 Doing a CX decomposiiton and select structures with highest scores.
+
+        basis(string):
+            Type of basis used in cluster expansion. Needs to be specified if you 
+            initalize enumeration from an existing CE, and its basis is different 
+            from 'indicator'!
+            If you used custom basis, just type 'custom' for this term. But hopefully
+            this will not happen too often.
     """
 
     def __init__(self,prim,sublat_list = None,\
@@ -170,7 +177,8 @@ class StructureEnumerator(MSONable):
                  transmat=[[1,0,0],[0,1,0],[0,0,1]],max_natoms=200,\
                  max_sc_cond = 8, min_sc_angle = 30,\
                  comp_restrictions=None,\
-                 select_method='CUR'):
+                 select_method='CUR',
+                 basis_type = 'indicator'):
 
         self.prim = prim
 
@@ -199,11 +207,14 @@ class StructureEnumerator(MSONable):
                     self.is_charged_ce = True
                     break
 
+        self.basis_type = basis_type
         if previous_ce is not None:
             self.ce = previous_ce
         else:
             #An empty cluster expansion with the points and ewald term only
-            c_spc = ClusterSubspace.from_radii(self.prim,{2:0.01})
+            #Default is indicator basis
+            c_spc = ClusterSubspace.from_radii(self.prim,{2:0.01},\
+                                    basis = self.basis_type)
             if self.is_charged_ce:
                 c_spc.add_external_term(EwaldTerm())
                 coef = np.zeros(c_spc.n_bit_orderings+1)
@@ -296,3 +307,25 @@ class StructureEnumerator(MSONable):
         Return:
             List of deduped pymatgen.Structure under given sc_mat and comp
         """
+        is_indicator = (self.basis_type == 'indicator')
+
+        if self.is_charged_ce:
+            processor = CompositeProcessor(self.ce.cluster_subspace,sc_mat)
+            #Default basis is indicator, used in enuemration
+            processor.add_processor(CEProcessor(self.ce.cluster_subspace,\
+                                                sc_mat,\
+                                                self.ce.coefs[:-1],\
+                                                optimize_indicator = is_indicator))
+            processor.add_processor(EwaldProcessor(self.ce.cluster_subspace,\
+                                                   sc_mat,\
+                                                   self.ce.cluster_subspace.external_terms[-1]))
+        else:
+            processor = CEProcessor(self.ce.cluster_subspace,\
+                                    sc_mat,\
+                                    self.ce.coefs[:-1],\
+                                    optimize_indicator = is_indicator)
+
+        #Make a random initial structure
+        scs = int(round(abs(np.linalg.det(sc_mat))))
+        scs = int(round(abs(np.linalg.det(sc_mat))))
+        
