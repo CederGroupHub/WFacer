@@ -1,4 +1,6 @@
 polytope
 pymatgen
 monty
+sympy
+numpy
 smol
