@@ -51,13 +51,13 @@ def _is_proper_sc(sc_matrix,lat,max_cond=8,min_angle=30):
     return abs(np.linalg.cond(newmat))<=max_cond and \
            min(angles)>min_angle
 
-def _enumerate_sc_matrices(max_det, lat,\
+def _enumerate_matrices(max_det, lat,\
                            transmat=[[1,0,0],[0,1,0],[0,0,1]],\
                            max_sc_cond = 8,\
                            min_sc_angle = 30,\
                            n_select=20):
     """
-    Enumerate proper supercell matrices with maximum size up to a number.
+    Enumerate proper matrices with maximum det up to a number.
     4 steps are used in the size enumeration.
     Inputs:
         max_det(int):
@@ -146,7 +146,184 @@ def _get_ewald_from_occu(occu,sc_sublat_list,bits,prim,sc_mat):
 
     return EwaldSummation(supercell_decode).total_energy
 
+def _CUR_decompose(G, C, R):
+    """ calcualate U s.t. G = CUR """
+    
+    C_inv = np.linalg.pinv(C)
+    R_inv = np.linalg.pinv(R)
+    U = np.dot(np.dot(C_inv, G), R_inv)
+    
+    return U
 
+def _select_rows(femat,n_select=10,old_femat=[],method='CUR',keep=[]):
+
+    """
+    Selecting a certain number of rows that recovers maximum amount of kernel
+    information from a matrix, or given an old feature matrix, select a certain
+    number of rows that maximizes information gain from a new feature matrix.
+
+    Inputs: 
+        femat(2D arraylike):
+            New feature matrix to select from
+        n_select(int):
+            Number of new rows to select
+        old_femat(2D arraylike):
+            Old feature matrix to compare with
+        method(str):
+            Row selection method.
+            'CUR'(default):
+                select by recovery of CUR score
+            'random':
+                select at full random
+        keep(List of ints):
+            indices of rows that will always be selected. By default, no row
+            has that priviledge.
+    Outputs:
+        List of ints. Indices of selected rows in femat.
+
+    """
+    A = np.array(femat)
+    n_pool,d = A.shape
+    domain = np.eye(d)
+    # Using an identity matrix as domain matrix
+    
+    if len(keep) > n_pool:
+        raise ValueError("Rows to keep more than rows you have!")      
+    n_add = max(min(n_select-len(keep),n_pool-len(keep)),0)
+
+    trial_indices = deepcopy(keep)
+    total_indices = [i for i in range(n_pool) if i not in keep]
+
+    if len(old_femat) == 0: #init mode
+
+        G = A@A.T
+
+        for i in range(n_add):
+            err = 1e8
+            return_index = None
+
+            if method == 'CUR':             
+                for i in range(100):  
+                #Try one row each time, optimize for 100 iterations
+                    trial_index = random.choice(total_indices)
+                    trial_indices_current = trial_indices+[trial_index]
+                    
+                    C = G[:, trial_indices_current]
+                    R = G[trial_indices_current,:]
+        
+                    U = _CUR_decompose(G, C, R)
+        
+                    err_trial = np.linalg.norm(G - np.dot(np.dot(C, U),R))
+        
+                    if err_trial < err:
+                        return_index = trial_index
+                        err = err_trial
+
+            elif method = 'random':
+                return_index = random.choice(total_indices)
+ 
+            else:
+                raise NotImplementedError
+
+            trial_indices.append(return_index)
+            total_indices.remove(return_index)
+
+    else: #add mode
+        
+        old_A = np.array(old_femat)        
+        old_cov = old_A.T @ old_A
+        old_inv = np.linalg.pinv(old_cov)
+        # Used Penrose-Moore inverse
+
+        reduction = np.zeros(n_add)
+
+        if method == 'CUR':
+            for i_id, i in enumerate(total_indices):
+                trial_A = np.concatenate((old_A, A[i].reshape(1, d)), axis =0)
+
+                trial_cov = trial_A.T @ trial_A
+                trial_inv = np.linalg.pinv(trial_cov)
+
+                reduction[i_id] = np.sum(np.multiply( (trial_inv-old_inv), domain))
+                
+            add_indices = [total_indices[iid] for iid in np.argsort(reduction)[:n_add]]
+
+        elif method == 'random':
+            add_indices = sorted(random.sample(total_indices,n_add))
+
+        else:
+            raise NotImplementedError
+
+        trial_indices = trial_indices + add_indices
+        total_indices = [i for i in total_indices if i not in add_indices]
+
+    trial_indices = sorted(trial_indices)
+    total_indices = sorted(total_indices)
+               
+    return trial_indices
+    
+def _flatten_2d(2d_lst,remove_nan=True):
+    """
+    Sequentially flatten any 2D list into 1D, and gives a deflatten rule.
+    Inputs:
+        2d_lst(List of list):
+            A 2D list to flatten
+        remove_nan(Boolean):
+            If true, will disregard all None values in 2d_lst when compressing.
+            Default is True
+    Outputs:
+        flat(List):
+            Flatten list
+        deflat_rule(List of int):
+            Deflatten rule. Each integer speciefies the length of each sub-list
+            in the original 2D list. When deflattening, will serially read and
+            unpack to each sublist based on these numbers.
+    """
+    deflat_rule = []
+    flat = []
+    for sl in 2d_lst:
+        if remove_nan:
+            sl_return = [item for item in sl if item is not None]
+        else:
+            sl_return = sl
+        flat.extend(sl_return)
+        deflat_rule.append(len(sl_return))
+
+    return flat,deflat_rule
+
+def _deflat_2d(flat_lst,deflat_rule,remove_nan=True):
+    """
+    Sequentially decompress a 1D list into a 2D list based on rule.
+    Inputs:
+        flat(List):
+            Flatten list
+        deflat_rule(List of int):
+            Deflatten rule. Each integer speciefies the length of each sub-list
+            in the original 2D list. When deflattening, will serially read and
+            unpack to each sublist based on these numbers.
+        remove_nan(Boolean):
+            If true, will first deflat on deflat rule, then remove all 
+            None values in resulting 2d_lst.
+            Default is True.
+
+    Outputs:
+        2d_lst(List of list):
+            Deflatten 2D list
+    """
+    if sum(deflat_rule)!= len(flat_lst):
+        raise ValueError("Deflatten length does not match original length!")
+
+    2d_lst = []
+    it = 0
+    for sl_len in deflat_rule:
+        sl = []
+        for i in range(it,it+sl_len):
+            if flat_lst[i] is None and remove_nan:
+                continue
+            sl.append(flat_lst[i])
+        2d_lst.append(sl)
+        it = it + sl_len
+    return 2d_lst
 
 class StructureEnumerator(MSONable):
     """
@@ -216,21 +393,20 @@ class StructureEnumerator(MSONable):
             we can simply write step = 4, so 4 sites are replaced each time, we 
             get totally 65 compositions.
 
-        select_method(string):
-            Method used to select most uncorrelated structures from the monte-carlo
-            sample pool. Currently supporting:
-            'CUR': 
-                Doing a CUR decompsition and select structures with highest scores.
-                Also known as Nystrom selection. (Default)
-            'CX':
-                Doing a CX decomposiiton and select structures with highest scores.
-
-        basis(string):
+        basis_type(string):
             Type of basis used in cluster expansion. Needs to be specified if you 
             initalize enumeration from an existing CE, and its basis is different 
             from 'indicator'!
             If you used custom basis, just type 'custom' for this term. But hopefully
             this will not happen too often.
+    
+        select_method(str): 
+            Method used in structure selection from enumerated pool.
+            'CUR'(default):
+                Select by highest CUR scores
+            'random':
+                Select randomly
+            Both methods guarantee inclusion of the ground states at initialization.
     """
 
     def __init__(self,prim,sublat_list = None,\
@@ -239,8 +415,8 @@ class StructureEnumerator(MSONable):
                  transmat=[[1,0,0],[0,1,0],[0,0,1]],max_natoms=200,\
                  max_sc_cond = 8, min_sc_angle = 30,\
                  comp_restrictions=None,comp_enumstep=1,\
-                 select_method='CUR',
-                 basis_type = 'indicator'):
+                 basis_type = 'indicator',\
+                 select_method = 'CUR'):
 
         self.prim = prim
 
@@ -301,11 +477,30 @@ class StructureEnumerator(MSONable):
 
         self.select_method = select_method
 
+        #These data will be saved as pre-grouped, multi-index form, not plain pandas
+        #DF, in case pandas.groupby takes too much time to group data by sc matrix and
+        #composition. A self.data property will still be available for easy access to
+        #a pandas-like DF
         self._sc_matrices = None
         self._sc_comps = None
         self._eq_occus = None
 
-        self._entry_pool = []
+        self._enum_strs = None
+        self._enum_occus = None
+        self._enum_corrs = None
+        #id starts from 0
+        self._enum_ids = None
+    
+    @property
+    def n_strs(self):
+        """
+        Number of enumerated structures.
+        """
+        if self._enum_strs is None or self._enum_occus is None or self._enum_corrs is None
+           or self._enum_ids is None:
+            return 0
+        else:
+            return sum([len(key_strs) for key_strs in self._enum_strs])
 
     @property
     def sc_matrices(self):
@@ -318,32 +513,34 @@ class StructureEnumerator(MSONable):
         if self._sc_matrices is None:
             trans_size = int(round(abs(np.linalg.det(self.transmat))))
             max_det = self.max_natoms // (len(self.prim) * trans_size)
-            self._sc_matrices =  _enumerate_sc_matrices(max_det, self.prim.lattice,\
+            self._sc_matrices =  _enumerate_matrices(max_det, self.prim.lattice,\
                                                         transmat=self.transmat,\
                                                         max_sc_cond = self.max_sc_cond,\
                                                         min_sc_angle = self.min_sc_cond)
         return self._sc_matrices
 
-    def set_sc_matrices(self,matrices):
+    def set_sc_matrices(self,matrices=[]):
         """
         Interface method to preset supercell matrices before enumeration. If no preset
         is given, supercell matrices will be automatically enumerated.
         Input:
             matrices: A list of Arraylike. Should be np.ndarrays or 2D lists.
         """
-        self._sc_matrices = []
+        new_sc_matrices = []
         for mat in matrices:
             if type(mat) == list and type(mat[0])== list:
-                self._sc_matrices.append(mat)
+                new_sc_matrices.append(mat)
             elif type(mat) == np.ndarray:
-                self._sc_matrices.append(mat)
+                new_sc_matrices.append(mat.tolist())
             else:
-                warnings.warn('Given matrix {} is not in a valid input format.'.format(mat))
-        if len(self._sc_matrices)==0:
-            self._sc_matrices = None
-            raise ValueError('No supercell matrices added!')
+                warnings.warn('Given matrix {} is not in a valid input format. Dropped.'.format(mat))
+        if len(new_sc_matrices)==0:
+            raise ValueError('No supercell matrices will be reset!')
         else:
-            print("Reset supercell matrices to:\n",matrices)
+            print("Reset supercell matrices to:\n{}\nAll previous compositions will be cleared and re-enumed!"
+                  .format(matrices))
+            self._sc_matrices = new_sc_matrices
+            self._sc_comps = None
 
     @property
     def sc_comps(self):
@@ -403,7 +600,8 @@ class StructureEnumerator(MSONable):
         If none yet, will be randomly generated.
         """
         if self._eq_occus is None:
-            self._eq_occus = [self._initialize_occu_under_sccomp(sc,comp) for sc,comp in self.sc_comps]
+            self._eq_occus = [None for sc,comp in self.sc_comps]
+        return self._eq_occus
 
     def _initialize_occu_under_sccomp(self,sc_mat,comp):
         """
@@ -466,39 +664,217 @@ class StructureEnumerator(MSONable):
 
         return random.choice(rand_occus[:10])
 
-    def _enum_configs_under_sccomps(self):
+    def generate_structures(self,n_per_key = 3, keep_gs = True):
+        """
+        Enumerate structures under all different key = (sc_matrix, composition). The eneumerated structures
+        will be deduplicated and selected based on CUR decomposition score to maximize sampling efficiency.
+        Will run on initalization mode if no previous enumearation present, and on addition mode if previous
+        enum present.
+        Inputs:
+            n_per_key(int):
+                will select n_per_key*N_keys number of new structures. If pool not large enough, select all of
+                pool. Default is 3.
+            keep_gs(Bool):
+                if true, will always select current ground states. Default is True.
+    
+        No outputs. Updates in object private attributes.
+        """
+        N_keys = len(self.sc_comps)
+        if self._enum_str is None or self._enum_occus is None or self._enum_ids is None or self._enum_corrs is None:
+        #Initialization branch. No deduplication with previous enums needed.
+            print('*Structures initialization.')
+            self._enum_str = [[] for i in range(N_keys)]
+            self._enum_occus = [[] for i in range(N_keys)]
+            self._enum_corrs = [[] for i in range(N_keys)]
+            self._enum_ids = [[] for i in range(N_keys)]
+            
+        eq_occus_update = []
+        enum_str = []
+        enum_occus = []
+        enum_corrs = []
+
+        n_enum = 0 
+        keep_fids = [] #Flatten ids of ground states that must be keeped
+        for (sc_mat,comp),eq_occu,old_strs in zip(self.sc_comps,self.eq_occus,self._enum_str):
+
+            str_pool,occu_pool = self._enum_configs_under_sccomp(sc_mat,comp,eq_occu)
+            corr_pool = [list(self.ce.cluster_subspace.corr_from_structure(s)) for s in str_pool]
+
+            #Update GS
+            gs_occu = deepcopy(occu_pool[0])
+            eq_occus_update.append(gs_occu)
+
+            dedup_ids = []
+             for s1_id, s1 in enumerate(str_pool):
+                 dupe = False
+                 for s2_id, s2 in enumerate(old_strs):
+                     if sm.fit(s1,s2):
+                         dupe = True
+                         break
+                 if not dupe:
+                     dedup_ids.append(s1_id)
+ 
+            #gs(id_0 in occu_pool) will always be selected if unique
+            str_pool = [str_pool[d_id] for d_id in dedup_ids]
+            occu_pool = [occu_pool[d_id] for d_id in dedup_ids]
+            corr_pool = [corr_pool[d_id] for d_id in dedup_ids]
+            n_enum += len(str_pool)
+            
+            if 0 in dedup_ids: #New GS detected, should be keeped
+                keep_fids.append(n_enum-len(str_pool))
+        
+        if not keep_gs:
+            keep_fids = []
+
+        print('Enumerated {} unique structures. Selecting.'.format(n_enum))
+
+        #Flatten data for processing. deflat_rules will be the same.
+        str_pool_flat, deflat_rule = _flatten_2d(str_pool)
+        occu_pool_flat, deflat_rule = _flatten_2d(occu_pool)
+        corr_pool_flat, deflat_rule = _flatten_2d(corr_pool)
+        old_femat, old_delfat_rule = _flatten_2d(self._enum_corrs)
+
+        selected_fids = _select_rows(corr_pool_flat,n_select=n_per_key*N_keys,
+                                     old_femat =_flatten_2d(self._enum_corrs),
+                                     method=self.select_method,
+                                     keep=keep_fids) 
+            
+        #Muting unselected structure, prepare for deflattening
+        str_pool_flat = [i for i_id,i in enumerate(str_pool_flat) if i_id in selected_fids else None]
+        occu_pool_flat = [i for i_id,i in enumerate(occu_pool_flat) if i_id in selected_fids else None]
+        corr_pool_flat = [i for i_id,i in enumerate(corr_pool_flat) if i_id in selected_fids else None]
+
+        #Deflatten
+        str_pool = _deflat_2d(str_pool_flat,deflat_rule)
+        occu_pool = _deflat_2d(occu_pool_flat,deflat_rule)
+        corr_pool = _deflat_2d(corr_pool_flat,deflat_rule)
+
+        cur_id = deepcopy(self.n_strs)
+        n_strs_init = deepcopy(self.n_strs)
+
+        for key_id in range(N_keys):
+            for i_id in range(len(str_pool[key_id])):
+                self._enum_strs[key_id].append(str_pool[key_id][i_id])
+                self._enum_occus[key_id].append(occu_pool[key_id][i_id])
+                self._enum_corrs[key_id].append(corr_pool[key_id][i_id])
+                self._enum_ids[key_id].append(cur_id)
+                #So id starts from 0!
+                cur_id += 1
+
+        self._eq_occus = eq_occus_update
+        print("*Added with {} new unique structures.".format(self.n_strs-n_strs_init))
+        print("*Ground states updated.")
+            
+    def clear_structures(self):
+        """
+        Clear enumerated structures.
+        """
+        print("Warning: Previous enumerations cleared.")
+        self._enum_str = None
+        self._enum_corrs = None
+        self._enum_occus = None
+        self._enum_ids = None
+
+    #POTENTIAL FUTURE ADDITION: add_single_structure
+
+    def _enum_configs_under_sccomp(self,sc_mat,comp,eq_occu=None):
         """
         Built in method to generate occupations under a supercell matrix and a fixed composition.
         Assuming that atoms in the supercells are generated by pymatgen.structure.make_supercell
         from the primitive cell, which simply replicates and stacks atom in their initial order.
         For example: [Ag, Cu] -> [Ag, Ag, Cu, Cu]
 
+        Inputs:
+            sc_mat(3*3 ArrayLike):
+                Supercell matrix
+            comp(Union([List[pymatgen.Composition],List[SiteSpace], List[dict] ])):
+                Compositions on each sublattice. Fractional.           
+            eq_occu(List of ints):
+                Occupation array of ground state under that composition. If None, will anneal to
+                calculate
         Return:
-            List of Lists of deduped pymatgen.Structure under each sc_mat and comp in self.sc_comps
+            rand_strs_dedup:
+                List of deduped pymatgen.Structures
+            rand_occus_dedup:
+                List of deduped occupation arrays. All in list of ints.
         """
-        for (sc_mat,comp),init_occu in zip(self.sc_comps,self.eq_occus):
-            print("Enumerating under supercell: {}, composition: {}.".format(sc_mat,comp))
-    
-            is_indicator = (self.basis_type == 'indicator')
-            sm = StructureMatcher()
-    
-            scs = int(round(abs(np.linalg.det(sc_mat))))
-            #Anneal n_atoms*100, Sample n_atoms*500
-            n_steps_anneal = scs*len(self.prim)*100
-            n_steps_sample = scs*len(self.prim)*500
-    
-            ensemble = CanonicalEnsemble.from_cluster_expansion(self.ce, sc_mat, 
-                                                                temperature = 1000, 
-                                                                optimize_inidicator=is_indicator)
-            sampler = Sampler.from_ensemble(ensemble)
-            temp_series = 3000/np.linspace(1,50,10)
 
-##TODO: Finish sampler
+        print("\nEnumerating under supercell: {}, composition: {}.".format(sc_mat,comp))
+ 
+        is_indicator = (self.basis_type == 'indicator')
+        scs = int(round(abs(np.linalg.det(sc_mat))))
 
+        #Anneal n_atoms*100 per temp, Sample n_atoms*500
+        n_steps_anneal = scs*len(self.prim)*100
+        n_steps_sample = scs*len(self.prim)*500
+        thin = max(1,n_steps_sample//200)
 
+        anneal_series = [2000,1340,1020,700,440,280,200,120,80,20]
+        sample_series = [500,1500,10000]
 
+        ensemble = CanonicalEnsemble.from_cluster_expansion(self.ce, sc_mat, 
+                                                            temperature = 1000, 
+                                                            optimize_inidicator=is_indicator)
+        sampler = Sampler.from_ensemble(ensemble)
+        processor = ensemble.processor
+        sm = StructureMatcher()
+ 
+        if eq_occu is None:
+        #If not annealed before, will anneal and save GS
+            print("**Initializing occupation.")
+            init_occu = self._initialize_occu_under_sccomp(sc,comp)
+ 
+            print("****Annealing to the ground state.")
+            sampler.anneal(anneal_series,n_steps_anneal,
+                           initial_occupancies=np.array([init_occu]))
+ 
+            print('*****Equilibrium GS found!')
+            gs_occu = list(sampler.samples.get_minimum_energy_occupancy())
+        else:
+        #If annealed before, will use old GS
+            gs_occu = eq_occu
+ 
+        #Will always contain GS structure at the first position in list
+        rand_occus = [gs_occu]
+        #Sampling temperatures
         
-        print('Initial encoded occupation:\n',init_occu)
-        print('Initial decoded occupancy:\n',processor.decode_occupancy(init_occu))
+        for T in sample_series:
+            print('**Getting samples under {} K.'.format(T))
+            sampler.samples.clear()
+            sampler._kernel.temperature = T
+            #Equilibriate
+            print("****Equilibration run.")
+            sampler.run(n_steps_sample,
+                        initial_occupancies=np.array([gs_occu]),
+                        thin_by=thin,
+                        progress=True)
+            sa_occu = sampler.samples.get_occupancies()[-1]
+            sampler.samples.clear()
+            #Sampling
+            print("****Generative run.")
+            sampler.run(n_steps_sample,
+                        initial_occupancies=np.array([sa_occu]),
+                        thin_by=thin,
+                        progress=True)
+            #default flat=True will remove n_walkers dimension. See moca docs.
+            rand_occus.extend(np.array(sampler.samples.get_occupancies()).tolist())          
 
+        rand_strs = [processor.structure_from_occupancy(occu) for occu in rand_occus]
+        #Internal deduplication
+        rand_dedup = []
+        for s1_id,s1 in enumerate(rand_strs):
+            duped = False
+            for s2_id,s2 in enumerate(rand_dedup):
+                if sm.fit(s1,s2):
+                    duped = True
+                    break
+            if not duped:
+                rand_dedup.append(s1_id)
 
+        print('{} unique structures generated.'.format(len(rand_dedup)))
+        rand_strs_dedup = [rand_strs[s_id] for s_id in rand_dedup]
+        rand_occus_dedup = [rand_occus[s_id] for s_id in rand_dedup]
+
+        return rand_strs_dedup, rand_occus_dedup
+
+## TODO: self.data, as_dict, from_dict

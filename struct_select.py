@@ -134,12 +134,7 @@ class StructureSelector():
         """
         self.ce = ce
         #self.n_init = n_init
-        self.n_iter = n_iter
-        self.n_step = n_step
-
-        if self.ce.use_ewald:
-            if self.ce.use_inv_r:
-                N_sp = sum([len(site.species_and_occu) for site in ce.structure])
+        self.n_iter = n_itern(site.species_and_occu) for site in ce.structure])
                 self.N_eweci = 1+N_sp+N_sp*(N_sp-1)//2
             else:
                 self.N_eweci = 1
