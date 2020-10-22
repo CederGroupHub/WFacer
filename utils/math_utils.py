@@ -1,16 +1,213 @@
-"""
-Combinatoric and compositional utilities used in multiple modules
-"""
+__author___ = 'Fengyu Xie'
 
-__author__ = 'Fengyu Xie'
+"""
+Mathematic utilities, including linear algebra, combinatorics and integerization
+"""
 
 import numpy as np
 from itertools import combinations,product
 from functools import reduce
+from copy import deepcopy
+import random
 
 from sympy.ntheory import factorint
+from pymatgen import Lattice
 
-def Get_diag_matrices(n,d=3):
+#Linear algebra
+def is_proper_sc(sc_matrix,lat,max_cond=8,min_angle=30):
+    """
+    Assess the skewness of a given supercell matrix. If the skewness is 
+    too high, then this matrix will be dropped.
+    Inputs:
+        sc_matrix(Arraylike):
+            Supercell matrix
+        lat(pymatgen.Lattice):
+            Lattice vectors of a primitive cell
+        max_cond(float):
+            Maximum conditional number allowed of the supercell lattice
+            matrix. By default set to 8, to prevent overstretching in one
+            direction
+        min_angle(float):
+            Minmum allowed angle of the supercell lattice. By default set
+            to 30, to prevent over-skewing.
+    Output:
+       Boolean
+    """
+    newmat = np.matmul(lat.matrix, sc_matrix)
+    newlat = Lattice(newmat)
+    angles = [newlat.alpha,newlat.beta,newlat.gamma,\
+              180-newlat.alpha,180-newlat.beta,180-newlat.gamma]
+
+    return abs(np.linalg.cond(newmat))<=max_cond and \
+           min(angles)>min_angle
+
+def enumerate_matrices(max_det, lat,\
+                           transmat=[[1,0,0],[0,1,0],[0,0,1]],\
+                           max_sc_cond = 8,\
+                           min_sc_angle = 30,\
+                           n_select=20):
+    """
+    Enumerate proper matrices with maximum det up to a number.
+    4 steps are used in the size enumeration.
+    Inputs:
+        max_det(int):
+            Maximum allowed determinant size of enumerated supercell
+            matrices
+        lat(pymatgen.Lattice):
+            Lattice vectors of a primitive cell
+        transmat(2D arraylike):
+            Symmetrizaiton matrix to apply on the primitive cell.
+        max_cond(float):
+            Maximum conditional number allowed of the supercell lattice
+            matrix. By default set to 8, to prevent overstretching in one
+            direction
+        min_angle(float):
+            Minmum allowed angle of the supercell lattice. By default set
+            to 30, to prevent over-skewing.
+        n_select(int):
+            Number of supercell matrices to select.
+    Outputs:
+        List of 2D lists.
+    """
+    scs=[]
+
+    if max_det>=4:
+        for det in range(max_det//4, max_det//4*4+1, max_det//4):
+            scs.extend(get_diag_matrices(det))
+    else:
+        for det in range(1,max_det+1):
+            scs.extend(get_diag_matrices(det))       
+
+    scs = [np.matmul(sc,transmat,dtype=np.int64).tolist() for sc in scs \
+           if is_proper_sc(np.matmul(sc,transmat), lat,\
+                            max_sc_cond = max_sc_cond,\
+                            min_sc_angle = min_sc_angle)]
+
+    ns = min(n_select,len(scs))
+
+    selected_scs = random.sample(scs,ns)
+
+    return selected_scs
+
+def CUR_decompose(G, C, R):
+    """ calcualate U s.t. G = CUR """
+    
+    C_inv = np.linalg.pinv(C)
+    R_inv = np.linalg.pinv(R)
+    U = np.dot(np.dot(C_inv, G), R_inv)
+    
+    return U
+
+def select_rows(femat,n_select=10,old_femat=[],method='CUR',keep=[]):
+
+    """
+    Selecting a certain number of rows that recovers maximum amount of kernel
+    information from a matrix, or given an old feature matrix, select a certain
+    number of rows that maximizes information gain from a new feature matrix.
+
+    Inputs: 
+        femat(2D arraylike):
+            New feature matrix to select from
+        n_select(int):
+            Number of new rows to select
+        old_femat(2D arraylike):
+            Old feature matrix to compare with
+        method(str):
+            Row selection method.
+            'CUR'(default):
+                select by recovery of CUR score
+            'random':
+                select at full random
+        keep(List of ints):
+            indices of rows that will always be selected. By default, no row
+            has that priviledge.
+    Outputs:
+        List of ints. Indices of selected rows in femat.
+
+    """
+    A = np.array(femat)
+    n_pool,d = A.shape
+    domain = np.eye(d)
+    # Using an identity matrix as domain matrix
+    
+    if len(keep) > n_pool:
+        raise ValueError("Rows to keep more than rows you have!")      
+    n_add = max(min(n_select-len(keep),n_pool-len(keep)),0)
+
+    trial_indices = deepcopy(keep)
+    total_indices = [i for i in range(n_pool) if i not in keep]
+
+    if len(old_femat) == 0: #init mode
+
+        G = A@A.T
+
+        for i in range(n_add):
+            err = 1e8
+            return_index = None
+
+            if method == 'CUR':             
+                for i in range(100):  
+                #Try one row each time, optimize for 100 iterations
+                    trial_index = random.choice(total_indices)
+                    trial_indices_current = trial_indices+[trial_index]
+                    
+                    C = G[:, trial_indices_current]
+                    R = G[trial_indices_current,:]
+        
+                    U = CUR_decompose(G, C, R)
+        
+                    err_trial = np.linalg.norm(G - np.dot(np.dot(C, U),R))
+        
+                    if err_trial < err:
+                        return_index = trial_index
+                        err = err_trial
+
+            elif method = 'random':
+                return_index = random.choice(total_indices)
+ 
+            else:
+                raise NotImplementedError
+
+            trial_indices.append(return_index)
+            total_indices.remove(return_index)
+
+    else: #add mode
+        
+        old_A = np.array(old_femat)        
+        old_cov = old_A.T @ old_A
+        old_inv = np.linalg.pinv(old_cov)
+        # Used Penrose-Moore inverse
+
+        reduction = np.zeros(n_add)
+
+        if method == 'CUR':
+            for i_id, i in enumerate(total_indices):
+                trial_A = np.concatenate((old_A, A[i].reshape(1, d)), axis =0)
+
+                trial_cov = trial_A.T @ trial_A
+                trial_inv = np.linalg.pinv(trial_cov)
+
+                reduction[i_id] = np.sum(np.multiply( (trial_inv-old_inv), domain))
+                
+            add_indices = [total_indices[iid] for iid in np.argsort(reduction)[:n_add]]
+
+        elif method == 'random':
+            add_indices = sorted(random.sample(total_indices,n_add))
+
+        else:
+            raise NotImplementedError
+
+        trial_indices = trial_indices + add_indices
+        total_indices = [i for i in total_indices if i not in add_indices]
+
+    trial_indices = sorted(trial_indices)
+    total_indices = sorted(total_indices)
+               
+    return trial_indices
+
+
+#Number theory
+def get_diag_matrices(n,d=3):
     """
     Get d dimensional positive integer diagonal matrices with
     det(M)=n
@@ -74,7 +271,12 @@ def LCM_list(l):
     else:
         return reduce(LCM,l)
 
+# Combinatoric and intergerization
 def reverse_ordering(l,ordering):
+    """
+    Given a mapping order of list, reverse that order
+    and return the original list
+    """
     original_l = [0 for i in range(len(l))]
     for cur_id,ori_id in enumerate(ordering):
         original_l[ori_id]=l[cur_id]
@@ -138,10 +340,6 @@ def integerize_multiple(vs, dim_limiter=100,dtol=1E-5):
                                         dtol=dtol)
     vs_int = np.reshape(vs_flat_int,shp)
     return vs_int, mul
-
-####
-# Combinatoric tools for compositional space and flip selection
-####
 
 def combinatorial_number(n,m):
     """
@@ -333,10 +531,7 @@ def formula_norm(v,sl_flips_list=None):
         sl_form_sizes.append(sl_form_size)
     return sum(sl_form_sizes)
 
-####
-# Partition tools
-####
-
+# Partition selection tools
 def choose_section_from_partition(probs):
     """
     This function choose one section from a partition based on each section's
@@ -408,82 +603,7 @@ def enumerate_partitions(n_part,enum_fold,constrs=None,quota=1.0):
 
     return accumulated_enums
 
-# Utilities for parsing occupation into composition
-def occu_to_species_stat(sublattices,occupancy,normalize=False):
-    """
-    Get a statistics table of each specie on sublattices from an encoded 
-    occupancy array.
-    Inputs:
-        sublattices(A list of Sublattice):
-            Sublattice objects of the current system, storing attibutes of
-            site indices and site spaces of each sublattice.
-        occupancy(np.ndarray):
-            An array representing encoded occupancy
-        normalize(Boolean):
-            Whether or not to normalize species_stat into fractional 
-            compositions. By default, we will not normalize.
-    Returns:
-        species_stat(2D list of ints/floats)
-            Is a statistics of number of species on each sublattice.
-            1st dimension: sublattices
-            2nd dimension: number of each specie on that specific sublattice.
-            Dimensions same as moca.sampler.mcushers.CorrelatedUsher.bits          
-    """
-    bits = [sl.species for sl in sublattices]
-    species_stat = [[0 for i in range(len(sl_bits))] for sl_bits in bits]
-    for s_id,sp_code in enumerate(occupancy):
-        sl_id = None
-        for i,sl in enumerate(sublattices):
-            if s_id in sl.sites:
-                sl_id = i
-                break
-        if sl_id is None:
-            raise ValueError("Occupancy site {} can not be matched to a sublattice!".format(s_id))   
-        species_stat[sl_id][sp_code]+=1
-     
-    if normalize:
-        species_stat_norm = \
-            [[float(species_stat[sl_id][sp_id])/sum(species_stat[sl_id])
-              for sp_id in range(len(bits[sl_id]))]
-              for sl_id in range(len(bits))]
-        species_stat = species_stat_norm
-
-    return species_stat
-
-def occu_to_species_list(sublattices,occupancy):
-    """
-    Get table of the indices of sites that are occupied by each specie on sublattices,
-    from an encoded occupancy array.
-    Inputs:
-        sublattices(A list of Sublattice):
-            Sublattice objects of the current system, storing attibutes of
-            site indices and site spaces of each sublattice.
-        occupancy(np.ndarray):
-            An array representing encoded occupancy
-    Returns:
-        species_list(3d list of ints):
-            Is a statistics of indices of sites occupied by each specie.
-            1st dimension: sublattices
-            2nd dimension: species on a sublattice
-            3rd dimension: site ids occupied by that specie
-    """
-    bits = [sl.species for sl in sublattices]
-    species_list = [[[] for i in range(len(sl_bits))] for sl_bits in bits]
-
-    for site_id,sp_id in enumerate(occupancy):
-        sl_id = None
-        for i,sl in enumerate(sublattices):
-            if s_id in sl.sites:
-                sl_id = i
-                break
-        if sl_id is None:
-            raise ValueError("Occupancy site {} can not be matched to a sublattice!".format(s_id))   
-
-        species_list[sl_id][sp_id].append(site_id)
-
-    return species_list
-
-# Utility for composition linkage
+# Composition linkage number for Charge neutral semi-grand flip rules
 def get_n_links(comp_stat,operations):
     """
     Get the total number of configurations reachable by a single flip in operations

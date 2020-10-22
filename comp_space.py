@@ -7,13 +7,15 @@ from scipy.spatial import ConvexHull
 from collections import OrderedDict
 from itertools import combinations,product
 from copy import deepcopy
-from monty.json import MSONable, MontyDecoder
+from monty.json import MSONable
 import json
 
 from pymatgen import Composition
 
 from smol.cofe.configspace.domain import Vacancy
-from .utils import *
+
+from .utils.math_utils import *
+from .utils.format_utils import *
 
 """
 This file contains functions related to implementing and navigating the 
@@ -42,10 +44,6 @@ CHGBALANCEERROR = ValueError("Charge balance cannot be achieved with these speci
 OUTOFSUBSPACEERROR = ValueError("Given coordinate falls outside the subspace.")
 
 SLACK_TOL = 1E-5
-
-def decode_from_dict(d):
-    return MontyDecoder().decode(json.dumps(d))
-
 
 ####
 # Finding minimun charge-conserved, number-conserved flips to establish constrained
