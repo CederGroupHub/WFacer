@@ -162,7 +162,7 @@ def select_rows(femat,n_select=10,old_femat=[],method='CUR',keep=[]):
                         return_index = trial_index
                         err = err_trial
 
-            elif method = 'random':
+            elif method == 'random':
                 return_index = random.choice(total_indices)
  
             else:

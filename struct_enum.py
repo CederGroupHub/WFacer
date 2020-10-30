@@ -362,10 +362,11 @@ class StructureEnumerator(MSONable):
             if 0 in dedup_ids: #New GS detected, should be keeped
                 keep_fids.append(n_enum-len(str_pool))
         
-        if not keep_gs:
+        #If don't keep GS mode selected, or is initalizing pool.
+        if not keep_gs or self.n_strs==0:
             keep_fids = []
 
-        print('Enumerated {} unique structures. Selecting.'.format(n_enum))
+        print('*Enumerated {} unique structures. Selecting.'.format(n_enum))
 
         #Flatten data for processing. deflat_rules will be the same.
         str_pool_flat, deflat_rule = flatten_2d(str_pool)
