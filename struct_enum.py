@@ -20,7 +20,7 @@ from smol.cofe.expansion import ClusterExpansion
 from smol.moca import CanonicalEnsemble,Sampler
 
 from .comp_space import CompSpace
-from .utils.math_utils import enumerate_matrices,select_rows
+from .utils.math_utils import enumerate_matrices,select_rows,combinatorial_number
 from .utils.format_utils import flatten_2d,deflat_2d,serialize_comp,deser_comp
 from .utils.calc_utils import get_ewald_from_occu
     
@@ -303,7 +303,7 @@ class StructureEnumerator(MSONable):
             self._eq_occus = [None for sc,comp in self.sc_comps]
         return self._eq_occus
 
-    def generate_structures(self,n_per_key = 3, keep_gs = True):
+    def generate_structures(self,n_per_key = 3, keep_gs = True,weight_by_comp=True):
         """
         Enumerate structures under all different key = (sc_matrix, composition). The eneumerated structures
         will be deduplicated and selected based on CUR decomposition score to maximize sampling efficiency.
@@ -314,29 +314,34 @@ class StructureEnumerator(MSONable):
                 will select n_per_key*N_keys number of new structures. If pool not large enough, select all of
                 pool. Default is 3.
             keep_gs(Bool):
-                if true, will always select current ground states. Default is True.
+                If true, will always select current ground states. Default is True.
+            Weight_by_comp(Boolean):
+                If true, will preprocess sample pool before structure selection, to make sure that the number of 
+                structures selected with each composition is proportional to the total number of structures with
+                that composition in the whole configurational space. 
+                Default is True.
     
         No outputs. Updates in object private attributes.
         """
         N_keys = len(self.sc_comps)
-        if self._enum_str is None or self._enum_occus is None or self._enum_ids is None or self._enum_corrs is None:
+        if self._enum_strs is None or self._enum_occus is None or self._enum_ids is None or self._enum_corrs is None:
         #Initialization branch. No deduplication with previous enums needed.
             print('*Structures initialization.')
-            self._enum_str = [[] for i in range(N_keys)]
+            self._enum_strs = [[] for i in range(N_keys)]
             self._enum_occus = [[] for i in range(N_keys)]
             self._enum_corrs = [[] for i in range(N_keys)]
             self._enum_ids = [[] for i in range(N_keys)]
             
         eq_occus_update = []
-        enum_str = []
+        enum_strs = []
         enum_occus = []
         enum_corrs = []
+        comp_weights = []
+        keep_first = []
 
-        n_enum = 0 
-        keep_fids = [] #Flatten ids of ground states that must be keeped
-        for (sc_mat,comp),eq_occu,old_strs in zip(self.sc_comps,self.eq_occus,self._enum_str):
+        for (sc_mat,comp),eq_occu,old_strs in zip(self.sc_comps,self.eq_occus,self._enum_strs):
 
-            str_pool,occu_pool = self._enum_configs_under_sccomp(sc_mat,comp,eq_occu)
+            str_pool,occu_pool,comp_weight = self._enum_configs_under_sccomp(sc_mat,comp,eq_occu)
             corr_pool = [list(self.ce.cluster_subspace.corr_from_structure(s)) for s in str_pool]
 
             #Update GS
@@ -354,24 +359,54 @@ class StructureEnumerator(MSONable):
                      dedup_ids.append(s1_id)
  
             #gs(id_0 in occu_pool) will always be selected if unique
-            str_pool = [str_pool[d_id] for d_id in dedup_ids]
-            occu_pool = [occu_pool[d_id] for d_id in dedup_ids]
-            corr_pool = [corr_pool[d_id] for d_id in dedup_ids]
-            n_enum += len(str_pool)
+            enum_strs.append([str_pool[d_id] for d_id in dedup_ids])
+            enum_occus.append([occu_pool[d_id] for d_id in dedup_ids])
+            enum_corrs.append([corr_pool[d_id] for d_id in dedup_ids])
+            comp_weights.append(comp_weight)
+            n_enum += len(enum_strs[-1])
             
             if 0 in dedup_ids: #New GS detected, should be keeped
-                keep_fids.append(n_enum-len(str_pool))
-        
-        #If don't keep GS mode selected, or is initalizing pool.
+                keep_first.append(True)
+            else:
+                keep_first.append(False)
+
+        #Preprocess to weight over compositions
+        W_max = max(1,max(comp_weights))
+        N_max = max(1,max([len(key_str) for key_str in enum_strs]))
+        r = N_max/W_max
+        if weight_by_comp:
+            n_selects = [min(max(1,int(round(w*r))),len(k)) for w,k in zip(comp_weights,enum_strs)]
+        else:
+            n_selects = [len(k) for w,k in zip(comp_weights,enum_strs)]
+
+        keep_fids = []
+        n_enum = 0
+        sec_ids = []
+        for n_sel,kf,key_str in zip(n_selects,keep_first,enum_strs):
+            if not kf:
+                sec_ids.append(random.sample(list(range(len(key_str))),n_sel))
+            else:
+                if len(key_str)>0:
+                    sec_ids.append([0]+random.sample(list(range(1,len(key_str))),n_sel-1))
+                    keep_fids.append(n_enum)
+                    n_enum += n_sel
+                else:
+                    raise ValueError("GS scan suggested to keep first, but structure pool under key is empty!")
+
+        enum_strs = [[enum_strs[k_id][s_id] for s_id in key_s_ids] for k_id,key_s_id in enumerate(sec_ids)]
+        enum_occus = [[enum_occus[k_id][s_id] for s_id in key_s_ids] for k_id,key_s_id in enumerate(sec_ids)]
+        enum_corrs = [[enum_corrs[k_id][s_id] for s_id in key_s_ids] for k_id,key_s_id in enumerate(sec_ids)]
+      
+        #If don't keep GS mode selected, or is initalizing pool and GS can't be obtained.
         if not keep_gs or self.n_strs==0:
-            keep_fids = []
+            keep_fids = [] #Flatten ids of ground states that must be keeped
 
         print('*Enumerated {} unique structures. Selecting.'.format(n_enum))
 
         #Flatten data for processing. deflat_rules will be the same.
-        str_pool_flat, deflat_rule = flatten_2d(str_pool)
-        occu_pool_flat, deflat_rule = flatten_2d(occu_pool)
-        corr_pool_flat, deflat_rule = flatten_2d(corr_pool)
+        str_pool_flat, deflat_rule = flatten_2d(enum_strs)
+        occu_pool_flat, deflat_rule = flatten_2d(enum_occus)
+        corr_pool_flat, deflat_rule = flatten_2d(enum_corrs)
         old_femat, old_delfat_rule = flatten_2d(self._enum_corrs)
 
         selected_fids = select_rows(corr_pool_flat,n_select=n_per_key*N_keys,
@@ -385,18 +420,18 @@ class StructureEnumerator(MSONable):
         corr_pool_flat = [i for i_id,i in enumerate(corr_pool_flat) if i_id in selected_fids else None]
 
         #Deflatten
-        str_pool = deflat_2d(str_pool_flat,deflat_rule)
-        occu_pool = deflat_2d(occu_pool_flat,deflat_rule)
-        corr_pool = deflat_2d(corr_pool_flat,deflat_rule)
+        enum_strs = deflat_2d(str_pool_flat,deflat_rule)
+        enum_occus = deflat_2d(occu_pool_flat,deflat_rule)
+        enum_corrs = deflat_2d(corr_pool_flat,deflat_rule)
 
         cur_id = deepcopy(self.n_strs)
         n_strs_init = deepcopy(self.n_strs)
 
         for key_id in range(N_keys):
             for i_id in range(len(str_pool[key_id])):
-                self._enum_strs[key_id].append(str_pool[key_id][i_id])
-                self._enum_occus[key_id].append(occu_pool[key_id][i_id])
-                self._enum_corrs[key_id].append(corr_pool[key_id][i_id])
+                self._enum_strs[key_id].append(enum_strs[key_id][i_id])
+                self._enum_occus[key_id].append(enum_occus[key_id][i_id])
+                self._enum_corrs[key_id].append(enum_corrs[key_id][i_id])
                 self._enum_ids[key_id].append(cur_id)
                 #So id starts from 0!
                 cur_id += 1
@@ -410,7 +445,7 @@ class StructureEnumerator(MSONable):
         Clear enumerated structures.
         """
         print("Warning: Previous enumerations cleared.")
-        self._enum_str = None
+        self._enum_strs = None
         self._enum_corrs = None
         self._enum_occus = None
         self._enum_ids = None
@@ -437,6 +472,9 @@ class StructureEnumerator(MSONable):
                 List of deduped pymatgen.Structures
             rand_occus_dedup:
                 List of deduped occupation arrays. All in list of ints.
+            comp_weight:
+                Total number of all possible structures with the current composition.
+                Integer.
         """
 
         print("\nEnumerating under supercell: {}, composition: {}.".format(sc_mat,comp))
@@ -444,10 +482,10 @@ class StructureEnumerator(MSONable):
         is_indicator = (self.basis_type == 'indicator')
         scs = int(round(abs(np.linalg.det(sc_mat))))
 
-        #Anneal n_atoms*100 per temp, Sample n_atoms*500
+        #Anneal n_atoms*100 per temp, Sample n_atoms*500, give 100 samples for practical ccomputation
         n_steps_anneal = scs*len(self.prim)*100
         n_steps_sample = scs*len(self.prim)*500
-        thin = max(1,n_steps_sample//200)
+        thin = max(1,n_steps_sample//100)
 
         anneal_series = [2000,1340,1020,700,440,280,200,120,80,20]
         sample_series = [500,1500,10000]
@@ -515,7 +553,7 @@ class StructureEnumerator(MSONable):
         rand_strs_dedup = [rand_strs[s_id] for s_id in rand_dedup]
         rand_occus_dedup = [rand_occus[s_id] for s_id in rand_dedup]
 
-        return rand_strs_dedup, rand_occus_dedup
+        return rand_strs_dedup, rand_occus_dedup, comp_weight
 
     def _initialize_occu_under_sccomp(self,sc_mat,comp):
         """
@@ -528,7 +566,11 @@ class StructureEnumerator(MSONable):
             comp(Union([List[pymatgen.Composition],List[SiteSpace], List[dict] ])):
                 Compositions on each sublattice. Fractional.
         Output:
-            Arraylike of integers. Encoded occupation array.
+            init_occu:
+                Arraylike of integers. Encoded occupation array.
+            comp_weight:
+                Total number of all possible structures with the current composition.
+                Integer.
         """
         scs = int(round(abs(np.linalg.det(sc_mat))))
         
@@ -595,7 +637,14 @@ class StructureEnumerator(MSONable):
             rand_occus = sorted(rand_occus,key=lambda occu:\
                                 get_ewald_from_occu(occu,sc_sublat_list,self.bits,self.prim,sc_mat))
 
-        return random.choice(rand_occus[:10])
+        comp_weight = 1
+        for sl_int_comp,sl_sites in zip(int_comp,sc_sublat_list):
+            N_sl = len(sc_sublat_list)
+            for n_sp in sl_int_comp.values():
+                comp_weight = comp_weight*combinatorial_number(N_sl,n_sp)
+                N_sl = N_sl - n_sp
+
+        return random.choice(rand_occus[:10]), comp_weight
 
 
 
