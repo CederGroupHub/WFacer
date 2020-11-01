@@ -646,8 +646,6 @@ class StructureEnumerator(MSONable):
 
         return random.choice(rand_occus[:10]), comp_weight
 
-
-
     @property
     def data(self):
         """

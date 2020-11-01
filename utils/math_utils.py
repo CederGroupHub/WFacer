@@ -9,6 +9,7 @@ from itertools import combinations,product
 from functools import reduce
 from copy import deepcopy
 import random
+import math
 
 from sympy.ntheory import factorint
 from pymatgen import Lattice
@@ -347,15 +348,7 @@ def combinatorial_number(n,m):
     m,n: 
         integers.
     """
-    if n<0 or m<0:
-        raise ValueError('No negative integers allowed in combinatorics.')
-    numerator = 1
-    denominator = 1
-    for i in range(1,m+1):
-        numerator = numerator*(n-m+i)
-        denominator = denominator*i
-
-    return numerator//denominator
+    return math.factorial(n)//(math.factorial(m)*math.factorial(n-m))
 
 def get_integer_grid(subspc_normv,right_side=0,limiters=None):
     """
@@ -671,4 +664,54 @@ def get_n_links(comp_stat,operations):
 
     return n_links
 
+#Geometry (convex hull, etc)
+def clean_convex_hull(hull):
+    """
+    This cleans a not necessarily convex hull of dft data into a strictly convex hull.
+    Only supports one dimensional comp-space.
+    Inputs:
+        hull(2D array-like):
+            Convex hull to clean-up
+            [(x,energy),...]
+    Outputs:
+        2D list, in same format as input value of hull.[(x,energy),...]
+    """
+    #Remove non-convex points
+    if len(hull[0])<3:
+        return hull
+    else:
+        old_hull = np.array(hull)
+        #python convex hulls are always Counter-clockwise in 2D, which we will utilize
+        cvx = ConvexHull(old_hull)
+        full_hull = old_hull[cvx.vertices]
+        #Slice, and take the lower half of the full hull
+        edges_pos_dir = []
+        for i in range(len(full_hull)-1):
+            edge = full_hull[i+1]-full_hull[i]
+            edges_pos_dir.append(edge[0]>0)
+        edges_pos_dir.append((full_hull[0]-full_hull[-1])[0]>0)
+        if not(edges_pos_dir[-1]):       
+            pos_end = None
+            pos_begin = None
+            for e_id,e_pos in enumerate(edges_pos_dir):
+                if e_pos and pos_begin is None and pos_end is None:
+                    pos_begin = e_id
+                if not e_pos and pos_begin is not None and pos_end is None:
+                    pos_end = e_id
+                    break
+            clean_hull = full_hull[pos_begin:pos_end+1]
+        else:
+            neg_end = None
+            neg_begin = None
+            for e_id,e_pos in enumerate(edges_pos_dir):
+                if not(e_pos) and neg_begin is None and neg_end is None:
+                    neg_begin = e_id
+                if e_pos and neg_begin is not None and neg_end is None:
+                    neg_end = e_id
+                    break
+            lower_hull_idx = list(range(neg_end,len(full_hull)))+list(range(0,neg_begin+1))     
+            clean_hull = full_hull[lower_hull_idx]
+
+        clean_hull = clean_hull.tolist()
+        return clean_hull
 
