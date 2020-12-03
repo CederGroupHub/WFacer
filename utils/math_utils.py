@@ -42,51 +42,59 @@ def is_proper_sc(sc_matrix,lat,max_cond=8,min_angle=30):
     return abs(np.linalg.cond(newmat))<=max_cond and \
            min(angles)>min_angle
 
-def enumerate_matrices(max_det, lat,\
+def enumerate_matrices(det, lat,\
                            transmat=[[1,0,0],[0,1,0],[0,0,1]],\
                            max_sc_cond = 8,\
-                           min_sc_angle = 30,\
-                           n_select=20):
+                           min_sc_angle = 30):
     """
     Enumerate proper matrices with maximum det up to a number.
     4 steps are used in the size enumeration.
+    Will give 1 unskewed matrix and up to 3 skewed matrices.
+    We add skewed matrices to avoid symmtric duplicacy of clusters.
     Inputs:
-        max_det(int):
-            Maximum allowed determinant size of enumerated supercell
+        det(int):
+            Required determinant size of enumerated supercell
             matrices
         lat(pymatgen.Lattice):
             Lattice vectors of a primitive cell
         transmat(2D arraylike):
-            Symmetrizaiton matrix to apply on the primitive cell.
+            Symmetrizaiton matrix to apply on the primitive cell, in 
+            order to pre-define an 'unskewed supercell'.
+            For example, in FCC rhombohydral primitive cell, apply
+            [[-1,1,1],[1,-1,1],[1,1,-1]] to convert into conventional 
+            FCC cubic cell.
         max_cond(float):
-            Maximum conditional number allowed of the supercell lattice
-            matrix. By default set to 8, to prevent overstretching in one
+            Maximum conditional number allowed of the skewed supercell
+            matrices. By default set to 8, to prevent overstretching in one
             direction
         min_angle(float):
             Minmum allowed angle of the supercell lattice. By default set
             to 30, to prevent over-skewing.
-        n_select(int):
-            Number of supercell matrices to select.
     Outputs:
         List of 2D lists.
     """
-    scs=[]
+    scs_unsk=get_diag_matrices(det)
 
-    if max_det>=4:
-        for det in range(max_det//4, max_det//4*4+1, max_det//4):
-            scs.extend(get_diag_matrices(det))
-    else:
-        for det in range(1,max_det+1):
-            scs.extend(get_diag_matrices(det))       
-
-    scs = [np.matmul(sc,transmat,dtype=np.int64).tolist() for sc in scs \
+    scs_unsk = [np.matmul(sc,transmat,dtype=np.int64).tolist() for sc in scs_unsk \
            if is_proper_sc(np.matmul(sc,transmat), lat,\
                             max_sc_cond = max_sc_cond,\
                             min_sc_angle = min_sc_angle)]
 
-    ns = min(n_select,len(scs))
+    #Take the unskewed matrix with minimal conditional number
+    sc_unsk = sorted(scs_unsk,key=lambda x:np.linalg.cond(x))[0]
+    n1 = sc_unsk[0][0]
+    n2 = sc_unsk[1][1]
+    n3 = sc_unsk[2][2]
+    #n1>n2>n3, already sorted in get_diag_matrices
+    sc_sk1 = deepcopy(sc_unsk)
+    sc_sk2 = deepcopy(sc_unsk)
+    sc_sk3 = deepcopy(sc_unsk)
+    
+    sc_sk1[0][1] = n1//2 if n1//2!=0 else 1
+    sc_sk2[0][2] = n1//2 if n1//2!=0 else 1
+    sc_sk3[1][2] = n2//2 if n2//2!=0 else 1
 
-    selected_scs = random.sample(scs,ns)
+    selected_scs = [sc_unsk,sc_sk1,sc_sk2,sc_sk3]
 
     return selected_scs
 
@@ -229,8 +237,8 @@ def get_diag_matrices(n,d=3):
             for p_id, power in enumerate(p_combo[f_id]):
                 factor_partition[p_id]*=(factor**p_combo[f_id][p_id])
 
-        if sorted(factor_partition) not in factor_partitions:
-            factor_partitions.append(sorted(factor_partition))
+        if sorted(factor_partition,reverse=True) not in factor_partitions:
+            factor_partitions.append(sorted(factor_partition,reverse=True))
 
     mats = [np.diag(f_part).tolist() for f_part in sorted(factor_partitions)]
     return mats
