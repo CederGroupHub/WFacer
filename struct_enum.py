@@ -50,10 +50,11 @@ class StructureEnumerator(MSONable):
             primitive cell, you can use [[1,-1,-1],[-1,1,-1],[-1,-1,1]] as a
             transmat to modify the primitive cell as cubic.
 
-        max_natoms(Int): 
-            maximum number of atoms allowed in each enumerated structure.
-            By default, set to 200, to restrict DFT computation cost.
-            Currently values over 200 are not recommended!
+        sc_size(Int): 
+            Supercell matrix deternimant of each enumerated structure.
+            By default, set to 32, to restrict DFT computation cost.
+            Currently, better not to make supercell have over 200 atoms!
+            We recommend up to 64 atoms in a supercell.
 
         max_sc_cond(float):
             Maximum allowed lattice matrix conditional number of the enumerated 
@@ -110,8 +111,7 @@ class StructureEnumerator(MSONable):
 
     def __init__(self,prim,sublat_list = None,\
                  previous_ce = None,\
-                 previous_fe_mat = [],\
-                 transmat=[[1,0,0],[0,1,0],[0,0,1]],max_natoms=200,\
+                 transmat=[[1,0,0],[0,1,0],[0,0,1]],sc_size=32,\
                  max_sc_cond = 8, min_sc_angle = 30,\
                  comp_restrictions=None,comp_enumstep=1,\
                  basis_type = 'indicator',\
@@ -164,9 +164,8 @@ class StructureEnumerator(MSONable):
 
             self.ce = ClusterExpansion(c_spc,coef,[])
             
-        self.previous_femat = np.array(previous_femat)
         self.transmat = transmat
-        self.max_natoms = max_natoms
+        self.sc_size = sc_size
         self.max_sc_cond = max_sc_cond
         self.min_sc_angle = min_sc_angle
 
@@ -210,9 +209,8 @@ class StructureEnumerator(MSONable):
             A list of 2D lists.
         """
         if self._sc_matrices is None:
-            trans_size = int(round(abs(np.linalg.det(self.transmat))))
-            max_det = self.max_natoms // (len(self.prim) * trans_size)
-            self._sc_matrices =  enumerate_matrices(max_det, self.prim.lattice,\
+            det = self.sc_size
+            self._sc_matrices =  enumerate_matrices(det, self.prim.lattice,\
                                                         transmat=self.transmat,\
                                                         max_sc_cond = self.max_sc_cond,\
                                                         min_sc_angle = self.min_sc_cond)
@@ -669,21 +667,47 @@ class StructureEnumerator(MSONable):
         return _data
 
     def as_dict(self):
-        parent_d = super().as_dict()
-        #Serialized
-        parent_d['sc_matrices'] = self.sc_matrices
-        parent_d['sc_comps'] = [(sc,serialize_comp(comp)) for sc,comp in self.sc_comps]
-        parent_d['eq_occus'] = self._eq_occus
-        parent_d['enum_strs'] = [[s.as_dict() for s in key_ss] for key_ss in self._enum_strs]
-        parent_d['enum_occus'] = self._enum_occus
-        parent_d['enum_corrs'] = self._enum_corrs
-        parent_d['enum_ids'] = self._enum_ids
+       
+        #Serialization
+        d={}
+        d['prim']=self.prim.as_dict()
+        d['sublat_list']=self.sublat_list
+        d['ce']=self.ce.as_dict()
+        d['transmat']=self.transmat
+        d['sc_size']=self.sc_size
+        d['max_sc_cond']=self.max_sc_cond
+        d['min_sc_angle']=self.min_sc_angle
+        d['comp_restrictions']=self.comp_restrictions
+        d['comp_enumstep']=self.comp_enumstep
+        d['basis_type']=self.basis_type
+        d['select_method']=self.select_method
+        d['sc_matrices'] = self.sc_matrices
+        d['sc_comps'] = [(sc,serialize_comp(comp)) for sc,comp in self.sc_comps]
+        d['eq_occus'] = self._eq_occus
+        d['enum_strs'] = [[s.as_dict() for s in key_ss] for key_ss in self._enum_strs]
+        d['enum_occus'] = self._enum_occus
+        d['enum_corrs'] = self._enum_corrs
+        d['enum_ids'] = self._enum_ids
+        d["@module"] = self.__class__.__module__
+        d["@class"] = self.__class__.__name__
 
-        return parent_d
+        return d
 
     @classmethod
     def from_dict(cls,d):
-        socket = super(cls,cls).from_dict(d)
+        prim = Structure.from_dict(d['prim'])
+        ce = ClusterExpansion.from_dict(d['ce'])
+        socket = cls(prim,sublat_list = d['sublat_list'],\
+                 previous_ce = ce,\
+                 transmat=d['transmat'],\
+                 sc_size=d['sc_size'],\
+                 max_sc_cond = d['max_sc_cond'],\
+                 min_sc_angle = d['min_sc_angle'],\
+                 comp_restrictions=d['comp_restrictions'],\
+                 comp_enumstep=d['comp_enumstep'],\
+                 basis_type = d['basis_type'],\
+                 select_method = d['select_method'])
+
         if 'sc_matrices' in d:
             socket._sc_matrices = d['sc_matrices']
         if 'sc_comps' in d:

@@ -73,7 +73,10 @@ def enumerate_matrices(det, lat,\
     Outputs:
         List of 2D lists.
     """
-    scs_unsk=get_diag_matrices(det)
+    trans_size = int(round(abs(np.linalg.det(self.transmat))))
+    if det%trans_size!=0:
+        raise ValueError("Supercell size must be divisible by transformation matrix determinant!")
+    scs_unsk=get_diag_matrices(det//trans_size)
 
     scs_unsk = [np.matmul(sc,transmat,dtype=np.int64).tolist() for sc in scs_unsk \
            if is_proper_sc(np.matmul(sc,transmat), lat,\
