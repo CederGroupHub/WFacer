@@ -13,7 +13,6 @@ For charge assignment, charges will be assigned by magnitudes of magnetization v
 
 from pymatgen import Specie,Structure,Element,DummySpecie
 from pymatgen.core.periodic_table import get_el_sp
-from smol.cofe.configspace.domain import Vacancy,get_specie
 from abc import ABC, abstractmethod
 
 import numpy as np
