@@ -12,7 +12,7 @@ import json
 
 from pymatgen import Composition
 
-from smol.cofe.configspace.domain import Vacancy
+from smol.cofe.space.domain import Vacancy
 
 from .utils.math_utils import *
 from .utils.format_utils import *

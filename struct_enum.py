@@ -19,7 +19,7 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 
 from smol.cofe.extern.ewald import EwaldTerm
 from smol.cofe.space.clusterspace import ClusterSubspace
-from smol.cofe.space.domain import get_allowed_species,get_specie, Vacancy
+from smol.cofe.space.domain import get_allowed_species,get_species, Vacancy
 from smol.cofe.expansion import ClusterExpansion
 from smol.moca import CanonicalEnsemble,Sampler
 
@@ -561,9 +561,8 @@ class StructureEnumerator(MSONable):
         sample_series = [500,1500,10000]
 
         ensemble = CanonicalEnsemble.from_cluster_expansion(self.ce, sc_mat, 
-                                                            temperature = 1000, 
                                                             optimize_inidicator=is_indicator)
-        sampler = Sampler.from_ensemble(ensemble)
+        sampler = Sampler.from_ensemble(ensemble,temperature=1000)
         processor = ensemble.processor
         sm = StructureMatcher()
  

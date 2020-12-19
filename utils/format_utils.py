@@ -9,7 +9,7 @@ import json
 
 from pymatgen import Composition,Specie,DummySpecie
 
-from smol.cofe.configspace.domain import Vacancy
+from smol.cofe.space.domain import Vacancy
 from smol.moca import CEProcessor
 
 # Monty decoding any dict
