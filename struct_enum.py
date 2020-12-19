@@ -2,11 +2,15 @@ __author__="Fengyu Xie"
 
 """
 This module implements a StructureEnumerator class for CE sampling.
+Ground state structures will also be added to the structure pool, but 
+they are not added here. They will be added in the convergence checker
+module.
 """
 import warnings
 import random
 from copy import deepcopy
 import numpy as np
+import os
 
 from monty.json import MSONable
 
@@ -14,16 +18,19 @@ from pymatgen import Structure,Element
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
 from smol.cofe.extern.ewald import EwaldTerm
-from smol.cofe.configspace.clusterspace import ClusterSubspace
-from smol.cofe.configspace.domain import get_allowed_species,get_specie, Vacancy
+from smol.cofe.space.clusterspace import ClusterSubspace
+from smol.cofe.space.domain import get_allowed_species,get_specie, Vacancy
 from smol.cofe.expansion import ClusterExpansion
 from smol.moca import CanonicalEnsemble,Sampler
 
 from .comp_space import CompSpace
 from .utils.math_utils import enumerate_matrices,select_rows,combinatorial_number
-from .utils.format_utils import flatten_2d,deflat_2d,serialize_comp,deser_comp
+from .utils.format_utils import flatten_2d,deflat_2d,serialize_comp,deser_comp,\
+                                structure_from_occu
 from .utils.calc_utils import get_ewald_from_occu
-    
+ 
+import pandas as pd
+
 class StructureEnumerator(MSONable):
     """
     Attributes:
@@ -107,8 +114,24 @@ class StructureEnumerator(MSONable):
             'random':
                 Select randomly
             Both methods guarantee inclusion of the ground states at initialization.
-    """
 
+        All generated structure entree will be saved in a star-schema:
+        The dimension tables will contain serialized supercell matrices and compositions,
+        and their id's as primary keys.(sc_id, comp_id). These dimension tables will mostly be fixed
+        as they were initalized, unless new ground state compostions has been detected.
+
+        The fact table will contain entrees of enumerated occupations(encoded), structures, their original
+        feature vectors, computation convergence(Boolean), properties used for charge assignment if ever, 
+        mapped occupation(encoded,None if can't map), mapped feature vector, sc_comp_id as foreign key, 
+        and entry_id as primary key. The primary keys will be sorted by their order of adding into this
+        table. 
+ 
+        Both the dimension tables and the fact table can be changed by all modules in CEAuto. They are 
+        main repositories of CEdata.
+
+        Computation results will be stored under 'vasp_run/{}'.format(entry_id). CEAuto will parse these 
+        files for charge assignment and featurization only.
+    """
     def __init__(self,prim,sublat_list = None,\
                  previous_ce = None,\
                  transmat=[[1,0,0],[0,1,0],[0,0,1]],sc_size=32,\
@@ -175,46 +198,39 @@ class StructureEnumerator(MSONable):
 
         self.select_method = select_method
 
-        #These data will be saved as pre-grouped, multi-index form, not plain pandas
-        #DF, in case pandas.groupby takes too much time to group data by sc matrix and
-        #composition. A self.data property will still be available for easy access to
-        #a pandas-like DF
-        self._sc_matrices = None
-        self._sc_comps = None
-        self._eq_occus = None
-
-        self._enum_strs = None
-        self._enum_occus = None
-        self._enum_corrs = None
-        #id starts from 0
-        self._enum_ids = None
+        # These data will be saved as star-schema. The dataframes will be serialized and saved in separate 
+        # csv files.
+        self._sc_df = None
+        self._comp_df = None
+        self._fact_df = None
     
     @property
     def n_strs(self):
         """
         Number of enumerated structures.
         """
-        if self._enum_strs is None or self._enum_occus is None or self._enum_corrs is None
-           or self._enum_ids is None:
+        if self._fact_df is None:
             return 0
         else:
-            return sum([len(key_strs) for key_strs in self._enum_strs])
+            return len(self._fact_df)
 
     @property
-    def sc_matrices(self):
+    def sc_df(self):
         """
         Supercell matrices used for structural enumeration. If none yet, will be 
         enumerated.
         Return:
-            A list of 2D lists.
+            Supercell matrix dimension table. Is a pd.Dataframe.
         """
-        if self._sc_matrices is None:
+        if self._sc_df is None:
             det = self.sc_size
-            self._sc_matrices =  enumerate_matrices(det, self.prim.lattice,\
+            sc_matrices =  enumerate_matrices(det, self.prim.lattice,\
                                                         transmat=self.transmat,\
                                                         max_sc_cond = self.max_sc_cond,\
                                                         min_sc_angle = self.min_sc_cond)
-        return self._sc_matrices
+            self._sc_df = pd.DataFrame({'sc_id':list(range(len(sc_matrices))),\
+                                        'matrix':sc_matrices})
+        return self._sc_df
 
     def set_sc_matrices(self,matrices=[]):
         """
@@ -236,30 +252,75 @@ class StructureEnumerator(MSONable):
         else:
             print("Reset supercell matrices to:\n{}\nAll previous compositions will be cleared and re-enumed!"
                   .format(matrices))
-            self._sc_matrices = new_sc_matrices
-            self._sc_comps = None
+            self._sc_df = pd.DataFrame({'sc_id':list(range(len(new_sc_matrices))),\
+                                        'matrix':new_sc_matrices})
+            self._comp_df = None
 
     @property
-    def sc_comps(self):
+    def comp_df(self):
         """
-        Enumerate proper compositions under each supercell matrix.
+        Enumerate proper compositions under each supercell matrix, and gives a dimension table with
+        sc_id, comp_id, and the exact composition.
         Return:
-            List of tuples, each tuple[0] is supercell matrix, tuple[1] is a list of composition
-            per sublattice. 
-            These will be used as keys to group structures, therefore to avoid unneccessary dedups 
-            between groups.
+            Dimension table containing all enumerated compositions, and their correponding supercell
+            matrices. Is a pandas.DataFrame.
         """
-        if self._sc_comps is None:
-            self._sc_comps = []
-            for mat in self.sc_matrices:
+        if self._comp_df is None:
+            sc_ids = []
+            comps = []
+            for sc_id,mat in zip(self.sc_df.sc_id,self.sc_df.matrix):
                 scs = int(round(abs(np.linalg.det(mat))))
-                self._sc_comps.extend([(mat,comp) for comp in 
-                                        self.comp_space.frac_grids(sc_size=scs/self.comp_enumstep,\
-                                                                   form='composition')
-                                        if self._check_comp(comp) 
-                                      ])
+                mat_comps = [comp for comp in 
+                             self.comp_space.frac_grids(sc_size=scs/self.comp_enumstep,\
+                                                        form='composition')
+                             if self._check_comp(comp) 
+                            ]
+                sc_ids.extend([sc_id for i in range(len(mat_comps))])
+                comps.extend(mat_comps)
+            #Remember to serialize and deserialize compositions when storing and loading.
+            self._comp_df = pd.DataFrame({'comp_id':list(range(len(comps))),\
+                                          'sc_id':sc_ids,\
+                                          'comp':comps,\
+                                          'eq_occu':[None for i in range(len(comps))]})
         #Notice: in form='composition', Vacancy() are not explicitly included!
-        return self._sc_comps
+        #eq_occu is a list to store equilibrated occupations under different 
+        #supercell matrices and compositions. If none yet, will be randomly generated.
+        return self._comp_df
+
+    @property
+    def fact_df(self):
+        """
+        Fact table, containing all computed entrees.
+        Columns:
+            entry_id(int):
+                Index of an entry, containing the computation result of a enumerated structure.
+            sc_id(int):
+                 Index of supercell matrix in the supercell matrix dimension table
+            comp_id(int):
+                Index of composition in the composition dimension table
+            ori_occu(List of int):
+                Original occupancy as it was enumerated. (Encoded, and turned into list)
+            ori_corr(List of float):
+                Original correlation vector computed from ori_occu. (Turned into list)
+            calc_status(str):
+                A string of two characters, specifying the calculation status of the current entry.
+                'NC': not calculated, or calculation not finished.
+                'CF': calculated, and failed (or exceeded wall time).
+                'AF': assignment failed. For example, not charge neutral after charge assignment.
+                'MF': mapping failed, structure failed to map into original lattice or featurize.
+                'SC': successfully calculated, mapped and featurized.
+                Any other status other than 'SC' will cause the following columns to be None.
+            map_occu(List of int or None):
+                Mapped occupancy after DFT relaxation.(Encoded, and turned into List)
+            map_corr(List of float or None):
+                Mapped correlation vector computed from map_occu. (Turned into List)
+            e_prim(float or None):
+                DFT energies of structures, normalized to ev/prim.
+            other_props(Dict or None):
+                Other scalar properties to expand. If not specified, only e_prim will be expanded.
+                In format: {'prop_name':prop_value,...}
+        """
+        return self._fact_df
 
     def _check_comp(self,comp):
         """
@@ -291,23 +352,16 @@ class StructureEnumerator(MSONable):
 
         return True
 
-    @property
-    def eq_occus(self):
-        """
-        A list to store equilibrated occupations under different supercell matrices and compositions.
-        If none yet, will be randomly generated.
-        """
-        if self._eq_occus is None:
-            self._eq_occus = [None for sc,comp in self.sc_comps]
-        return self._eq_occus
-
-    def generate_structures(self,n_per_key = 3, keep_gs = True,weight_by_comp=True):
+    def generate_structures(self, n_per_key = 3, keep_gs = True,weight_by_comp=True):
         """
         Enumerate structures under all different key = (sc_matrix, composition). The eneumerated structures
         will be deduplicated and selected based on CUR decomposition score to maximize sampling efficiency.
         Will run on initalization mode if no previous enumearation present, and on addition mode if previous
         enum present.
         Inputs:
+            old_femat(2D arraylike):
+                Feature matrices of previously generated structures. If not specified, will do initialization,
+                rather than structure addition.
             n_per_key(int):
                 will select n_per_key*N_keys number of new structures. If pool not large enough, select all of
                 pool. Default is 3.
@@ -319,17 +373,13 @@ class StructureEnumerator(MSONable):
                 that composition in the whole configurational space. 
                 Default is True.
     
-        No outputs. Updates in object private attributes.
+        No outputs. Updates in self._fact_df
         """
-        N_keys = len(self.sc_comps)
-        if self._enum_strs is None or self._enum_occus is None or self._enum_ids is None or self._enum_corrs is None:
-        #Initialization branch. No deduplication with previous enums needed.
-            print('*Structures initialization.')
-            self._enum_strs = [[] for i in range(N_keys)]
-            self._enum_occus = [[] for i in range(N_keys)]
-            self._enum_corrs = [[] for i in range(N_keys)]
-            self._enum_ids = [[] for i in range(N_keys)]
-            
+        N_keys = len(self.comp_df)
+        if self._fact_df is None:
+            self._fact_df = pd.DataFrame(columns=['entry_id','sc_id','comp_id','ori_occu','ori_corr',
+                                                  'calc_status','map_occu','map_corr','e_prim','other_props'])           
+        # Results of his generator run
         eq_occus_update = []
         enum_strs = []
         enum_occus = []
@@ -337,24 +387,38 @@ class StructureEnumerator(MSONable):
         comp_weights = []
         keep_first = []
 
-        for (sc_mat,comp),eq_occu,old_strs in zip(self.sc_comps,self.eq_occus,self._enum_strs):
+
+        old_femat = self._fact_df.ori_corr.tolist()
+
+        for sc_id,comp_id,comp,eq_occu in zip(self.comp_df.sc_id, self.comp_df.comp_id,\
+                                              self.comp_df.comp, self.comp_df.eq_occu):
+            
+            #Query dimension tables
+            sc_mat = self.sc_df[self.sc_df.sc_id == sc_id].iloc[0]
+
+            #Query previous fact table
+            old_strs = self._fact_df[self._fact_df.comp_id == comp_id]\
+                       .ori_occu.map(lambda o: structure_from_occu(self.ce,sc_mat,o))
 
             str_pool,occu_pool,comp_weight = self._enum_configs_under_sccomp(sc_mat,comp,eq_occu)
-            corr_pool = [list(self.ce.cluster_subspace.corr_from_structure(s)) for s in str_pool]
+            corr_pool = [list(self.ce.cluster_subspace.corr_from_structure(s,sc_matrix=sc_mat)) 
+                         for s in str_pool]
 
             #Update GS
             gs_occu = deepcopy(occu_pool[0])
             eq_occus_update.append(gs_occu)
 
             dedup_ids = []
-             for s1_id, s1 in enumerate(str_pool):
-                 dupe = False
-                 for s2_id, s2 in enumerate(old_strs):
-                     if sm.fit(s1,s2):
-                         dupe = True
-                         break
-                 if not dupe:
-                     dedup_ids.append(s1_id)
+
+
+            for s1_id, s1 in enumerate(str_pool):
+                dupe = False
+                for s2_id, s2 in enumerate(old_strs):
+                    if sm.fit(s1,s2):
+                        dupe = True
+                        break
+                if not dupe:
+                    dedup_ids.append(s1_id)
  
             #gs(id_0 in occu_pool) will always be selected if unique
             enum_strs.append([str_pool[d_id] for d_id in dedup_ids])
@@ -368,7 +432,8 @@ class StructureEnumerator(MSONable):
             else:
                 keep_first.append(False)
 
-        #Preprocess to weight over compositions
+        #Preprocess to weight over compositions, to determine how many structures to select under 
+        #each composition.
         W_max = max(1,max(comp_weights))
         N_max = max(1,max([len(key_str) for key_str in enum_strs]))
         r = N_max/W_max
@@ -377,9 +442,10 @@ class StructureEnumerator(MSONable):
         else:
             n_selects = [len(k) for w,k in zip(comp_weights,enum_strs)]
 
-        keep_fids = []
+        #Marking canonical ground states as 'must-keep'.
+        keep_fids = [] #Indices to keep in the flatten structure pool
         n_enum = 0
-        sec_ids = []
+        sec_ids = [] #Indices to select in the unflatten structure pool
         for n_sel,kf,key_str in zip(n_selects,keep_first,enum_strs):
             if not kf:
                 sec_ids.append(random.sample(list(range(len(key_str))),n_sel))
@@ -387,9 +453,9 @@ class StructureEnumerator(MSONable):
                 if len(key_str)>0:
                     sec_ids.append([0]+random.sample(list(range(1,len(key_str))),n_sel-1))
                     keep_fids.append(n_enum)
-                    n_enum += n_sel
                 else:
                     raise ValueError("GS scan suggested to keep first, but structure pool under key is empty!")
+            n_enum += n_sel
 
         enum_strs = [[enum_strs[k_id][s_id] for s_id in key_s_ids] for k_id,key_s_id in enumerate(sec_ids)]
         enum_occus = [[enum_occus[k_id][s_id] for s_id in key_s_ids] for k_id,key_s_id in enumerate(sec_ids)]
@@ -405,10 +471,10 @@ class StructureEnumerator(MSONable):
         str_pool_flat, deflat_rule = flatten_2d(enum_strs)
         occu_pool_flat, deflat_rule = flatten_2d(enum_occus)
         corr_pool_flat, deflat_rule = flatten_2d(enum_corrs)
-        old_femat, old_delfat_rule = flatten_2d(self._enum_corrs)
 
+        #Selecting structures that contributes to most feature variance.
         selected_fids = select_rows(corr_pool_flat,n_select=n_per_key*N_keys,
-                                     old_femat =flatten_2d(self._enum_corrs),
+                                     old_femat = old_femat,
                                      method=self.select_method,
                                      keep=keep_fids) 
             
@@ -422,31 +488,37 @@ class StructureEnumerator(MSONable):
         enum_occus = deflat_2d(occu_pool_flat,deflat_rule)
         enum_corrs = deflat_2d(corr_pool_flat,deflat_rule)
 
+        #Adding new structures into the fact table. All fact entry ids starts from 1
         cur_id = deepcopy(self.n_strs)
         n_strs_init = deepcopy(self.n_strs)
 
-        for key_id in range(N_keys):
-            for i_id in range(len(str_pool[key_id])):
-                self._enum_strs[key_id].append(enum_strs[key_id][i_id])
-                self._enum_occus[key_id].append(enum_occus[key_id][i_id])
-                self._enum_corrs[key_id].append(enum_corrs[key_id][i_id])
-                self._enum_ids[key_id].append(cur_id)
-                #So id starts from 0!
+        for sc_id,comp_id,key_occus,key_corrs in zip(self.comp_df.sc_id, self.comp_df.comp_id,\
+                                                     enum_occus,enum_corrs):
+            for occu,corr in zip(key_occus,key_corrs):
+                self._fact_df.append({'entry_id':cur_id,
+                                      'sc_id':sc_id,
+                                      'comp_id':comp_id,
+                                      'ori_occu':occu,
+                                      'ori_corr':corr,
+                                      'calc_status':'NC',
+                                      'map_occu':None,
+                                      'map_corr':None,
+                                      'e_prim':None,
+                                      'other_props':None
+                                     }, ignore_index = True)
                 cur_id += 1
 
-        self._eq_occus = eq_occus_update
+        #Updating eq_occus in comp_df
+        self._comp_df.eq_occus = eq_occus_update
+
         print("*Added with {} new unique structures.".format(self.n_strs-n_strs_init))
-        print("*Ground states updated.")
             
     def clear_structures(self):
         """
         Clear enumerated structures.
         """
         print("Warning: Previous enumerations cleared.")
-        self._enum_strs = None
-        self._enum_corrs = None
-        self._enum_occus = None
-        self._enum_ids = None
+        self._fact_df = None
 
     #POTENTIAL FUTURE ADDITION: add_single_structure
 
@@ -644,30 +716,11 @@ class StructureEnumerator(MSONable):
 
         return random.choice(rand_occus[:10]), comp_weight
 
-    @property
-    def data(self):
+    def as_dict(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
         """
-        Flatten data to a single indexed, Pandas-like dataframe,
-        with indices from self._enum_ids. Not serialized to json
-        writable format, just for quick reference, not for load/save.
+        Serialize this class, and save the dimension and fact tables into csv files.
+        I won't recommend you to change the file name options.
         """
-        if self._enum_strs is None or self._enum_corrs is None\
-        or self._enum_occus is None or self._enum_ids is None:
-            return []
-        else:
-            _data = []
-            for (sc,comp),gs_occu,key_strs,key_occus,key_corrs,key_ids\
-                 in zip(self.sc_comps,self.eq_occus):
-                for s,o,c,iid in zip(key_strs,key_occus,key_corrs,key_ids):
-                    entry = {'iid':iid,'sc_mat':sc,'comp':comp,
-                             'eq_occu':eq_occu,
-                             'ori_str':s,'ori_occu':o,'ori_corr':c}
-                    _data.append(entry)
-            _data = sorted(_data,key=lambda item:item['iid'])
-        return _data
-
-    def as_dict(self):
-       
         #Serialization
         d={}
         d['prim']=self.prim.as_dict()
@@ -681,20 +734,28 @@ class StructureEnumerator(MSONable):
         d['comp_enumstep']=self.comp_enumstep
         d['basis_type']=self.basis_type
         d['select_method']=self.select_method
-        d['sc_matrices'] = self.sc_matrices
-        d['sc_comps'] = [(sc,serialize_comp(comp)) for sc,comp in self.sc_comps]
-        d['eq_occus'] = self._eq_occus
-        d['enum_strs'] = [[s.as_dict() for s in key_ss] for key_ss in self._enum_strs]
-        d['enum_occus'] = self._enum_occus
-        d['enum_corrs'] = self._enum_corrs
-        d['enum_ids'] = self._enum_ids
         d["@module"] = self.__class__.__module__
         d["@class"] = self.__class__.__name__
+
+        #Saving dimension tables and the fact table. Must set index=False, otherwise will always add
+        #One more row for each save and load.
+        #comp_df needs a little bit serialization
+        self.sc_df.to_csv(sc_file,index=False)
+        comp_ser = self.comp_df.copy()
+        comp_ser.comp = comp_ser.comp.map(lambda c: serialize_comp(c))
+        comp_ser.to_csv(comp_file,index=False)
+        if self.fact_df is not None:
+            self.fact_df.to_csv(fact_file,index=False)
 
         return d
 
     @classmethod
-    def from_dict(cls,d):
+    def from_dict(cls,d,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+        """
+        De-serialzie from a dictionary, and load dimension and fact tables from csv files,
+        if they are already present.
+        I won't recommend you to change the file name options.
+        """
         prim = Structure.from_dict(d['prim'])
         ce = ClusterExpansion.from_dict(d['ce'])
         socket = cls(prim,sublat_list = d['sublat_list'],\
@@ -707,21 +768,15 @@ class StructureEnumerator(MSONable):
                  comp_enumstep=d['comp_enumstep'],\
                  basis_type = d['basis_type'],\
                  select_method = d['select_method'])
-
-        if 'sc_matrices' in d:
-            socket._sc_matrices = d['sc_matrices']
-        if 'sc_comps' in d:
-            socket._sc_comps = [(sc,deser_comp(comp_ser)) for sc,comp_ser in d['sc_comps']]
-        if 'eq_occus' in d:
-            socket._eq_occus = d['eq_occus']
-        if 'enum_strs' in d:
-            socket._enum_strs = [[Structure.from_dict(s_d) for s_d in key_sds] 
-                                 for key_sds in d['enum_strs']]
-        if 'enum_occus' in d:
-            socket._enum_occus = d['enum_occus']
-        if 'enum_corrs' in d:
-            socket._enum_corrs = d['enum_corrs']
-        if 'enum_ids' in d:
-            socket._enum_ids = d['enum_ids']
+        
+        if os.path.isfile(sc_file):
+            socket._sc_df = pd.read_csv(sc_file)
+        if os.path.isfile(comp_file):
+            #De-serialize compositions
+            comp_ser = pd.read_csv(comp_file)
+            comp_ser.comp = comp_ser.comp.map(lambda c: deser_comp(c))
+            socket._comp_df = comp_ser.copy()
+        if os.path.isfile(fact_file):
+            socket._fact_df = pd.read_csv(fact_file)
 
         return socket

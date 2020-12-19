@@ -10,6 +10,7 @@ import json
 from pymatgen import Composition,Specie,DummySpecie
 
 from smol.cofe.configspace.domain import Vacancy
+from smol.moca import CEProcessor
 
 # Monty decoding any dict
 def decode_from_dict(d):
@@ -193,5 +194,10 @@ def occu_to_species_list(sublattices,occupancy):
         species_list[sl_id][sp_id].append(site_id)
 
     return species_list
+
+#Wrap up structure_from_occu method from processor module
+def structure_from_occu(ce,sc_matrix,occu):
+    decode_proc = CEProcessor(ce.cluster_subspace,sc_matrix,ce.coefs)
+    return decode_proc.structure_from_occupancy(occu)
 
 
