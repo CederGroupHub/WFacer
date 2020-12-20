@@ -11,17 +11,14 @@ import os
 from collections import OrderedDict
 from monty.json import MSONable
 
-from pymatgen import Structure,Lattice
+from pymatgen import Structure,Lattice,Element
 
-from smol.cofe.space.domain import get_allowed_species
+from smol.cofe.space.domain import get_allowed_species,Vacancy
 from smol.cofe import ClusterSubspace,ClusterExpansion
 from smol.cofe.extern.ewald import EwaldTerm
 
-from .assign import *
-
 #### Feature assigners
 
-#### Property extractors
 
 
 class Featurizer(MSONable):
@@ -40,26 +37,26 @@ class Featurizer(MSONable):
         previous_ce(smol.cofe.ClusterExpansion):
             A previous cluster expansion. By default, is None. If this is given, will featurize based on this clusterexpansion
             indstead.
-        assignments(List of str):
-            Assigners called before mapping into feature vectors. For example, if we do cluster expansion with charge, since vasp
+        decorators(List of .decorator.Decorator objects):
+            Decorators called before mapping into feature vectors. For example, if we do cluster expansion with charge, since vasp
             calculated structures does not mark charges, we have to assign charges to atoms before mapping.
 
-            All items in this list must be a class name in .assign.assignments. If multiple assignment class names are given,
-            assignments will be done in the order of this list. If None given, will infer required assignments from the form of given 
-            prim.
+            All items in this list must be a class object in .decorator. If multiple decorators are given,
+            decorations will be done in the order of this list. If None given, will check with prim, and see whether decorations
+            are needed. If decorations are needed, but no decorator is given, will return an error.
 
-            Currently, we only support mixture of gaussian charge assignment from magnetization. You can implement you own assignments
-            in .assign.assignments, and add local processing methods at the head of this file, accordingly.
+            Currently, we only support mixture of gaussian charge decoration from magnetization. You can implement you own decoration
+            in .decoration module, and add local processing methods at the head of this file, accordingly.
+
         other_exp_props(List of str):
             Calculated properties to extract for expansion. Currently none of other proerties than 'e_prim' is supported. You can add
-            your own properties extractors on you own.
+            your own properties extractors in calc_manager classes.
+            This class does not check whether a proerty name is legal. Error messages will be given by calc_manager class.
     """
-    allowed_assignments = {'charge':['MagChargeAssignment']}
-    allowed_other_properties = []   
 
     def __init__(self,prim,sublat_list=None,basis_type='indicator',radius=None,
                  previous_ce=None,
-                 assignments=None,
+                 decorators=[],
                  other_props=[]):
 
         self.prim = prim
@@ -134,37 +131,21 @@ class Featurizer(MSONable):
             self.ce = ClusterExpansion(c_spc,coef,[])
 
         #Handling assignment types.
-        if assignments is not None:
-            self.assignments = OrderedDict({})
-            for assign_name in assignments:
-                assign_type = None
-                for tp in allowed_assignments:
-                    if assign_name in allowed_assignments[tp]:
-                        assign_type = tp
-                if assign_type is None:
-                    raise ValueError('Assignment {} is not implemented.'.format(assign_name))
-                elif assign_type not in self.assignments:
-                    self.assignments[assign_type] = assign_name
-                else:
-                    print('Warning: Assignment {} if of type {}, which is already scheduled.'\
-                          .format(assign_name,assign_type))
+        if len(decorators)!=0:
+            self.decorators = decorators
         else:
         #Currently only supports charge assignments. If you implement more assginments in the future, please 
         #modify the following inference conditions, as well.
-            self.assignments = OrderedDict({})
             if self.is_charged_ce:
-                self.assignments['charge']='MagChargeAssignment'
-            #### POTENTIAL ADDITIONS HERE
+                raise ValueError('Cluster expansion is charged, but no charge decoration is provided!')
+            for sl_bits in self.bits:
+                for b in sl_bits:
+                    if not isinstance(b,(Vacancy,Element)) and len(b._properties>0):
+                        raise ValueError('Cluster expasnion distiguishes {} of species, \
+                                          but no decorations are given!'\
+                                          .format(list(b._properties.keys())))                       
 
-        #handling properties 
-        self.other_props = []      
-        for p_name in other_props:
-            if p_name not in allowed_other_properties:
-                raise ValueError('Property name: {} not supported!'.format(p_name))
-            elif p_name not in self.other_props:
-                self.other_props.append(p_name)
-            else:
-                continue
+        self.other_props = other_props
 
     def featurize(self,sc_table,comp_table,fact_table,calc_manager):
         """

@@ -6,13 +6,14 @@ For charge assignment, charges will be assigned by magnitudes of magnetization v
 
 from pymatgen import Specie,Structure,Element,DummySpecie
 from pymatgen.core.periodic_table import get_el_sp
-from base import Assignment
+
+from .base import BaseDecorator
 
 import numpy as np
 from sklearn.mixture import GaussianMixture
 from copy import deepcopy
 
-class MagChargeAssignment(Assignment):
+class MagChargeDecorator(BaseDecorator):
     """
     Assign charges from magnitudes of magentic moments. Partition dividers will be given by
     a mixture of gaussians model. Takes in a pool of structures, gives assigned strutures.
@@ -126,7 +127,11 @@ class MagChargeAssignment(Assignment):
                 Check whether the assigned structures are charge neutral.
                 Non-neutral structures will be returned as None.
         Returns:
-            A list of Structures or Nones.
+            A dictionary, specifying name of assigned properties and their
+            values by structure and by site. If assignment failed for a
+            structure, will give None for it.
+            For example: 
+            {'charge":[[1,4,2,...],None,...]}
         """
         #Establish a mapping list of MoG clusters and oxidation states. means sorted by ascending order.
         clusorders_by_element = {e:np.argsort(self._models_by_elements[e].means_.reshape((-1,))).tolist()
@@ -153,43 +158,29 @@ class MagChargeAssignment(Assignment):
                 s_id, st_id = (sites_by_elements[e][a_id][1:]
                 assignments[s_id][st_id]=a
 
-        str_assigned = []
+        oxi_assigned = []
         n_fails = 0
         for s_id,s in enumerate(str_pool):
-            species_of_s = []
-            for st_id,st in enumerate(s):
-                ox = assignments[s_id][st_id]
-                e_str = st.specie.symbol
-                #If oxidation state is 0, will assign to Element!
-                if ox == 0:
-                    try:
-                        sp = Element(e_str)
-                    except:
-                        sp = DummySpecie(e_str)
-                else:
-                    try:
-                        sp = Specie(e_str,oxidation_state=ox)
-                    except:
-                        sp = DummySpecie(e_str,oxidation_state=ox)
-                species_of_s.append(sp)
             if (not check_neutral) or (check_neutral and np.sum(assignments[s_id])==0):
-                str_assigned.append(Structure(s.lattice, species_of_s, s.frac_coords))
+                oxi_assigned.append(assignments[s_id])
             else:
-                str_assigned.append(None)
+                oxi_assigned.append(None)
                 n_fails += 1
 
-        n_all = len(str_assigned)
+        n_all = len(oxi_assigned)
         n_success = n_all-n_fails
         print("****{}/{} Structures Assigned. Success percentage: {:.3f}.".format(n_success,n_all,float(n_success)/n_all)) 
                 
-        return str_assigned    
+        return {'_oxi_state':oxi_assigned}    
 
     def as_dict(self):
         """
         Serialize into dictionary.
         """
         return {'labels_table':self.labels_table,
-                'model_params':self.params_by_elements
+                'model_params':self.params_by_elements,
+                "@module": self.__class__.__module__
+                "@class": self.__class__.__name__
                }
     
     @classmethod

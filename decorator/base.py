@@ -9,10 +9,11 @@ If the user wishes to define other properties assignment methods, just derive
 a new class Assignment class, and write assignment methods accordingly.
 """
 from abc import ABC, abstractmethod
+from monty.json import MSONable
 
-class Assignment(ABC):
+class BaseDecorator(ABC,MSONable):
     """
-    Abstract assignment class.
+    Abstract decorator class.
     Attributes:
         labels_av(Dict{Element: List[int|float]...}):
             A dictionary, specifying the elements, and the labels
@@ -31,7 +32,7 @@ class Assignment(ABC):
             in these three types of oxidation states.
     """
     def __init__(self):
-        
+        pass
 
     @abstractmethod
     def train(self,str_pool,properties):
@@ -59,10 +60,12 @@ class Assignment(ABC):
             properties(2D ArrayLike):
                 Numerical properties used to classify sites.
                 Shape should be N_strs*N_sites       
-        Return:
-            List[Structure|Nonetype], a list of assigned structures, consisting of
-        Species|Element, or None. Vacancies will be handled by structure matcher
-        in smol.ClusterSubspace, so there is no need to explicitly add them.
+        Returns:
+            A dictionary, specifying name of assigned properties and their
+            values by structure and by site. If assignment failed for a
+            structure, will give None for it.
+            For example: 
+            {'charge":[[1,4,2,...],None,[...],...]}
         """
         return
 
@@ -71,4 +74,9 @@ class Assignment(ABC):
         """
         Serialization method. Please save the trained property partition or clustering here.
         """
+        return
+
+    @classmethod
+    @abstractmethod
+    def from_dict(cls,d):
         return

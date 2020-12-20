@@ -744,10 +744,9 @@ class StructureEnumerator(MSONable):
 
         return random.choice(rand_occus[:10]), comp_weight
 
-    def as_dict(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+    def as_dict(self):
         """
-        Serialize this class, and save the dimension and fact tables into csv files.
-        I won't recommend you to change the file name options.
+        Serialize this class. Saving and loading of the star schema are moved to other functions!
         """
         #Serialization
         d={}
@@ -764,25 +763,14 @@ class StructureEnumerator(MSONable):
         d['select_method']=self.select_method
         d["@module"] = self.__class__.__module__
         d["@class"] = self.__class__.__name__
-
-        #Saving dimension tables and the fact table. Must set index=False, otherwise will always add
-        #One more row for each save and load.
-        #comp_df needs a little bit serialization
-        self.sc_df.to_csv(sc_file,index=False)
-        comp_ser = self.comp_df.copy()
-        comp_ser.comp = comp_ser.comp.map(lambda c: serialize_comp(c))
-        comp_ser.to_csv(comp_file,index=False)
-        if self.fact_df is not None:
-            self.fact_df.to_csv(fact_file,index=False)
+        print('NOTICE: Generator Serialized, make sure you have also saved the dataframes!')
 
         return d
 
     @classmethod
-    def from_dict(cls,d,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+    def from_dict(cls,d):
         """
-        De-serialzie from a dictionary, and load dimension and fact tables from csv files,
-        if they are already present.
-        I won't recommend you to change the file name options.
+        De-serialze from a dictionary.
         """
         prim = Structure.from_dict(d['prim'])
         ce = ClusterExpansion.from_dict(d['ce'])
@@ -797,14 +785,34 @@ class StructureEnumerator(MSONable):
                  basis_type = d['basis_type'],\
                  select_method = d['select_method'])
         
+        return socket
+
+    def save_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+        """
+        Saving dimension tables and the fact table. Must set index=False, otherwise will always add
+        One more row for each save and load.
+        comp_df needs a little bit serialization.
+        File names can be changed, but not recommended!
+        """
+        self.sc_df.to_csv(sc_file,index=False)
+        comp_ser = self.comp_df.copy()
+        comp_ser.comp = comp_ser.comp.map(lambda c: serialize_comp(c))
+        comp_ser.to_csv(comp_file,index=False)
+        if self.fact_df is not None:
+            self.fact_df.to_csv(fact_file,index=False)
+
+    def load_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+        """
+        Loading dimension tables and the fact table. 
+        comp_df needs a little bit de-serialization.
+        File names can be changed, but not recommended!
+        """
         if os.path.isfile(sc_file):
-            socket._sc_df = pd.read_csv(sc_file)
+            self._sc_df = pd.read_csv(sc_file)
         if os.path.isfile(comp_file):
             #De-serialize compositions
             comp_ser = pd.read_csv(comp_file)
             comp_ser.comp = comp_ser.comp.map(lambda c: deser_comp(c))
-            socket._comp_df = comp_ser.copy()
+            self._comp_df = comp_ser.copy()
         if os.path.isfile(fact_file):
-            socket._fact_df = pd.read_csv(fact_file)
-
-        return socket
+            self._fact_df = pd.read_csv(fact_file)
