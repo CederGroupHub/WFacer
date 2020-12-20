@@ -173,6 +173,7 @@ class StructureEnumerator(MSONable):
         self.basis_type = basis_type
         if previous_ce is not None:
             self.ce = previous_ce
+            self.basis_type = self.ce.cluster_subspace.orbits[0].basis_type
         else:
             #An empty cluster expansion with the points and ewald term only
             #Default is indicator basis
@@ -268,20 +269,38 @@ class StructureEnumerator(MSONable):
         if self._comp_df is None:
             sc_ids = []
             comps = []
+            ucoords = []
+            ccoords = []
             for sc_id,mat in zip(self.sc_df.sc_id,self.sc_df.matrix):
                 scs = int(round(abs(np.linalg.det(mat))))
                 mat_comps = [comp for comp in 
                              self.comp_space.frac_grids(sc_size=scs/self.comp_enumstep,\
-                                                        form='composition')
-                             if self._check_comp(comp) 
-                            ]
+                                                        form='composition')]
+                mat_ucoords = [uc for uc in
+                             self.comp_space.frac_grids(sc_size=scs/self.comp_enumstep,\
+                                                        form='unconstr')]
+                mat_ccoords = [cc for cc in
+                             self.comp_space.frac_grids(sc_size=scs/self.comp_enumstep,\
+                                                        form='constr')]
+
+                filt_ = [self._check_comp(comp) for comp in mat_comps]
+                mat_comps = [comp for comp,f in zip(mat_comps,filt_) if f]
+                mat_ucoords = [uc for uc,f in zip(mat_ucoords,filt_) if f]
+                mat_ccoords = [cc for cc,f in zip(mat_ccoords,filt_) if f]
+ 
                 sc_ids.extend([sc_id for i in range(len(mat_comps))])
                 comps.extend(mat_comps)
+                ucoords.extend(mat_ucoords)
+                ccoords.extend(mat_ccoords)
+
             #Remember to serialize and deserialize compositions when storing and loading.
             self._comp_df = pd.DataFrame({'comp_id':list(range(len(comps))),\
                                           'sc_id':sc_ids,\
+                                          'ucoord':ucoords,\
+                                          'ccoord':ccoords,\
                                           'comp':comps,\
                                           'eq_occu':[None for i in range(len(comps))]})
+
         #Notice: in form='composition', Vacancy() are not explicitly included!
         #eq_occu is a list to store equilibrated occupations under different 
         #supercell matrices and compositions. If none yet, will be randomly generated.
@@ -298,6 +317,11 @@ class StructureEnumerator(MSONable):
                  Index of supercell matrix in the supercell matrix dimension table
             comp_id(int):
                 Index of composition in the composition dimension table
+            iter_id(int):
+                Specifies the time when this structure is added into calculations.
+                If iter_id is even, this structure is added in a generator run. If
+                iter_id is odd, this structure is added in a groundsolver run.
+                Iteration ids starts from 0
             ori_occu(List of int):
                 Original occupancy as it was enumerated. (Encoded, and turned into list)
             ori_corr(List of float):
@@ -376,9 +400,13 @@ class StructureEnumerator(MSONable):
         No outputs. Updates in self._fact_df
         """
         N_keys = len(self.comp_df)
-        if self._fact_df is None:
-            self._fact_df = pd.DataFrame(columns=['entry_id','sc_id','comp_id','ori_occu','ori_corr',
+        if self._fact_df is None or len(self._fact_df)==0:
+            self._fact_df = pd.DataFrame(columns=['entry_id','sc_id','comp_id','iter_id','ori_occu','ori_corr',
                                                   'calc_status','map_occu','map_corr','e_prim','other_props'])           
+            cur_it_id = 0
+        else:
+            cur_it_id = self._fact_df.iter_id.max()+1
+
         # Results of his generator run
         eq_occus_update = []
         enum_strs = []
@@ -498,6 +526,7 @@ class StructureEnumerator(MSONable):
                 self._fact_df.append({'entry_id':cur_id,
                                       'sc_id':sc_id,
                                       'comp_id':comp_id,
+                                      'iter_id':cur_iter_id,
                                       'ori_occu':occu,
                                       'ori_corr':corr,
                                       'calc_status':'NC',
