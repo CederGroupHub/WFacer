@@ -166,7 +166,7 @@ class Featurizer(MSONable):
             else:
                 continue
 
-    def featurize(self,sc_table,comp_table,fact_table,vasp_run='vasp_run'):
+    def featurize(self,sc_table,comp_table,fact_table,calc_manager):
         """
         Load and featurize the fact table with vasp data.
         sc_table(pd.DataFrame):
@@ -176,9 +176,12 @@ class Featurizer(MSONable):
         fact_table(pd.DataFrame):
             Fact table, containing all structure information, and is
             to be filled.
-        vasp_run(str):
-            vasp data directory name. Example folder structure: 
-            vasprun/0/[vasp_computation files].
+        calc_manager(CalcManager):
+            A calculations manager object. Either interacts with a local
+            directory, vasp_run, or with a mongodb.
+            Must provide methods to access calculated properties from 
+            CONTCAR, vasprun.xml and OUTCAR. (They will also interact
+            with computational resources.)
         """
         ##Loading and assignment
 
