@@ -17,7 +17,7 @@ from smol.cofe.space.domain import get_allowed_species
 from smol.cofe import ClusterSubspace,ClusterExpansion
 from smol.cofe.extern.ewald import EwaldTerm
 
-from .assign.assignments import *
+from .assign import *
 
 #### Feature assigners
 
