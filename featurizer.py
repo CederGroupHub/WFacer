@@ -222,7 +222,7 @@ class Featurizer(MSONable):
         ##Loading and decoration. If decorators not trained, train decorator.
         eid_unassigned = fact_table[fact_table.calc_status=='NC'].entry_id
         #Check computation status, returns converged and failed indices.
-        success_ids, fail_ids = calc_manager.check_computation_status(check_ids = eid_unassigned)
+        success_ids, fail_ids = calc_manager.check_computation_status(entry_ids = eid_unassigned)
         print('****{}/{} successful computations in the last run.'\
               .format(len(success_ids),len(fact_unassigned)))
         fact_table.loc[fact_table.entry_id.isin(fail_ids),'calc_status'] = 'CF'
@@ -232,7 +232,7 @@ class Featurizer(MSONable):
 
         #Loading structures
         structures_unassign = calc_manager.load_structures(\
-                              check_ids = fact_unassigned.entry_id)
+                              entry_ids = fact_unassigned.entry_id)
        
         #Loading properties and doing decorations
         if len(self.decorators)>0:
@@ -240,7 +240,7 @@ class Featurizer(MSONable):
             for decorator in self.decorators:
                 d_name = decorator.__class__.__name__
                 requirements = decorator_requirements[d_name]
-                decor_inputs = calc_manager.load_properties(check_ids = fact_unassigned.entry_id,\
+                decor_inputs = calc_manager.load_properties(entry_ids = fact_unassigned.entry_id,\
                                                             prop_names = requirements)
                 if not decorator.trained:
                     print('******Training decorator {}.'.format(d_name))
@@ -338,16 +338,16 @@ class Featurizer(MSONable):
         eid_unchecked = fact_unchecked.entry_id
 
         #loading un-normalized energies
-        e_norms = calc_manager.load_properties(check_ids = eid_unchecked,\
-                                                normalize = sc_sizes,\
-                                                prop_names = 'energy')
+        e_norms = calc_manager.load_properties(entry_ids = eid_unchecked,\
+                                               normalize_by = sc_sizes,\
+                                               prop_names = 'energy')
         #prop_names can be either one str or List. This method also provides normalization.
         #If not normalizable, will not normalize
         #Also provides a selection of format. If include_pnames = True, will return a 
         #Dictionary with {prop_name:[List of values]}
 
-        other_props = calc_manager.load_properties(check_ids = eid_unchecked,\
-                                                   normalize = sc_sizes,\
+        other_props = calc_manager.load_properties(entry_ids = eid_unchecked,\
+                                                   normalize_by = sc_sizes,\
                                                    prop_names = self.other_props,\
                                                    include_pnames = True)
 
