@@ -34,17 +34,30 @@ class BaseDecorator(ABC,MSONable):
     def __init__(self):
         pass
 
+    @property
     @abstractmethod
-    def train(self,str_pool,properties):
+    def trained(self):
+        """
+        Gives whether this decorator is trained or not. If trained, will not be trained
+        again.
+        """
+        return
+
+    @abstractmethod
+    def train(self,str_pool,properties,reset=False):
         """
         Train a properties assignment model. Model or model parameters
         should be stored in a property of the object.
         Args:
             str_pool(List[Structure]):
                 Unassigned structures, must contain only pymatgen.Element
-            properties(2D ArrayLike):
+            properties(3D ArrayLike):
                 Numerical properties used to classify sites.
-                Shape should be N_strs*N_sites
+                Shape should be N_different_proerties*N_strs*N_sites
+            reset(Boolean):
+                If you want to re-train the decorator model, set this value
+                to true. Otherwise we will skip training if self.trained is 
+                true.
         """
         return
 
@@ -65,7 +78,12 @@ class BaseDecorator(ABC,MSONable):
             values by structure and by site. If assignment failed for a
             structure, will give None for it.
             For example: 
-            {'charge":[[1,4,2,...],None,[...],...]}
+            {'charge':[[1,4,2,...],None,[...],...]}
+            Currently, in pymatgen.Specie's
+            other_properties, only 'spin' is allowed. If you want to add more, do
+            your own study!
+            The de-serialization of property names is given in CEAuto.featurizer.
+            featurize.
         """
         return
 

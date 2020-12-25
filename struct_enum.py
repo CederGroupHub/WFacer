@@ -595,11 +595,11 @@ class StructureEnumerator(MSONable):
         processor = ensemble.processor
         sm = StructureMatcher()
  
+        print("**Initializing occupation.")
+        init_occu, comp_weight = self._initialize_occu_under_sccomp(sc,comp)
+ 
         if eq_occu is None:
         #If not annealed before, will anneal and save GS
-            print("**Initializing occupation.")
-            init_occu = self._initialize_occu_under_sccomp(sc,comp)
- 
             print("****Annealing to the ground state.")
             sampler.anneal(anneal_series,n_steps_anneal,
                            initial_occupancies=np.array([init_occu]))
@@ -806,13 +806,24 @@ class StructureEnumerator(MSONable):
         Loading dimension tables and the fact table. 
         comp_df needs a little bit de-serialization.
         File names can be changed, but not recommended!
+        Notice: pandas loads lists as strings. You have to serialize them!
         """
+        list_conv = lambda x: json.loads(x) if x is not None else None
         if os.path.isfile(sc_file):
-            self._sc_df = pd.read_csv(sc_file)
+            self._sc_df = pd.read_csv(sc_file,converters={'matrix':list_conv})
         if os.path.isfile(comp_file):
-            #De-serialize compositions
-            comp_ser = pd.read_csv(comp_file)
-            comp_ser.comp = comp_ser.comp.map(lambda c: deser_comp(c))
-            self._comp_df = comp_ser.copy()
+            #De-serialize compositions and list values
+            self._comp_df = pd.read_csv(comp_file,
+                                        converters={'ucoord':list_conv,
+                                                    'ccoord':list_conv,
+                                                    'eq_occu':list_conv,
+                                                    'comp':deser_comp
+                                                   })
         if os.path.isfile(fact_file):
-            self._fact_df = pd.read_csv(fact_file)
+            self._fact_df = pd.read_csv(fact_file,
+                                        converters={'ori_occu':list_conv,
+                                                    'ori_corr':list_conv,
+                                                    'map_occu':list_conv,
+                                                    'map_corr':list_conv,
+                                                    'other_props':list_conv
+                                                   })

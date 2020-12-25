@@ -43,21 +43,43 @@ class MagChargeDecorator(BaseDecorator):
             structures as None. Default is True.
     """
     def __init__(self,labels_table):
-         self.labels_table = labels_table
-         self._models_by_elements = {e:None for e in self.labels_table.keys()}
+        self.labels_table = labels_table
+        self._models_by_elements = {e:None for e in self.labels_table.keys()}
+         
+    @property
+    def trained(self):
+        """
+        Gives whether the model is trained or not.
+        """
+        for val in self._models_by_elements.values():
+            if val is None:
+                return False
+        return True
 
-    def train(self,str_pool,mags):
+    def train(self,str_pool,mags_3d,reset=False):
         """
         Train a properties assignment model. Model or model parameters
         should be stored in a property of the object.
         Args:
             str_pool(List[Structure]):
                 Unassigned structures, must contain only pymatgen.Element
-            mags(2D ArrayLike):
+            mags_3d(3D ArrayLike):
                 Magnetic moments of each site in each structure.
-                Shape should be N_strs*N_sites
+                Shape should be 1*N_strs*N_sites
+                This must be a 3D array because some other decorators may
+                take multiple proerties as classifier features. We must keep
+                a consistency of input formats between all classifiers.
+            reset(Boolean):
+                If you want to re-train the decorator model, set this value
+                to true. Otherwise we will skip training if self.trained is 
+                true.
         No return value.
         """
+        if self.trained and (not reset):
+            print("Decorator model trained! Skip training.")
+            return
+
+        mags = mags_3d[0]
         #flatten all structures, and group by elements
         sites_by_elements = {e:[] for e in self.labels_table.keys()}
         
@@ -131,7 +153,10 @@ class MagChargeDecorator(BaseDecorator):
             values by structure and by site. If assignment failed for a
             structure, will give None for it.
             For example: 
-            {'charge":[[1,4,2,...],None,...]}
+            {'charge':[[1,4,2,...],None,[...],...]}
+            Currently, in pymatgen.Specie's
+            other_properties, only 'spin' is allowed. If you want to add more, do
+            your own study!
         """
         #Establish a mapping list of MoG clusters and oxidation states. means sorted by ascending order.
         clusorders_by_element = {e:np.argsort(self._models_by_elements[e].means_.reshape((-1,))).tolist()
@@ -171,7 +196,7 @@ class MagChargeDecorator(BaseDecorator):
         n_success = n_all-n_fails
         print("****{}/{} Structures Assigned. Success percentage: {:.3f}.".format(n_success,n_all,float(n_success)/n_all)) 
                 
-        return {'_oxi_state':oxi_assigned}    
+        return {'charge':oxi_assigned}    
 
     def as_dict(self):
         """
