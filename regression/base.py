@@ -35,6 +35,8 @@ class BaseEstimator(ABC):
         traget_av = np.mean(target_vector)
         target_centered = target_vector - target_av
 
+        #TODO: implement separate fitting of single-point terms. Is it necessary?
+
         coef_ = self._solve(feature_centered, target_centered, hierarchy=hierarchy,
                                  *args, **kwargs)
         self.coef_ = coef_.copy()
