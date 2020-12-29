@@ -181,12 +181,12 @@ class StructureEnumerator(MSONable):
                                     basis = self.basis_type)
             if self.is_charged_ce:
                 c_spc.add_external_term(EwaldTerm())
-                coef = np.zeros(c_spc.n_bit_orderings+1)
+                coef = np.zeros(c_spc.num_corr_functions+1)
                 coef[-1] = 1.0
             else:
-                coef = np.zeros(c_spc.n_bit_orderings)
+                coef = np.zeros(c_spc.num_corr_functions)
 
-            self.ce = ClusterExpansion(c_spc,coef,[])
+            self.ce = ClusterExpansion(c_spc,coef,np.array([coef.tolist()]))
             
         self.transmat = transmat
         self.sc_size = sc_size
@@ -341,7 +341,7 @@ class StructureEnumerator(MSONable):
             e_prim(float or None):
                 DFT energies of structures, normalized to ev/prim.
             other_props(Dict or None):
-                Other scalar properties to expand. If not specified, only e_prim will be expanded.
+                Other SCALAR properties to expand. If not specified, only e_prim will be expanded.
                 In format: {'prop_name':prop_value,...}
         """
         return self._fact_df

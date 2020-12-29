@@ -176,13 +176,13 @@ class Featurizer(MSONable):
 
             if self.is_charged_ce:
                 c_spc.add_external_term(EwaldTerm())
-                coef = np.zeros(c_spc.n_bit_orderings+1)
+                coef = np.zeros(c_spc.num_corr_functions+1)
                 coef[-1] = 1.0
             else:
-                coef = np.zeros(c_spc.n_bit_orderings)
+                coef = np.zeros(c_spc.num_corr_functions)
 
             #This CE is used for featurization only, so values of coefficients don't matter. 
-            self.ce = ClusterExpansion(c_spc,coef,[])
+            self.ce = ClusterExpansion(c_spc,coef,np.array([coef.tolist()]))
 
         #Handling assignment types.
         if len(decorators)!=0:
@@ -314,6 +314,8 @@ class Featurizer(MSONable):
         """
         Load expansion properties. By default, only loads energies.
         Properties will be noralized to per prim, if possible.
+   
+        All properties must be scalars.
         sc_table(pd.DataFrame):
             supercell matrix dimension table file.
         comp_table(pd.DataFrame):

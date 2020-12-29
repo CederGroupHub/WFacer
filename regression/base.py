@@ -19,7 +19,7 @@ class BaseEstimator(ABC):
     def __init__(self):
         self.coef_ = None
 
-    def fit(self, feature_matrix, target_vector, sample_weight=None, hierarchy=None,
+    def fit(self, feature_matrix, target_vector, sample_weight=None,
             *args, **kwargs):
         """
         Prepare fit input then fit. First, weighting. Then centering.
@@ -37,7 +37,7 @@ class BaseEstimator(ABC):
 
         #TODO: implement separate fitting of single-point terms. Is it necessary?
 
-        coef_ = self._solve(feature_centered, target_centered, hierarchy=hierarchy,
+        coef_ = self._solve(feature_centered, target_centered,
                                  *args, **kwargs)
         self.coef_ = coef_.copy()
         self.coef_[0] += (target_av-np.dot(feature_av,coef_))
@@ -49,7 +49,7 @@ class BaseEstimator(ABC):
         return np.dot(feature_matrix, self.coef_)
 
     def calc_cv_score(self, feature_matrix, target_vector, sample_weight=None,\
-                       hierarchy=None, k=5, *args, **kwargs):
+                      k=5, *args, **kwargs):
         """
         Args:
             feature_matrix: sensing matrix (scaled appropriately)
@@ -80,7 +80,6 @@ class BaseEstimator(ABC):
     
                 self.fit(feature_matrix[ins], target_vector[ins],\
                          sample_weight=weights[ins],\
-                         hierarchy=hierarchy,\
                          *args,**kwargs)
                 res = (self.predict(feature_matrix[oos]) - target_vector[oos]) ** 2
                 ssr += np.sum(res * weights[oos]) / np.average(weights[oos])
@@ -90,7 +89,7 @@ class BaseEstimator(ABC):
         return np.average(all_cv)
 
     def optimize_mu(self,feature_matrix, target_vector, sample_weight=None,\
-                    hierarchy=None, dim_mu=0,n_iter=2,\
+                    dim_mu=0,n_iter=2,\
                     log_mu_ranges=None,log_mu_steps=None,\
                     *args, **kwargs):
         """
@@ -141,7 +140,7 @@ class BaseEstimator(ABC):
                 cur_mus[:,-d] = np.power(10,np.linspace(lb,ub,s))
                 cur_cvs = [self.calc_cv_score(feature_matrix,target_vector,\
                                               sample_weight=sample_weight,\
-                                              hierarchy=hierarchy,mu=mu,\
+                                              mu=mu,\
                                               *args,**kwargs) for mu in cur_mus]
                 i_max = np.nanargmax(cur_cvs)
                 #Update search conditions
@@ -152,6 +151,6 @@ class BaseEstimator(ABC):
         return np.power(10,log_centers)
 
     @abstractmethod
-    def _solve(self, feature_matrix, target_vector, hierarchy=None, *args, **kwargs):
+    def _solve(self, feature_matrix, target_vector, *args, **kwargs):
         """Solve for the learn coefficients."""
         return

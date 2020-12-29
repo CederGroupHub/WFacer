@@ -18,7 +18,7 @@ class LassoEstimator(BaseEstimator):
     def __init__(self):
         super().__init__()
 
-    def fit(self, feature_matrix, target_vector, sample_weight=None, hierarchy=None,\
+    def fit(self, feature_matrix, target_vector, sample_weight=None\
             mu=None, log_mu_ranges=[(-1,6)], log_mu_steps = [8]):
         """
         Fit the estimator. If mu not given, will optimize it.
@@ -29,11 +29,6 @@ class LassoEstimator(BaseEstimator):
                 Physical properties to fit.
             sample_weight(1d ArrayLike or None):
                 Weight of samples. If not given, rows will be treated with equal weights.
-            hierarchy(2D ArrayLike or None):
-                Up-to-down hierarchy relation table between bit-clusters. Each sublist in 
-                the 1st dimension will include indices of all higher order bit-clusters 
-                that contains the current bit-cluster as a sub-cluster.
-                It is your responsibility to check  the correctness of the hierarchy table!
             mu(1d arraylike of length 1 or None):
                 mu parameter in LASSO regularization penalty term. Form is:
                 L = ||Xw-y||^2 + mu * ||w|| 
@@ -57,7 +52,6 @@ class LassoEstimator(BaseEstimator):
         if mu is None or len(mu)!=1:
             mu = super().optimize_mu(feature_matrix, target_vector,
                                      sample_weight=sample_weight,
-                                     hierarchy=hierarchy,
                                      dim_mu=1,
                                      log_mu_ranges=log_mu_ranges,
                                      log_mu_steps=log_mu_steps)
@@ -68,10 +62,10 @@ class LassoEstimator(BaseEstimator):
 
         super().fit(feature_matrix, target_vector,
                     sample_weight=sample_weight, 
-                    hierarchy=hierarchy, mu=mu)
+                    mu=mu)
         return mu
 
-    def _solve(self, feature_matrix, target_vector, hierarchy=None, mu=[0]):
+    def _solve(self, feature_matrix, target_vector, mu=[0]):
         """
         X and y should already have been adjusted to account for weighting.
         mu(1D arraylike of length 1 or None):
@@ -92,11 +86,8 @@ class LassoEstimator(BaseEstimator):
         w = cp.Variable((d,))
         z1 = cp.Variable((d,),pos=True)
         constraints = [z1>=w, z1>=-w]
-        #Hierarchy constraints.
-        if hierarchy is not None:
-            for sub_id,high_ids in enumerate(hierarchy):
-                for high_id in high_ids:
-                    constraints.append(z0[high_id]<=z0[sub_id])
+        #Hierarchy constraints are not supported by regularization without L0
+
         # Cost function
         L = cp.sum_squares(A@w-b)+mu[0]*cp.sum(z1)
 
