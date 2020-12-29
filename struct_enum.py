@@ -328,7 +328,9 @@ class StructureEnumerator(MSONable):
                 Original correlation vector computed from ori_occu. (Turned into list)
             calc_status(str):
                 A string of two characters, specifying the calculation status of the current entry.
-                'NC': not calculated, or calculation not finished.
+                'NC': not calculated.
+                'CC': calculating, not finished
+                'CL': calculation finished.(will be assigned by calc_manager)
                 'CF': calculated, and failed (or exceeded wall time).
                 'AF': assignment failed. For example, not charge neutral after charge assignment.
                 'MF': mapping failed, structure failed to map into original lattice or featurize.
@@ -516,7 +518,7 @@ class StructureEnumerator(MSONable):
         enum_occus = deflat_2d(occu_pool_flat,deflat_rule)
         enum_corrs = deflat_2d(corr_pool_flat,deflat_rule)
 
-        #Adding new structures into the fact table. All fact entry ids starts from 1
+        #Adding new structures into the fact table. All fact entry ids starts from 0
         cur_id = deepcopy(self.n_strs)
         n_strs_init = deepcopy(self.n_strs)
 

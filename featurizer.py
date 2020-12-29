@@ -220,14 +220,14 @@ class Featurizer(MSONable):
             featurized fact table
         """
         ##Loading and decoration. If decorators not trained, train decorator.
-        eid_unassigned = fact_table[fact_table.calc_status=='NC'].entry_id
+        eid_unassigned = fact_table[fact_table.calc_status=='CL'].entry_id
         #Check computation status, returns converged and failed indices.
         success_ids, fail_ids = calc_manager.check_computation_status(entry_ids = eid_unassigned)
         print('****{}/{} successful computations in the last run.'\
               .format(len(success_ids),len(fact_unassigned)))
         fact_table.loc[fact_table.entry_id.isin(fail_ids),'calc_status'] = 'CF'
 
-        fact_unassigned = fact_table[fact_table.calc_status=='NC']\
+        fact_unassigned = fact_table[fact_table.calc_status=='CL']\
                           .merge(sc_table,how='left',on='sc_id')
 
         #Loading structures
@@ -241,7 +241,8 @@ class Featurizer(MSONable):
                 d_name = decorator.__class__.__name__
                 requirements = decorator_requirements[d_name]
                 decor_inputs = calc_manager.load_properties(entry_ids = fact_unassigned.entry_id,\
-                                                            prop_names = requirements)
+                                                            prop_names = requirements,
+                                                            include_pnames = False)
                 if not decorator.trained:
                     print('******Training decorator {}.'.format(d_name))
                     decorator.train(structures_unassign,decor_inputs)
@@ -269,7 +270,7 @@ class Featurizer(MSONable):
         else:
             structures_unmaped = structures_unassign
 
-        fact_unmaped = fact_table[fact_table.calc_status=='NC']\
+        fact_unmaped = fact_table[fact_table.calc_status=='CL']\
                           .merge(sc_table,how='left',on='sc_id')
 
         print('****{}/{} successful decorations in the last run.'\
@@ -300,9 +301,9 @@ class Featurizer(MSONable):
 
         eid_map_fails = fact_unmaped.iloc[sid_map_fails].entry_id
         fact_table.loc[fact_table.entry_id.isin(eid_map_fails),'calc_status'] = 'MF'
-        fact_table.loc[fact_table.calc_status=='NC','map_occu'] = occus_mapped
-        fact_table.loc[fact_table.calc_status=='NC','map_corr'] = corrs_mapped
-        fact_table.loc[fact_table.calc_status=='NC','calc_status'] = 'SC'
+        fact_table.loc[fact_table.calc_status=='CL','map_occu'] = occus_mapped
+        fact_table.loc[fact_table.calc_status=='CL','map_corr'] = corrs_mapped
+        fact_table.loc[fact_table.calc_status=='CL','calc_status'] = 'SC'
 
         print('****{}/{} successful mappings in the last run.'\
               .format(len(occus_mapped),len(fact_unmaped)))
@@ -348,7 +349,7 @@ class Featurizer(MSONable):
         #Also provides a selection of format. If include_pnames = True, will return a 
         #Dictionary with {prop_name:[List of values]}
 
-        other_props = calc_manager.load_properties(entry_ids = eid_unchecked,\
+        other_props = calc_manager.oad_properties(entry_ids = eid_unchecked,
                                                    normalize_by = sc_sizes,\
                                                    prop_names = self.other_props,\
                                                    include_pnames = True)

@@ -19,8 +19,8 @@ class BaseEstimator(ABC):
     def __init__(self):
         self.coef_ = None
 
-    def fit(self, feature_matrix, target_vector, sample_weight=None,
-            *args, **kwargs):
+    def fit(self, feature_matrix, target_vector, *args, sample_weight=None,
+            **kwargs):
         """
         Prepare fit input then fit. First, weighting. Then centering.
         Point terms are not separated for linear regression. (Not implemented
@@ -48,8 +48,8 @@ class BaseEstimator(ABC):
             raise NotFittedError('This estimator has not been fitted.')
         return np.dot(feature_matrix, self.coef_)
 
-    def calc_cv_score(self, feature_matrix, target_vector, sample_weight=None,\
-                      k=5, *args, **kwargs):
+    def calc_cv_score(self, feature_matrix, target_vector, *args, sample_weight=None,\
+                      k=5, **kwargs):
         """
         Args:
             feature_matrix: sensing matrix (scaled appropriately)
@@ -78,9 +78,9 @@ class BaseEstimator(ABC):
                 ins = (partitions != i)  # in the sample for this iteration
                 oos = (partitions == i)  # out of the sample for this iteration
     
-                self.fit(feature_matrix[ins], target_vector[ins],\
+                self.fit(feature_matrix[ins], target_vector[ins],*args,\
                          sample_weight=weights[ins],\
-                         *args,**kwargs)
+                         **kwargs)
                 res = (self.predict(feature_matrix[oos]) - target_vector[oos]) ** 2
                 ssr += np.sum(res * weights[oos]) / np.average(weights[oos])
                 ssr_uw += np.sum(res)
@@ -88,10 +88,10 @@ class BaseEstimator(ABC):
             all_cv.append(cv)
         return np.average(all_cv)
 
-    def optimize_mu(self,feature_matrix, target_vector, sample_weight=None,\
+    def optimize_mu(self,feature_matrix, target_vector,*args,sample_weight=None,\
                     dim_mu=0,n_iter=2,\
                     log_mu_ranges=None,log_mu_steps=None,\
-                    *args, **kwargs):
+                    **kwargs):
         """
         If the estimator supports mu parameters, this method provides a quick, coordinate
         descent method to find the optimal mu for the model, by minimizing cv (maximizing
@@ -138,10 +138,9 @@ class BaseEstimator(ABC):
                 s = log_mu_steps[-d]
                 cur_mus = np.power(10,[log_centers for i in range(s)])
                 cur_mus[:,-d] = np.power(10,np.linspace(lb,ub,s))
-                cur_cvs = [self.calc_cv_score(feature_matrix,target_vector,\
+                cur_cvs = [self.calc_cv_score(feature_matrix,target_vector,*args,\
                                               sample_weight=sample_weight,\
-                                              mu=mu,\
-                                              *args,**kwargs) for mu in cur_mus]
+                                              mu=mu,**kwargs) for mu in cur_mus]
                 i_max = np.nanargmax(cur_cvs)
                 #Update search conditions
                 log_centers[-d] = np.linspace(lb,ub,s)[i_max]

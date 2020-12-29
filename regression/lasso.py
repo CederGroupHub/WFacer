@@ -18,7 +18,7 @@ class LassoEstimator(BaseEstimator):
     def __init__(self):
         super().__init__()
 
-    def fit(self, feature_matrix, target_vector, sample_weight=None\
+    def fit(self, feature_matrix, target_vector, sample_weight=None,\
             mu=None, log_mu_ranges=[(-1,6)], log_mu_steps = [8]):
         """
         Fit the estimator. If mu not given, will optimize it.
