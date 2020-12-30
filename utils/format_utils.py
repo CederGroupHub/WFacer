@@ -9,6 +9,7 @@ import json
 
 from pymatgen import Composition,Specie,DummySpecie
 
+from smol.cofe import ClusterSubspace
 from smol.cofe.space.domain import Vacancy
 from smol.moca import CEProcessor
 
@@ -196,8 +197,25 @@ def occu_to_species_list(sublattices,occupancy):
     return species_list
 
 #Wrap up structure_from_occu method from processor module
-def structure_from_occu(ce,sc_matrix,occu):
-    decode_proc = CEProcessor(ce.cluster_subspace,sc_matrix,ce.coefs)
-    return decode_proc.structure_from_occupancy(occu)
+def structure_from_occu(prim,sc_matrix,occu):
+    """
+    Decodes structure from encoded occupation array.
+    Inputs:
+        prim(pymatgen.Structure):
+            primitive cell containing all occupying species information.
+            It is your responisibility to ensure that it is exactly the
+            one you used to initialize cluster expansion.
+        sc_matrix(3*3 arraylike):
+            Supercell matrix. It is your responsibility to check size
+            matches the length of occu
+        occu(1D arraylike):
+            encoded occupation string
+    Returns:
+        Decoded pymatgen.Structure object.
+    """
+    dummy_cspace = ClusterSubspace.from_cutoffs(prim, cutoffs={2:0.01})
+    dummy_coefs = np.zeros(dummy_cspace.num_corr_functions)
+    dummy_proc = CEProcessor(dummy_cspace,sc_matrix,dummy_coefs)
+    return dummy_proc.structure_from_occupancy(occu)
 
 

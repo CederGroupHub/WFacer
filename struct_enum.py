@@ -177,7 +177,7 @@ class StructureEnumerator(MSONable):
         else:
             #An empty cluster expansion with the points and ewald term only
             #Default is indicator basis
-            c_spc = ClusterSubspace.from_radii(self.prim,{2:0.01},\
+            c_spc = ClusterSubspace.from_cutoffs(self.prim,{2:0.01},\
                                     basis = self.basis_type)
             if self.is_charged_ce:
                 c_spc.add_external_term(EwaldTerm())
@@ -428,7 +428,7 @@ class StructureEnumerator(MSONable):
 
             #Query previous fact table
             old_strs = self._fact_df[self._fact_df.comp_id == comp_id]\
-                       .ori_occu.map(lambda o: structure_from_occu(self.ce,sc_mat,o))
+                       .ori_occu.map(lambda o: structure_from_occu(self.prim,sc_mat,o))
 
             str_pool,occu_pool,comp_weight = self._enum_configs_under_sccomp(sc_mat,comp,eq_occu)
             corr_pool = [list(self.ce.cluster_subspace.corr_from_structure(s,sc_matrix=sc_mat)) 

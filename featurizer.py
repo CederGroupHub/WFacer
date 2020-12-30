@@ -171,7 +171,7 @@ class Featurizer(MSONable):
                 self.radius[3]=d_nn*2.0
                 self.radius[4]=d_nn*2.0
 
-            c_spc = ClusterSubspace.from_radii(self.prim,self.radius,\
+            c_spc = ClusterSubspace.from_cutoffs(self.prim,self.radius,\
                                     basis = self.basis_type)
 
             if self.is_charged_ce:
