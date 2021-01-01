@@ -48,10 +48,11 @@ class BaseManager(ABC):
     def check_tasks_status(self,entry_ids=None):
         """
         Check ab-initio task status for given entree indices.
-        'NC' for not submitted, 'CC' for running or waiting in
-        queue, 'CL' for finished. (same as in the doc of 
-        CEAuto.featurizer.)
-
+        'NC' for not submitted, 'RX' for relaxation or waiting for
+        relaxation in queue, 'SP' for doing single point or waiting
+        for single point in queue. 'CL' for finished. None for non-existent 
+        in archieve.
+        (same as in the doc of  CEAuto.featurizer.)        
         Inputs:
             entry_ids(List of ints):
                 list of entry indices to be checked. Indices in a
@@ -63,9 +64,9 @@ class BaseManager(ABC):
         return
 
     @abstractmethod
-    def check_computation_status(self,entry_ids=None):
+    def check_convergence_status(self,entry_ids=None):
         """
-        Checks computation status of entree with specific indices.
+        Checks convergence status of entree with specific indices.
         Inputs:
             entry_ids(List of ints):
                 list of entry indices to be checked. Indices in a

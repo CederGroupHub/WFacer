@@ -222,7 +222,7 @@ class Featurizer(MSONable):
         ##Loading and decoration. If decorators not trained, train decorator.
         eid_unassigned = fact_table[fact_table.calc_status=='CL'].entry_id
         #Check computation status, returns converged and failed indices.
-        success_ids, fail_ids = calc_manager.check_computation_status(entry_ids = eid_unassigned)
+        success_ids, fail_ids = calc_manager.check_convergence_status(entry_ids = eid_unassigned)
         print('****{}/{} successful computations in the last run.'\
               .format(len(success_ids),len(fact_unassigned)))
         fact_table.loc[fact_table.entry_id.isin(fail_ids),'calc_status'] = 'CF'
