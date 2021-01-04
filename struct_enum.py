@@ -328,9 +328,7 @@ class StructureEnumerator(MSONable):
                 Original correlation vector computed from ori_occu. (Turned into list)
             calc_status(str):
                 A string of two characters, specifying the calculation status of the current entry.
-                'NC': not calculated.
-                'RX': doing or waiting relaxation.
-                'SP': doing or waiting single point calculation.
+                'NC': not calculated.(not submitted or waiting.)
                 'CL': calculation finished.
                 'CF': calculated, and failed (or exceeded wall time).
                 'AF': assignment failed. For example, not charge neutral after charge assignment.

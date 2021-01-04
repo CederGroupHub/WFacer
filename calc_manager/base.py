@@ -6,149 +6,126 @@ __author__ = "Fengyu Xie"
 
 from abc import ABC, abstractmethod
 import numpy as np
+import time
+from datetime import datetime
 
 class BaseManager(ABC):
     """
-    A calculation manager class, to write, call ab-initio calculations, and 
-    read calculation results from various data warehouses. Current implementation
-    includes local archive+SGE queue and mongo database+fireworks.
-   
-    Current implementations only support vasp.
+    A calculation manager class, to write, call ab-initio calculations.
+    Current implementation includes local archive+SGE queue and mongo 
+    database+fireworks. Interacts with 
+    calculation resources.   
+
+    May support any abinito software.
 
     This class only interacts with the data warehouse, and will not change 
     the fact table. Everything in this class shall be temporary, and will not 
     be saved as dictionaries into disk.
+   
+    Attributes:
+        time_limit(float):
+            Time limit for all calculations to finish. Unit is second.
+            Default is 3 days.
+        check_interval(float):
+            Interval to check status of all computations in queue. Unit is second.
+            Default is every 5 mins.
     """
-    def __init__(self):
-        pass
+    def __init__(self,time_limit=259200,check_interval=300):
+        self.time_limit = time_limit
+        self.interval = check_interval
         
     @abstractmethod
-    def create_tasks(self,prim,sc_table,fact_table,*args, entry_ids=None, **kwargs):
-        """
-        Write input files and submit calculations.
-        Inputs:
-            prim(pymatgen.Structure):
-                primitive cell used to initialize cluster expansion.
-            sc_table(pd.DataFrame):
-                supercell dimension table
-            fact_table(pd.DataFrame):
-                fact table containing current calculation informations.
-            entry_ids(List of ints):
-                list of entry indices to be checked. Indices in a
-                fact table starts from 0
-                If None, will check all available entree.                
-            Can pass ab-intio settings into **kwargs.
-        No return value.
-        """
-        return
-
-#Shall we enable killing tasks?
-
-    @abstractmethod
-    def check_tasks_status(self,entry_ids=None):
+    def entree_in_queue(self,entry_ids):
         """
         Check ab-initio task status for given entree indices.
-        'NC' for not submitted, 'RX' for relaxation or waiting for
-        relaxation in queue, 'SP' for doing single point or waiting
-        for single point in queue. 'CL' for finished. None for non-existent 
-        in archieve.
         (same as in the doc of  CEAuto.featurizer.)        
         Inputs:
             entry_ids(List of ints):
                 list of entry indices to be checked. Indices in a
                 fact table starts from 0
-                If None, will check all available entree.     
+                Must be provided.
         Returns:
-            A list of strings specifying status of each task.
+            A list of Booleans specifying status of each task.
+            True for in queue (either running or waiting, your 
+            responsibility to distinguish between them two)
+            ,false for not in queue.
+
+        NOTE: This function does not care the type of work you are doing,
+              either 'relaxation' or 'static'. It is your responsibility
+              check in calc_writer before submission and logging.
         """
         return
 
-    @abstractmethod
-    def check_convergence_status(self,entry_ids=None):
+    def run_tasks(self,entry_ids):
         """
-        Checks convergence status of entree with specific indices.
+        Submit tasks for calculation, and checks finish or time limit.
+        Be sure to finished all calculations of all entree, then submit 
+        another type of jobs.
+        It is your responsibility not to dupe-submit.
+
         Inputs:
             entry_ids(List of ints):
                 list of entry indices to be checked. Indices in a
                 fact table starts from 0
-                If None, will check all available entree.
-        Returns:
-            a list of booleans, each shows whether the calculation
-            of the correponding entry have succeeded.
-        """
-        return
+                Must be provided.
+        Return:
+            Boolean, indicating whether all entree end in specified time
+            limit.
 
-    @abstractmethod
-    def load_structures(self,entry_ids):
+        NOTE: 
+           1, This function does not care the type of work you are doing,
+              either 'relaxation' or 'static'. It is your responsibility
+              check in calc_writer before submission and logging.      
+           2, This function waits for the calculation resources, therfore
+              will always hang for a long time.  
         """
-        Loads relaxed structures.
-        Inputs:
-            entry_ids(List of ints):
-                list of entry indices to be checked. Indices in a
-                fact table starts from 0
-                If None, will check all available ids.
-        Returns:
-            a list of pymatgen.Structure, all composed of 
-            pymatgen.Element (undecorated).
-        """
-        return
+        q_status = self.entree_in_queue(entry_ids)
+        for eid,e_in_queue zip(entry_ids,q_status):
+            if not e_in_queue:
+                self._submit_single(eid)
 
-    def load_properties(self,entry_ids=None,normalize_by = 1,prop_names='energy',
-                        include_pnames=True):
-        """
-        Load calculated properties from ab_initio data.
-        Inputs:
-             entry_ids(List of ints):
-                list of entry indices to be checked. Indices in a
-                fact table starts from 0.
-                If none given, will return all availale entrees.       
-             normalize_by(float or 1D-arraylike):
-                before returning values, will devide them by this
-                value or array. Used to normalize extensive variables.
-             prop_names(List of str or str):
-                property names to extract. Currently supports energies,
-                and magenetization. You can add more if required.
-                If one single string is given, will return a list only.
-             include_pnames(Boolean):
-                Include property names in the return value.
-                If true, will return a dict with property names as 
-                keys. If false, will only return properties in a list
-                by the order of entry in prop_names.
-       Outputs:
-           Dict or list containing properties of specified structures,
-           depending on the value of include_params, and the format
-           of prop_names.
-        """
-        if isinstance(prop_names,str):
-            p = np.array(self._load_property_by_name(entry_ids,name=prop_names))/normalize_by
-            return p.tolist()
+        #set timer
+        t_quota = self.time_limit
+        print("**Calculations started at: {}".format(datetime.now()))
+        print("**Number of calculations {}".format(len(entry_ids)))
 
-        properties = []
-        for pname in prop_names:
-            p = np.array(self._load_property_by_name(entry_ids,name=pname)/normalize_by
-            properties.append(p.tolist())
-
-        if include_pnames:
-            return {pname:p for pname,p in zip(prop_names,properties)}
+        n_checks = 0
+        while t_quota>0:
+            time.sleep(self.check_interval)
+            t_quota -= self.check_interval
+            n_checks += 1
+            status = self.entree_in_quque(entry_ids)
+            if not np.any(self.entree_in_quque(entry_ids)): 
+                break          
+            print(">>Time: {}, Remaining(seconds): {}\n  {}/{} calculations finished!".\
+                  format(datetime.now(),t_quota,int(np.sum(status)),len(status))
+        
+        if t_quota>0:            
+            print("**Calculations finished at: {}".format(datetime.now()))
         else:
-            return properties
+            self.kill_tasks()
+            print("**Warning: only {}/{} calculations finished in time limit {}!".\
+                  format(int(np.sum(status)),len(status),self.time_limit))
+            print("**You may want to use a longer time limit.")
+
+        return (t_quota>0)
 
     @abstractmethod
-    def _load_property_by_name(self,entry_ids=None,name='energy'):
+    def kill_tasks(self,entry_ids=None):
         """
-        Load a single type of property of structures from the warehouse.
-        Inputs:
+         Kill specified tasks if they are still in queue.
+         Inputs:
             entry_ids(List of ints):
                 list of entry indices to be checked. Indices in a
-                fact table starts from 0.
-                If none given, will return all availale entrees. 
-            name(str):
-                Name of property to be extracted. By default, gives
-                energy.
-                Must be a member in list: supported_properties.
-                (class constant)
-        Outputs:
-            A list containing extracted proerties of corresponding 
-            entree.
+                fact table starts from 0
+                If None given, will kill anything in the queue
+                with the current job root name.
+        """  
+        return
+
+    @abstractmethod
+    def _submit_single(self,eid):
         """
-        return 
+        Submit a single calculation.
+        """
+        return

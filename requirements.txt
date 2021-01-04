@@ -5,3 +5,4 @@ sympy
 numpy
 smol
 mip
+qstat
