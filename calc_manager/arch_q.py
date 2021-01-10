@@ -55,6 +55,9 @@ class ArchQueueManager(BaseManager,ABC):
           1, No two CE folders have the same name!
           2, Better not to include underscore in your CE folder names.
     """
+        submission_template = ""
+        submission_command = ""
+        kill_command = ""
 
     def __init__(self,path='vasp_run', ab_command='vasp', ncores = 16,\
                       time_limit=259200,check_interval=300):
@@ -66,9 +69,7 @@ class ArchQueueManager(BaseManager,ABC):
         self._root = os.getcwd()
         self._root_name = os.path.split(os.getcwd())[-1] 
         #Assume you're running CEAuto under a fixed directory.
-        self.submission_template = ""
-        self.submission_command = ""
-        self.kill_command = ""
+
         
     @abstractmethod
     def entree_in_queue(self,entry_ids):
@@ -122,7 +123,7 @@ class ArchQueueManager(BaseManager,ABC):
            not os.path.isfile(os.path.join(epath,'KPOINTS')):
             raise ValueError("Entry {} vasp inputs not written!".format(eid))
 
-        script = self.submission_template
+        script = submission_template
         #Jobs will be named after root path (Current directory where you run 
         #CEAuto main program).
         jobname = self._root_name+'_ce_{}'.format(eid)
@@ -137,7 +138,7 @@ class ArchQueueManager(BaseManager,ABC):
         st = os.stat('sub.sh')
         os.chmod('sub.sh', st.st_mode | stat.S_IEXEC)
         
-        os.system(self.submission_command+' sub.sh')
+        os.system(submission_command+' sub.sh')
         os.chdir(self._root)  #It is essential to move back!
         print('****Submitted ab_initio for entry: {}.'.format(entry_id))
 
@@ -182,19 +183,19 @@ class ArchSGEManager(ArchQueueManager):
           1, No two CE folders have the same name!
           2, Better not to include underscore in your CE folder names.
     """
+        submission_template = "#!/bin/bash\n#$ -cwd\n#$ -j y\n"+\
+                                   "#$ -N {*jobname*}\n#$ -m es\n#$ -V\n"+\
+                                   "#$ -pe impi {*ncores*}\n#$ -o ll_out\n"+\
+                                   "#$ -e ll_er\n#$ -S /bin/bash\n"+\
+                                   "\n{*abcommand*}"
+        submission_command = "qsub"
+        kill_command = "qdel"
 
     def __init__(self,path='vasp_run', ab_command='vasp', ncores = 16,\
                       time_limit=259200,check_interval=300):
 
         super().__init__(path=path, ab_command=ab_command, ncores=ncores,\
                       time_limit=time_limit, check_interval=check_interval)
-        self.submission_template = "#!/bin/bash\n#$ -cwd\n#$ -j y\n"+\
-                                   "#$ -N {*jobname*}\n#$ -m es\n#$ -V\n"+\
-                                   "#$ -pe impi {*ncores*}\n#$ -o ll_out\n"+\
-                                   "#$ -e ll_er\n#$ -S /bin/bash\n"+\
-                                   "\n{*abcommand*}"
-        self.submission_command = "qsub"
-        self.kill_command = "qdel"
 
     def entree_in_queue(self,entry_ids):
         """
@@ -258,5 +259,5 @@ class ArchSGEManager(ArchQueueManager):
                     entry_ids_to_kill.append(eid)
 
         for jid,eid in zip(job_ids_to_kill,entry_ids_to_kill):
-            os.system(self.kill_command+' {}'.format(jid))
+            os.system(kill_command+' {}'.format(jid))
             print("****Job killed: {}, Entry id: {}.".format(jid,eid))
