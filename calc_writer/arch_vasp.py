@@ -1,5 +1,5 @@
 """
-Base calculation writer class. These classes DO NOT MODIFY 
+Archieve+vasp calculation writer class. These classes DO NOT MODIFY 
 fact table!
 """
 __author__ = "Fengyu Xie"
@@ -159,6 +159,3 @@ class ArchVaspWriter(BaseWriter):
         io_set.potcar.write_file(os.path.join(entry_path,'POTCAR'))
         io_set.kpoints.write_file(os.path.join(entry_path,'KPOINTS'))
         print("****{} calculations written for entry: {}.".format(mode,eid))
-
-
-        
