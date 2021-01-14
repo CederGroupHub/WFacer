@@ -76,12 +76,12 @@ class BaseReader(ABC):
            of prop_names.
         """
         if isinstance(prop_names,str):
-            p = np.array(self._load_property_by_name(entry_ids,name=prop_names))/normalize_by
+            p = np.array(self._load_property_by_name(entry_ids,name=prop_names))
             return p.tolist()
 
         properties = []
         for pname in prop_names:
-            p = np.array(self._load_property_by_name(entry_ids,name=pname)/normalize_by
+            p = np.array(self._load_property_by_name(entry_ids,name=pname)
             properties.append(p.tolist())
 
         if include_pnames:

@@ -21,18 +21,9 @@ class BaseManager(ABC):
     This class only interacts with the data warehouse, and will not change 
     the fact table. Everything in this class shall be temporary, and will not 
     be saved as dictionaries into disk.
-   
-    Attributes:
-        time_limit(float):
-            Time limit for all calculations to finish. Unit is second.
-            Default is 3 days.
-        check_interval(float):
-            Interval to check status of all computations in queue. Unit is second.
-            Default is every 5 mins.
     """
-    def __init__(self,time_limit=259200,check_interval=300):
-        self.time_limit = time_limit
-        self.interval = check_interval
+    def __init__(self):
+        pass
         
     @abstractmethod
     def entree_in_queue(self,entry_ids):
@@ -55,14 +46,15 @@ class BaseManager(ABC):
               check in calc_writer before submission and logging.
         """
         return
-
+ 
     def run_tasks(self,entry_ids):
         """
-        Submit tasks for calculation, and checks finish or time limit.
-        Be sure to finished all calculations of all entree, then submit 
-        another type of jobs.
-        It is your responsibility not to dupe-submit.
-
+        Run all calculation tasks specified by entree ids.
+        And monitor status. 
+        If CEAuto job is interrupted, for arch+queue, will
+        resubmit the specified jobs; for mongodb+atomate,
+        will check for unreserved tasks, and resubmit to
+        queue.
         Inputs:
             entry_ids(List of ints):
                 list of entry indices to be checked. Indices in a
@@ -79,10 +71,7 @@ class BaseManager(ABC):
            2, This function waits for the calculation resources, therfore
               will always hang for a long time.  
         """
-        q_status = self.entree_in_queue(entry_ids)
-        for eid,e_in_queue zip(entry_ids,q_status):
-            if not e_in_queue:
-                self._submit_single(eid)
+        self._submit_all(entry_ids)
 
         #set timer
         t_quota = self.time_limit
@@ -124,8 +113,8 @@ class BaseManager(ABC):
         return
 
     @abstractmethod
-    def _submit_single(self,eid):
+    def _submit_all(self,eids=None):
         """
-        Submit a single calculation.
+        Submit entree to queue.
         """
-        return
+        return  

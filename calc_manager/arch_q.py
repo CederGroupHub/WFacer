@@ -69,43 +69,16 @@ class ArchQueueManager(BaseManager,ABC):
         self._root = os.getcwd()
         self._root_name = os.path.split(os.getcwd())[-1] 
         #Assume you're running CEAuto under a fixed directory.
-
-        
-    @abstractmethod
-    def entree_in_queue(self,entry_ids):
+      
+    def _submit_all(self,eids):
         """
-        Check ab-initio task status for given entree indices.
-        (same as in the doc of  CEAuto.featurizer.)        
-        Inputs:
-            entry_ids(List of ints):
-                list of entry indices to be checked. Indices in a
-                fact table starts from 0
-                Must be provided.
-        Returns:
-            A list of Booleans specifying status of each task.
-            True for in queue (either running or waiting, your 
-            responsibility to distinguish between them two)
-            ,false for not in queue.
-
-        NOTE: This function does not care the type of work you are doing,
-              either 'relaxation' or 'static'. It is your responsibility
-              check in calc_writer before submission and logging.
+        Submit all tasks in a queue.
         """
-        return
+        qstats = self.entree_in_queue(eids)
+        for eid,e_in_queue in zip(eids,qstats):
+            if not e_in_queue:
+                self._submit_single(eid)
 
-    @abstractmethod
-    def kill_tasks(self,entry_ids=None):
-        """
-         Kill specified tasks if they are still in queue.
-         Inputs:
-            entry_ids(List of ints):
-                list of entry indices to be checked. Indices in a
-                fact table starts from 0
-                If None given, will kill anything in the queue
-                with the current job root name.
-        """  
-        return
-       
     def _submit_single(self,eid):
         """
         Submit a single computation in archieve. It is your responsibility to check that:
@@ -142,10 +115,9 @@ class ArchQueueManager(BaseManager,ABC):
         os.chdir(self._root)  #It is essential to move back!
         print('****Submitted ab_initio for entry: {}.'.format(entry_id))
 
-
 class ArchSGEManager(ArchQueueManager):
     """
-    Base queue calculation manager class, to call and monitor ab-initio calculations.
+    SGE queue calculation manager class, to call and monitor ab-initio calculations.
 
     This class only interacts with the data warehouse, and will not change 
     the fact table. Everything in this class shall be temporary, and will not 

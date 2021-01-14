@@ -15,7 +15,7 @@ from fireworks import LaunchPad,Workflow
 
 from .base import BaseWriter
 
-def wf_ce_sample(structure, entry_id, is_metal=False,\
+def wf_ce_sample(structure, entry_id, root_name = None, is_metal=False,\
                  relax_set_params = None, static_set_params = None,\
                  **kwargs):
     """
@@ -26,6 +26,9 @@ def wf_ce_sample(structure, entry_id, is_metal=False,\
             The structure to be computed. Usually pre-deformed to break relaxation symmetry.
         entry_id(int):
             index of the entry corresponding to the structure.
+        root_name(str):
+            Root name of all workflows and fireworks. By default, will set to name
+            of the current directory.
         is_metal(Boolean):
             If true, will use vasp parameters specific to metallic computations.
         relax_set_params(dict):
@@ -40,7 +43,7 @@ def wf_ce_sample(structure, entry_id, is_metal=False,\
         in cluster expansion pool.
     """
     #Current folder name will be used to mark calculation entree!
-    root_name = os.path.split(os.getcwd())[-1]
+    root_name = root_name or os.path.split(os.getcwd())[-1]
     entry_name = 'ce_{}_{}'.format(root_name,entry_id)
     opt_setting = relax_set_params or {}
     sta_setting = static_set_params or {}
@@ -51,10 +54,13 @@ def wf_ce_sample(structure, entry_id, is_metal=False,\
         opt_set = MPRelaxSet(structure,**sta_setting)
     sta_set = MPStaticSet(structure)
 
-    opt_fw = OptimizeFW(structure,vasp_input_set = opt_set) 
+    #fireworks encoded with root and entry names.
+    opt_fw = OptimizeFW(structure,vasp_input_set = opt_set,\
+                        name = entry_name+'_optimization') 
     sta_fw = StaticFW(structure,vasp_input_set = sta_set,\
                       overwrite_default_vasp_params = sta_fw,\
-                      parents = [opt_fw])
+                      parents = [opt_fw],\
+                      name = entry_name+'_static')
 
     #workflow encoded with root and entry names
     return Workflow([opt_fw,sta_fw], name=entry_name,**kwargs)
@@ -85,6 +91,7 @@ class MongoVaspWriter(BaseWriter):
     """
     def __init__(self):
         #Load is based on the atomate launchpad configuration under your environment!
+        self.root_name = os.path.split(os.getcwd())[-1]
         self._lpad = LaunchPad.auto_load()
         
     def write_tasks(self,strs_undeformed,entry_ids,*args, strain=[1.05,1.03,1.01],\
@@ -141,10 +148,11 @@ class MongoVaspWriter(BaseWriter):
            
         str_input = Deformation(strain).apply_to_structure(structure)
 
-        wf = wf_ce_sample(str_input, eid, is_metal=is_metal,\
-                 relax_set_params = relax_set_params,\
-                 static_set_params = static_set_params,\
-                 **kwargs)               
+        wf = wf_ce_sample(str_input, eid, root_name=self.root_name,\
+                          is_metal=is_metal,\
+                          relax_set_params = relax_set_params,\
+                          static_set_params = static_set_params,\
+                          **kwargs)               
 
         self._lpad.add_wf(wf)
         print("****Calculation workflow loaded to launchpad for entry: {}.".format(eid))
