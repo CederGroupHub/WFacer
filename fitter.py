@@ -9,6 +9,7 @@ import pandas as pd
 import json
 from monty.json import MSONable
 import warnings
+import matplotlib.pyplot as plt
 
 from smol.cofe import ClusterExpansion
 
@@ -182,6 +183,120 @@ class CEFitter(MSONable):
                                   "rmse":self._rmse,
                                   "coefs":self._coefs})
             self._updated = True
+
+
+    def get_eci_plot(self,prop_name='e_prim'):
+        """
+        Plot eci of the latest cluster expansion.
+        Args:
+           prop_name(str):
+               Name of the property to plot eci for.
+               Default is e_prim.
+        Return:
+           plt.figure, plt.axes. Remember to close the figure after save.
+        """
+        if len(self._cv)==0 or len(self._rmse)==0 or len(self._coefs)==0:
+            warnings.warn("ECIs not fitted yet. Trying with history CE.")
+            if len(self._history)==0:
+                raise ValueError("No history CE to read from!")
+            _cv = self._history[-1]['cv'][prop_name]
+            _rmse = self._history[-1]['rmse'][prop_name]
+            _coefs = self._hitory[-1]['coefs'][prop_name]
+
+        else:
+            _cv = self._cv[prop_name]
+            _rmse = self._rmse[prop_name]
+            _coefs = self._rmse[prop_name]
+
+        ce = ClusterExpansion(self.cspc,_coefs,np.array(self._femat))
+        ecis = ce.eci
+
+        fs = 16
+        fst = 12
+        fig,ax = plt.subplots(figsize=(8.0,6.0))
+        xs = np.arange(0,len(ecis)-1)+0.5
+        ax.bar(xs,ecis[1:],width=1.0)
+
+        #Number of each type of clusters, marking lines.
+        n1 = sum([len(o) for o in self.cspc.orbits_by_size.get(1,[[]])])
+        n2 = sum([len(o) for o in self.cspc.orbits_by_size.get(2,[[]])])
+        n3 = sum([len(o) for o in self.cspc.orbits_by_size.get(3,[[]])])
+        n4 = sum([len(o) for o in self.cspc.orbits_by_size.get(4,[[]])])
+
+        ax.axvline(x=n1,color='k')
+        ax.axvline(x=n1+n2,color='k')
+        ax.axvline(x=n1+n2+n3,color='k')
+        ax.axvline(x=n1+n2+n3+n4,color='k')
+
+        #marking external terms
+        n_ext = self.cspc.external_terms
+        if n_ext!=0:
+            ext_names = [et.__class__.__name__ for et in self.cspc.external_terms]
+            ext_names = ','.join(ext_names)
+            ax.bar(xs[-n_ext:],ecis[-n_ext:],width=1.0,color='r',label=ext_names)
+
+        ax.tick_params(labelsize=fst)
+        ax.set_xlabel('Cluster indices (w.o. zero-term)',fontsize=fs)
+        ax.set_ylabel('ECIs',fontsize=fs)
+        ax.set_title('ECI plot of {} (zero={:.3f})'.format(prop_name,ecis[0]),fontsize=fs)
+        if n_ext!=0:
+            ax.legend(fontsize=fst)
+
+        return fig,ax
+
+
+    def get_scatter_plot(self,fact_table,prop_name='e_prim'):
+        """
+        Plot scatter plot of the latest cluster expansion.
+        Args:
+           fact_table(pd.DataFrame):
+               The fact table you used to fit the last CE.
+           prop_name(str):
+               Name of the property to plot eci for.
+               Default is e_prim.
+        Return:
+           plt.figure, plt.axes. Remember to close the figure after save.
+        """ 
+        fact_avail = fact_df[fact_table.calc_status=='SC']     
+        X = np.array(fact_avail.map_corr.tolist())
+
+        if len(self._cv)==0 or len(self._rmse)==0 or len(self._coefs)==0:
+            warnings.warn("ECIs not fitted yet. Trying with history CE.")
+            if len(self._history)==0:
+                raise ValueError("No history CE to read from!")
+            _cv = self._history[-1]['cv'][prop_name]
+            _rmse = self._history[-1]['rmse'][prop_name]
+            _coefs = self._hitory[-1]['coefs'][prop_name]
+        else:
+            _cv = self._cv[prop_name]
+            _rmse = self._rmse[prop_name]
+            _coefs = self._rmse[prop_name]       
+
+        y_pred = X@np.array(_coefs)
+        if prop_name == 'e_prim':
+            y = fact_avail.e_prim
+        else:
+            other_props_asdf = pd.DataFrame(fact_avail.other_props.tolist())
+            y = np.array(other_props_asdf[prop_name].to_list())
+
+        textstr = '\n'.join((
+        r'$RMSE = %.3f$'%(_rmse,),
+        r'$CV value = %.3f$'%(_cv,),
+        r'$N_{strs} = %d$'%len(y)
+        ))
+
+        fig,ax = plt.subplots(figsize=(8,6))
+        ax.scatter(y,y_pred,label=text_str)
+        fs = 16
+        fst = 12
+        ax.tick_params(labelsize=fst)
+        ax.set_title("CE scatter plot of {}".format(prop_name))
+        ax.set_xlabel(prop_name+'_input',fontsize=fs)
+        ax.set_ylabel(prop_name+'_ce',fontsize=fs)
+        ax.legend(fontsize=fst)
+
+        return fig,ax
+            
 
     def as_dict(self,update_his=True):        
         """
