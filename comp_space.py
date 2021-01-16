@@ -621,7 +621,7 @@ class CompSpace(MSONable):
 
         return self._formulate_unconstr(comps,form=form,sc_size=1)
 
-    def _unconstr_to_constr_coords(self,x,sc_size=1):
+    def _unconstr_to_constr_coords(self,x,sc_size=1,to_int=False):
         """
         Unconstrained coordinate system to constrained coordinate system.
         In constrained coordinate system, a composition will be written as
@@ -660,6 +660,10 @@ class CompSpace(MSONable):
         x_prime = x_prime*sc_size
         d_slack = d_slack*sc_size
 
+        if to_int:
+            x_prime = np.round(x_prime)
+            x_prime = np.array(x_prime,dtype=np.int64)
+
         return x_prime
 
     def _constr_to_unconstr_coords(self,x_prime,sc_size=1,to_int=False):
@@ -686,14 +690,14 @@ class CompSpace(MSONable):
 
         if to_int:
             x = np.round(x)
-            x = np.array(x_prime,dtype=np.int64)
+            x = np.array(x,dtype=np.int64)
 
         return x
  
     def _unconstr_to_compstat(self,x,sc_size=1):
         """
         Translate unconstrained coordinate to statistics of specie numbers on 
-        each sublattice. Will have the same shape as self.nbitsa
+        each sublattice. Will have the same shape as self.nbits.
 
         Return:
             Compstat: List of lists of int.
@@ -711,6 +715,17 @@ class CompSpace(MSONable):
                 raise OUTOFSUBSPACEERROR
 
         return compstat
+
+    def _compstat_to_unconstr(self,compstat):
+        """
+        Translate compstat table to unconstrained coordinate.
+        Return:
+            x: an array of unconstrained variables
+        """
+        x = []
+        for sl_stat in compstat:
+            x.extend(sl_stat[:-1])
+        return x
 
     def _unconstr_to_composition(self,x,sc_size=1):
         """

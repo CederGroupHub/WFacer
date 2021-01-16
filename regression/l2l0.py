@@ -56,7 +56,7 @@ class L2L0Estimator(BaseEstimator):
                 Time limit of each L1L0 solve in seconds. If time limit is exceeded, 
                 will raise an error.
         Return:
-            Optimized mu for storage convenience.            
+            Optimized mu, cv score and coefficients     
             Fitter coefficients storeed in self.coef_.       
         """ 
         #Always call super().fit because this contains preprocessing of matrix 

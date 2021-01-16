@@ -42,11 +42,12 @@ class LassoEstimator(BaseEstimator):
                 Number of steps to search in each log_mu coordinate. Optional, but also
                 recommeneded.
         Return:
-            Optimized mu for storage convenience.
+            Optimized mu, cv score and coefficients.
             Fitter coefficients storeed in self.coef_.
         """
         if isinstance(mu,(int,float)):
             mu = [float(mu)]
+
         #Always call super().fit because this contains preprocessing of matrix 
         #and vector, such as centering and weighting!           
         if mu is None or len(mu)!=1:

@@ -114,7 +114,7 @@ class BaseEstimator(ABC):
                 Number of steps to search in each log_mu coordinate. If not given, 
                 Will set to 11 for each log_mu coordinate.
         Outputs:
-            optimal mu as a 1D np.array.
+            optimal mu as a 1D np.array, and optimal cv score
         """
         if dim_mu==0:
             #No optimization needed.
@@ -130,6 +130,7 @@ class BaseEstimator(ABC):
 
         log_widths = np.array([ub-lb for ub,lb in log_mu_ranges])
         log_centers = np.array([(ub+lb)/2 for ub,lb in log_mu_ranges])
+        #cvs_opt = 0
 
         for it in range(n_iter):
             for d in range(dim_mu):
@@ -142,6 +143,7 @@ class BaseEstimator(ABC):
                                               sample_weight=sample_weight,\
                                               mu=mu,**kwargs) for mu in cur_mus]
                 i_max = np.nanargmax(cur_cvs)
+                #cvs_opt = cur_cvs[i_max]
                 #Update search conditions
                 log_centers[-d] = np.linspace(lb,ub,s)[i_max]
                 #For each iteration, shrink window by 4

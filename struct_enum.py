@@ -269,6 +269,7 @@ class StructureEnumerator(MSONable):
         if self._comp_df is None:
             sc_ids = []
             comps = []
+            cstats = []
             ucoords = []
             ccoords = []
             for sc_id,mat in zip(self.sc_df.sc_id,self.sc_df.matrix):
@@ -276,20 +277,26 @@ class StructureEnumerator(MSONable):
                 mat_comps = [comp for comp in 
                              self.comp_space.frac_grids(sc_size=scs/self.comp_enumstep,\
                                                         form='composition')]
-                mat_ucoords = [uc for uc in
+                mat_cstats = [cstat for cstat in 
+                             self.comp_space.frac_grids(sc_size=scs/self.comp_enumstep,\
+                                                        form='compstat')]
+                mat_ucoords = [uc.tolist() for uc in
                              self.comp_space.frac_grids(sc_size=scs/self.comp_enumstep,\
                                                         form='unconstr')]
-                mat_ccoords = [cc for cc in
+                mat_ccoords = [cc.tolist() for cc in
                              self.comp_space.frac_grids(sc_size=scs/self.comp_enumstep,\
                                                         form='constr')]
+                #coords outputs are arrays!
 
                 filt_ = [self._check_comp(comp) for comp in mat_comps]
                 mat_comps = [comp for comp,f in zip(mat_comps,filt_) if f]
                 mat_ucoords = [uc for uc,f in zip(mat_ucoords,filt_) if f]
                 mat_ccoords = [cc for cc,f in zip(mat_ccoords,filt_) if f]
- 
+                mat_cstats = [cs for cs,f in zip(mat_cstats,filt_) if f]
+
                 sc_ids.extend([sc_id for i in range(len(mat_comps))])
                 comps.extend(mat_comps)
+                cstats.append(mat_cstats)
                 ucoords.extend(mat_ucoords)
                 ccoords.extend(mat_ccoords)
 
@@ -299,6 +306,7 @@ class StructureEnumerator(MSONable):
                                           'ucoord':ucoords,\
                                           'ccoord':ccoords,\
                                           'comp':comps,\
+                                          'cstat':cstats,\
                                           'eq_occu':[None for i in range(len(comps))]})
 
         #Notice: in form='composition', Vacancy() are not explicitly included!
@@ -318,10 +326,12 @@ class StructureEnumerator(MSONable):
             comp_id(int):
                 Index of composition in the composition dimension table
             iter_id(int):
-                Specifies the time when this structure is added into calculations.
-                If iter_id is even, this structure is added in a generator run. If
-                iter_id is odd, this structure is added in a groundsolver run.
-                Iteration ids starts from 0
+                Specifies in which iteration this structure is added into calculations.
+                Both structure enumerator and ground state checker can add to fact
+                table.
+            module(str):
+                Specifying the module name that generated and added this entry into the
+                fact table. Can be 'enum' or 'gscheck'
             ori_occu(List of int):
                 Original occupancy as it was enumerated. (Encoded, and turned into list)
             ori_corr(List of float):
@@ -402,8 +412,11 @@ class StructureEnumerator(MSONable):
         """
         N_keys = len(self.comp_df)
         if self._fact_df is None or len(self._fact_df)==0:
-            self._fact_df = pd.DataFrame(columns=['entry_id','sc_id','comp_id','iter_id','ori_occu','ori_corr',
-                                                  'calc_status','map_occu','map_corr','e_prim','other_props'])           
+            self._fact_df = pd.DataFrame(columns=['entry_id','sc_id','comp_id','iter_id','module',\
+                                                  'ori_occu','ori_corr',\
+                                                  'calc_status','map_occu','map_corr',\
+                                                  'e_prim',\
+                                                  'other_props'])           
             cur_it_id = 0
         else:
             cur_it_id = self._fact_df.iter_id.max()+1
@@ -524,10 +537,11 @@ class StructureEnumerator(MSONable):
         for sc_id,comp_id,key_occus,key_corrs in zip(self.comp_df.sc_id, self.comp_df.comp_id,\
                                                      enum_occus,enum_corrs):
             for occu,corr in zip(key_occus,key_corrs):
-                self._fact_df.append({'entry_id':cur_id,
+                self._fact_df = self._fact_df.append({'entry_id':cur_id,
                                       'sc_id':sc_id,
                                       'comp_id':comp_id,
                                       'iter_id':cur_iter_id,
+                                      'module':'enum',
                                       'ori_occu':occu,
                                       'ori_corr':corr,
                                       'calc_status':'NC',
@@ -774,19 +788,18 @@ class StructureEnumerator(MSONable):
         De-serialze from a dictionary.
         """
         prim = Structure.from_dict(d['prim'])
-        ce = ClusterExpansion.from_dict(d['ce'])
-        socket = cls(prim,sublat_list = d['sublat_list'],\
+        ced = d.get(['ce'],None)
+        ce = ClusterExpansion.from_dict(ced) if ced else None
+        return  cls(prim,sublat_list = d.get('sublat_list',None),\
                  previous_ce = ce,\
-                 transmat=d['transmat'],\
-                 sc_size=d['sc_size'],\
-                 max_sc_cond = d['max_sc_cond'],\
-                 min_sc_angle = d['min_sc_angle'],\
-                 comp_restrictions=d['comp_restrictions'],\
-                 comp_enumstep=d['comp_enumstep'],\
-                 basis_type = d['basis_type'],\
-                 select_method = d['select_method'])
-        
-        return socket
+                 transmat=d.get('transmat',[[1,0,0],[0,1,0],[0,0,1]]),\
+                 sc_size=d.get('sc_size',32),\
+                 max_sc_cond = d.get('max_sc_cond',8),\
+                 min_sc_angle = d.get('min_sc_angle',30),\
+                 comp_restrictions=d.get('comp_restrictions',None),\
+                 comp_enumstep=d.get('comp_enumstep',1),\
+                 basis_type = d.get('basis_type','indicator'),\
+                 select_method = d.get('select_method','CUR'))
 
     def save_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
         """
@@ -817,6 +830,7 @@ class StructureEnumerator(MSONable):
             self._comp_df = pd.read_csv(comp_file,
                                         converters={'ucoord':list_conv,
                                                     'ccoord':list_conv,
+                                                    'cstat':list_conv,
                                                     'eq_occu':list_conv,
                                                     'comp':deser_comp
                                                    })

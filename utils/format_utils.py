@@ -118,18 +118,44 @@ def deser_comp(comp_ser):
 
     return {decode_from_dict(sp_d):n for sp_d,n in comp_ser}
 
+# Utilities to get supercell sublattice sites from primitive sublattice sites.
+def get_sc_sllist_from_prim(sl_list_prim,sc_size=1):
+    """
+    Get supercell sublattice sites list from primitive cell sublattice sites list.
+    Args:
+        sl_list_prim(List[List[int]]):
+             sublattice sites indices in primitive cell
+        sc_size(int):
+             supercell size. Default to 1.
+    Returns:
+        List[List[int]]:
+             sublattice sites indices in supercell.
+    """
+    sl_list_sc = []
+    for sl_prim in sl_list_prim:
+        sl_sc = []
+        for sid_prim in sl_prim:
+            all_sid_sc = list(range(sid_prim*sc_size,(sid_orim+1)*sc_size))
+            sl_sc.extend(all_sid_sc)
+        sl_list_sc.append(sl_sc)
+
+    return sl_list_sc
 
 # Utilities for parsing occupation, used in charge-neutral semigrand flip table
-def occu_to_species_stat(sublattices,occupancy,normalize=False):
+def occu_to_species_stat(bits,sublat_list,occupancy,sc_size=1,normalize=False):
     """
     Get a statistics table of each specie on sublattices from an encoded 
     occupancy array.
-    Inputs:
-        sublattices(A list of smol.moca.Sublattice):
-            Sublattice objects of the current system, storing attibutes of
-            site indices and site spaces of each sublattice.
+    Args:
+        bits(list of lists of Specie):
+            A list of species on each sublattice, must correspond to occupancy
+            encoding table
+        sublat_list(List of lists of ints):
+            A list storing sublattice sites in a PRIM cell
         occupancy(np.ndarray like):
             An array representing encoded occupancy, can be list.
+        sc_size(int):
+            Size of supercell. Default to 1.
         normalize(Boolean):
             Whether or not to normalize species_stat into fractional 
             compositions. By default, we will not normalize.
@@ -140,13 +166,14 @@ def occu_to_species_stat(sublattices,occupancy,normalize=False):
             2nd dimension: number of each specie on that specific sublattice.
             Dimensions same as moca.sampler.mcushers.CorrelatedUsher.bits          
     """
-    bits = [sl.species for sl in sublattices]
     occu = np.array(occupancy)
     species_stat = [[0 for i in range(len(sl_bits))] for sl_bits in bits]
+    sublat_list = get_sc_sllist_from_prim(sublat_list,sc_size=sc_size)
+
     for s_id,sp_code in enumerate(occu):
         sl_id = None
-        for i,sl in enumerate(sublattices):
-            if s_id in sl.sites:
+        for i,sl in enumerate(sublat_list):
+            if s_id in sl:
                 sl_id = i
                 break
         if sl_id is None:
@@ -162,16 +189,20 @@ def occu_to_species_stat(sublattices,occupancy,normalize=False):
 
     return species_stat
 
-def occu_to_species_list(sublattices,occupancy):
+def occu_to_species_list(bits,sublat_list,occupancy,sc_size=1):
     """
     Get table of the indices of sites that are occupied by each specie on sublattices,
     from an encoded occupancy array.
     Inputs:
-        sublattices(A list of smol.moca.Sublattice):
-            Sublattice objects of the current system, storing attibutes of
-            site indices and site spaces of each sublattice.
+        bits(list of lists of Specie):
+            A list of species on each sublattice, must correspond to occupancy
+            encoding table
+        sublat_list(List of lists of ints):
+            A list storing sublattice sites in a PRIM cell
         occupancy(np.ndarray like):
-            An array representing encoded occupancy
+            An array representing encoded occupancy, can be list.
+        sc_size(int):
+            Size of supercell. Default to 1.
     Returns:
         species_list(3d list of ints):
             Is a statistics of indices of sites occupied by each specie.
@@ -179,14 +210,14 @@ def occu_to_species_list(sublattices,occupancy):
             2nd dimension: species on a sublattice
             3rd dimension: site ids occupied by that specie
     """
-    bits = [sl.species for sl in sublattices]
     occu = np.array(occupancy)
     species_list = [[[] for i in range(len(sl_bits))] for sl_bits in bits]
+    sublat_list = get_sc_sllist_from_prim(sublat_list,sc_size=sc_size)
 
     for site_id,sp_id in enumerate(occu):
         sl_id = None
-        for i,sl in enumerate(sublattices):
-            if s_id in sl.sites:
+        for i,sl in enumerate(sublat_list):
+            if s_id in sl:
                 sl_id = i
                 break
         if sl_id is None:
