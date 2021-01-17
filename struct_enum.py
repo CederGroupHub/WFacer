@@ -11,6 +11,7 @@ import random
 from copy import deepcopy
 import numpy as np
 import os
+import json
 
 from monty.json import MSONable
 
@@ -216,6 +217,15 @@ class StructureEnumerator(MSONable):
             return len(self._fact_df)
 
     @property
+    def n_iter(self):
+        """
+        Current iteration number. This index starts from 0.
+        """
+        if self._fact_df is None or len(self._fact_df)==0:
+            return -1
+        return self._fact_df[self._fact_df.module=='enum'].iter_id.max()
+
+    @property
     def sc_df(self):
         """
         Supercell matrices used for structural enumeration. If none yet, will be 
@@ -411,17 +421,24 @@ class StructureEnumerator(MSONable):
         No outputs. Updates in self._fact_df
         """
         N_keys = len(self.comp_df)
+
+        #Check for dumplicated strcture enumerator call
+        filt_ = (self._fact_df.iter_id==self.n_iter) & (self._fact_df.module=='enum')
+        if self.n_iter>=0 and np.all(self._fact_df[filt_].calc_status=='NC'):
+            warnings.warn("Structure enumerator called twice in one iteration, skipping.")
+            return
+
+        #Build the table
         if self._fact_df is None or len(self._fact_df)==0:
-            self._fact_df = pd.DataFrame(columns=['entry_id','sc_id','comp_id','iter_id','module',\
+            self._fact_df = pd.DataFrame(columns=['entry_id','sc_id','comp_id','iter_id',\
+                                                  'module',\
                                                   'ori_occu','ori_corr',\
-                                                  'calc_status','map_occu','map_corr',\
+                                                  'calc_status',\
+                                                  'map_occu','map_corr',\
                                                   'e_prim',\
                                                   'other_props'])           
-            cur_it_id = 0
-        else:
-            cur_it_id = self._fact_df.iter_id.max()+1
 
-        # Results of his generator run
+        # Results of this enumerator run
         eq_occus_update = []
         enum_strs = []
         enum_occus = []
@@ -533,6 +550,7 @@ class StructureEnumerator(MSONable):
         #Adding new structures into the fact table. All fact entry ids starts from 0
         cur_id = deepcopy(self.n_strs)
         n_strs_init = deepcopy(self.n_strs)
+        cur_iter_id = self.n_iter+1
 
         for sc_id,comp_id,key_occus,key_corrs in zip(self.comp_df.sc_id, self.comp_df.comp_id,\
                                                      enum_occus,enum_corrs):
@@ -801,7 +819,7 @@ class StructureEnumerator(MSONable):
                  basis_type = d.get('basis_type','indicator'),\
                  select_method = d.get('select_method','CUR'))
 
-    def save_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+    def _save_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
         """
         Saving dimension tables and the fact table. Must set index=False, otherwise will always add
         One more row for each save and load.
@@ -815,7 +833,7 @@ class StructureEnumerator(MSONable):
         if self.fact_df is not None:
             self.fact_df.to_csv(fact_file,index=False)
 
-    def load_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+    def _load_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
         """
         Loading dimension tables and the fact table. 
         comp_df needs a little bit de-serialization.
@@ -842,3 +860,46 @@ class StructureEnumerator(MSONable):
                                                     'map_corr':list_conv,
                                                     'other_props':list_conv
                                                    })
+
+
+    def auto_save(self,enum_file='ce_enum.json',\
+                  sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+        """
+        Automatically save object data into specified files.
+        Args:
+            enum_file(str):
+                enumerator object file path.
+            sc_file(str):
+                supercell matrix file path
+            comp_file(str):
+                composition file path
+            fact_file(str):
+                fact table file path
+        All optional, but I don't recommend you to change the paths.
+        """
+        with open(enum_file,'w') as fout:
+            json.dump(self.as_dict(),fout)
+
+        self._save_data(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
+
+    @classmethod
+    def auto_load(cls,enum_file='ce_enum.json',\
+                  sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+        """
+        Automatically load object data from specified files, and returns an object.
+        Args:
+            enum_file(str):
+                enumerator object file path.
+            sc_file(str):
+                supercell matrix file path
+            comp_file(str):
+                composition file path
+            fact_file(str):
+                fact table file path
+        All optional, but I don't recommend you to change the paths.
+        """
+        with open(enum_file) as fin:
+            socket = cls.from_dict(json.load(fin))
+
+        socket._load_data(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
+        return socket

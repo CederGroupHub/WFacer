@@ -217,7 +217,7 @@ class CompSpace(MSONable):
         enumeration method. For the exact way we do enumeration, please refer to the documentation of 
         each class methods.
             
-
+        By default, all other coordinate formats will not be normalized, except 'composition'.
     """
     def __init__(self,bits,sl_sizes=None):
         """
@@ -454,7 +454,7 @@ class CompSpace(MSONable):
             raise CHGBALANCEERROR
 
         #This function formuates multiple unconstrained coords together.
-        return self._formulate_unconstr(self._constr_spc_vertices,form=form,sc_size=1)
+        return self._convert_unconstr_to(self._constr_spc_vertices,form=form,sc_size=1)
 
     @property
     def min_sc_size(self):
@@ -484,9 +484,9 @@ class CompSpace(MSONable):
         if self._min_sc_size or self._min_int_vertices is None:
             min_sc_size = self.min_sc_size
 
-        return self._formulate_unconstr(self._min_int_vertices,form=form,sc_size=self.min_sc_size)
+        return self._convert_unconstr_to(self._min_int_vertices,form=form,sc_size=self.min_sc_size)
 
-    def int_vertices(self,sc_size=1,step=1,form='unconstr'):
+    def int_vertices(self,sc_size=1,form='unconstr'):
         """
         Type: np.array of np.int64
         If supercell size is a multiple of min_sc_size, then int_vertices are just min_int_vertices*multiple;
@@ -514,7 +514,7 @@ class CompSpace(MSONable):
                 #points does not satisfy the requirement to form a hull in the constrained space
                 vertices = int_grids
 
-        return self._formulate_unconstr(vertices,form=form,sc_size=sc_size)
+        return self._convert_unconstr_to(vertices,form=form,sc_size=sc_size)
 
     def min_grid(self,form='unconstr'):
         """
@@ -534,7 +534,7 @@ class CompSpace(MSONable):
         if self._min_grid is None:
             self._min_grid = self._enum_int_grids(sc_size=self.min_sc_size)
 
-        return self._formulate_unconstr(self._min_grid,form=form,sc_size=self.min_sc_size)
+        return self._convert_unconstr_to(self._min_grid,form=form,sc_size=self.min_sc_size)
 
     def int_grids(self,sc_size=1,form='unconstr'):
         """
@@ -561,7 +561,7 @@ class CompSpace(MSONable):
         if sc_size not in self._int_grids:
             self._int_grids[sc_size] = self._enum_int_grids(sc_size=sc_size)
 
-        return self._formulate_unconstr(self._int_grids[sc_size],form=form,sc_size=sc_size)
+        return self._convert_unconstr_to(self._int_grids[sc_size],form=form,sc_size=sc_size)
 
     def _enum_int_grids(self,sc_size=1):
         """
@@ -619,8 +619,9 @@ class CompSpace(MSONable):
         """
         comps = np.array(self.int_grids(sc_size),dtype=np.float64)/sc_size
 
-        return self._formulate_unconstr(comps,form=form,sc_size=1)
+        return self._convert_unconstr_to(comps,form=form,sc_size=1)
 
+#These formatting functions will not normalize or scale compositions. It's your responsibility.
     def _unconstr_to_constr_coords(self,x,sc_size=1,to_int=False):
         """
         Unconstrained coordinate system to constrained coordinate system.
@@ -633,7 +634,8 @@ class CompSpace(MSONable):
         to_int: if true, round coords to integers.
 
         Outputs:
-            x_prime: constrained coordinates vector, in its proper dimension
+            x_prime(np.array): 
+                   constrained coordinates vector, in its proper dimension
             d_slack: slack distance out of constraint plane. Will always be 0 if charge 
                    constraint does not apply.
                    if d_slack>SLACK_TOL, then we consider the charge constraint as broken.
@@ -669,6 +671,8 @@ class CompSpace(MSONable):
     def _constr_to_unconstr_coords(self,x_prime,sc_size=1,to_int=False):
         """
         Constrained coordinate system to unconstrained coordinate system.
+        Output:
+            np.array.
         """
         #scale down to unit comp space
         x_prime = np.array(x_prime)/sc_size
@@ -720,12 +724,13 @@ class CompSpace(MSONable):
         """
         Translate compstat table to unconstrained coordinate.
         Return:
-            x: an array of unconstrained variables
+            x(np.array): 
+                an array of unconstrained coordinate
         """
         x = []
         for sl_stat in compstat:
             x.extend(sl_stat[:-1])
-        return x
+        return np.array(x)
 
     def _unconstr_to_composition(self,x,sc_size=1):
         """
@@ -734,7 +739,6 @@ class CompSpace(MSONable):
         of structure generator.
         """
         compstat = self._unconstr_to_compstat(x,sc_size=sc_size)
-        sl_sizes = np.array(self.sl_sizes)*sc_size
 
         sl_comps = []
         for sl_id,sl_bits in enumerate(self.bits):
@@ -744,17 +748,44 @@ class CompSpace(MSONable):
                 #Trim vacancies from the composition, for pymatgen to read the structure.
                 if isinstance(bit, Vacancy):
                     continue
-                sl_comp[bit] = float(compstat[sl_id][b_id])/sl_sizes[sl_id]
+                #Composition will always be normalized!
+                sl_comp[bit] = compstat[sl_id][b_id]/(self.sl_sizes[sl_id]*sc_size)
 
             sl_comps.append(Composition(sl_comp))
 
         return sl_comps
 
-    def _formulate_unconstr(self,arr,form='unconstr',sc_size=1):
+    def _composition_to_unconstr(self,comp):
+        """
+        Translate composition format to unconstrained coordinates.
+        Since compositions are always normalized, we will not 
+        need supercell size.
+        Returns:
+            np.array
+        """
+        x = []
+
+        for sl_id,sl_bits in enumerate(self.bits):
+            for b_id, bit in enumerate(sl_bits[:-1]):
+                if isinstance(bit, Vacancy):
+                    sl_sum = sum(list(comp[sl_id].values()))
+                    if sl_sum > 1:
+                        raise ValueError("{} is not a valid composition."\
+                                         .format(comp[sl_id]))
+                    ucoord.append(1 - sl_sum)
+                else:
+                    ucoord.append(comp[sl_id][bit])
+
+        return np.array(x)
+
+
+    def _convert_unconstr_to(self,x,form='unconstr',sc_size=1):
         """
         Translates an unconstrained coordinate into different forms.
         Inputs:
-            arr: must be 2D np.array
+            x:
+                Any arraylike, the last dimension will be considered as an 
+                unconstrained coordinate.
             sc_size (int):
                 Supercell size to numerate on.
             form (string):
@@ -765,23 +796,92 @@ class CompSpace(MSONable):
                 'composition': use a pymatgen.composition for each sublattice 
                                (vacancies not explicitly included)
         """
+        if len(np.array(x).shape)>1:
+            result = [self._convert_unconstr_to(x_sub,form=form,sc_size=sc_size) \
+                      for x_sub in x])
+            if form in ['constr','unconstr']:
+                return np.array(result)
+            else:
+                return result
+
         if form == 'unconstr':
-            #Output is 2D array
-            return arr
+            return np.array(x)
         elif form == 'constr':
-            #Output is 2D array
-            return np.array([self._unconstr_to_constr_coords(x,sc_size=sc_size)
-                             for x in arr])
+            return np.array(self._unconstr_to_constr_coords(x,sc_size=sc_size))
         elif form == 'compstat':
-            #Output is a list of 2D lists, each 2D list is for an element in the
-            #Original 2D array
-            return [self._unconstr_to_compstat(x,sc_size=sc_size) for x in arr]
+            return self._unconstr_to_compstat(x,sc_size=sc_size)
         elif form == 'composition':
-            #Output will be a 2D list of pymatgen.Composition
-            return [self._unconstr_to_composition(x,sc_size=sc_size) for x in arr]
+            return self._unconstr_to_composition(x,sc_size=sc_size)
         else:
             raise ValueError('Requested format not supported.')
 
+
+    def _convert_to_unconstr(self,x,form,sc_size=1):
+        """
+        Translates different forms into an unconstrained coordinate.
+        Inputs:
+            x:
+                Any arraylike, the last dimension will be considered as an 
+                unconstrained coordinate.
+            sc_size (int):
+                Supercell size to numerate on.
+            form (string):
+                Specifies the format to output the compositions.
+                'unconstr': use unconstrained (type 1) coordinates.(default)
+                'constr': use constrained (type 2) coordinates.
+                'compstat': use compstat lists.(See self._unconstr_to_compstat doc)
+                'composition': use a pymatgen.composition for each sublattice 
+                               (vacancies not explicitly included, and must be normalized.
+        """
+        if form in ['unconstr','constr']:
+            if len(np.array(x).shape)>1:
+                result = [self._convert_to_unconstr(x_sub,form=form,sc_size=sc_size) \
+                          for x_sub in x]
+                return np.array(result)
+        elif form == 'compstat':
+            if isinstance(x[0][0],list):
+                result = [self._convert_to_unconstr(x_sub,form=form,sc_size=sc_size) \
+                          for x_sub in x]
+                return np.array(result)
+        elif form == 'composition':
+            if not isinstance(x[0],Composition):
+                result = [self._convert_to_unconstr(x_sub,form=form,sc_size=sc_size) \
+                          for x_sub in x]
+                return np.array(result)
+
+        if form == 'unconstr':
+            return np.array(x)
+        elif form == 'constr':
+            return np.array(self._constr_to_unconstr_coords(x,sc_size=sc_size))
+        elif form == 'compstat':
+            return np.array(self._compstat_to_unconstr(x))
+        elif form == 'composition':
+            #Output will be a 2D list of pymatgen.Composition
+            return np.array(self._composition_to_unconstr(x))
+        else:
+            raise ValueError('Requested format not supported.')
+
+   
+    def translate_format(self,x,from_format,to_format='unconstr',sc_size=1): 
+        """
+        Translates different forms into an unconstrained coordinate.
+        Inputs:
+            x:
+                Any arraylike, the last dimension will be considered as an 
+                unconstrained coordinate.
+            sc_size (int):
+                Supercell size to numerate on.
+                Default is 1, we suppose you are using primitive cell scale.
+            from_format,to_format (string):
+                Specifies the format to output the compositions.
+                'unconstr': use unconstrained (type 1) coordinates.(default)
+                'constr': use constrained (type 2) coordinates.
+                'compstat': use compstat lists.(See self._unconstr_to_compstat doc)
+                'composition': use a pymatgen.composition for each sublattice 
+                               (vacancies not explicitly included)
+        """
+        ucoords = self._convert_to_unconstr(x,form=from_format,sc_size=sc_size)
+        return self._convert_unconstr_to(ucoords,form=to_format,sc_size=sc_size)
 
     def as_dict(self):
         bits_d = [[sp.as_dict() for sp in sl_sps] for sl_sps in self.bits]

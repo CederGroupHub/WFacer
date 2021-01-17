@@ -142,7 +142,7 @@ def get_sc_sllist_from_prim(sl_list_prim,sc_size=1):
     return sl_list_sc
 
 # Utilities for parsing occupation, used in charge-neutral semigrand flip table
-def occu_to_species_stat(bits,sublat_list,occupancy,sc_size=1,normalize=False):
+def occu_to_species_stat(bits,sublat_list,occupancy,normalize=False):
     """
     Get a statistics table of each specie on sublattices from an encoded 
     occupancy array.
@@ -154,8 +154,6 @@ def occu_to_species_stat(bits,sublat_list,occupancy,sc_size=1,normalize=False):
             A list storing sublattice sites in a PRIM cell
         occupancy(np.ndarray like):
             An array representing encoded occupancy, can be list.
-        sc_size(int):
-            Size of supercell. Default to 1.
         normalize(Boolean):
             Whether or not to normalize species_stat into fractional 
             compositions. By default, we will not normalize.
@@ -167,6 +165,10 @@ def occu_to_species_stat(bits,sublat_list,occupancy,sc_size=1,normalize=False):
             Dimensions same as moca.sampler.mcushers.CorrelatedUsher.bits          
     """
     occu = np.array(occupancy)
+    if len(occu)%sum([len(sl) for sl in sublat_list])!=0:
+        raise ValueError("Occupancy size not multiple of primitive cell size.")
+    sc_size = len(occu)//sum([len(sl) for sl in sublat_list])
+
     species_stat = [[0 for i in range(len(sl_bits))] for sl_bits in bits]
     sublat_list = get_sc_sllist_from_prim(sublat_list,sc_size=sc_size)
 
@@ -228,10 +230,12 @@ def occu_to_species_list(bits,sublat_list,occupancy,sc_size=1):
     return species_list
 
 #Wrap up structure_from_occu method from processor module
-def structure_from_occu(prim,sc_matrix,occu):
+def structure_from_occu(occu,prim,sc_matrix):
     """
     Decodes structure from encoded occupation array.
-    Inputs:
+    Args:
+        occu(1D arraylike):
+            encoded occupation string
         prim(pymatgen.Structure):
             primitive cell containing all occupying species information.
             It is your responisibility to ensure that it is exactly the
@@ -239,8 +243,6 @@ def structure_from_occu(prim,sc_matrix,occu):
         sc_matrix(3*3 arraylike):
             Supercell matrix. It is your responsibility to check size
             matches the length of occu
-        occu(1D arraylike):
-            encoded occupation string
     Returns:
         Decoded pymatgen.Structure object.
     """
@@ -248,5 +250,3 @@ def structure_from_occu(prim,sc_matrix,occu):
     dummy_coefs = np.zeros(dummy_cspace.num_corr_functions)
     dummy_proc = CEProcessor(dummy_cspace,sc_matrix,dummy_coefs)
     return dummy_proc.structure_from_occupancy(occu)
-
-

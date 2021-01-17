@@ -108,18 +108,49 @@ def fix_convex_hull(hull_list):
         clean_hull = clean_hull.T.tolist()
         return clean_hull
 
+
+def estimate_mu_from_hull(hull):
+    """
+    This util function estimates the central mu in compositional space
+    from grounds states hull vertices.(Constrained compositional space,
+    refer to comp_space.py)
+    Args:
+        hull(pd.DataFrame):
+            A hull in dataframe form, must contain at least two columns:
+            'ccoord','e_prim'
+    Return:
+        List of length ndim, each component contains a central estimate 
+        of mu on that compositional dimension.
+    """
+    hull = hull.reset_index()
+    all_ccoords = hull['ccoord'].tolist()
+    boundhull = ConvexHull(all_ccorrds)
+    #Select edges originating from the first vertex only
+    X = []
+    y = []
+    for v_id in boundhull.vertices[1:]:
+        X.append(np.array(hull.iloc[0]['ccoord'])-np.array(hull.iloc[v_id]['coord']))
+        y.append(hull.iloc[0]['e_prim'] - hull.iloc[v_id]['e_prim'])
+    X = np.array(X)
+    y = np.array(y)
+    return (np.linalg.inv(X.T@X)@X.T@y).tolist()
+
+
 def plot_hull(hull,axis_id=None, fix_hull=True,\
               title='CE hull plot',x_label = None,\
-              y_label='Energy per prim/eV'):
+              y_label='Energy per prim/eV',\
+              convert_to_formation = True):
     """
-    This util function tries to plot a hull. When in high dimensional
-    compositional space, must specify an axis to project to.
+    This util function tries to plot a hull, by formation energy.
+    When in high dimensional compositional space, must specify 
+    an axis to project to.
 
     Usually you need to overlay scatter plot on it.
     Args:
         hull(pd.DataFrame):
             Dataframe of the minimum energy hulls.
-            Must contain at least two columns: ['e_prim','ccoord']
+            Must contain at least 3 columns: 
+            ['e_prim','ccoord','comp']
             coordinates must be normalized!
         axis_id(int):
             Index of axis. If none given, will always project on 
@@ -132,8 +163,16 @@ def plot_hull(hull,axis_id=None, fix_hull=True,\
             x axis label
         y_label(str):
             y axis label
+        convert_to_formation(Boolean):
+            If true, will plot formation energy in eV/prim,
+            instead of CE energies.
     Return:
-        plt.figure, plt.axes
+        plt.figure, plt.axes,
+        e1, e2: 
+           estimated energies of the two extremum
+        x_min, x_max: 
+           constrained coordinate values at extremums on
+           the plotting axis.
     """
     hull_sort = hull.reset_index()
     if len(hull_sort.iloc[0]['ccoord'])<1:
@@ -142,18 +181,37 @@ def plot_hull(hull,axis_id=None, fix_hull=True,\
         warnings.warn("Plotting in multi-dimensional space, but no projection axis specified.")
 
     hull_sort['ccoord'] = hull_sort['ccoord'].map(lambda x: x[axis_id or 0])
-    hull_sort = hull_sort.sort_values(by=['ccoord'])
-    
+    hull_sort = hull_sort.sort_values(by=['ccoord']).reset_index()
+     
+   
     hull_list = hull_sort.loc[:,['ccoord','e_prim']].T.tolist()
     if fix_hull:
         hull_list = fix_convex_hull(hull_list)
 
+    if convert_to_formation:
+        e1 = hull_list[1][0]
+        e2 = hull_list[1][-1]
+        x_min = hull_list[0][0]
+        x_max = hull_list[0][-1]
+        hulls_list = np.array(hulls_list)
+        hulls_list[0] = (hulls_list[0]-x_min)/(x_max-x_min)
+        hulls_list[1] = hulls_list[1] - (hulls_list[0]*e1 + hulls_list[0]*e2)
+    else:
+        e1 = None
+        e2 = None
+        x_min = None
+        x_max = None
+
+    comp1 = hull_sort.iloc[0]['comp']
+    comp2 = hull_sort.iloc[-1]['comp']
     fig,ax = plt.subplots()
-    ax.plot(hull_list[0],hull_list[1],color='g',label='Min Hull')
+    ax.plot(hull_list[0],hull_list[1],color='g',label='Min Hull\nx=0:{},x=1:[]'\
+                                                      .format(comp1,comp2))
     ax.set_title(title)
+    ax.text()
     ax.set_xlabel(x_label or 'constrained_composition_axis_{}'.format(axis_id or 0))
     ax.set_ylabel(y_label)
-    ax.legend()
+    ax.legend(fontsize=10)
 
-    return fig, ax
+    return fig, ax, e1, e2, x_min, x_max
     

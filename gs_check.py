@@ -4,17 +4,17 @@ THIS CLASS DOES NOT TOUCH DATA TABLES!
 """
 __author__ == "Fengyu Xie"
 
-from monty.json import MSONable
+
 import json
 import numpy as np
+import pandas as pd
 
 from smol.cofe import ClusterSubspace
 
 from utils.format_utils import *
 from utils.hull_utils import hulls_match, plot_hull
 
-NODATAERROR = ValueError("No dataframes. You may call self.load_data() to load \
-                          the calculation data first.")
+NODATAERROR = RuntimeError("No dataframes. You may call data loading methods to load the calculation data first.")
  
 class GSChecker:
     """
@@ -63,7 +63,7 @@ class GSChecker:
         """
         if self._fact_table is None:
             raise NODATAERROR
-        _n_it = self._fact_table.iter_id.max()
+        _n_it = self._fact_table[self._fact_table.module=='enum'].iter_id.max()
         if pd.isnull(_n_it):
             return -1
         else:
@@ -206,7 +206,7 @@ class GSChecker:
            self.prev_dft_hull is None or self.curr_dft_hull is None:
             return False
 
-        cv = self.ce_history[-1]['cv']['e_prim']
+        cv = self.ce_history[-1].get('cv',{'e_prim':0.001})['e_prim']
 
         return hulls_match(self.prev_ce_hull,self.curr_ce_hull,\
                            e_tol=e_tol*cv,comp_tol=comp_tol) and \
@@ -214,39 +214,13 @@ class GSChecker:
                            e_tol=e_tol*cv,comp_tol=comp_tol)
 
 
-    def _load_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
-        """
-        Loading dimension tables and the fact table. 
-        comp_df needs a little bit de-serialization.
-        File names can be changed, but not recommended!
-        Notice: pandas loads lists as strings. You have to serialize them!
-        """
-        list_conv = lambda x: json.loads(x) if x is not None else None
-        if os.path.isfile(sc_file):
-            self._sc_df = pd.read_csv(sc_file,converters={'matrix':list_conv})
-        if os.path.isfile(comp_file):
-            #De-serialize compositions and list values
-            self._comp_df = pd.read_csv(comp_file,
-                                        converters={'ucoord':list_conv,
-                                                    'ccoord':list_conv,
-                                                    'eq_occu':list_conv,
-                                                    'comp':deser_comp
-                                                   })
-        if os.path.isfile(fact_file):
-            self._fact_df = pd.read_csv(fact_file,
-                                        converters={'ori_occu':list_conv,
-                                                    'ori_corr':list_conv,
-                                                    'map_occu':list_conv,
-                                                    'map_corr':list_conv,
-                                                    'other_props':list_conv
-                                                   })
-
-
     def plot_hull_scatter(self,mode='dft',\
                           axis_id=None,title='hull and scatter plot',\
-                          x_label=None,y_label='Energy per prim/eV'):
+                          x_label=None,y_label='Energy per prim/eV',\
+                          convert_to_formation=True):
         """
-        Plot hull and scatter.When in high dimensional compositional 
+        Plot hull and scatter of a physical quantity.
+        When in high dimensional compositional 
         space, must specify an axis to project to.
 
         Args:
@@ -265,6 +239,9 @@ class GSChecker:
                 x axis label
             y_label(str):
                 y axis label
+            convert_to_formation(Boolean):
+                If true, will plot formation energy in eV/prim,
+                instead of CE energies.
         Return:
             plt.figure, plt.axes
         """
@@ -280,22 +257,56 @@ class GSChecker:
 
         if mode == 'dft':
             hull = self.curr_dft_hull
-            scatter = fact_cur.loc[:,['ccoord','e_prim']].T.tolist()
+            scatter = fact_cur.loc[:,['ccoord','e_prim']].to_numpy().T
         elif mode == 'ce':
             coef_ = self.ce_history[-1]['coefs']['e_prim']
             fact_cur['e_ce'] = np.array(fact_cur.map_corr.tolist())@np.array(coef_)
             hull = self.curr_ce_hull
-            scatter = fact_cur.loc[:,['ccoord','e_ce']].T.tolist()
+            scatter = fact_cur.loc[:,['ccoord','e_ce']].to_numpy().T
         else:
             raise NotImplementedError("Hull mode {} not implemented yet."\
                                       .format(mode))           
 
-        fig, ax = plot_hull(hull,axis_id=axis_id,\
-                            title=title,x_label=x_label,\
-                            y_label=y_label)
+        fig, ax, e1, e2, x_min, x_max = plot_hull(hull,axis_id=axis_id,\
+                                            title=title,x_label=x_label,\
+                                            y_label=y_label,\
+                                            convert_to_formation=convert_to_formation)
+
+        if convert_to_formation:
+            scatter[0] = (scatter[0]-x_min)/(x_max-x_min)
+            scatter[1] = scatter[1] - (scatter[0]*e1 + scatter[0]*e2)
+
         ax.scatter(scatter[0],scatter[1],color='b')
         
         return fig, ax
+
+
+    def _load_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+        """
+        Loading dimension tables and the fact table. 
+        comp_df needs a little bit de-serialization.
+        File names can be changed, but not recommended!
+        Notice: pandas loads lists as strings. You have to serialize them!
+        """
+        list_conv = lambda x: json.loads(x) if x is not None else None
+        if os.path.isfile(sc_file):
+            self._sc_table = pd.read_csv(sc_file,converters={'matrix':list_conv})
+        if os.path.isfile(comp_file):
+            #De-serialize compositions and list values
+            self._comp_table = pd.read_csv(comp_file,
+                                        converters={'ucoord':list_conv,
+                                                    'ccoord':list_conv,
+                                                    'eq_occu':list_conv,
+                                                    'comp':deser_comp
+                                                   })
+        if os.path.isfile(fact_file):
+            self._fact_table = pd.read_csv(fact_file,
+                                        converters={'ori_occu':list_conv,
+                                                    'ori_corr':list_conv,
+                                                    'map_occu':list_conv,
+                                                    'map_corr':list_conv,
+                                                    'other_props':list_conv
+                                                   })
 
 
     @classmethod

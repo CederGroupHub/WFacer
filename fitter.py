@@ -324,9 +324,9 @@ class CEFitter(MSONable):
                 "@class":self.__class__.__name__
                }          
 
-    def as_file(self,update_his= True,fname = 'ce_fitter.json'):
+    def auto_save(self,update_his= True,fname = 'ce_fit.json'):
         """
-        Serialization. 
+        Serialization to file.
         Make sure to call it only ONCE for each CE iteration!
         Args:
             fname(str):
@@ -354,9 +354,10 @@ class CEFitter(MSONable):
         socket._femat = d.get('femat',[])
         return socket
 
-    def from_file(cls,fname= 'ce_fitter.json'):
+    @classmethod
+    def auto_load(cls,fname= 'ce_fit.json'):
         """
-        De-Serialization. 
+        De-Serialization from file.
         Make sure to call it only ONCE for each CE iteration!
         If you have to call it multiple times, make sure not to call as_dict, as_file
         again, or pass update_his = False to as_dict and as_file.
