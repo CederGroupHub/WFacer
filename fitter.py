@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 from smol.cofe import ClusterExpansion
 
 from .regression import *
+from .data_manager import DataManager
+
 from .utils.weight_utils import weights_from_fact
 
 class CEFitter(MSONable):
@@ -47,8 +49,11 @@ class CEFitter(MSONable):
     supported_weights = ('unweighted','e_above_hull','e_above_comp')
 
     def __init__(self,cluster_subspace,\
-                      estimator_flavor='L2L0Estimator',weights_flavor='unweighted',\
-                      use_hierarchy=True):
+                      estimator_flavor='L2L0Estimator',\
+                      weights_flavor='unweighted',\
+                      use_hierarchy=True,\
+                      data_manager = DataManager.auto_load()):
+
         self.cspc = cluster_subspace
         self.estimator_flavor = estimator_flavor
         if weights_flavor not in supported_weights:
@@ -68,6 +73,30 @@ class CEFitter(MSONable):
         self._cv = {}
         self._rmse = {}
         self._femat = []
+
+        self._dm = data_manager
+
+    @property
+    def sc_df(self):
+        """
+        Supercell dataframe.
+        """
+        return self._dm.sc_df
+
+    @property
+    def comp_df(self):
+        """
+        Composition dataframe.
+        """
+        return self._dm.comp_df
+
+    @property
+    def fact_df(self):
+        """
+        Fact dataframe.
+        """
+        return self._dm.fact_df
+
 
     def pack_cluster_expansions(self):
         """
@@ -106,12 +135,9 @@ class CEFitter(MSONable):
         return ClusterExpansion(self.cspc,np.array(self._coefs['e_prim']),
                                 np.array(self._femat))
 
-    def fit_from_fact(self,fact_df,estimator_params={},weighter_params={}):
+    def fit_from_fact(self,estimator_params={},weighter_params={}):
         """
         Inputs:
-            fact_df(pd.DataFrame):
-                The fact table dataframe containing information of all calculations.
-                Must contain at least one 'e_prim' row for energy CE fit!
             estimator_params(Dict of dicts or None):
                 used to set estimator parameters. For example, mu, log_mu_ranges,
                 log_mu_steps, M, tlimit, etc.
@@ -131,6 +157,8 @@ class CEFitter(MSONable):
          Class attibutes will be refreshed after every fit, so it is your responsibility not to 
          double-fit the same dataset!
         """
+        fact_df = self.fact_df.copy()
+
         fact_avail = fact_df[fact_df.calc_status=='SC']
 
         #Given a fact table (pd.DataFrame), computes weights.
@@ -174,7 +202,8 @@ class CEFitter(MSONable):
             self._cv[prop_name] = np.sqrt((1-cvs)*np.sum((y-np.average(y))**2)/len(y))
             self._rmse[prop_name] = np.sqrt(np.sum((np.array(preds)-y)**2)/len(y))
 
-    def update_history(self):
+
+    def _update_history(self):
         """
         Append current fit to the history log.
         """
@@ -245,19 +274,19 @@ class CEFitter(MSONable):
         return fig,ax
 
 
-    def get_scatter_plot(self,fact_table,prop_name='e_prim'):
+    def get_scatter_plot(self,prop_name='e_prim'):
         """
         Plot scatter plot of the latest cluster expansion.
         Args:
-           fact_table(pd.DataFrame):
-               The fact table you used to fit the last CE.
            prop_name(str):
                Name of the property to plot eci for.
                Default is e_prim.
         Return:
            plt.figure, plt.axes. Remember to close the figure after save.
         """ 
-        fact_avail = fact_df[fact_table.calc_status=='SC']     
+        fact_df = self.fact_df.copy()
+
+        fact_avail = fact_df[fact_df.calc_status=='SC']     
         X = np.array(fact_avail.map_corr.tolist())
 
         if len(self._cv)==0 or len(self._rmse)==0 or len(self._coefs)==0:
@@ -298,73 +327,40 @@ class CEFitter(MSONable):
         return fig,ax
             
 
-    def as_dict(self,update_his=True):        
-        """
-        Serialization. 
-        Since this class does not check which iteration number it is in, it is possible
-        that you initialize and fit it twice in one iteration.
-        If you fail to recognize this and pass it down as update_his=False, your history
-        will be dupe appended in one iteration, which may cause error in the termination 
-        criteria codes.
-        Make sure to init it only ONCE for each CE iteration. And if you have to init
-        it multiple times, make sure not to call update_history in your later inits!
-        Args:
-            update_his(Bool):
-                whether to update history log or not. Default to True.
-        """
-        if update_his:
-            self.update_history()
-        return {"cluster_subspace":self.cspc.as_dict(),
-                "weights_flavor": self.weights_flavor,
-                "estimator_flavor": self.estimator_flavor,
-                "use_hierarchy": self.use_hierarchy,
-                "history": self._history,
-                "femat": self._femat,
-                "@module":self.__class__.__module__
-                "@class":self.__class__.__name__
-               }          
-
-    def auto_save(self,update_his= True,fname = 'ce_fit.json'):
+    def auto_save(self,update_his= True,ce_history_file = 'ce_history.json'):
         """
         Serialization to file.
         Make sure to call it only ONCE for each CE iteration!
         Args:
-            fname(str):
-                path to object saving file. Can be changed, but
-                not recommended!
             update_his(Bool):
                 whether to update history log or not. Default to True.
+            ce_history_file(str):
+                path to cluster expansion history file.
         """
-        with open(fname,'w') as fout:
-            json.dump(self.as_dict(update_his=update_his),fout)
+        with open(ce_history_file,'w') as fout:
+            if update_his:
+                self._update_history()
+            json.dump(self._history,fout)
+
 
     @classmethod
-    def from_dict(cls,d):
-        """
-        Deserialization.
-        Make sure to call it only ONCE for each CE iteration!
-        If you have to call it multiple times, make sure not to call as_dict, as_file
-        again, or pass update_his = False to as_dict and as_file.
-        """
-        socket = cls(cluster_subspace = d.get('cluster_subspace',None),
-                     weights_flavor = d.get('weights_flavor','unweighted'),
-                     estimator_flavor = d.get('estimator_flavor','L2L0Estimator'),
-                     use_hierarchy = d.get('use_hierarchy',True))
-        socket._history = d.get('history',[])
-        socket._femat = d.get('femat',[])
-        return socket
-
-    @classmethod
-    def auto_load(cls,fname= 'ce_fit.json'):
+    def auto_load(cls,ce_history_file = 'ce_history.json'):
         """
         De-Serialization from file.
         Make sure to call it only ONCE for each CE iteration!
         If you have to call it multiple times, make sure not to call as_dict, as_file
         again, or pass update_his = False to as_dict and as_file.
         Args:
-            fname(str):
-                path to object saving file. Can be changed, but
+            ce_history_file(str):
+                path to history saving file. Can be changed, but
                 not recommended!
         """
-        with open(fname) as fin:
-            return cls.from_dict(json.load(fin))
+
+#TODO
+    def __init__(self,cluster_subspace,\
+                      estimator_flavor='L2L0Estimator',\
+                      weights_flavor='unweighted',\
+                      use_hierarchy=True,\
+                      data_manager = DataManager.auto_load()):
+
+

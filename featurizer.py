@@ -19,7 +19,10 @@ from smol.cofe import ClusterSubspace,ClusterExpansion
 from smol.cofe.extern.ewald import EwaldTerm
 
 from .decorator import *
-from .utils.format_utils import decode_from_dict
+from .data_manager import DataManager
+from .calc_reader import *
+
+from .utils.serial_utils import decode_from_dict
 
 def decorate_single(s,decor_keys,decor_values):
     """
@@ -71,125 +74,92 @@ def decorate_single(s,decor_keys,decor_values):
 
 class Featurizer(MSONable):
     """
-    Featurization of calculation results.
+    Featurization of calculation results. Direct initialization of this class is not recommended.
     Attributes:
+
         prim(Structure):
             primitive cell of the structure to do cluster expansion on.
+
+        bits(List[List[Specie]]):
+            Occupying species on each sublattice. Vacancy() should be included.
+
         sublat_list(List of lists on ints):
-            Stores primitive cell indices of sites in the same sublattices. If none, sublattices will be automatically generated.
-        basis_type(str):
-            Type of basis function. By default, will use indicator basis.
-        radius(Dict):
-            Cluster radius. If None given, by default, given minimum interatomic distance d, will set pair radius to 4*d, triplets 
-            and quads to 2*d.
+            Stores primitive cell indices of sites in the same sublattices. 
+            If none, sublattices will be automatically generated.
+
+        is_charged(Boolean):
+            If true, will do charged cluster expansion.
+
         previous_ce(smol.cofe.ClusterExpansion):
-            A previous cluster expansion. By default, is None. If this is given, will featurize based on this clusterexpansion
-            indstead.
+            A previous cluster expansion. By default, is None. If this is given, 
+            will featurize based on this cluster expansion indstead.
+
         decorators(List of .decorator.Decorator objects):
-            Decorators names called before mapping into feature vectors. For example, if we do cluster expansion with charge, since vasp
-            calculated structures does not mark charges, we have to assign charges to atoms before mapping.
+            Decorators names called before mapping into feature vectors. For 
+            example, if we do cluster expansion with charge, since vasp
+            calculated structures does not mark charges, we have to assign 
+            charges to atoms before mapping.
 
-            All items in this list must be a name in .decorator. If multiple decorators are given,
-            decorations will be done in the order of this list. If None given, will check with prim, and see whether decorations
-            are needed. If decorations are needed, but no decorator is given, will return an error. If multiple decorators are given
-            on the same decoration type, for example, charge decoration by magnetization or bader charge, only the first one in list
-            will be keeped. This duplication is not checked before model training and assignment, so you must check them on your own
-            to avoid additional training cost.
+            All items in this list must be a name in .decorator. If multiple 
+            decorators are given, decorations will be done in the order of this 
+            list. If None given, will check with prim, and see whether decorations
+            are needed. If decorations are needed, but no decorator is given, 
+            will return an error. If multiple decorators are given on the same 
+            decoration type, for example, charge decoration by magnetization or 
+            bader charge, only the first one in list will be keeped. 
 
-            Currently, we only support mixture of gaussian charge decoration from magnetization. You can implement you own decoration
-            in .decoration module, and add local processing methods at the head of this file, accordingly.
+            This duplication is not checked before model training and assignment, 
+            so you must check them on your own to avoid additional training cost.
+
+            Currently, we only support mixture of gaussian charge decoration from 
+            magnetization. You can implement you own decoration in .decoration module, 
+            and add local processing methods at the head of this file, accordingly.
 
         other_props(List of str):
-            Calculated properties to extract for expansion. Currently none of other proerties than 'e_prim' is supported. You can add
-            your own properties extractors in calc_reader classes.
-            This class does not check whether a proerty name is legal. Error messages will be given by calc_reader class.
-            Check CEAuto.calc_reader docs for detail.
+            Calculated properties to extract for expansion. Currently none of other 
+            proerties than 'e_prim' is supported. You can add your own properties 
+            extractors in calc_reader classes.
+
+            This class does not check whether a proerty name is legal. Error messages
+            will be given by calc_reader class. Check calc_reader docs for detail.
  
         normalize_props(Boolean):
-            Whether to normalize proerties by supercell matrix determinants or not. By default, will normalize all properties.
+            Whether to normalize proerties by supercell matrix determinants or not. 
+            By default, will normalize all properties.
+
+        data_manager(DataManager):
+            The database manager class to use for this instance.
+
+        calc_reader(BaseCalcReader):
+            Calculation reader, depends on your selected workflow type.
     """
     #Add to this dict if you implement more properties assignments
     decorator_requirements = {'MagChargeDecorator':['magnetization']}
 
-    def __init__(self,prim,sublat_list=None,basis_type='indicator',radius=None,\
-                 previous_ce=None,\
-                 decorators=[],\
-                 other_props=[], normalize_props = True):
+    def __init__(self,prim,\
+                      bits=None,\
+                      sublat_list=None,\
+                      is_charged=False,\
+                      previous_ce=None,\
+                      decorators=[],\
+                      other_props=[],\
+                      normalize_props = True,\
+                      data_manager=DataManager.auto_load(),\
+                      calc_reader=ArchVaspReader()):
 
         self.prim = prim
-
-        bits = get_allowed_species(self.prim)
-        if sublat_list is not None:
-            #User define sublattices, which you may not need very often.
-            self.sublat_list = sublat_list
-            self.sl_sizes = [len(sl) for sl in self.sublat_list]
-            self.bits = [bits[sl[0]] for sl in self.sublat_list]
-        else:
-            #Automatic sublattices, same rule as smol.moca.Sublattice:
-            #sites with the same compositioon are considered same sublattice.
-            self.sublat_list = []
-            self.bits = []
-            for s_id,s_bits in enumerate(bits):
-                if s_bits in self.bits:
-                    s_bits_id = self.bits.index(s_bits)
-                    self.sublat_list[s_bits_id].append(s_id)
-                else:
-                    self.sublat_list.append([s_id])
-                    self.bits.append(s_bits)
-            self.sl_sizes = [len(sl) for sl in self.sublat_list]
+        self.bits = bits
+        self.sublat_list = sublat_list
+        self.sl_sizes = [len(sl) for sl in self.sublat_list]
 
         #Check if this cluster expansion should be charged
-        self.is_charged_ce = False
-        for sl_bits in self.bits:
-            for bit in sl_bits:
-                if type(bit)!= Element and bit_oxi_state!=0:
-                    self.is_charged_ce = True
-                    break
+        self.is_charged_ce = is_charged
 
-        self.basis_type = basis_type
-        if previous_ce is not None:
-            self.ce = previous_ce
-            self.basis_type = self.ce.cluster_subspace.orbits[0].basis_type
-        else:
-            #An empty cluster expansion with the points and ewald term only
-            #Default is indicator basis
-            if radius is not None and len(radius)>0:
-                self.radius = radius
-            else:
-                d_nns = []
-                for i,site1 in enumerate(self.prim):
-                    d_ij = []
-                    for j,site2 in enumerate(self.prim):
-                        if j<i: continue;
-                        if j>i:
-                            d_ij.append(site1.distance(site2))
-                        if j==i:
-                            d_ij.append(min([self.prim.lattice.a,self.prim.lattice.b,self.prim.lattice.c]))
-                    d_nns.append(min(d_ij))
-                d_nn = min(d_nns)
-    
-                self.radius= {}
-                # Default cluster radius
-                self.radius[2]=d_nn*4.0
-                self.radius[3]=d_nn*2.0
-                self.radius[4]=d_nn*2.0
-
-            c_spc = ClusterSubspace.from_cutoffs(self.prim,self.radius,\
-                                    basis = self.basis_type)
-
-            if self.is_charged_ce:
-                c_spc.add_external_term(EwaldTerm())
-                coef = np.zeros(c_spc.num_corr_functions+1)
-                coef[-1] = 1.0
-            else:
-                coef = np.zeros(c_spc.num_corr_functions)
-
-            #This CE is used for featurization only, so values of coefficients don't matter. 
-            self.ce = ClusterExpansion(c_spc,coef,np.array([coef.tolist()]))
+        self.ce = previous_ce
 
         #Handling assignment types.
         if len(decorators)!=0:
-            self.decorators = decorators
+            self._decorators = decorators
         else:
         #Currently only supports charge assignments. If you implement more assginments in the future, please 
         #modify the following inference conditions, as well.
@@ -202,31 +172,45 @@ class Featurizer(MSONable):
 
         self.other_props = other_props
         self.normalize_props = normalize_props
+        self._dm = data_manager
+        self._reader = calc_reader
 
-    def featurize(self,sc_table,fact_table,calc_reader):
+    @property
+    def sc_df(self):
+        """
+        Supercell dataframe.
+        """
+        return self._dm.sc_df
+
+    @property
+    def comp_df(self):
+        """
+        Composition dataframe.
+        """
+        return self._dm.comp_df
+
+    @property
+    def fact_df(self):
+        """
+        Fact dataframe.
+        """
+        return self._dm.fact_df
+
+
+    def featurize(self):
         """
         Load and featurize the fact table with vasp data.
-        sc_table(pd.DataFrame):
-            supercell matrix dimension table file.
-        comp_table(pd.DataFrame):
-            compositions dimension table file.
-        fact_table(pd.DataFrame):
-            Fact table, containing all structure information, and is
-            to be filled.
-        calc_reader(CEAuto.Reader):
-            A calculations manager object. Either interacts with a local
-            directory, vasp_run, or with a mongodb.
-            Must provide methods to access calculated properties from 
-            CONTCAR, vasprun.xml and OUTCAR. 
-        These four attibutes must be generated by the same CE flow.
-        Return:
-            featurized fact table
         """
+        sc_df = self.sc_df.copy()
+        fact_table = self.fact_df.copy()
+        calc_reader = self.calc_reader        
+
+        print("**Running featurization.")
         ##Loading and decoration. If decorators not trained, train decorator.
         eid_unassigned = fact_table[fact_table.calc_status=='CL'].entry_id
         #Check computation status, returns converged and failed indices.
         success_ids, fail_ids = calc_reader.check_convergence_status(entry_ids = eid_unassigned)
-        print('****{}/{} successful computations in the last run.'\
+        print('**{}/{} successful computations in the last run.'\
               .format(len(success_ids),len(fact_unassigned)))
         fact_table.loc[fact_table.entry_id.isin(fail_ids),'calc_status'] = 'CF'
 
@@ -238,16 +222,16 @@ class Featurizer(MSONable):
                               entry_ids = fact_unassigned.entry_id)
        
         #Loading properties and doing decorations
-        if len(self.decorators)>0:
+        if len(self._decorators)>0:
             decorations = {}
-            for decorator in self.decorators:
+            for decorator in self._decorators:
                 d_name = decorator.__class__.__name__
                 requirements = decorator_requirements[d_name]
                 decor_inputs = calc_reader.load_properties(entry_ids = fact_unassigned.entry_id,\
                                                             prop_names = requirements,
                                                             include_pnames = False)
                 if not decorator.trained:
-                    print('******Training decorator {}.'.format(d_name))
+                    print('**Training decorator {}.'.format(d_name))
                     decorator.train(structures_unassign,decor_inputs)
                 
                 decoration = decorator.assign(structures_unassign,properties)
@@ -276,7 +260,7 @@ class Featurizer(MSONable):
         fact_unmaped = fact_table[fact_table.calc_status=='CL']\
                           .merge(sc_table,how='left',on='sc_id')
 
-        print('****{}/{} successful decorations in the last run.'\
+        print('**{}/{} successful decorations in the last run.'\
               .format(len(fact_unmaped),len(fact_unassigned)))
 
         ##Feature mapping
@@ -308,36 +292,25 @@ class Featurizer(MSONable):
         fact_table.loc[fact_table.calc_status=='CL','map_corr'] = corrs_mapped
         fact_table.loc[fact_table.calc_status=='CL','calc_status'] = 'SC'
 
-        print('****{}/{} successful mappings in the last run.'\
+        print('**{}/{} successful mappings in the last run.'\
               .format(len(occus_mapped),len(fact_unmaped)))
         print('**Featurization finished.')
 
-        return fact_table
+        self._dm._fact_df = fact_table
 
-    def get_properties(self,sc_table,fact_table,calc_parser):
+    def get_properties(self,sc_table,fact_table,calc_reader):
         """
         Load expansion properties. By default, only loads energies.
         Properties will be noralized to per prim, if possible.
    
         All properties must be scalars.
-        sc_table(pd.DataFrame):
-            supercell matrix dimension table file.
-        comp_table(pd.DataFrame):
-            compositions dimension table file.
-        fact_table(pd.DataFrame):
-            Fact table, containing all structure information, and is
-            to be filled.
-        calc_parser(CEAuto.CalcReader):
-            A calculations reader object. Either interacts with a local
-            directory, vasp_run, or with a mongodb.
-            Must provide methods to access calculated properties from 
-            CONTCAR, vasprun.xml and OUTCAR. (They will not interact
-            with computational resources, so be sure to finish all 
-            calculations before calling them.)
-        Return:
-            fact table with properties retrieved.
+
         NOTE: This must always be called after featurization!
         """
+        sc_table = self.sc_df.copy()
+        fact_table = self.fact_df.copy()
+        calc_reader = self.calc_reader
+
         fact_unchecked = fact_table[(fact_table.calc_status=='SC') & \
                                     (fact_table.e_prim.isna())]\
                          .merge(sc_table,how='left',on='sc_id')
@@ -345,14 +318,14 @@ class Featurizer(MSONable):
         eid_unchecked = fact_unchecked.entry_id
 
         #loading un-normalized energies
-        e_norms = calc_parser.load_properties(entry_ids = eid_unchecked,\
+        e_norms = calc_reader.load_properties(entry_ids = eid_unchecked,\
                                               prop_names = 'energy')
         #prop_names can be either one str or List. This method also provides normalization.
         #If not normalizable, will not normalize
         #Also provides a selection of format. If include_pnames = True, will return a 
         #Dictionary with {prop_name:[List of values]}
 
-        other_props = calc_parser.load_properties(entry_ids = eid_unchecked,
+        other_props = calc_reader.load_properties(entry_ids = eid_unchecked,
                                                    prop_names = self.other_props,\
                                                    include_pnames = True)
 
@@ -367,26 +340,89 @@ class Featurizer(MSONable):
         fact_table.loc[fact_table.entry_id.isin(eid_unchecked),'e_prim'] = e_norms
         fact_table.loc[fact_table.entry_id.isin(eid_unchecked),'other_props'] = other_props
         
-        return fact_table
+        self._dm._fact_df = fact_table
 
-    def as_dict(self):
-        return {'prim':self.prim.as_dict(), #Structure serialization safely keeps species.properties while composition does not. Strange indeed
-                'sublat_list';self.sublat_list,
-                'ce':self.ce.as_dict(),
-                'basis_type':self.basis_type,
-                'radius':self.radius,
-                'decorators':[d.as_dict() for d in self.decorators]           
-                'other_props':self.other_props
-                "@module":self.__class__.__module__
-                "@class":self.__class__.__name__
-               }
+    def auto_save(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv',\
+                       decor_file='decors.json'):
+        """
+        Automatically save dataframes into specified files, then saves
+        trained classifiers.
+
+        Args:
+            sc_file(str):
+                supercell matrix file path
+            comp_file(str):
+                composition file path
+            fact_file(str):
+                fact table file path
+            decor_file(str):
+                decorators save file path
+        All optional, but I don't recommend you to change the paths.
+        """
+        self._dm.auto_save(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
+
+        with open(decor_file,'w') as fout:
+            decorator_dicts = [decorator.as_dict() for decorator in self._decorators]
+            json.dump(decorator_dicts,fout)
 
     @classmethod
-    def from_dict(cls,d):
-        return cls(prim = Structure(d['prim']),
-                   previous_ce = ClusterExpansion.from_dict(d['ce']),
-                   sublat_list = d['sublat_list'],
-                   basis_type = d['basis_type'],
-                   radius = d['radius'],
-                   decorators = [decode_from_dict(dd) for dd in d['decorators']],
-                   other_props = d['other_props'])
+    def auto_load(cls,options_file='options.yaml',\
+                  sc_file='sc_mats.csv',\
+                  comp_file='comps.csv',\
+                  fact_file='data.csv',\
+                  ce_history_file='ce_history.json',\
+                  decor_file='decors.json'):
+        """
+        This method is the recommended way to initialize this object.
+        It automatically reads all setting files with FIXED NAMES.
+        YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
+        YOU MAY BREAK THE INITIALIZATION PROCESS!
+        Args:
+            options_file(str):
+                path to options file. Options must be stored as yaml
+                format. Default: 'options.yaml'
+            sc_file(str):
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'
+            sc_file(str):
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'             
+            sc_file(str):
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'             
+            ce_history_file(str):
+                path to cluster expansion history file.
+                Default: 'ce_history.json'
+            decor_file(str):
+                decorators save file path
+                Default: 'decors.json'
+        Returns:
+             Featurizer object.
+        """
+        options = InputsWrapper.auto_load(options_file=options_file,\
+                                          ce_history_file=ce_history_file)
+
+        dm = DataManager.auto_load(options_file='options.yaml',\
+                                   sc_file='sc_mats.csv',\
+                                   comp_file='comps.csv',\
+                                   fact_file='data.csv',\
+                                   ce_history_file='ce_history.json')
+
+        if os.path.isfile(decor_file):
+             with open(decor_file) as :
+                 decor_dicts = json.load(decor_file)
+                 decorators = [decode_from_dict(d) for d in decor_dicts]
+        else:
+             decorators = []
+
+        return cls(options.prim,
+                   bits=options.bits,\
+                   sublat_list=options.sublat_list,\
+                   is_charged=options.is_charged,\
+                   previous_ce=options.last_ce,\
+                   decorators=decorators,\
+                   other_props=options.other_props,\
+                   normalize_props = options.normalize_props,\
+                   data_manager=dm,\
+                   calc_reader=options.calc_reader
+                  )

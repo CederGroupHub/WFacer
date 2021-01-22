@@ -1,6 +1,6 @@
 """
 Ground state scanner that checks grounds states for convergence.
-THIS CLASS DOES NOT TOUCH DATA TABLES!
+THIS CLASS DOES NOT CHANGE DATA TABLES!
 """
 __author__ == "Fengyu Xie"
 
@@ -11,11 +11,8 @@ import pandas as pd
 
 from smol.cofe import ClusterSubspace
 
-from utils.format_utils import *
 from utils.hull_utils import hulls_match, plot_hull
 
-NODATAERROR = RuntimeError("No dataframes. You may call data loading methods to load the calculation data first.")
- 
 class GSChecker:
     """
     A ground state checker class. This class only checks grand

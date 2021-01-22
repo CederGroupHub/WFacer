@@ -10,6 +10,7 @@ import warnings
 import random
 from copy import deepcopy
 import numpy as np
+import pandas as pd
 import os
 import json
 
@@ -24,32 +25,37 @@ from smol.cofe.space.domain import get_allowed_species,get_species, Vacancy
 from smol.cofe.expansion import ClusterExpansion
 from smol.moca import CanonicalEnsemble,Sampler
 
-from .comp_space import CompSpace
 from .utils.math_utils import enumerate_matrices,select_rows,combinatorial_number
 from .utils.format_utils import flatten_2d,deflat_2d,serialize_comp,deser_comp,\
                                 structure_from_occu
 from .utils.calc_utils import get_ewald_from_occu
- 
-import pandas as pd
+from .utils.comp_utils import check_comp_restriction
+
+from .comp_space import CompSpace
+from .status_checker import StatusChecker
+from .data_manager import DataManager 
+from .inputs_wrapper import InputsWrapper
 
 class StructureEnumerator(MSONable):
     """
+    Dircet initialization no longer recommended!
     Attributes:
         prim(Structure):
             primitive cell of the structure to do cluster expansion on.
+
+        bits(List[List[Specie]]):
+            Occupying species on each sublattice. Vacancy() should be included.
 
         sublat_list(List of lists):
             Stores primitive cell indices of sites in the same sublattices
             If none, sublattices will be automatically generated.
 
+        is_charged(Boolean):
+            If true, will do charged cluster expansion.
+
         previous_ce(ClusterExpansion):
             A cluster expansion containing information of cluster expansion
             in previously enumerated structures. Used when doing mc sampling.
-
-        previous_fe_mat(2D Arraylike):
-            Feature matrices of previously generated structures. By default,
-            is an empty list, which means no previous structure has been 
-            generated. 
 
         transmat(3*3 arraylike):
             A transformation matrix to apply to the primitive cell before
@@ -116,6 +122,8 @@ class StructureEnumerator(MSONable):
                 Select randomly
             Both methods guarantee inclusion of the ground states at initialization.
 
+        data_manager(DataManager):
+            The datamanager to use for this instance.
         All generated structure entree will be saved in a star-schema:
         The dimension tables will contain serialized supercell matrices and compositions,
         and their id's as primary keys.(sc_id, comp_id). These dimension tables will mostly be fixed
@@ -133,139 +141,76 @@ class StructureEnumerator(MSONable):
         Computation results will be stored under 'vasp_run/{}'.format(entry_id). CEAuto will parse these 
         files for charge assignment and featurization only.
     """
-    def __init__(self,prim,sublat_list = None,\
+    def __init__(self,prim,
+                 bits=None,\
+                 sublat_list=None,\
+                 is_charged=False,\
                  previous_ce = None,\
-                 transmat=[[1,0,0],[0,1,0],[0,0,1]],sc_size=32,\
-                 max_sc_cond = 8, min_sc_angle = 30,\
-                 comp_restrictions=None,comp_enumstep=1,\
+                 transmat=[[1,0,0],[0,1,0],[0,0,1]],\
+                 sc_size=32,\
+                 max_sc_cond = 8,\
+                 min_sc_angle = 30,\
+                 comp_restrictions=None,\
+                 comp_enumstep=1,\
                  basis_type = 'indicator',\
-                 select_method = 'CUR'):
+                 select_method = 'CUR',
+                 data_manager=DataManager.auto_load()):
 
         self.prim = prim
 
-        bits = get_allowed_species(self.prim)
-        if sublat_list is not None:
-            #User define sublattices, which you may not need very often.
-            self.sublat_list = sublat_list
-            self.sl_sizes = [len(sl) for sl in self.sublat_list]
-            self.bits = [bits[sl[0]] for sl in self.sublat_list]
-        else:
-            #Automatic sublattices, same rule as smol.moca.Sublattice:
-            #sites with the same compositioon are considered same sublattice.
-            self.sublat_list = []
-            self.bits = []
-            for s_id,s_bits in enumerate(bits):
-                if s_bits in self.bits:
-                    s_bits_id = self.bits.index(s_bits)
-                    self.sublat_list[s_bits_id].append(s_id)
-                else:
-                    self.sublat_list.append([s_id])
-                    self.bits.append(s_bits)
-            self.sl_sizes = [len(sl) for sl in self.sublat_list]
+        #Calculation of bits, sublat_list, is_charges_ce
+        #previous_ce are no longer computed here.
+        #I have moved them to InputsWrapper.
+        self.bits = bits
+        self.sublat_list = sublat_list
+        self.sl_sizes = [len(sl) for sl in sublat_list]
 
-        #Check if this cluster expansion should be charged
-        self.is_charged_ce = False
-        for sl_bits in self.bits:
-            for bit in sl_bits:
-                if type(bit)!= Element and bit_oxi_state!=0:
-                    self.is_charged_ce = True
-                    break
+        #Check if this cluster expansion should be charged ce
+        self.is_charged_ce = is_charged
 
         self.basis_type = basis_type
-        if previous_ce is not None:
-            self.ce = previous_ce
-            self.basis_type = self.ce.cluster_subspace.orbits[0].basis_type
-        else:
-            #An empty cluster expansion with the points and ewald term only
-            #Default is indicator basis
-            c_spc = ClusterSubspace.from_cutoffs(self.prim,{2:0.01},\
-                                    basis = self.basis_type)
-            if self.is_charged_ce:
-                c_spc.add_external_term(EwaldTerm())
-                coef = np.zeros(c_spc.num_corr_functions+1)
-                coef[-1] = 1.0
-            else:
-                coef = np.zeros(c_spc.num_corr_functions)
-
-            self.ce = ClusterExpansion(c_spc,coef,np.array([coef.tolist()]))
+        self.ce = previous_ce
             
         self.transmat = transmat
         self.sc_size = sc_size
         self.max_sc_cond = max_sc_cond
         self.min_sc_angle = min_sc_angle
 
-        self.comp_space = CompSpace(self.bits,sl_sizes = self.sl_sizes)
+        self._compspace = CompSpace(self.bits,sl_sizes = self.sl_sizes)
         self.comp_restrictions = comp_restrictions
         self.comp_enumstep = comp_enumstep
 
+        if self.sc_size%self.comp_enumstep!=0:
+            raise ValueError("Composition enumeration step can't divide supercell size.")
+
         self.select_method = select_method
 
-        # These data will be saved as star-schema. The dataframes will be serialized and saved in separate 
-        # csv files.
-        self._sc_df = None
-        self._comp_df = None
-        self._fact_df = None
+        #data manager
+        self._dm = data_manager
     
     @property
     def n_strs(self):
         """
         Number of enumerated structures.
         """
-        if self._fact_df is None:
-            return 0
-        else:
-            return len(self._fact_df)
+        return len(self.fact_df)
 
     @property
     def n_iter(self):
         """
         Current iteration number. This index starts from 0.
         """
-        if self._fact_df is None or len(self._fact_df)==0:
-            return -1
-        return self._fact_df[self._fact_df.module=='enum'].iter_id.max()
+        return self.dm.cur_iter_id
 
     @property
     def sc_df(self):
         """
-        Supercell matrices used for structural enumeration. If none yet, will be 
+        Supercell matrices used for structural enumeration. If none yet, shall be 
         enumerated.
         Return:
             Supercell matrix dimension table. Is a pd.Dataframe.
         """
-        if self._sc_df is None:
-            det = self.sc_size
-            sc_matrices =  enumerate_matrices(det, self.prim.lattice,\
-                                                        transmat=self.transmat,\
-                                                        max_sc_cond = self.max_sc_cond,\
-                                                        min_sc_angle = self.min_sc_cond)
-            self._sc_df = pd.DataFrame({'sc_id':list(range(len(sc_matrices))),\
-                                        'matrix':sc_matrices})
-        return self._sc_df
-
-    def set_sc_matrices(self,matrices=[]):
-        """
-        Interface method to preset supercell matrices before enumeration. If no preset
-        is given, supercell matrices will be automatically enumerated.
-        Input:
-            matrices: A list of Arraylike. Should be np.ndarrays or 2D lists.
-        """
-        new_sc_matrices = []
-        for mat in matrices:
-            if type(mat) == list and type(mat[0])== list:
-                new_sc_matrices.append(mat)
-            elif type(mat) == np.ndarray:
-                new_sc_matrices.append(mat.tolist())
-            else:
-                warnings.warn('Given matrix {} is not in a valid input format. Dropped.'.format(mat))
-        if len(new_sc_matrices)==0:
-            raise ValueError('No supercell matrices will be reset!')
-        else:
-            print("Reset supercell matrices to:\n{}\nAll previous compositions will be cleared and re-enumed!"
-                  .format(matrices))
-            self._sc_df = pd.DataFrame({'sc_id':list(range(len(new_sc_matrices))),\
-                                        'matrix':new_sc_matrices})
-            self._comp_df = None
+        return self._dm.sc_df
 
     @property
     def comp_df(self):
@@ -276,127 +221,84 @@ class StructureEnumerator(MSONable):
             Dimension table containing all enumerated compositions, and their correponding supercell
             matrices. Is a pandas.DataFrame.
         """
-        if self._comp_df is None:
-            sc_ids = []
-            comps = []
-            cstats = []
-            ucoords = []
-            ccoords = []
-            for sc_id,mat in zip(self.sc_df.sc_id,self.sc_df.matrix):
-                scs = int(round(abs(np.linalg.det(mat))))
-                mat_comps = [comp for comp in 
-                             self.comp_space.frac_grids(sc_size=scs/self.comp_enumstep,\
-                                                        form='composition')]
-                mat_cstats = [cstat for cstat in 
-                             self.comp_space.frac_grids(sc_size=scs/self.comp_enumstep,\
-                                                        form='compstat')]
-                mat_ucoords = [uc.tolist() for uc in
-                             self.comp_space.frac_grids(sc_size=scs/self.comp_enumstep,\
-                                                        form='unconstr')]
-                mat_ccoords = [cc.tolist() for cc in
-                             self.comp_space.frac_grids(sc_size=scs/self.comp_enumstep,\
-                                                        form='constr')]
-                #coords outputs are arrays!
+        return self._dm.comp_df
 
-                filt_ = [self._check_comp(comp) for comp in mat_comps]
-                mat_comps = [comp for comp,f in zip(mat_comps,filt_) if f]
-                mat_ucoords = [uc for uc,f in zip(mat_ucoords,filt_) if f]
-                mat_ccoords = [cc for cc,f in zip(mat_ccoords,filt_) if f]
-                mat_cstats = [cs for cs,f in zip(mat_cstats,filt_) if f]
-
-                sc_ids.extend([sc_id for i in range(len(mat_comps))])
-                comps.extend(mat_comps)
-                cstats.append(mat_cstats)
-                ucoords.extend(mat_ucoords)
-                ccoords.extend(mat_ccoords)
-
-            #Remember to serialize and deserialize compositions when storing and loading.
-            self._comp_df = pd.DataFrame({'comp_id':list(range(len(comps))),\
-                                          'sc_id':sc_ids,\
-                                          'ucoord':ucoords,\
-                                          'ccoord':ccoords,\
-                                          'comp':comps,\
-                                          'cstat':cstats,\
-                                          'eq_occu':[None for i in range(len(comps))]})
-
-        #Notice: in form='composition', Vacancy() are not explicitly included!
-        #eq_occu is a list to store equilibrated occupations under different 
-        #supercell matrices and compositions. If none yet, will be randomly generated.
-        return self._comp_df
-
-    @property
+    @proeprty
     def fact_df(self):
         """
-        Fact table, containing all computed entrees.
-        Columns:
-            entry_id(int):
-                Index of an entry, containing the computation result of a enumerated structure.
-            sc_id(int):
-                 Index of supercell matrix in the supercell matrix dimension table
-            comp_id(int):
-                Index of composition in the composition dimension table
-            iter_id(int):
-                Specifies in which iteration this structure is added into calculations.
-                Both structure enumerator and ground state checker can add to fact
-                table.
-            module(str):
-                Specifying the module name that generated and added this entry into the
-                fact table. Can be 'enum' or 'gscheck'
-            ori_occu(List of int):
-                Original occupancy as it was enumerated. (Encoded, and turned into list)
-            ori_corr(List of float):
-                Original correlation vector computed from ori_occu. (Turned into list)
-            calc_status(str):
-                A string of two characters, specifying the calculation status of the current entry.
-                'NC': not calculated.(not submitted or waiting.)
-                'CL': calculation finished.
-                'CF': calculated, and failed (or exceeded wall time).
-                'AF': assignment failed. For example, not charge neutral after charge assignment.
-                'MF': mapping failed, structure failed to map into original lattice or featurize.
-                'SC': successfully calculated, mapped and featurized.
-                Any other status other than 'SC' will cause the following columns to be None.
-            map_occu(List of int or None):
-                Mapped occupancy after DFT relaxation.(Encoded, and turned into List)
-            map_corr(List of float or None):
-                Mapped correlation vector computed from map_occu. (Turned into List)
-            e_prim(float or None):
-                DFT energies of structures, normalized to ev/prim.
-            other_props(Dict or None):
-                Other SCALAR properties to expand. If not specified, only e_prim will be expanded.
-                In format: {'prop_name':prop_value,...}
+        Fact dataframe, storing all generated structures and their caluclated properties.
         """
-        return self._fact_df
+        return self._dm.fact_df
 
-    def _check_comp(self,comp):
+    def set_sc_matrices(self,matrices=[],add_new=False):
         """
-        Check whether a given composition violates self.comp_restrictions.
+        Interface method to preset supercell matrices before enumeration. If no preset
+        is given, supercell matrices will be automatically enumerated. Otherwise will
+        skip.
+
+        Not frequently called.
+        Args:
+            matrices(List[3*3 ArrayLike]): 
+                Supercell matrices to insert
+            add_new(Boolean):
+                If true, will add matices to the supercell dataframe, even if the
+                current dataframe is not empty.
         """
-        if type(self.comp_restrictions) == dict:
-            for sp,(lb,ub) in self.comp_restrictions.items():
-                sp_name = get_specie(sp)
-                sp_num = 0
-                for sl_comp,sl_size in zip(comp,sl_sizes):
-                    if sp_name in sl_comp:
-                        sp_num += sl_comp[sp_name]*sl_size   
-                sp_frac = float(sp_num)/sum(sl_sizes)
-                if not (sp_frac<=ub and sp_frac >=lb):
-                    return False
+        if len(self.sc_df)>0 and not add_new:
+            warnings.warn("Attempt to set matrices after matrix enumeration. Skipping")
+            return
 
-        elif type(self.comp_restrictions) == list and len(self.comp_restrictions)>=1 \
-             and type(self.comp_restrictions[0]) == dict:
-            for sl_restriction, sl_comp in zip(self.comp_restrictions,comp):
-                for sp in sl_restriction:
-                    sp_name = get_specie(sp)
-                    if sp_name not in sl_comp:
-                        sp_frac = 0
-                    else:
-                        sp_frac = sl_comp[sp_name]
+        for m in matrices:
+            if isinstance(m,np.ndarray):
+                m = m.tolist()
+            self._dm.insert_one_supercell(m)
 
-                    if not (sp_frac<=ub and sp_frac >=lb):
-                       return False                   
+    def enumerate_sc_matrices(self,add_new=False):
+        """
+        Enumerate supercell matrices if nothing is present.
+        Args:
+            add_new(Boolean):
+                If true, will add matices to the supercell dataframe, even if the
+                current dataframe is not empty.
+        """
+        print("**Start supercell enumeration.")
+        mats = enumerate_matrices(self.sc_size,self.prim.lattice,\
+                                  transmat=self.transmat,\
+                                  max_sc_cond = self.max_sc_cond,\
+                                  min_sc_angle = self.min_sc_angle)
+        print("**Enumerated Supercell matrices: \n")
+        for m in mat:
+            print("  {}".format(m))
+        if len(self.sc_df)==0:
+            self.set_sc_matrices(matrices=mats,add_new = add_new)
 
-        return True
+    def enumerate_comps(self,add_new=False):
+        """
+        Enumerate Compositions under supercells.
+        Args:
+            add_new(Boolean):
+                If true, will add composition to the comp dataframe, even if the
+                current dataframe is not empty.
+        """
+        if len(self.comp_df)>0 and not add_new:
+            warnings.warn("Attempt to set composition after compositions enumeration. Skipping")
+            return
 
+        if len(self.sc_df) == 0:
+            self.enumerate_sc_matrices()
+
+        print("**Start compositions enumeration")
+        for sc_id,m in zip(self.sc_df.sc_id,self.sc_df.matrix):
+            scs = int(round(abs(np.linalg.det(m))))
+            ucoords = self._comp_space.frac_grids(sc_size=scs//self.comp_enumstep)
+            comps = self._comp_space.frac_grids(sc_size=scs//self.comp_enumstep)
+            print("****Enumerated {} compositions under matrix {}."\
+                  .format(len(ucoords),m))
+            for ucoord,comp in zip(ucoords,comps):
+                if check_comp_restriction(comp,self.sl_sizes,self.comp_restrictions):
+                    _,comp_id = self._dm.insert_one_comp(ucoord,sc_id=sc_id)
+
+    #TODO: add simulator support, and parallelize.
     def generate_structures(self, n_per_key = 3, keep_gs = True,weight_by_comp=True):
         """
         Enumerate structures under all different key = (sc_matrix, composition). The eneumerated structures
@@ -579,10 +481,8 @@ class StructureEnumerator(MSONable):
         """
         Clear enumerated structures.
         """
-        print("Warning: Previous enumerations cleared.")
-        self._fact_df = None
-
-    #POTENTIAL FUTURE ADDITION: add_single_structure
+        warnings.warn("All previous enumerations cleared. Do this at your own risk!")
+        self._dm.reset()
 
     def _enum_configs_under_sccomp(self,sc_mat,comp,eq_occu=None):
         """
@@ -753,7 +653,7 @@ class StructureEnumerator(MSONable):
                 n_assigned = 0
                 for sp,n_sp in sl_int_comp.items():
                     for s_id in sl_sites_shuffled[n_assigned:n_assigned+n_sp]:
-                        sp_name = get_specie(sp)
+                        sp_name = get_species(sp)
                         sp_id = self.bits[sl_id].index(sp_name)
                         occu[s_id] = sp_id
                     n_assigned += n_sp
@@ -777,98 +677,10 @@ class StructureEnumerator(MSONable):
 
         return random.choice(rand_occus[:10]), comp_weight
 
-    def as_dict(self):
+    def auto_save(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
         """
-        Serialize this class. Saving and loading of the star schema are moved to other functions!
-        """
-        #Serialization
-        d={}
-        d['prim']=self.prim.as_dict()
-        d['sublat_list']=self.sublat_list
-        d['ce']=self.ce.as_dict()
-        d['transmat']=self.transmat
-        d['sc_size']=self.sc_size
-        d['max_sc_cond']=self.max_sc_cond
-        d['min_sc_angle']=self.min_sc_angle
-        d['comp_restrictions']=self.comp_restrictions
-        d['comp_enumstep']=self.comp_enumstep
-        d['basis_type']=self.basis_type
-        d['select_method']=self.select_method
-        d["@module"] = self.__class__.__module__
-        d["@class"] = self.__class__.__name__
-        print('NOTICE: Generator Serialized, make sure you have also saved the dataframes!')
-
-        return d
-
-    @classmethod
-    def from_dict(cls,d):
-        """
-        De-serialze from a dictionary.
-        """
-        prim = Structure.from_dict(d['prim'])
-        ced = d.get(['ce'],None)
-        ce = ClusterExpansion.from_dict(ced) if ced else None
-        return  cls(prim,sublat_list = d.get('sublat_list',None),\
-                 previous_ce = ce,\
-                 transmat=d.get('transmat',[[1,0,0],[0,1,0],[0,0,1]]),\
-                 sc_size=d.get('sc_size',32),\
-                 max_sc_cond = d.get('max_sc_cond',8),\
-                 min_sc_angle = d.get('min_sc_angle',30),\
-                 comp_restrictions=d.get('comp_restrictions',None),\
-                 comp_enumstep=d.get('comp_enumstep',1),\
-                 basis_type = d.get('basis_type','indicator'),\
-                 select_method = d.get('select_method','CUR'))
-
-    def _save_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
-        """
-        Saving dimension tables and the fact table. Must set index=False, otherwise will always add
-        One more row for each save and load.
-        comp_df needs a little bit serialization.
-        File names can be changed, but not recommended!
-        """
-        self.sc_df.to_csv(sc_file,index=False)
-        comp_ser = self.comp_df.copy()
-        comp_ser.comp = comp_ser.comp.map(lambda c: serialize_comp(c))
-        comp_ser.to_csv(comp_file,index=False)
-        if self.fact_df is not None:
-            self.fact_df.to_csv(fact_file,index=False)
-
-    def _load_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
-        """
-        Loading dimension tables and the fact table. 
-        comp_df needs a little bit de-serialization.
-        File names can be changed, but not recommended!
-        Notice: pandas loads lists as strings. You have to serialize them!
-        """
-        list_conv = lambda x: json.loads(x) if x is not None else None
-        if os.path.isfile(sc_file):
-            self._sc_df = pd.read_csv(sc_file,converters={'matrix':list_conv})
-        if os.path.isfile(comp_file):
-            #De-serialize compositions and list values
-            self._comp_df = pd.read_csv(comp_file,
-                                        converters={'ucoord':list_conv,
-                                                    'ccoord':list_conv,
-                                                    'cstat':list_conv,
-                                                    'eq_occu':list_conv,
-                                                    'comp':deser_comp
-                                                   })
-        if os.path.isfile(fact_file):
-            self._fact_df = pd.read_csv(fact_file,
-                                        converters={'ori_occu':list_conv,
-                                                    'ori_corr':list_conv,
-                                                    'map_occu':list_conv,
-                                                    'map_corr':list_conv,
-                                                    'other_props':list_conv
-                                                   })
-
-
-    def auto_save(self,enum_file='ce_enum.json',\
-                  sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
-        """
-        Automatically save object data into specified files.
+        Automatically save dataframes into specified files.
         Args:
-            enum_file(str):
-                enumerator object file path.
             sc_file(str):
                 supercell matrix file path
             comp_file(str):
@@ -877,29 +689,58 @@ class StructureEnumerator(MSONable):
                 fact table file path
         All optional, but I don't recommend you to change the paths.
         """
-        with open(enum_file,'w') as fout:
-            json.dump(self.as_dict(),fout)
-
-        self._save_data(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
+        self._dm.auto_save(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
 
     @classmethod
-    def auto_load(cls,enum_file='ce_enum.json',\
-                  sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+    def auto_load(cls,options_file='options.yaml',\
+                  sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv',\
+                  ce_history_file='ce_history.json'):
         """
-        Automatically load object data from specified files, and returns an object.
+        This method is the recommended way to initialize this object.
+        It automatically reads all setting files with FIXED NAMES.
+        YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
+        YOU MAY BREAK THE INITIALIZATION PROCESS!
         Args:
-            enum_file(str):
-                enumerator object file path.
+            options_file(str):
+                path to options file. Options must be stored as yaml
+                format. Default: 'options.yaml'
             sc_file(str):
-                supercell matrix file path
-            comp_file(str):
-                composition file path
-            fact_file(str):
-                fact table file path
-        All optional, but I don't recommend you to change the paths.
-        """
-        with open(enum_file) as fin:
-            socket = cls.from_dict(json.load(fin))
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'
+            sc_file(str):
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'             
+            sc_file(str):
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'             
+            ce_history_file(str):
+                path to cluster expansion history file.
+                Default: 'ce_history.json'
 
-        socket._load_data(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
-        return socket
+        Returns:
+             StructureEnumerator object.
+        """
+        options = InputsWrapper.auto_load(options_file=options_file,\
+                                          ce_history_file=ce_history_file)
+
+        dm = DataManager.auto_load(options_file='options.yaml',\
+                                   sc_file='sc_mats.csv',\
+                                   comp_file='comps.csv',\
+                                   fact_file='data.csv',\
+                                   ce_history_file='ce_history.json')
+
+        return cls(options.prim,
+                   bits=options.bits,\
+                   sublat_list=options.sublat_list,\
+                   is_charged=options.is_charged,\
+                   previous_ce=options.last_ce,\
+                   transmat=options.transmat,\
+                   sc_size=options.sc_size,\
+                   max_sc_cond = options.max_sc_cond,\
+                   min_sc_angle = options.min_sc_angle,\
+                   comp_restrictions= options.comp_restrictions,\
+                   comp_enumstep= options.comp_enumstep,\
+                   basis_type = options.basis_type,\
+                   select_method = options.select_method,\
+                   data_manager=dm
+                  )

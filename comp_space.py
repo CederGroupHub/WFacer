@@ -599,8 +599,9 @@ class CompSpace(MSONable):
 
     def frac_grids(self,sc_size=1,form='unconstr'):
         """
-        Enumerate integer compositions under a certain sc_size, and turn it into
-        float form by normalizeing with sc_size.
+        Enumerates integer compositions under a certain sc_size, and turns them into
+        proper form by normalizing with sc_size. ('composition' format normalized
+        with sublattice sizes.)
         Inputs:
             sc_size (int):
                 Supercell size to numerate on.
@@ -755,7 +756,7 @@ class CompSpace(MSONable):
 
         return sl_comps
 
-    def _composition_to_unconstr(self,comp):
+    def _composition_to_unconstr(self,comp,sc_size=1):
         """
         Translate composition format to unconstrained coordinates.
         Since compositions are always normalized, we will not 
@@ -766,15 +767,17 @@ class CompSpace(MSONable):
         x = []
 
         for sl_id,sl_bits in enumerate(self.bits):
+            sl_size = self.sl_sizes[sl_id]*sc_size
             for b_id, bit in enumerate(sl_bits[:-1]):
                 if isinstance(bit, Vacancy):
-                    sl_sum = sum(list(comp[sl_id].values()))
-                    if sl_sum > 1:
+                    sl_sum = sum(list(comp[sl_id].values()))\
+                             *sl_size
+                    if sl_sum > sl_size:
                         raise ValueError("{} is not a valid composition."\
                                          .format(comp[sl_id]))
-                    ucoord.append(1 - sl_sum)
+                    ucoord.append(sl_size - sl_sum)
                 else:
-                    ucoord.append(comp[sl_id][bit])
+                    ucoord.append(comp[sl_id][bit]*sl_size)
 
         return np.array(x)
 
@@ -857,7 +860,7 @@ class CompSpace(MSONable):
             return np.array(self._compstat_to_unconstr(x))
         elif form == 'composition':
             #Output will be a 2D list of pymatgen.Composition
-            return np.array(self._composition_to_unconstr(x))
+            return np.array(self._composition_to_unconstr(x,sc_size=sc_size))
         else:
             raise ValueError('Requested format not supported.')
 
