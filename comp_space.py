@@ -244,8 +244,8 @@ class CompSpace(MSONable):
 
         self.unit_n_swps,self.chg_of_swps,self.swp_ids_in_sublat = get_unit_swps(self.bits)
 
-        self._constr_spc_basis = None
-        self._constr_spc_vertices = None
+        self._unit_spc_basis = None
+        self._unit_spc_vertices = None
         #Minimum supercell size required to make vetices coordinates all integer.
         self._polytope = None
 
@@ -301,7 +301,7 @@ class CompSpace(MSONable):
             return d-1
 
     @property
-    def constr_spc_basis(self):
+    def unit_spc_basis(self):
         """
         Get 'minimal charge-neutral flips basis' in vector representation. 
         Given any compositional space, all valid, charge-neutral compoisitons are 
@@ -317,10 +317,10 @@ class CompSpace(MSONable):
 
         Type: 2d np.array of np.int64
         """        
-        if self._constr_spc_basis is None:
-            self._constr_spc_basis = \
+        if self._unit_spc_basis is None:
+            self._unit_spc_basis = \
                  np.array(get_integer_basis(self.chg_of_swps,sl_flips_list=self.swp_ids_in_sublat),dtype=np.int64)
-        return self._constr_spc_basis
+        return self._unit_spc_basis
 
     @property
     def min_flips(self):
@@ -329,7 +329,7 @@ class CompSpace(MSONable):
         """
         _operations = flipvec_to_operations(self.unit_n_swps,\
                                             self.nbits,\
-                                            self.constr_spc_basis)
+                                            self.unit_spc_basis)
         return _operations
 
     @property
@@ -376,7 +376,7 @@ class CompSpace(MSONable):
                 # subspace as an empty set.
 
                 # x: unconstrained, x': constrained
-                R = np.vstack((self.constr_spc_basis,np.array(self.chg_of_swps)))
+                R = np.vstack((self.unit_spc_basis,np.array(self.chg_of_swps)))
                 t = np.zeros(self.unconstr_dim)
                 t[0] = -self.bkgrnd_chg/self.chg_of_swps[0]
                 A_sub = A@R.T
@@ -421,7 +421,7 @@ class CompSpace(MSONable):
         except:
             return False
 
-    def constr_spc_vertices(self,form='unconstr'):
+    def unit_spc_vertices(self,form='unconstr'):
         """
         Find extremums of the constrained compositional space in a primitive cell,
 
@@ -436,11 +436,11 @@ class CompSpace(MSONable):
                 'composition': use a pymatgen.composition for each sublattice 
                                (vacancies not explicitly included)
         """
-        if self._constr_spc_vertices is None:
+        if self._unit_spc_vertices is None:
             if not self.is_charge_constred:
                 A,b,_,_=self.polytope
                 poly = pc.Polytope(A,b)
-                self._constr_spc_vertices = pc.extreme(poly)
+                self._unit_spc_vertices = pc.extreme(poly)
             else:
                 A,b,R,t=self.polytope
                 poly_sub = pc.Polytope(A,b)
@@ -448,13 +448,48 @@ class CompSpace(MSONable):
                 n = vert_sub.shape[0]
                 vert = np.hstack((vert_sub,np.zeros((n,1))))
                 #Transform back into unconstraned coord
-                self._constr_spc_vertices = vert@R + t
+                self._unit_spc_vertices = vert@R + t
 
-        if len(self._constr_spc_vertices)==0:
+        if len(self._unit_spc_vertices)==0:
             raise CHGBALANCEERROR
 
         #This function formuates multiple unconstrained coords together.
-        return self._convert_unconstr_to(self._constr_spc_vertices,form=form,sc_size=1)
+        return self._convert_unconstr_to(self._unit_spc_vertices,form=form,sc_size=1)
+
+    def get_random_point_in_unit_spc(self,form='unconstr'):
+        """
+        Get a random point that is strictly inside the unit, constrained space.
+
+        Args:
+            form(str):
+                Desired format of output.
+        """
+        verts = self.unit_spc_vertices(form='unconstr')
+        x = verts[0].copy() 
+
+        for i in range(1,len(verts)):
+            lam = np.random.random()
+            x = lam*x + (1-lam)*verts[i]
+
+            in_spc = True
+            if not self.is_charge_constred:
+                x_prime = deepcopy(x)
+            else:
+                x_prime = np.linalg.inv((self.R).T)@(x-self.t)
+                d_slack = x_prime[-1]
+                x_prime = x_prime[:-1]
+            
+            b = self.A@x_prime
+            for bi_p,bi in zip(b,self.b):
+                if bi_p-bi > -SLACK_TOL:
+                     in_spc = False
+                     break
+
+            if in_spc:
+                break
+
+        return self._convert_unconstr_to(x,form=form,sc_size=1)
+              
 
     @property
     def min_sc_size(self):
@@ -465,7 +500,7 @@ class CompSpace(MSONable):
         """
         if self._min_sc_size or self._min_int_vertices is None:
             self._min_int_vertices, self._min_sc_size = \
-                integerize_multiple(self.constr_spc_vertices())
+                integerize_multiple(self.unit_spc_vertices())
         return self._min_sc_size
 
     def min_int_vertices(self,form='unconstr'):
@@ -580,7 +615,7 @@ class CompSpace(MSONable):
 
         else:
             #Then integer composition is not guaranteed to be found.
-            vertices = self.constr_spc_vertices()*sc_size
+            vertices = self.unitspc_vertices()*sc_size
             limiters_ub = np.array(np.ceil(np.max(vertices,axis=0)),dtype=np.int64)
             limiters_lb = np.array(np.floor(np.min(vertices,axis=0)),dtype=np.int64)
 
@@ -895,8 +930,8 @@ class CompSpace(MSONable):
         return {
                 'bits': bits_d,
                 'sl_sizes': self.sl_sizes,
-                'constr_spc_basis': self.constr_spc_basis.tolist(),
-                'constr_spc_vertices': self.constr_spc_vertices().tolist(),
+                'unit_spc_basis': self.unit_spc_basis.tolist(),
+                'unit_spc_vertices': self.unit_spc_vertices().tolist(),
                 'polytope': poly,
                 'min_sc_size': self.min_sc_size,
                 'min_int_vertices': self.min_int_vertices().tolist(),
@@ -912,12 +947,12 @@ class CompSpace(MSONable):
         
         obj = cls(bits,d['sl_sizes'])        
  
-        if 'constr_spc_basis' in d:
-            obj._constr_spc_basis = np.array(d['constr_spc_basis'],dtype=np.int64)
+        if 'unit_spc_basis' in d:
+            obj._unit_spc_basis = np.array(d['unit_spc_basis'],dtype=np.int64)
             
 
-        if 'constr_spc_vertices' in d:          
-            obj._constr_spc_vertices = np.array(d['constr_spc_vertices'])
+        if 'unit_spc_vertices' in d:          
+            obj._unit_spc_vertices = np.array(d['unit_spc_vertices'])
 
         if 'polytope' in d:            
             poly = d['polytope']

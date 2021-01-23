@@ -42,7 +42,7 @@ class ArchVaspWriter(BaseWriter):
     def write_tasks(self,strs_undeformed,entry_ids,*args, strain=[1.05,1.03,1.01],\
                     mode = 'relax', is_metal = False,**kwargs):
         """
-        Write input files or push data to fireworks launchpad.
+        Write input files.
         Inputs(Order of arguments matters):
             strs_undeformed(List of Structure):
                 Structures in original lattice.(Not deformed.)

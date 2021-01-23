@@ -118,9 +118,9 @@ class MongoFWManager(BaseManager):
         import re
 
         regex_ = re.compile("^ce_{}".format(self.root_name))
-        all_wids = [wf['nodes'] for wf in self._lpad.fireworks.find({'name':regex_})]
+        all_wids = [wf['nodes'] for wf in self._lpad.workflows.find({'name':regex_})]
         all_qids = [[self._lpad.get_reservation_id_from_fw_id(fw_id) for fw_id in e_fwids]\
-                     for e_fwids in all_fwids]
+                     for e_fwids in all_wids]
         all_eids = [int(wf['name'].split('_')[-1])\
                     for wf in self._lpad.workflows.find({'name':regex_})]        
 
@@ -128,19 +128,20 @@ class MongoFWManager(BaseManager):
         qstats = self.entree_in_queue(entry_ids) 
         entry_ids = [eid for eid,e_in_q in zip(entry_ids,qstats) if e_in_q]      
 
-        print("Killing tasks associated with")
+        print("**Killing tasks associated with entree: ",entry_ids)
         all_eids_2k = []
         all_qids_2k = []
         all_wids_2k = []
         for wids,qids,eid in zip(all_wids,all_qids,all_eids):
             if eid in entry_ids:
-                all_eids_2delete.append(eid)
-                all_qids_2delete.append(qids)
-                all_wids_2delete.append(wids)  
+                all_eids_2k.append(eid)
+                all_qids_2k.append(qids)
+                all_wids_2k.append(wids)  
 
         for wids,qids,eid in zip(all_wids_2k,all_qids_2k,all_eids_2k):
             for qid in qids:
-                os.system(kill_command+' {}'.format(qid))
+                if qid is not None:
+                    os.system(kill_command+' {}'.format(qid))
             #defuse the workflow correspoding to eid
             self._lpad.defuse_wf(wids[0])
             print("****Tasks corresponding to entry: {} has been killed and defused!".format(eid))

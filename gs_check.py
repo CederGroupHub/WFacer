@@ -12,6 +12,7 @@ import pandas as pd
 from smol.cofe import ClusterSubspace
 
 from utils.hull_utils import hulls_match, plot_hull
+from .data_manager import DataManager
 
 class GSChecker:
     """
@@ -24,29 +25,23 @@ class GSChecker:
             Previous ClusterSubspace object used in featurizer.
         ce_history(List of CEFitter dicts):
             Previous cluster expansion fitting history.
-        sc_table(pd.DataFrame):
-            supercell matrices dataframe.
-            Can not be modified
-        comp_table(pd.DataFrame):
-            compositions dataframe.
-            Can be modified by this class, if new grounds states
-            are detected.       
-        fact_table(pd.DataFrame):
-            facts dataframe.
-            Can be modified by this class, if new grounds states
-            are detected.  
+        data_manager(DataManager):
+            A data manager to interact with calculated data.
     Notice:
         We consider structures added in this module as belongs to 
         the last structure enumeration iteration.
     You may not want to call this function directly.
     """
     def __init__(self,cluster_subspace=None,ce_history = [],\
-                      sc_table=None, comp_table=None, fact_table=None):
+                      data_manager=DataManager.auto_load()):
         self.cspc = cluster_subspace
         self.ce_history = ce_history
-        self._sc_table = sc_table
-        self._comp_table = comp_table
-        self._fact_table = fact_table
+
+        self._dm = data_manager
+
+        self._sc_table = self._dm.sc_df
+        self._comp_table = self._dm.comp_df
+        self._fact_table = self._dm.fact_df
         self._dft_hulls_ahead = {}  #Will not be saved
         self._ce_hulls_ahead = {}
 
@@ -58,13 +53,7 @@ class GSChecker:
         Returns:
             An integer index.
         """
-        if self._fact_table is None:
-            raise NODATAERROR
-        _n_it = self._fact_table[self._fact_table.module=='enum'].iter_id.max()
-        if pd.isnull(_n_it):
-            return -1
-        else:
-            return _n_it
+        return self._dm.cur_iter_id
 
 
     def get_hull_n_iters_ahead(self,n_it_ahead=0,mode='dft'):
@@ -91,9 +80,6 @@ class GSChecker:
         if mode not in ['ce','dft']:
             raise NotImplementedError("Hull mode {} not implemented yet."\
                                       .format(mode))           
-
-        if self._fact_table is None:
-            raise NODATAERROR
 
         filt_ = (self._fact_table.iter_id <= self.n_iter-n_it_ahead) & \
                 (self._fact_table.calc_status=='SC') &
@@ -278,59 +264,53 @@ class GSChecker:
         return fig, ax
 
 
-    def _load_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
-        """
-        Loading dimension tables and the fact table. 
-        comp_df needs a little bit de-serialization.
-        File names can be changed, but not recommended!
-        Notice: pandas loads lists as strings. You have to serialize them!
-        """
-        list_conv = lambda x: json.loads(x) if x is not None else None
-        if os.path.isfile(sc_file):
-            self._sc_table = pd.read_csv(sc_file,converters={'matrix':list_conv})
-        if os.path.isfile(comp_file):
-            #De-serialize compositions and list values
-            self._comp_table = pd.read_csv(comp_file,
-                                        converters={'ucoord':list_conv,
-                                                    'ccoord':list_conv,
-                                                    'eq_occu':list_conv,
-                                                    'comp':deser_comp
-                                                   })
-        if os.path.isfile(fact_file):
-            self._fact_table = pd.read_csv(fact_file,
-                                        converters={'ori_occu':list_conv,
-                                                    'ori_corr':list_conv,
-                                                    'map_occu':list_conv,
-                                                    'map_corr':list_conv,
-                                                    'other_props':list_conv
-                                                   })
-
-
     @classmethod
-    def auto_load(cls,fitter_file='ce_fitter.json',\
-                  sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+    def auto_load(cls,\
+                  options_file='options.yaml',\
+                  sc_file='sc_mats.csv',\
+                  comp_file='comps.csv',\
+                  fact_file='data.csv',\
+                  ce_history_file='ce_history.json'):
         """
-        Automatically initializes this object from data and history files.
-        This is more frequently called during initailization.
+        This method is the recommended way to initialize this object.
+        It automatically reads all setting files with FIXED NAMES.
+        YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
+        YOU MAY BREAK THE INITIALIZATION PROCESS!
         Args:
-            fitter_file(str):
-                path to the fitter file.
+            options_file(str):
+                path to options file. Options must be stored as yaml
+                format. Default: 'options.yaml'
             sc_file(str):
-                supercell matrix data file path.
-            comp_file(str):
-                compositions data file path.
-            fact_file(str):
-                calculation entree data file.
-            You can specify these paths, but we don't recommend so.
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'
+            sc_file(str):
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'             
+            sc_file(str):
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'             
+            ce_history_file(str):
+                path to cluster expansion history file.
+                Default: 'ce_history.json'
+        Returns:
+            GSChecker object.
         """
-        if not os.path.isfile(fitter_file):
-            raise ValueError("No previous fitter record exists!")
-        with open(fitter_file) as fin:
-            d = json.load(fin)
-        cspc = d.get('cluster_subspace')
-        cspc = ClusterSubspace.from_dict(cspc) if cspc is not None else None
-        history = d.get('history',[])
-        socket = cls(cluster_subspace = cspc, ce_history=history)
-        socket._load_data(sc_file,comp_file,fact_file)
+        options = InputsWrapper.auto_load(options_file=options_file,\
+                                          ce_history_file=ce_history_file)
 
-        return socket
+        dm = DataManager.auto_load(options_file='options.yaml',\
+                                   sc_file='sc_mats.csv',\
+                                   comp_file='comps.csv',\
+                                   fact_file='data.csv',\
+                                   ce_history_file='ce_history.json')
+
+
+        history = []
+        if os.path.isfile(ce_history_file):
+            with open(ce_history_file) as fin:
+                history = json.load(fin)
+
+        return cls(options.subspace,\
+                   ce_history = history,\
+                   data_manager=dm,\
+                  )

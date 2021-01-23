@@ -32,7 +32,6 @@ from .utils.calc_utils import get_ewald_from_occu
 from .utils.comp_utils import check_comp_restriction
 
 from .comp_space import CompSpace
-from .status_checker import StatusChecker
 from .data_manager import DataManager 
 from .inputs_wrapper import InputsWrapper
 

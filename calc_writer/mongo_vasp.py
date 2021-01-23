@@ -7,6 +7,7 @@ Configure you atomate and fireworks before using this!
 __author__ = "Fengyu Xie"
 
 import os
+import itertools
 
 from pymatgen.io.vasp.sets import MPRelaxSet, MPMetalRelaxSet,\
                                   MPStaticSet
@@ -153,6 +154,20 @@ class MongoVaspWriter(BaseWriter):
                           relax_set_params = relax_set_params,\
                           static_set_params = static_set_params,\
                           **kwargs)               
+
+        #Check duplicacy. If any duplicacy occurs, will OVERWRITE for a re-run.
+        fw_ids = self._lpad.get_fw_ids()
+
+        all_dupe_fw_ids = []
+        for fw_id in fw_ids:
+            wf_name = self._lpad.get_wf_summary_dict(fw_id)['name']
+            if wf_name == wf.name and fw_id not in itertools.chain(*all_dupe_fw_ids):
+                wf_old = self._lpad.get_wf_by_fw_id(fw_id)
+                dupe_fw_ids = [fw.fw_id for fw in wf_old.fws]
+                all_dupe_fw_ids.append(dupe_fw_ids)
+      
+        for dupe_fw_ids in all_dupe_fw_ids:
+            self._lpad.delete_wf(dupe_fw_ids[0])
 
         self._lpad.add_wf(wf)
         print("****Calculation workflow loaded to launchpad for entry: {}.".format(eid))

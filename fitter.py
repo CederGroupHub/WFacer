@@ -45,6 +45,16 @@ class CEFitter(MSONable):
                 'e_above_hull': weight by energy above hull
         use_hierarchy(Boolean):
             Whether or not to add hierarchy constraints.
+        estimator_params(Dict{Dict}|Dict):
+            Parameters to pass into the estimators. When is a dictionary, will only
+            use it for fitting 'e_prim'. When is a dictionary
+            of dictionaries, the keys will specify which property are the parameters 
+            being applied to.
+            See regression module.
+        weighter_params(Dict):
+            Parameters to pass into the weighting module. See utils.weight_utils
+        data_manager(DataManager):
+           A data manager object to read and write dataframes.
     """
     supported_weights = ('unweighted','e_above_hull','e_above_comp')
 
@@ -52,6 +62,8 @@ class CEFitter(MSONable):
                       estimator_flavor='L2L0Estimator',\
                       weights_flavor='unweighted',\
                       use_hierarchy=True,\
+                      estimator_params={},\
+                      weighter_params={},\
                       data_manager = DataManager.auto_load()):
 
         self.cspc = cluster_subspace
@@ -74,7 +86,18 @@ class CEFitter(MSONable):
         self._rmse = {}
         self._femat = []
 
+        if len(estimator_params) == 0:
+            self.estimator_params = estimator_params
+
+        elif not isinstance(list(estimator_params.values())[0],dict):
+            self.estimator_params = {'e_prim':estimator_params}
+        else:
+            self.estimator_parmas = estimator_params
+ 
+        self.weighter_params = weighter_params
+
         self._dm = data_manager
+        self._schecker = self._dm._schecker
 
     @property
     def sc_df(self):
@@ -110,8 +133,9 @@ class CEFitter(MSONable):
             A dictionary: {property_name:cluster expansion of that property}
         """
         if len(self._coefs) == 0 or len(self._femat) == 0:
-            print("No cluster expansion model fitted yet.")
+            warnings.warn("No cluster expansion model fitted yet. Call fit first.")
             return None
+
         return {pname:ClusterExpansion(self.cspc,
                                        np.array(self._coefs[pname]),
                                        np.array(self._femat))
@@ -130,33 +154,28 @@ class CEFitter(MSONable):
             Cluster expansion object of normalized energies. 
         """
         if len(self._coefs) == 0 or len(self._femat) == 0:
-            print("No cluster expansion model fitted yet.")
+            warnings.warn("No cluster expansion model fitted yet. Call fit first.")
             return None
         return ClusterExpansion(self.cspc,np.array(self._coefs['e_prim']),
                                 np.array(self._femat))
 
-    def fit_from_fact(self,estimator_params={},weighter_params={}):
+    def fit(self):
         """
-        Inputs:
-            estimator_params(Dict of dicts or None):
-                used to set estimator parameters. For example, mu, log_mu_ranges,
-                log_mu_steps, M, tlimit, etc.
-                This can write like:
-                    self.fit_from_fact(df,estimator_params={'e_prim':{'log_mu_ranges':[(-5,5)]}})
-                to pass log_mu_ranges into your estimator's fit method, when fitting 'e_prim'.
-                If empty dict given, will use default setting for all estimator runs.
-                See documentation of your Estimator of choice for detail.
-            weighter_params(Dict):
-                used to pass parameters of the weights_from_occu function. keywords may
-                usually include 'prim','sc_mats', and may include 'temperature', etc, 
-                depending on the weighting method.
-                See doc for util.weight_utils.weights_from_occu for more detail.
-
-         No return value.
+         Fits cluster expansion from the featurized fact dataframe. No return value.
 
          Class attibutes will be refreshed after every fit, so it is your responsibility not to 
          double-fit the same dataset!
+
         """
+        estimator_params = self.estimator_params
+        weighter_params = self.weighter_params       
+
+        if self._schecker.last_completed_module_id<5: #Fitter not finished in current cycle.
+            warnings.warn("ECIs aleady fitted for current cycle. Loading from history.")
+            self._coefs = self._history[-1]['coefs']
+            self._cv = self._history[-1]['cv']
+            self._rmse = self._history[-1]['rmse']
+
         fact_df = self.fact_df.copy()
 
         fact_avail = fact_df[fact_df.calc_status=='SC']
@@ -169,8 +188,8 @@ class CEFitter(MSONable):
         #Fit energy coefficients
         y = np.array(fact_avail.e_prim)
 
-        e_prim_params = estimator_params['e_prim'] if 'e_prim' in estimator_params else \
-                        {}
+        e_prim_params = estimator_params.get('e_prim',{})
+
         mu = self._estimator.fit(X,y,sample_weight = weights,\
                                  hierarchy=self.hierarchy,\
                                  **e_prim_params)
@@ -188,8 +207,7 @@ class CEFitter(MSONable):
 
         for prop_name in other_props_asdf:
             y = np.array(other_props_asdf[prop_name].tolist())
-            prop_params = estimator_params[prop_name] if prop_name in estimator_params else \
-                          {}
+            prop_params = estimator_params.get(prop_name,{})
 
             self._estimator.fit(X,y,sample_weight = weights,\
                                 hierarchy=self.hierarchy,\
@@ -198,7 +216,7 @@ class CEFitter(MSONable):
             self._coefs[prop_name]=self._estimator.coef_.copy().tolist()
             cvs = self._estimator.calc_cv_score(X,y,sample_weight=weights,\
                                             hierarchy=self.hierarchy,\
-                                            **e_prim_params)
+                                            **prop_params)
             self._cv[prop_name] = np.sqrt((1-cvs)*np.sum((y-np.average(y))**2)/len(y))
             self._rmse[prop_name] = np.sqrt(np.sum((np.array(preds)-y)**2)/len(y))
 
@@ -206,8 +224,11 @@ class CEFitter(MSONable):
     def _update_history(self):
         """
         Append current fit to the history log.
+        Status Checker will prevent double appending in a same iteration, therefore 
+        lenth of history should always be the same as the current iteration number.
         """
-        if len(self._cv) and len(self._rmse) and len(self._coefs) and not self._updated:
+        if len(self._cv) and len(self._rmse) and len(self._coefs) and not self._updated \
+           and self._schecker.last_completed_module_id<5: #Fitter not finished in current cycle.
             self._history.append({"cv":self._cv,
                                   "rmse":self._rmse,
                                   "coefs":self._coefs})
@@ -344,23 +365,60 @@ class CEFitter(MSONable):
 
 
     @classmethod
-    def auto_load(cls,ce_history_file = 'ce_history.json'):
+    def auto_load(cls,options_file='options.yaml',\
+                  sc_file='sc_mats.csv',\
+                  comp_file='comps.csv',\
+                  fact_file='data.csv',\
+                  ce_history_file='ce_history.json',\
+                 ):
         """
-        De-Serialization from file.
-        Make sure to call it only ONCE for each CE iteration!
-        If you have to call it multiple times, make sure not to call as_dict, as_file
-        again, or pass update_his = False to as_dict and as_file.
+        This method is the recommended way to initialize this object.
+        It automatically reads all setting files with FIXED NAMES.
+        YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
+        YOU MAY BREAK THE INITIALIZATION PROCESS!
         Args:
+            options_file(str):
+                path to options file. Options must be stored as yaml
+                format. Default: 'options.yaml'
+            sc_file(str):
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'
+            sc_file(str):
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'             
+            sc_file(str):
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'             
             ce_history_file(str):
-                path to history saving file. Can be changed, but
-                not recommended!
+                path to cluster expansion history file.
+                Default: 'ce_history.json'
+        Returns:
+             Fitter object.
         """
+        options = InputsWrapper.auto_load(options_file=options_file,\
+                                          ce_history_file=ce_history_file)
 
-#TODO
-    def __init__(self,cluster_subspace,\
-                      estimator_flavor='L2L0Estimator',\
-                      weights_flavor='unweighted',\
-                      use_hierarchy=True,\
-                      data_manager = DataManager.auto_load()):
+        dm = DataManager.auto_load(options_file='options.yaml',\
+                                   sc_file='sc_mats.csv',\
+                                   comp_file='comps.csv',\
+                                   fact_file='data.csv',\
+                                   ce_history_file='ce_history.json')
 
 
+        socket = cls(options.subspace,
+                   estimator_flavor = options.flavors['estimator'],\
+                   weights_flavor = options.flavors['weight'],\
+                   use_hierarchy = options.flavors['hierarchy'],\
+                   estimator_params = options.params['estimator'],\
+                   weight_params = options.params['weight'],\
+                   data_manager=dm
+                  )
+
+        history = []
+        if os.path.isfile(ce_history_file):
+            with open(ce_history_file) as fin:
+                history = json.load(fin)
+
+        socket._history = history
+
+        return socket

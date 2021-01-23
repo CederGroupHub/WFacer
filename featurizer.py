@@ -18,7 +18,7 @@ from smol.cofe.space.domain import get_allowed_species,Vacancy
 from smol.cofe import ClusterSubspace,ClusterExpansion
 from smol.cofe.extern.ewald import EwaldTerm
 
-from .decorator import *
+from .specie_decorator import *
 from .data_manager import DataManager
 from .calc_reader import *
 
@@ -371,7 +371,9 @@ class Featurizer(MSONable):
                   comp_file='comps.csv',\
                   fact_file='data.csv',\
                   ce_history_file='ce_history.json',\
-                  decor_file='decors.json'):
+                  decor_file='decors.json',\
+                  decorators_types=[],
+                  decorators_args=[]):
         """
         This method is the recommended way to initialize this object.
         It automatically reads all setting files with FIXED NAMES.
@@ -396,6 +398,16 @@ class Featurizer(MSONable):
             decor_file(str):
                 decorators save file path
                 Default: 'decors.json'
+            decorators_types(List[str]):
+                Class names of decorators to be used. If no
+                decor_file is present, this shall be required. 
+                Otherwise we will initialize decorators from saves,
+                and this argument will be ignored.
+            decorators_args(List[Dict]):
+                parameters required to initialize decorators, each
+                dict for a corresponding decorator.
+                See species_decorator module for more information.
+       
         Returns:
              Featurizer object.
         """
@@ -409,11 +421,12 @@ class Featurizer(MSONable):
                                    ce_history_file='ce_history.json')
 
         if os.path.isfile(decor_file):
-             with open(decor_file) as :
-                 decor_dicts = json.load(decor_file)
-                 decorators = [decode_from_dict(d) for d in decor_dicts]
+            with open(decor_file) as :
+                decor_dicts = json.load(decor_file)
+                decorators = [decode_from_dict(d) for d in decor_dicts]
         else:
-             decorators = []
+            decorators = [globals()[name](**args) for name,args in \
+                          zip(decorators_types,decorators_args)]
 
         return cls(options.prim,
                    bits=options.bits,\
