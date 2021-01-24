@@ -21,9 +21,18 @@ class BaseManager(ABC):
     This class only interacts with the data warehouse, and will not change 
     the fact table. Everything in this class shall be temporary, and will not 
     be saved as dictionaries into disk.
+
+    Args:
+        time_limit(float):
+            Time limit for all calculations to finish. Unit is second.
+            Default is 3 days.
+        check_interval(float):
+            Interval to check status of all computations in queue. Unit is second.
+            Default is every 5 mins.
     """
-    def __init__(self):
-        pass
+    def __init__(self,time_limit=259200,check_interval=300):
+        self.time_limit=time_limit
+        self.check_interval=check_interval
         
     @abstractmethod
     def entree_in_queue(self,entry_ids):

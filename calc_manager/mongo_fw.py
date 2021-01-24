@@ -35,6 +35,12 @@ class MongoFWManager(BaseManager):
             PBS, SGE, Cobalt, SLURM, LoadLeveler, LoadSharingFacility, or MOAB, and
             you have set up your atomate configurations correctly, you shouldn't need
             to specify this value.
+        lp_file(str):
+            path to launchpad setting file. If not given, will use atomate default.
+        fw_file(str):
+            path to fireworker setting file. If not given, will use atomate default.
+        qa_file(str):
+            path to queue adapter file. If not given, will use atomate default.
     """
     default_kill_commands = 
     {
@@ -47,15 +53,23 @@ class MongoFWManager(BaseManager):
         "MOAB": "canceljob"
     }
 
-    def __init__(self,kill_command=None):
+    def __init__(self,lp_file=None,\
+                      fw_file=None,\
+                      qa_file=None,\
+                      kill_command=None,\
+                      **kwargs):
+
         self.root_name = os.path.split(os.getcwd())[-1]
-        self._lpad = LaunchPad.from_file(LAUNCHPAD_LOC)
-        self._fworker = FWorker.from_file(FWORKER_LOC)
-        self._qadapter = load_object_from_file(QUEUEADAPTER_LOC)
+
+        self._lpad = LaunchPad.from_file(lpfile or LAUNCHPAD_LOC)
+        self._fworker = FWorker.from_file(fw_file or FWORKER_LOC)
+        self._qadapter = load_object_from_file(qa_file or QUEUEADAPTER_LOC)
+
         #If you define any other qadapter than CommonQadapter, make sure
         #to implement a q_type attribute!
-        kill_command = kill_command or default_kill_commands.get(self._qadapter.q_type,None)
-        if kill_command is None:
+        self.kill_command = kill_command or \
+                     default_kill_commands.get(self._qadapter.q_type,None)
+        if self.kill_command is None:
             raise ValueError("Queue type {} not supported, but no kill command given in init!"\
                              .format(self._qadapter.q_type))
 
@@ -100,7 +114,7 @@ class MongoFWManager(BaseManager):
         rapidfire(self._lpad,self._fworker,self._qadapter,reserve=True)
 
                
-    def kill_tasks(self,entry_ids=None,kill_command='qdel'):
+    def kill_tasks(self,entry_ids=None):
         """
          Kill specified workflows of entrees, if they are still in the queue.
          The workflows will be defused!
@@ -111,10 +125,9 @@ class MongoFWManager(BaseManager):
                 fact table starts from 0
                 If None given, will kill anything in the queue
                 with the current job root name.
-            kill_command(str):
-                killing command for your specific queue. Default is qdel,
-                but for slurm, can be different one.
         """ 
+        kill_command = self.kill_command
+
         import re
 
         regex_ = re.compile("^ce_{}".format(self.root_name))

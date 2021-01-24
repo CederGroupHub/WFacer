@@ -28,7 +28,7 @@ class ArchVaspReader(BaseReader):
         path(str):
             path to the archieve. By difault, will be under ./vasp_run
     """
-    def __init__(self,path = 'vasp_run'):
+    def __init__(self,path = 'vasp_run',**kwargs):
         self.path = path
         if not os.path.isdir(path):
             raise ValueError("Specified archieve {} does not exist!".format(path))

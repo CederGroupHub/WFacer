@@ -23,6 +23,12 @@ class GSChecker:
     Args:
         cluster_subspace(smol.ClusterSubspace):
             Previous ClusterSubspace object used in featurizer.
+        e_tol_in_cv(float):
+            Tolerance of energy difference in times of CV.
+        comp_tol(float):
+            Tolerance of ground state composition changes,
+            measured in norm of change of unconstrained 
+            compositional coordinates.
         ce_history(List of CEFitter dicts):
             Previous cluster expansion fitting history.
         data_manager(DataManager):
@@ -32,10 +38,16 @@ class GSChecker:
         the last structure enumeration iteration.
     You may not want to call this function directly.
     """
-    def __init__(self,cluster_subspace=None,ce_history = [],\
+    def __init__(self,cluster_subspace=None,\
+                      e_tol_in_cv = 3,\
+                      comp_tol = 0.05,\
+                      ce_history = [],\
                       data_manager=DataManager.auto_load()):
         self.cspc = cluster_subspace
         self.ce_history = ce_history
+ 
+        self.e_tol_in_cv = e_tol_in_cv
+        self.comp_tol = comp_tol
 
         self._dm = data_manager
 
@@ -164,7 +176,7 @@ class GSChecker:
         return self.get_dft_hull_n_iters_ahead(n_it_ahead = 0,mode='dft')
 
 
-    def check_convergence(self, e_tol=3, comp_tol = 0.05):
+    def check_convergence(self):
         """
         This function checks whether the ground states for a cluster expansion have 
         converged from reading history and the fact table.
@@ -192,9 +204,9 @@ class GSChecker:
         cv = self.ce_history[-1].get('cv',{'e_prim':0.001})['e_prim']
 
         return hulls_match(self.prev_ce_hull,self.curr_ce_hull,\
-                           e_tol=e_tol*cv,comp_tol=comp_tol) and \
+                           e_tol=self.e_tol_in_cv*cv,comp_tol=comp_tol) and \
                hulls_match(self.prev_dft_hull,self.curr_dft_hull,\
-                           e_tol=e_tol*cv,comp_tol=comp_tol)
+                           e_tol=self.e_tol_in_cv*cv,comp_tol=comp_tol)
 
 
     def plot_hull_scatter(self,mode='dft',\
@@ -298,19 +310,14 @@ class GSChecker:
         options = InputsWrapper.auto_load(options_file=options_file,\
                                           ce_history_file=ce_history_file)
 
-        dm = DataManager.auto_load(options_file='options.yaml',\
-                                   sc_file='sc_mats.csv',\
-                                   comp_file='comps.csv',\
-                                   fact_file='data.csv',\
-                                   ce_history_file='ce_history.json')
-
-
-        history = []
-        if os.path.isfile(ce_history_file):
-            with open(ce_history_file) as fin:
-                history = json.load(fin)
+        dm = DataManager.auto_load(options_file=options_file,\
+                                   sc_file=sc_file,\
+                                   comp_file=comp_file,\
+                                   fact_file=fact_file,\
+                                   ce_history_file=ce_history_file)
 
         return cls(options.subspace,\
-                   ce_history = history,\
+                   ce_history = options.history,\
                    data_manager=dm,\
+                   **options.gs_checker_options
                   )

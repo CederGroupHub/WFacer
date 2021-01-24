@@ -7,11 +7,12 @@ from monty.json import MSONable
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
+import itertools
 
 from smol.cofe.space.domain import get_allowed_species
 
-from .comp_space import CompSpace
-from .gs_solver import *
+from .ce_handler import *
+from .data_manager import DataManager
 from .utils.format_utils import deser_comp,structure_from_occu
 from .utils.hull_utils import estimate_mu_from_hull
 from .utils.math_utils import get_center_grid
@@ -30,26 +31,25 @@ class GSGenerator(MSONable):
     Args:
         ce(smol.ClusterExpansion):
             Latest cluster expansion object to solve GS from.
-        sc_table(pd.DataFrame):
-            supercell matrices dataframe.
-            Will not be modified in this module.
-        comp_table(pd.DataFrame):
-            compositions dataframe.
-            Might be modified if using with 'Grand' canonical solver.
-        fact_table(pd.DataFrame):
-            fact table dataframe, including all previous enumerated
-            structures.
-            Might be modified in this class, if not using 'MCCanonical'
-            solver.
-        solver_flavor(str):
-            Specifies class name of the solver to be used.
-            Check available solvers in CEAuto.gs_solver module.
+        prim(Structure):
+            Primitive cell of the system. Should be modified 
+            to charge neutral and has every specie in it.
+        bits(List[List[Specie]]):
+            Species on each sublattice, including Vacancy.
+        sublat_list(List[List[int]]):
+            List of prim cell site indices in a sublattice.
+        compspace(CompSpace):
+            Compositional space of the current system.
+        handler_flavor(str):
+            Specifies class name of the handler to be used.
+            Check available handlers in CEAuto.gs_handler module.
             Will use 'Canonical' as default.
-            When selecting Canoncial as solver, will not add anything,
+            When selecting Canoncial as handler, will not add anything,
             because in structure eneumerator, we are already keeping
             canoncial ground states.
-        **grand_solver_args takes in semi-grand solver parameters, such
-        as:
+        handler_args(Dict):
+            Takes in handler parameters, such as:
+            For semi-grand
             mu_grid_step(float, or list[float]):
                 grid density on each dimesion of mu in the constrained 
                 compositional coordinate.(see comp_space.py)
@@ -64,61 +64,39 @@ class GSGenerator(MSONable):
                 Number of mu points to compute simultaneously. Default
                 is 4.
  
+        data_manager(DataManager):
+            DataManager object of the current CE project.
+
         Central mu will be estimated from previous CE hull.
     """
-    #Modify this when you implement new solvers
-    supported_solvers = ('Canonical','MCGrand','PBGrand')
+    #Modify this when you implement new handlers
+    supported_handlers = ('CanonicalHandler','MCGrandHandler','PBGrandHandler')
 
     def __init__(self,ce,\
-                 sc_table=None,comp_table=None,fact_table=None,\
-                 solver_flavor='Canonical',**grand_solver_args):
+                      prim,\
+                      bits,\
+                      sublat_list,\
+                      compspace,\
+                      handler_flavor='CanonicalHandler',\
+                      handler_args={},\
+                      data_manger=DataManager.auto_load()):
 
         self.ce = ce
-        self.prim = ce.cluster_subspace.structure
+        self.prim = prim
+        self.bits = bits
+        self.sublat_list = sublat_list
+        self.comp_space = compspace
 
-        bits = get_allowed_species(self.prim)
-        self.sublat_list = []
-        self.bits = []
-        for s_id,s_bits in enumerate(bits):
-            if s_bits in self.bits:
-                s_bits_id = self.bits.index(s_bits)
-                self.sublat_list[s_bits_id].append(s_id)
-            else:
-                self.sublat_list.append([s_id])
-                self.bits.append(s_bits)
-        self.sl_sizes = [len(sl) for sl in self.sublat_list]
-        self.comp_space = CompSpace(self.bits,sl_sizes = self.sl_sizes)
+        if handler_flavor not in supported_handlers:
+            raise ValueError("Solver {} not supported!".format(handler_flavor))
 
-        self._sc_df = sc_table
-        self._comp_df = comp_table
-        self._fact_df = fact_table
-
-        if solver_flavor not in supported_solvers:
-            raise ValueError("Solver {} not supported!".format(solver_flavor))
-
-        self.flavor = solver_flavor
-        if 'Grand' in self.flavor:
-            self._grand_solver_args = grand_solver_args
-        else:
-            self._grand_solver_args = {}
+        self.flavor = handler_flavor
+        self._handler_args = handler_args
 
         self._mu_center = None
-        self._gs_df = None
+        self._gss = None
 
-    @property
-    def n_iter(self):
-        """
-        This function gets the current CE iteration number from the fact table.
-        Returns:
-            An integer index.
-        """
-        if self._fact_df is None:
-            raise NODATAERROR
-        _n_it = self._fact_df[self._fact_df.module=='enum'].iter_id.max()
-        if pd.isnull(_n_it):
-            return -1
-        else:
-            return _n_it
+        self._dm = data_manager
 
     @property
     def comp_dim(self):
@@ -128,129 +106,80 @@ class GSGenerator(MSONable):
         Returns:
             An integer index.
         """
-        if self._comp_df is None:
-            raise NODATAERROR
-        return len(self._comp_df.reset_index().iloc[0]['ccoord'])
+        return self.comp_space.dim
+
+    @property
+    def sc_df(self):
+        """
+        Supercell dataframe.
+        """
+        return self._dm.sc_df
+ 
+    @property
+    def comp_df(self):
+        """
+        Compositional dataframe.
+        """
+        return self._dm.comp_df
+
+    @property
+    def fact_df(self):
+        """
+        Fact dataframe containing all entree.
+        """
+        return self._dm.fact_df
 
     def solve_gss(self):
         """
         Solve for new ground state entree.
         """
-        if self._gs_df is not None:
-            return self._gs_df
+        if self._gss is not None: #Already solved, no need to do again.
+            return
 
-        if self.flavor == 'Canonical':
-            self._gs_df = pd.DataFrame(columns=['sc_id','sc','comp','ccoord','ucoord',])
+        if 'Canonical' in self.flavor:
+            self._gss = []
+            return
 
-        else:
-            #Estimate mu
-            if self._mu_center is None:
-                history = [{"coefs":self.ce.coefs}]
-                _checker = GSChecker(self.ce.cluster_subspace,history,\
-                                     sc_table=self._sc_df,comp_table=self._comp_df,\
-                                     fact_table=self._fact_df)
-                _cehull = self._checker.curr_ce_hull
-                self._mu_center = estimate_mu_from_hull(self._cehull)
+        #Estimate mu
+        if self._mu_center is None:
+            history = [{"coefs":self.ce.coefs}]
+            _checker = GSChecker(self.ce.cluster_subspace,ce_history=history,\
+                                 data_manager=self._dm)
+            _cehull = _checker.curr_ce_hull
+            self._mu_center = estimate_mu_from_hull(self._cehull)
 
-            _mu_step = self._grand_solver_args.get('mu_grid_step',0.4)
-            _mu_num = self._grand_solver_args.get('mu_grid_num',5)
-            _mu_grid = get_center_grid(self._mu_center,_mu_step,_mu_num)
-            _n_proc = self._grand_solver_args.get('n_proc',4)
-  
-            def grand_solver_call(flavor,ce,sc_matrix,mu):
-                _solver = globals()[flavor](ce,sc_matrix,mu)
-                gs_occu,gs_e = _solver.solve()
-                gs_str = structure_from_occu(self.ce.structure,sc_matrix,gs_occu)
-                gs_corr = self.ce.cluster_subspace.corr_from_structure(gs_str,\
-                                                   scmatrix=sc_matrix)
-                return gs_occu,gs_corr,gs_str,gs_e
+        _mu_step = self._handler_args.get('mu_grid_step',0.4)
+        _mu_num = self._handler_args.get('mu_grid_num',5)
+        _mu_grid = get_center_grid(self._mu_center,_mu_step,_mu_num)
+        _n_proc = self._handler_args.get('n_proc',4)
 
-                       
-             
-        return self._new_comps, self._new_facts
+        def grand_handler_call(flavor,ce,sc_matrix,mu,**handler_args):
+            _handler = globals()[flavor](ce,sc_matrix,mu,**handler_args)
+            gs_occu,gs_e = _handler.solve()
+            gs_occu = list(gs_occu)
+            return gs_occu,gs_e
+       
+        sc_mus = list(itertools.product(self.sc_df.matrix,_mu_grid))
+        pool = mp.Pool(_nproc)
+        gs_occu_es = pool.map(sc_mus,\
+                            lambda p: grand_handler_call(self.flavor,self.ce,\
+                                                         p[0],p[1],\
+                                                         **self._handler_args))
 
-    def add_gss_to_df(self):
+        self._gss = []
+        #Insert new ground states.
+        for (gs_occu,gs_e),(sc,mu) in zip(gs_occu_es,sc_mus):
+            self._gss.append((gs_occu,sc))
+            self._dm.insert_one_occu(gs_occu,sc_mat=sc,module_name='gs')
 
     #Serializations and de-serializations
-    def as_dict(self):
-        """
-        Serialize this class. Saving and loading of the star schema are moved to other functions!
-        """
-        #Serialization
-        d={}
-        d['ce']=self.ce.as_dict()
-        d['flavor']=self.flavor
-        d['grand_solver_args']=self._grand_solver_args
-        d['mu_center']=self._mu_center
-        d["@module"] = self.__class__.__module__
-        d["@class"] = self.__class__.__name__
 
-        return d
-
-    @classmethod
-    def from_dict(cls,d):
-        """
-        De-serialze from a dictionary.
-        """
-        ce = ClusterExpansion.from_dict(d.get('ce'))
-        socket = cls(ce = ce,\
-                    solver_flavor=d.get('flavor','MCCanonical'),\
-                    **d.get('grand_solver_args',{}))
-        socket._mu_center = d.get('mu_center')
-        return socket
-
-    def _save_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
-        """
-        Saving dimension tables and the fact table. Must set index=False, otherwise will always add
-        One more row for each save and load.
-        comp_df needs a little bit serialization.
-        File names can be changed, but not recommended!
-        """
-        if self._sc_table is not None:
-            self._sc_table.to_csv(sc_file,index=False)
-        if self._comp_table is not None:
-            comp_ser = self._comp_table.copy()
-            comp_ser.comp = comp_ser.comp.map(lambda c: serialize_comp(c))
-            comp_ser.to_csv(comp_file,index=False)
-        if self._fact_df is not None:
-            self._fact_df.to_csv(fact_file,index=False)
-
-    def _load_data(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
-        """
-        Loading dimension tables and the fact table. 
-        comp_df needs a little bit de-serialization.
-        File names can be changed, but not recommended!
-        Notice: pandas loads lists as strings. You have to serialize them!
-        """
-        list_conv = lambda x: json.loads(x) if x is not None else None
-        if os.path.isfile(sc_file):
-            self._sc_table = pd.read_csv(sc_file,converters={'matrix':list_conv})
-        if os.path.isfile(comp_file):
-            #De-serialize compositions and list values
-            self._comp_table = pd.read_csv(comp_file,
-                                        converters={'ucoord':list_conv,
-                                                    'ccoord':list_conv,
-                                                    'cstat':list_conv,
-                                                    'eq_occu':list_conv,
-                                                    'comp':deser_comp
-                                                   })
-        if os.path.isfile(fact_file):
-            self._fact_table = pd.read_csv(fact_file,
-                                        converters={'ori_occu':list_conv,
-                                                    'ori_corr':list_conv,
-                                                    'map_occu':list_conv,
-                                                    'map_corr':list_conv,
-                                                    'other_props':list_conv
-                                                   })
-
-
-    def auto_save(self,gen_file='ce_gsgen.json',\
-                  sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+    def auto_save(self,sc_file='sc_mats.csv',\
+                       comp_file='comps.csv',\
+                       fact_file='data.csv'):
         """
         Automatically save object data into specified files.
         Args:
-            gen_file(str):
-                GSGenerator object file path.
             sc_file(str):
                 supercell matrix file path
             comp_file(str):
@@ -259,29 +188,52 @@ class GSGenerator(MSONable):
                 fact table file path
         All optional, but I don't recommend you to change the paths.
         """
-        with open(gen_file,'w') as fout:
-            json.dump(self.as_dict(),fout)
-
-        self._save_data(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
+        self._dm.auto_save(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
 
     @classmethod
-    def auto_load(cls,gen_file='ce_gsgen.json',\
-                  sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+    def auto_load(cls,\
+                  options_file='options.yaml',\
+                  sc_file='sc_mats.csv',\
+                  comp_file='comps.csv',\
+                  fact_file='data.csv',\
+                  ce_history_file='ce_history.json'):
         """
-        Automatically load object data from specified files, and returns an object.
+        This method is the recommended way to initialize this object.
+        It automatically reads all setting files with FIXED NAMES.
+        YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
+        YOU MAY BREAK THE INITIALIZATION PROCESS!
         Args:
-            gen_file(str):
-                GSGenerator object file path.
+            options_file(str):
+                path to options file. Options must be stored as yaml
+                format. Default: 'options.yaml'
             sc_file(str):
-                supercell matrix file path
-            comp_file(str):
-                composition file path
-            fact_file(str):
-                fact table file path
-        All optional, but I don't recommend you to change the paths.
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'
+            sc_file(str):
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'             
+            sc_file(str):
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'             
+            ce_history_file(str):
+                path to cluster expansion history file.
+                Default: 'ce_history.json'
+        Returns:
+            GSChecker object.
         """
-        with open(gen_file) as fin:
-            socket = cls.from_dict(json.load(fin))
+        options = InputsWrapper.auto_load(options_file=options_file,\
+                                          ce_history_file=ce_history_file)
 
-        socket._load_data(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
-        return socket
+        dm = DataManager.auto_load(options_file=options_file,\
+                                   sc_file=sc_file,\
+                                   comp_file=comp_file,\
+                                   fact_file=data_file,\
+                                   ce_history_file=ce_history_file)
+
+        return cls(options.last_ce,\
+                   options.prim,\
+                   options.bits,\
+                   options.sublat_list,\
+                   options.comp_space,\
+                   data_manager=dm,\
+                   **options.gs_generator_options)

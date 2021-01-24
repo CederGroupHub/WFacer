@@ -20,10 +20,8 @@ def hulls_match(old_hull,new_hull, e_tol, comp_tol=0.05):
             If new ground state occurs, but its energy difference to old gss
             is smaller than tolerance, will still think converged.
         comp_tol(float):
-            tolerance of ground state composition changes, measured in percent.
-            If composition is multidimensional, each specie on each sublattice
-            must not change beyond this tolerance.
-            Default is 5%.
+            tolerance of ground state composition changes, measured in norm of unconstrained coordinates change.
+            Default is 0.05.
             If new ground state occurs, but its composition difference to old gss
             is smaller than tolerance, will still think converged.
     Returns:

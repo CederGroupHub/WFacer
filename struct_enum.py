@@ -722,24 +722,17 @@ class StructureEnumerator(MSONable):
         options = InputsWrapper.auto_load(options_file=options_file,\
                                           ce_history_file=ce_history_file)
 
-        dm = DataManager.auto_load(options_file='options.yaml',\
-                                   sc_file='sc_mats.csv',\
-                                   comp_file='comps.csv',\
-                                   fact_file='data.csv',\
-                                   ce_history_file='ce_history.json')
+        dm = DataManager.auto_load(options_file=options_file,\
+                                   sc_file=sc_file,\
+                                   comp_file=comp_file,\
+                                   fact_file=fact_file,\
+                                   ce_history_file=ce_history_file)
 
         return cls(options.prim,
                    bits=options.bits,\
                    sublat_list=options.sublat_list,\
-                   is_charged=options.is_charged,\
+                   is_charged=options.is_charged_ce,\
                    previous_ce=options.last_ce,\
-                   transmat=options.transmat,\
-                   sc_size=options.sc_size,\
-                   max_sc_cond = options.max_sc_cond,\
-                   min_sc_angle = options.min_sc_angle,\
-                   comp_restrictions= options.comp_restrictions,\
-                   comp_enumstep= options.comp_enumstep,\
-                   basis_type = options.basis_type,\
-                   select_method = options.select_method,\
-                   data_manager=dm
+                   data_manager=dm,\
+                   **options.enumerator_options
                   )

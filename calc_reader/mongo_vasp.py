@@ -33,10 +33,10 @@ class MongoVaspReader(BaseReader):
     """
 
     DEFAULT_MONGO_PATH = os.path.join(atomate.__path__[0],'config/json')
-    DEFAULT_CALCDB =  VaspCalcDb.from_db_file(DEFAULT_MONGO_PATH)
 
-    def __init__(self,mongod=DEFAULT_CALCDB):
-        self._mongod = mongod
+    def __init__(self,md_file=None,**kwargs):
+        md_file = md_file or DEFAULT_MONGO_PATH
+        self._mongod = VaspCalcDb.from_db_file(md_file)
         self.root_name = os.path.split(os.get_cwd())[-1]
 
     def check_convergence_status(self,entry_ids):

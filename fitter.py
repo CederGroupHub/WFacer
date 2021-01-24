@@ -398,27 +398,17 @@ class CEFitter(MSONable):
         options = InputsWrapper.auto_load(options_file=options_file,\
                                           ce_history_file=ce_history_file)
 
-        dm = DataManager.auto_load(options_file='options.yaml',\
-                                   sc_file='sc_mats.csv',\
-                                   comp_file='comps.csv',\
-                                   fact_file='data.csv',\
-                                   ce_history_file='ce_history.json')
+        dm = DataManager.auto_load(options_file=options_file,\
+                                   sc_file=sc_file,\
+                                   comp_file=comp_file,\
+                                   fact_file=fact_file,\
+                                   ce_history_file=ce_history_file)
 
+        socket = cls(options.subspace,\
+                     data_manager=dm,\
+                     **options.fitter_options
+                    )
 
-        socket = cls(options.subspace,
-                   estimator_flavor = options.flavors['estimator'],\
-                   weights_flavor = options.flavors['weight'],\
-                   use_hierarchy = options.flavors['hierarchy'],\
-                   estimator_params = options.params['estimator'],\
-                   weight_params = options.params['weight'],\
-                   data_manager=dm
-                  )
-
-        history = []
-        if os.path.isfile(ce_history_file):
-            with open(ce_history_file) as fin:
-                history = json.load(fin)
-
-        socket._history = history
+        socket._history = options.history
 
         return socket

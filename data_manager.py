@@ -487,15 +487,7 @@ class DataManager:
       
         eid = self.fact_df.entry_id.max()+1 if len(self.fact_df)>0 else 0
 
-        #if this structure is inserted during enumeration, will use current iteration
-        #number. If this structure is inserted during ground state or other operation,
-        #Will be considered as the next iteration.
-        if module_name == 'enum':
-            iter_id = self.cur_iter_id
-        else: 
-            if len(self.fact_df)==0:
-                raise ValueError("Ground states can't be inserted without previous calculations!")
-            iter_id = self.cur_iter_id+1
+        iter_id = self.cur_iter_id
 
         matrix = self.sc_df[self.sc_df.sc_id==sc_id].reset_index().iloc[0]['matrix']
         s = structure_from_occu(occu,self._prim,matrix)

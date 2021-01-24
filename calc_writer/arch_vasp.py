@@ -34,13 +34,29 @@ class ArchVaspWriter(BaseWriter):
     Attributes: 
         path(str):
             path to the calculation archieve.
+        writer_strain(1*3 or 3*3 arraylike):
+            Strain matrix to apply to structure before writing as 
+            inputs. This helps breaking symmetry, and relax to a
+            more reasonable equilibrium structure.
+        is_metal(Boolean):
+            If true, will use vasp set specifically designed for 
+            metals calculation (MPMetalRelaxSet)
+        ab_setting(Dict):
+            Pass ab-initio software options. For vasp,
+            look at pymatgen.vasp.io.sets doc.
+            May have two keys, 'relax' and 'static'.
+            See pymaten.vasp.io.sets for detail.
     """
-    def __init__(self, path = 'vasp_run'):
+    def __init__(self, path = 'vasp_run', 
+                       writer_strain=[1.05,1.03,1.01],\
+                       is_metal = False,\
+                       ab_setting={},\
+                       **kwargs):
+        super().init_(writer_strain=writer_strain,ab_setting=ab_setting,**kwargs)
         self.path = path
-        
-        
-    def write_tasks(self,strs_undeformed,entry_ids,*args, strain=[1.05,1.03,1.01],\
-                    mode = 'relax', is_metal = False,**kwargs):
+        self.is_metal = is_metal
+               
+    def write_tasks(self,strs_undeformed,entry_ids,*args,mode='relax',**kwargs):
         """
         Write input files.
         Inputs(Order of arguments matters):
@@ -50,10 +66,6 @@ class ArchVaspWriter(BaseWriter):
                 list of entry indices to be checked. Indices in a
                 fact table starts from 0
                 Must be provided.       
-            strain(1*3 or 3*3 arraylike):
-                Strain matrix to apply to structure before writing as 
-                inputs. This helps breaking symmetry, and relax to a
-                more reasonable equilibrium structure.
             mode(str):
                 Type of inputs to write. Supporting:
                     'relax': 
@@ -69,22 +81,14 @@ class ArchVaspWriter(BaseWriter):
                         Force a static calculation regardless of the previous 
                         relaxation. (Might be used when some high-energy space
                         constraints are required, but usually not recommended.)
-            is_metal(Boolean):
-                Select True if your system is a metallic alloy, then we will optimize 
-                relaxation parameters with MPMetalRelaxSet. By default, use 
-                false.
 
-            Can pass ab-intio settings as **kwargs. Refer to pymatgen.io.vasp.sets
-        for more details.
         No return value.
         """
         if mode == 'force_static':
             print("**Warning: Forcing static calculation without checking relaxation, do this at your own risk!")
-        super().write_tasks(strs_undeformed,entry_ids,*args,strain=strain,\
-                            mode = mode, is_metal = is_metal, **kwargs)
+        super().write_tasks(strs_undeformed,entry_ids,*args,mode = mode,**kwargs)
 
-    def _write_single(self,structure,eid,*args,strain=[1.05,1.03,1.01],\
-                      mode = 'relax', is_metal = False, **kwargs):
+    def _write_single(self,structure,eid,*args,mode = 'relax', **kwargs):
         """
         Write a single computation task to archieve.
         """
@@ -93,7 +97,7 @@ class ArchVaspWriter(BaseWriter):
             os.makedirs(epath)
 
         #Apply a slight deformation.
-        strain = np.array(strain)
+        strain = np.array(self.strain)
         if strain.shape == (3,):
             strain = np.diag(strain)
    
@@ -103,12 +107,16 @@ class ArchVaspWriter(BaseWriter):
         str_input = Deformation(strain).apply_to_structure(structure)
 
         if mode == 'relax':
-            if is_metal:
-                io_set = MPMetalRelaxSet(str_input,**kwargs) #kwargs passed into set
-            else:
-                io_set = MPRelaxSet(str_input,**kwargs)
+            relax_setting = self.ab_setting.get('relax',{})
 
-        elif task_type == 'static':
+            if self.is_metal:
+                io_set = MPMetalRelaxSet(str_input,**relax_setting)
+            else:
+                io_set = MPRelaxSet(str_input,**relax_setting)
+
+        elif mode == 'static':
+            static_setting = self.ab_setting.get('static',{})
+
             vrun_path = os.path.join(entry_path,'vasprun.xml')
             ocar_path = os.path.join(entry_path,'OUTCAR')
             vrun_path_new = os.path.join(entry_path,'vasprun.xml.relax')
@@ -127,13 +135,15 @@ class ArchVaspWriter(BaseWriter):
                 return #Skip this entry
 
             str_input = relax_vasprun.structures[-1]
-            io_set = MPStaticSet(str_input,**kwargs)
+            io_set = MPStaticSet(str_input,**static_setting)
 
             #move and keep old calculation results and necessary inputs.            
             os.rename(vrun_path,vrun_path_new)
             os.rename(ocar_path,ocar_path_new)
 
         elif task_type == 'force_static':
+            static_setting = self.ab_setting.get('static',{})
+
             vrun_path = os.path.join(entry_path,'vasprun.xml')
             ocar_path = os.path.join(entry_path,'OUTCAR')
             vrun_path_new = os.path.join(entry_path,'vasprun.xml.relax')
@@ -147,7 +157,7 @@ class ArchVaspWriter(BaseWriter):
             if os.path.isfile(ocar_path):
                 os.rename(ocar_path,ocar_path_new)
 
-            io_set = MPStaticSet(str_input,**kwargs)
+            io_set = MPStaticSet(str_input,**static_setting)
 
         else:
             raise ValueError("Calculation type {} not supported in {}.".\

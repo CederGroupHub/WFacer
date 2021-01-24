@@ -164,7 +164,7 @@ class ArchSGEManager(ArchQueueManager):
         kill_command = "qdel"
 
     def __init__(self,path='vasp_run', ab_command='vasp', ncores = 16,\
-                      time_limit=259200,check_interval=300):
+                      time_limit=259200,check_interval=300,**kwargs):
 
         super().__init__(path=path, ab_command=ab_command, ncores=ncores,\
                       time_limit=time_limit, check_interval=check_interval)

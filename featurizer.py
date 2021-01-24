@@ -123,9 +123,7 @@ class Featurizer(MSONable):
             This class does not check whether a proerty name is legal. Error messages
             will be given by calc_reader class. Check calc_reader docs for detail.
  
-        normalize_props(Boolean):
-            Whether to normalize proerties by supercell matrix determinants or not. 
-            By default, will normalize all properties.
+            Any physical quantity will always be normalized by supercell size!
 
         data_manager(DataManager):
             The database manager class to use for this instance.
@@ -143,7 +141,6 @@ class Featurizer(MSONable):
                       previous_ce=None,\
                       decorators=[],\
                       other_props=[],\
-                      normalize_props = True,\
                       data_manager=DataManager.auto_load(),\
                       calc_reader=ArchVaspReader()):
 
@@ -152,26 +149,12 @@ class Featurizer(MSONable):
         self.sublat_list = sublat_list
         self.sl_sizes = [len(sl) for sl in self.sublat_list]
 
-        #Check if this cluster expansion should be charged
-        self.is_charged_ce = is_charged
-
         self.ce = previous_ce
 
-        #Handling assignment types.
-        if len(decorators)!=0:
-            self._decorators = decorators
-        else:
-        #Currently only supports charge assignments. If you implement more assginments in the future, please 
-        #modify the following inference conditions, as well.
-            for sl_bits in self.bits:
-                for b in sl_bits:
-                    if not isinstance(b,(Vacancy,Element)):
-                        raise ValueError('Cluster expasion requires Species, not Elements, \
-                                          but no decorations are given!'\
-                                          .format(list(b._properties.keys())))                       
+        #Handling specie decoration types.
+        self._decorators = decorators           
 
         self.other_props = other_props
-        self.normalize_props = normalize_props
         self._dm = data_manager
         self._reader = calc_reader
 
@@ -330,12 +313,11 @@ class Featurizer(MSONable):
                                                    include_pnames = True)
 
         #Normalize properties
-        if self.normalize_props:
-            sc_sizes = fact_unchecked.matrix.map(lambda x: int(abs(round(np.linalg.det(x)))) )
-            e_norms = (np.array(e_norms)/sc_sizes).tolist()
+        sc_sizes = fact_unchecked.matrix.map(lambda x: int(abs(round(np.linalg.det(x)))) )
+        e_norms = (np.array(e_norms)/sc_sizes).tolist()
 
-            for prop_name in other_props:
-                other_props[prop_name] = (np.array(other_props[prop_name])/sc_sizes).tolist()
+        for prop_name in other_props:
+            other_props[prop_name] = (np.array(other_props[prop_name])/sc_sizes).tolist()
 
         fact_table.loc[fact_table.entry_id.isin(eid_unchecked),'e_prim'] = e_norms
         fact_table.loc[fact_table.entry_id.isin(eid_unchecked),'other_props'] = other_props
@@ -371,9 +353,7 @@ class Featurizer(MSONable):
                   comp_file='comps.csv',\
                   fact_file='data.csv',\
                   ce_history_file='ce_history.json',\
-                  decor_file='decors.json',\
-                  decorators_types=[],
-                  decorators_args=[]):
+                  decor_file='decors.json'):
         """
         This method is the recommended way to initialize this object.
         It automatically reads all setting files with FIXED NAMES.
@@ -398,6 +378,7 @@ class Featurizer(MSONable):
             decor_file(str):
                 decorators save file path
                 Default: 'decors.json'
+        Other important arguments to be passed from InputsWrapper:
             decorators_types(List[str]):
                 Class names of decorators to be used. If no
                 decor_file is present, this shall be required. 
@@ -414,28 +395,30 @@ class Featurizer(MSONable):
         options = InputsWrapper.auto_load(options_file=options_file,\
                                           ce_history_file=ce_history_file)
 
-        dm = DataManager.auto_load(options_file='options.yaml',\
-                                   sc_file='sc_mats.csv',\
-                                   comp_file='comps.csv',\
-                                   fact_file='data.csv',\
-                                   ce_history_file='ce_history.json')
+        dm = DataManager.auto_load(options_file=options_file,\
+                                   sc_file=sc_file,\
+                                   comp_file=comp_file,\
+                                   fact_file=fact_file,\
+                                   ce_history_file=ce_history_file)
 
         if os.path.isfile(decor_file):
             with open(decor_file) as :
                 decor_dicts = json.load(decor_file)
                 decorators = [decode_from_dict(d) for d in decor_dicts]
         else:
+            decorators_types = options.featurizer_options['decorators_types']
+            decorators_args = options.featurizer_options['decorators_args']
+
             decorators = [globals()[name](**args) for name,args in \
                           zip(decorators_types,decorators_args)]
 
         return cls(options.prim,
                    bits=options.bits,\
                    sublat_list=options.sublat_list,\
-                   is_charged=options.is_charged,\
+                   is_charged=options.is_charged_ce,\
                    previous_ce=options.last_ce,\
+                   other_props=options.featurizer_options['other_props'],\
                    decorators=decorators,\
-                   other_props=options.other_props,\
-                   normalize_props = options.normalize_props,\
                    data_manager=dm,\
                    calc_reader=options.calc_reader
                   )
