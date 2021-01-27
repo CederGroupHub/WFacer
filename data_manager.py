@@ -210,7 +210,6 @@ class DataManager:
 
         return None
         
-
     def insert_one_supercell(self,new_sc_mat):
         """
         Insert one supercell to the supercell dataframe.
@@ -507,7 +506,6 @@ class DataManager:
 
         return sc_id, comp_id, eid
 
-
     def insert_one_structure(self, s, comp_id=None, comp=None, comp_format='ucoord',\
                               sc_id=None, sc_mat=None,\
                               module_name='enum',**calculated_info):
@@ -563,6 +561,7 @@ class DataManager:
         return self.insert_one_occu(occu,comp_id=comp_id,comp=comp,comp_format=comp_format,\
                                          sc_id=sc_id,sc_mat=sc_mat,\
                                          module_name=module_name,**calculated_info)
+
 
     def remove_entree_by_id(self,entry_ids=[]):
         """

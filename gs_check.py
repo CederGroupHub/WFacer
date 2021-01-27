@@ -202,11 +202,13 @@ class GSChecker:
             return False
 
         cv = self.ce_history[-1].get('cv',{'e_prim':0.001})['e_prim']
+        cv_1 = self.ce_history[-2].get('cv',{'e_prim':0.001})['e_prim']
 
         return hulls_match(self.prev_ce_hull,self.curr_ce_hull,\
-                           e_tol=self.e_tol_in_cv*cv,comp_tol=comp_tol) and \
+                           e_tol=self.e_tol_in_cv*cv,comp_tol=self.comp_tol) and \
                hulls_match(self.prev_dft_hull,self.curr_dft_hull,\
-                           e_tol=self.e_tol_in_cv*cv,comp_tol=comp_tol)
+                           e_tol=self.e_tol_in_cv*cv,comp_tol=self.comp_tol) and \
+               abs(cv_1-cv)/cv_1 < 0.20  #change of cv < 20 %
 
 
     def plot_hull_scatter(self,mode='dft',\

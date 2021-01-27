@@ -5,6 +5,37 @@ Formatting utilities.
 __author__ = 'Fengyu Xie'
 
 
+def merge_dicts(ds,keep_all=False):
+    """
+    Merge dictionaries by taking union of keys. For duplicated keys, will take
+    the first value as default.
+    Args:
+       ds(List[Dict]):
+           A list of dicts to merge.
+       keep_all(Boolean):
+           If true, will return values as a list of all values in all input dicts.
+           If false, only the first occurence will be kept.
+           Default to false.
+    Returns:
+       Dict.
+    """
+    merged = {}
+    if not keep_all:
+        for d in ds:
+            for k in d:
+                if k not in merged:
+                    merged[k]=d[k]
+    else:
+        for d in ds:
+            for k in d:
+                if k not in merged:
+                    merged[k]=[d[k]]
+                else:
+                    merged[k].append(d[k])
+
+    return merged
+
+
 # flatten and de-flatten a 2d array
 def flatten_2d(2d_lst,remove_nan=True):
     """

@@ -7,13 +7,18 @@ __author__ = "Fengyu Xie"
 import itertools
 import numpy as np
 import warnings
+import json
+import yaml
 
 from monty.json import MSONable
-from pymatgen import Structure,Element
+from pymatgen import Structure,Element,Lattice
 
 from smol.cofe import ClusterSubspace,ClusterExpansion
 from smol.cofe.space.domain import get_allowed_species,Vacancy
 from smol.cofe.space.extern import *
+
+from .utils.serial_utils import decode_from_dict,serialize_any
+from .utils.format_utils import merge_dicts
 
 from .comp_space import CompSpace
 from .calc_reader import *
@@ -51,6 +56,11 @@ class InputsWrapper(MSONable):
         self._frac_coords = lat_data.get('frac_coords')
         self._sublat_list = lat_data.get('sublat_list')
         self._prim = lat_data.get('prim')
+        if self._prim is None and (self._bits is None or \
+                                   self._lattice is None or \
+                                   self._frac_coords is None or \
+                                   self._sublat_list is None):
+            raise ValueError("Lattice information not sufficient!")
 
         self._compspace = None     
         self._is_charged_ce = None
@@ -137,6 +147,7 @@ class InputsWrapper(MSONable):
     def compspace(self):
         """
         Compositional space object corresponding to this system.
+        Will be saved and re-utilized!
         Returns:
             CompSpace
         """
@@ -220,7 +231,7 @@ class InputsWrapper(MSONable):
     @property
     def subspace(self):
         """
-        Cluster subspace of this system.
+        Cluster subspace of this system. Will be saved and re-utilized!
         Returns:
             ClusterSubspace
         """
@@ -418,20 +429,145 @@ class InputsWrapper(MSONable):
                        self.gs_checker_options,\
                        self.gs_generator_options\
                       ]
-
-        merged_d = {}
-
         #If conflicting keys appear, will only take the first value.
         #It is your responsibility to avoid conflicting keys!
-        for sub_d in all_options:
-            for key in sub_d:
-                if key not in merged_d:
-                    merged_d[key]=sub_d[key]
 
-        self._options = merged_d
+        self._options = merge_dicts(all_options,keep_all=False)
         return self._options
 
-    #TODO
-    #auto_load
+    @classmethod
+    def from_dict(cls,d):
+        """
+        Deserialize from a dictionary.
+        Args:
+            d(dict):
+                Dictionary containing all lattice information, options.
+                Notice: History information can not be loaded by this method!
+                        It must be loaded separately!
+        Returns:
+            InputsWrapper object.
+        """    
+        lat_keys = ['prim_file','prim',\
+                    'lattice','frac_coords',\
+                    'bits','sublat_list']
+       
+        attr_keys = ['_subspace',\
+                     '_compspace'\
+                    ]
 
-    #auto_save
+        prim_file = d.get('prim_file','prim.cif')
+        prim = d.get('prim')
+        if isinstance(prim,dict):
+            prim = Structure.from_dict(prim)
+        if prim is None:
+            if os.path.isfile(prim_file):
+                prim = Structure.from_file(prim_file)
+
+        lattice = d.get('lattice')
+        if isinstance(lattice,dict):
+            lattice = Lattice.from_dict(lattice)
+
+        frac_coords = d.get('frac_coords')
+
+        bits = d.get('bits')
+        bits_deser = []
+        if bits is not None:
+            sl_bits_deser = []
+            for sl_bits in bits:
+                for b in sl_bits:
+                    if isinstance(b,dict):
+                        sl_bits_deser.append(decode_from_dict(b))
+                    else:
+                        sl_bits_deser.append(b)
+                bits_deser.append(sl_bits_deser)
+
+        lat_vals = [prim,lattice,frac_coords,bits,sublat_list]
+        
+        lat_data = {k:v for k,v in zip(lat_keys[:-1],lat_vals) if v is not None}
+       
+        options = {k:v for k,v in d.items() if k not in lat_keys}
+
+        socket = cls(lat_data,options)
+        #deserialize attributes. Must all be MSONable.
+        for attr_k in attr_keys:
+            attr = d.get(attr_k)
+            if isinstance(attr,dict):
+                attr = decode_from_dict(attr)
+            setattr(socket,attr_k,attr)
+
+        return socket
+
+    def as_dict(self):
+        """
+        Serialize all class data into a dictionary.
+        This dictionary will be saved into json by auto_save.
+        History data will not be saved. It is handled separately!
+        Returns:
+            dict. Containing all serialized lattice data, options,\
+            and important attributes 
+        """     
+        lat_keys = ['prim_file','prim',\
+                    'lattice','frac_coords',\
+                    'bits','sublat_list']
+       
+        attr_keys = ['_subspace',\
+                     '_compspace'\
+                    ]
+
+        ds = [{k:serialize_any(getattr(self,k)) for k in lat_keys},\
+              self.options,\
+              {k:serialize(getattr(self,k[1:])) for k in attr_keys},\
+              {'@module':self.__class__.__module__,\
+               '@class':self.__class__.__name__\
+              }\
+             ]
+
+        return merge_dicts(ds)
+
+    #auto_load
+    @classmethod
+    def auto_load(cls,options_file='options.yaml',\
+                      ce_history_file='ce_history.json',\
+                      wrapper_file='inputs_wrapper.json'):
+        """
+        Automatically load object from files, including 
+        the options file and the history file.
+        If the wrapper_file is already present, will load
+        from the wrapper_file first.
+        Args:
+            options_file(str):
+                CEAuto setting file containing all options.
+            ce_history_file(str):
+                Cluster expansion history file, containing
+                past rmse, cv and eci values.
+            wrapper_file(str):
+                InputsWrapper file. Will try to load this
+                first, if this is present.
+        All paths can be changed, but I don't recommend 
+        you to do so.
+        """
+        with open(options_file) as ops:
+            d = yaml.load(ops,Loader = yaml.FullLoader)
+
+        with open(ce_history_file) as his:
+            history = json.load(his)
+
+        socket = cls.from_dict(d)
+        socket.history = history
+
+        return socket
+
+    #auto_save, will be saved and unchanged after first initialization.
+    def auto_save(self,wrapper_file='inputs_wrapper.json'):
+        """
+        Automatically save this object data into a json file, for 
+        quick initialization in the future.
+ 
+        Args:
+            wrapper_file(str):
+                File for inputs wrapper. 
+
+        Defaults can be changed, but I won't recommend you to do so.
+        """
+        with open(wrapper_file,'w') as fout:
+            json.dump(self.as_dict(),fout)

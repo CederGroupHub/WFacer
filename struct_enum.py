@@ -175,7 +175,7 @@ class StructureEnumerator(MSONable):
         self.max_sc_cond = max_sc_cond
         self.min_sc_angle = min_sc_angle
 
-        self._compspace = CompSpace(self.bits,sl_sizes = self.sl_sizes)
+        self._compspace = compspace
         self.comp_restrictions = comp_restrictions
         self.comp_enumstep = comp_enumstep
 
@@ -200,6 +200,15 @@ class StructureEnumerator(MSONable):
         Current iteration number. This index starts from 0.
         """
         return self.dm.cur_iter_id
+
+    @property
+    def compspace(self):
+        """
+        Constained compositional space of this system.
+        """
+        if self._compspace is None:
+            self._compspace = CompSpace(self.bits,self.sl_sizes)
+        return self._compspace
 
     @property
     def sc_df(self):
@@ -289,8 +298,8 @@ class StructureEnumerator(MSONable):
         print("**Start compositions enumeration")
         for sc_id,m in zip(self.sc_df.sc_id,self.sc_df.matrix):
             scs = int(round(abs(np.linalg.det(m))))
-            ucoords = self._comp_space.frac_grids(sc_size=scs//self.comp_enumstep)
-            comps = self._comp_space.frac_grids(sc_size=scs//self.comp_enumstep)
+            ucoords = self.compspace.frac_grids(sc_size=scs//self.comp_enumstep)
+            comps = self.compspace.frac_grids(sc_size=scs//self.comp_enumstep)
             print("****Enumerated {} compositions under matrix {}."\
                   .format(len(ucoords),m))
             for ucoord,comp in zip(ucoords,comps):
@@ -321,6 +330,8 @@ class StructureEnumerator(MSONable):
     
         No outputs. Updates in self._fact_df
         """
+        #TODO: use schecker to check iteration step
+
         N_keys = len(self.comp_df)
 
         #Check for dumplicated strcture enumerator call

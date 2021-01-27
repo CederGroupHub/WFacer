@@ -170,7 +170,7 @@ class CEFitter(MSONable):
         estimator_params = self.estimator_params
         weighter_params = self.weighter_params       
 
-        if self._schecker.last_completed_module_id<5: #Fitter not finished in current cycle.
+        if self._schecker.after('fit'): #Fitter already finished in current cycle.
             warnings.warn("ECIs aleady fitted for current cycle. Loading from history.")
             self._coefs = self._history[-1]['coefs']
             self._cv = self._history[-1]['cv']

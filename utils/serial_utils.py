@@ -6,6 +6,9 @@ __author__ = 'Fengyu Xie'
 
 from monty.json import MontyDecoder
 import json
+import np
+
+from pymatgen import Composition
 
 # Monty decoding any dict
 def decode_from_dict(d):
@@ -24,7 +27,7 @@ def serialize_comp(comp):
         A serialzed composition, in form: [(specie_dict,num_specie)] or 
         a list of such.
     """
-    if type(comp) == list:
+    if isinstance(comp,list):
         return [serialize_comp(sl_comp) for sl_comp in comp]
 
     return [(sp.as_dict(),n) for sp,n in comp.items()]
@@ -43,7 +46,28 @@ def deser_comp(comp_ser):
         comp(Composition or List of Composition):
             the composition to serialize
     """
-    if type(comp_ser) == list and type(comp_ser[0]) == list:
+    if isinstance(comp_ser,list) and isinstance(comp_ser[0],list):
         return [deser_comp(sl_comp_ser) for sl_comp_ser in comp_ser]
 
-    return {decode_from_dict(sp_d):n for sp_d,n in comp_ser}    
+    return Composition({decode_from_dict(sp_d):n for sp_d,n in comp_ser})
+
+#Serialize anything
+def serialize_any(obj):
+    """
+    Serialize any object or list of objects.
+    Args:
+        obj: 
+            An object, or a multi-dimensional list of objects.
+    Returns:
+        If obj is a multi-dimensional list, will have the same shape
+        as input.
+        If obj is a single object, returns a single dicitonary.
+    Do not use this for composition!
+    """
+    if isinstance(obj,(list,tuple,set,np.ndarray)):
+        return serialize_any([o for o in obj])
+
+    if 'as_dict' in dir(obj):
+        return obj.as_dict()
+
+    return obj #Not serializable, or serialization not needed.

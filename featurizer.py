@@ -366,12 +366,12 @@ class Featurizer(MSONable):
             sc_file(str):
                 path to supercell matrix dataframe file, in csv format.
                 Default: 'sc_mats.csv'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'             
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'             
+            comp_file(str):
+                path to compositions dataframe file, in csv format.
+                Default: 'comps.csv'             
+            fact_file(str):
+                path to fact dataframe file, in csv format.
+                Default: 'data.csv'             
             ce_history_file(str):
                 path to cluster expansion history file.
                 Default: 'ce_history.json'
