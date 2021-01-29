@@ -25,6 +25,8 @@ from .calc_reader import *
 from .calc_writer import *
 from .calc_manager import *
 
+from .config_paths import *
+
 class InputsWrapper(MSONable):
 
     """
@@ -301,11 +303,25 @@ class InputsWrapper(MSONable):
     #initialization. Although they have different pamameters, we can just
     #pass options as dict 
 
+    def _check_w_m_r_types(self):
+        """
+        Check whether writer, manager and reader types match, and can work together. If not, raise Error.
+        Will check by the first three characters of their name strings.
+        """
+        w_type = self._options.get('writer_type','ArchVaspWriter')
+        m_type = self._options.get('manager_type','ArchSGEManager')
+        r_type = self._options.get('reader_type','ArchVaspReader')
+        if w_type[:3]!=m_type[:3] or w_type[:3]!=r_type[:3]:
+            raise ValueError("Calculation reader, writer and manager types do not match, CE workflow can't run!")
+
+
     @property
     def calc_writer_options(self):
         """
         Get calculation writer options.
         """
+        self._check_w_m_r_types()
+
         return {'path':self._options.get('path','vasp_run'),\
                 'lp_file':self._options.get('lp_file'),\
                 'writer_strain':self._options.get('writer_strain',[1.05,1.03,1.01]),\
@@ -313,13 +329,14 @@ class InputsWrapper(MSONable):
                 'ab_setting':self._options.get('ab_setting',{}),\
                 'writer_type':self._options.get('writer_type','ArchVaspWriter')
                }
-        #TODO: need to change calc_writer to allow vasp options.
 
     @property
     def calc_manager_options(self):
         """
         Get calculation manager options.
         """
+        self._check_w_m_r_types()
+
         return {'path':self._options.get('path','vasp_run'),\
                 'lp_file':self._options.get('lp_file'),\
                 'fw_file':self._options.get('fw_file'),\
@@ -329,7 +346,7 @@ class InputsWrapper(MSONable):
                 'ncores':self._options.get('ncores',16),\
                 'time_limit':self._options.get('time_limit',259200),\
                 'check_interval':self._options.get('check_interval',300),\
-                'manager_type':self._options.get('writer_type','ArchSGEManager')
+                'manager_type':self._options.get('manager_type','ArchSGEManager')
                }
 
     @property
@@ -337,6 +354,8 @@ class InputsWrapper(MSONable):
         """
         Get calculation reader options.
         """
+        self._check_w_m_r_types()
+
         return {'path':self._options.get('path','vasp_run'),\
                 'md_file':self._options.get('md_file'),\
                 'reader_type':self._options.get('reader_type','ArchVaspReader')
@@ -391,25 +410,51 @@ class InputsWrapper(MSONable):
                 'handler_args':self._options.get('handler_args',{})
                }
 
-    #Not frequently used
-    @property
-    def calc_writer(self):
+    def get_calc_writer(self,data_manager):
+        """
+        Calculation writer object initialized from the options.
+
+        Inputs:
+            data_manager(DataManager):
+                socket to datamanager object.
+
+                Since the initialization of a DataManager requires InputsWrapper, we have
+                to provide this socket explicitly to avoid loop.
+        Return:
+            BaseCalcWriter
+        """
         name = self.calc_writer_options['writer_type']
         kwargs = self.calc_writer_options.copy()
         kwargs.pop('writer_type')
-        return globals()[name](**kwargs)
+        return globals()[name](data_manager=data_manager,**kwargs)
 
-    #Not frequently used
-    @property
-    def calc_manager(self):
+    def get_calc_manager(self,data_manager):
+        """
+        Calculation manager object initialized from the options.
+        Inputs:
+            data_manager(DataManager):
+                socket to datamanager object.
+
+                Since the initialization of a DataManager requires InputsWrapper, we have
+                to provide this socket explicitly to avoid loop.
+        Return:
+            BaseCalcManager
+        """
         name = self.calc_manager_options['manager_type']
         kwargs = self.calc_manager_options.copy()
         kwargs.pop('manager_type')
-        return globals()[name](**kwargs)
+        return globals()[name](data_manager=data_manager,**kwargs)
 
-    #Used in featurizer
+    #Used in featurizer. Calc reader will usually not be explicitly called.
     @property
     def calc_reader(self):
+        """
+        Calculation reader object initialized from the options.
+        This class does not directly interact with the datamanager. It only serves
+        as an attachment to Featurizer.
+        Return:
+            BaseCalcManager
+        """
         name = self.calc_reader_options['reader_type']
         kwargs = self.calc_reader_options.copy()
         kwargs.pop('reader_type')
@@ -526,31 +571,27 @@ class InputsWrapper(MSONable):
 
     #auto_load
     @classmethod
-    def auto_load(cls,options_file='options.yaml',\
-                      ce_history_file='ce_history.json',\
-                      wrapper_file='inputs_wrapper.json'):
+    def auto_load(cls,ce_history_file=CE_HISTORY_FILE,\
+                      wrapper_file=WRAPPER_FILE,\
+                      options_file=OPTIONS_FILE):
         """
         Automatically load object from files, including 
         the options file and the history file.
         If the wrapper_file is already present, will load
         from the wrapper_file first.
-        Args:
-            options_file(str):
-                CEAuto setting file containing all options.
-            ce_history_file(str):
-                Cluster expansion history file, containing
-                past rmse, cv and eci values.
-            wrapper_file(str):
-                InputsWrapper file. Will try to load this
-                first, if this is present.
+
         All paths can be changed, but I don't recommend 
         you to do so.
         """
-        with open(options_file) as ops:
-            d = yaml.load(ops,Loader = yaml.FullLoader)
-
         with open(ce_history_file) as his:
             history = json.load(his)
+
+        if os.path.isfile(wrapper_file):
+            with open(wrapper_file) as ops:
+                d = json.load(ops)
+        else:
+            with open(options_file) as ops:
+                d = yaml.load(ops,Loader = yaml.FullLoader)
 
         socket = cls.from_dict(d)
         socket.history = history
@@ -558,14 +599,10 @@ class InputsWrapper(MSONable):
         return socket
 
     #auto_save, will be saved and unchanged after first initialization.
-    def auto_save(self,wrapper_file='inputs_wrapper.json'):
+    def auto_save(self,wrapper_file=WRAPPER_FILE):
         """
         Automatically save this object data into a json file, for 
         quick initialization in the future.
- 
-        Args:
-            wrapper_file(str):
-                File for inputs wrapper. 
 
         Defaults can be changed, but I won't recommend you to do so.
         """

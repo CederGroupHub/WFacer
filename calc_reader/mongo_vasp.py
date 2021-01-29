@@ -28,8 +28,9 @@ class MongoVaspReader(BaseReader):
     be saved as dictionaries into disk.
 
     Args:
-        mongod(VaspCalcDb):
-            Calculation database storing vasp outputs. Default to atomate settings.
+        md_file(str):
+            Path to mongodb setting file. The calculations will be read from
+            this database.
     """
 
     DEFAULT_MONGO_PATH = os.path.join(atomate.__path__[0],'config/json')

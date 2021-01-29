@@ -18,6 +18,8 @@ from .data_manager import DataManager
 
 from .utils.weight_utils import weights_from_fact
 
+from .config_paths import *
+
 class CEFitter(MSONable):
     """
     You may not want to initialize CEFitter directly.
@@ -348,7 +350,7 @@ class CEFitter(MSONable):
         return fig,ax
             
 
-    def auto_save(self,update_his= True,ce_history_file = 'ce_history.json'):
+    def auto_save(self,update_his= True,ce_history_file = CE_HISTORY_FILE):
         """
         Serialization to file.
         Make sure to call it only ONCE for each CE iteration!
@@ -365,12 +367,11 @@ class CEFitter(MSONable):
 
 
     @classmethod
-    def auto_load(cls,options_file='options.yaml',\
-                  sc_file='sc_mats.csv',\
-                  comp_file='comps.csv',\
-                  fact_file='data.csv',\
-                  ce_history_file='ce_history.json',\
-                 ):
+    def auto_load(cls,options_file=OPTIONS_FILE,\
+                      sc_file=SC_FILE,\
+                      comp_file=COMP_FILE,\
+                      fact_file=FACT_FILE,\
+                      ce_history_file=CE_HISTORY_FILE):
         """
         This method is the recommended way to initialize this object.
         It automatically reads all setting files with FIXED NAMES.
@@ -383,12 +384,12 @@ class CEFitter(MSONable):
             sc_file(str):
                 path to supercell matrix dataframe file, in csv format.
                 Default: 'sc_mats.csv'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'             
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'             
+            comp_file(str):
+                path to compositions file, in csv format.
+                Default: 'comps.csv'             
+            fact_file(str):
+                path to enumerated structures dataframe file, in csv format.
+                Default: 'data.csv'             
             ce_history_file(str):
                 path to cluster expansion history file.
                 Default: 'ce_history.json'

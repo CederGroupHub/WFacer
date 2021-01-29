@@ -7,6 +7,9 @@ __author__ = "Fengyu Xie"
 from abc import ABC, abstractmethod
 import numpy as np
 
+from ..inputs_wrapper import InputsWrapper
+from ..config_paths import *
+
 class BaseReader(ABC):
     """
     A calculation reader class, to read calculation results from 
@@ -19,7 +22,7 @@ class BaseReader(ABC):
     the fact table. Everything in this class shall be temporary, and will not 
     be saved as dictionaries into disk.
     """
-    def __init__(self):
+    def __init__(self,**kwargs):
         pass
 
     @abstractmethod
@@ -108,3 +111,29 @@ class BaseReader(ABC):
             entree.
         """
         return 
+
+    @classmethod
+    def auto_load(cls,options_file=OPTIONS_FILE,\
+                      sc_file=SC_FILE,\
+                      comp_file=COMP_FILE,\
+                      fact_file=FACT_FILE,\
+                      ce_history_file=CE_HISTORY_FILE):
+        """
+        This method is the recommended way to initialize this object.
+        It automatically reads all setting files with FIXED NAMES.
+        YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
+        YOU MAY BREAK THE INITIALIZATION PROCESS!
+        Args:
+            options_file(str):
+                path to options file. Options must be stored as yaml
+                format. Default: 'options.yaml'
+            ce_history_file(str):
+                path to cluster expansion history file.
+                Default: 'ce_history.json'
+        Returns:
+            BaseReader object.
+        """        
+        options = InputsWrapper.auto_load(options_file=options_file,\
+                                          ce_history_file=ce_history_file)
+
+        return cls(**options.calc_reader_options)

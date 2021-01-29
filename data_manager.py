@@ -21,6 +21,8 @@ from .comp_space import CompSpace
 from .inputs_wrapper import InputsWrapper #Used in auto_load()
 from .status_check import StatusChecker #Used in auto_load()
 
+from .config_paths import *
+
 class DataManager:
     """
     You are not recommended to call __init__ directly.
@@ -143,6 +145,7 @@ class DataManager:
             calc_status(str):
                 A string of two characters, specifying the calculation status of the current entry.
                 'NC': not calculated.(not submitted or waiting.)
+                'CC': Calculation written, but calculation not finished.
                 'CL': calculation finished.
                 'CF': calculated, and failed (or exceeded wall time).
                 'AF': assignment failed. For example, not charge neutral after charge assignment.
@@ -612,6 +615,31 @@ class DataManager:
         self._reassign_comp_ids()
         self._reassign_sc_ids()
 
+    def get_eid_w_status(self,status='NC'):
+        """
+        Get entree indices with a status.
+        Args:
+            status(str):
+                The status that you wish to query.
+        Returns: 
+            List[int], indices in the fact table with that
+            calc_status.
+        """
+        filt_ = self.fact_df.calc_status==status:
+        return self.fact_df[filt_].entry_id.tolist()
+
+    def set_status(self,eids = [],status='NC'):
+        """
+        Set calc_status column of corresponding entree indices in the fact table.
+        Args:
+            eids(List[int]):
+                entree indices to rewrite calc_status
+            status(str):
+                The status to rewrite with. See self.fact_df for allowed values.
+        """
+        filt_ = self._fact_df.entry_id.isin(eids)
+        self._fact_df.loc[filt_,'calc_status']=status
+
     def reset(self):
         """
         Reset all calculation data. Use this at your own risk!
@@ -696,10 +724,11 @@ class DataManager:
 
 
     @classmethod
-    def auto_load(cls,options_file='options.yaml',\
-                  sc_file='sc_mats.csv',comp_file='comps.csv',\
-                  fact_file='data.csv',\
-                  ce_history_file='ce_history.json'):
+    def auto_load(cls,options_file=OPTIONS_FILE,\
+                      sc_file=SC_FILE,\
+                      comp_file=COMP_FILE,\
+                      fact_file=FACT_FILE,\
+                      ce_history_file=CE_HISTORY_FILE):
         """
         This method is the recommended way to initialize this object.
         It automatically reads all setting files with FIXED NAMES.
@@ -712,19 +741,18 @@ class DataManager:
             sc_file(str):
                 path to supercell matrix dataframe file, in csv format.
                 Default: 'sc_mats.csv'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'             
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'             
+            comp_file(str):
+                path to compositions file, in csv format.
+                Default: 'comps.csv'             
+            fact_file(str):
+                path to enumerated structures dataframe file, in csv format.
+                Default: 'data.csv'             
             ce_history_file(str):
                 path to cluster expansion history file.
                 Default: 'ce_history.json'
-
         Returns:
              DataManager object.
-        """
+        """        
         options = InputsWrapper.auto_load(options_file=options_file,\
                                           ce_history_file=ce_history_file)
 
@@ -745,24 +773,9 @@ class DataManager:
         return socket
 
 
-    def auto_save(self,sc_file='sc_mats.csv',comp_file='comps.csv',\
-                  fact_file='data.csv'):
+    def auto_save(self,sc_file=SC_FILE,comp_file=COMP_FILE,fact_file=FACT_FILE):
         """
-        Saves processed data to the dataframe. 
-        Notice: option file is read-only!
-        Args:
-            options_file(str):
-                path to options file. Options must be stored as yaml
-                format. Default: 'options.yaml'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'             
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'            
+        Saves processed data to the dataframe csvs.
         """
         #Option file is read_only
         self._save_dataframes(sc_file=sc_file,comp_file=comp_file,\

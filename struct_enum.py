@@ -35,6 +35,8 @@ from .comp_space import CompSpace
 from .data_manager import DataManager 
 from .inputs_wrapper import InputsWrapper
 
+from .config_paths import *
+
 class StructureEnumerator(MSONable):
     """
     Dircet initialization no longer recommended!
@@ -268,6 +270,8 @@ class StructureEnumerator(MSONable):
             add_new(Boolean):
                 If true, will add matices to the supercell dataframe, even if the
                 current dataframe is not empty.
+        Return:
+            enumerated supercell matrices(3*3 List)
         """
         print("**Start supercell enumeration.")
         mats = enumerate_matrices(self.sc_size,self.prim.lattice,\
@@ -279,6 +283,7 @@ class StructureEnumerator(MSONable):
             print("  {}".format(m))
         if len(self.sc_df)==0:
             self.set_sc_matrices(matrices=mats,add_new = add_new)
+        return mat
 
     def enumerate_comps(self,add_new=False):
         """
@@ -287,6 +292,8 @@ class StructureEnumerator(MSONable):
             add_new(Boolean):
                 If true, will add composition to the comp dataframe, even if the
                 current dataframe is not empty.
+        Return:
+            List of enumerated compositions by sublattice.
         """
         if len(self.comp_df)>0 and not add_new:
             warnings.warn("Attempt to set composition after compositions enumeration. Skipping")
@@ -299,12 +306,15 @@ class StructureEnumerator(MSONable):
         for sc_id,m in zip(self.sc_df.sc_id,self.sc_df.matrix):
             scs = int(round(abs(np.linalg.det(m))))
             ucoords = self.compspace.frac_grids(sc_size=scs//self.comp_enumstep)
-            comps = self.compspace.frac_grids(sc_size=scs//self.comp_enumstep)
+            comps = self.compspace.frac_grids(sc_size=scs//self.comp_enumstep,form='composition')
+
             print("****Enumerated {} compositions under matrix {}."\
                   .format(len(ucoords),m))
             for ucoord,comp in zip(ucoords,comps):
                 if check_comp_restriction(comp,self.sl_sizes,self.comp_restrictions):
                     _,comp_id = self._dm.insert_one_comp(ucoord,sc_id=sc_id)
+
+        return comps
 
     #TODO: add simulator support, and parallelize.
     def generate_structures(self, n_per_key = 3, keep_gs = True,weight_by_comp=True):
@@ -328,7 +338,8 @@ class StructureEnumerator(MSONable):
                 that composition in the whole configurational space. 
                 Default is True.
     
-        No outputs. Updates in self._fact_df
+        Return:
+            Newly generated structures.
         """
         #TODO: use schecker to check iteration step
 
@@ -487,9 +498,9 @@ class StructureEnumerator(MSONable):
 
         print("*Added with {} new unique structures.".format(self.n_strs-n_strs_init))
             
-    def clear_structures(self):
+    def clear(self):
         """
-        Clear enumerated structures.
+        Clear all enumerated data. Use this at your own risk! 
         """
         warnings.warn("All previous enumerations cleared. Do this at your own risk!")
         self._dm.reset()
@@ -687,24 +698,18 @@ class StructureEnumerator(MSONable):
 
         return random.choice(rand_occus[:10]), comp_weight
 
-    def auto_save(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+    def auto_save(self,sc_file=SC_FILE,comp_file=COMP_FILE,fact_file=FACT_FILE):
         """
-        Automatically save dataframes into specified files.
-        Args:
-            sc_file(str):
-                supercell matrix file path
-            comp_file(str):
-                composition file path
-            fact_file(str):
-                fact table file path
-        All optional, but I don't recommend you to change the paths.
+        Automatically save dataframes into pre-configured paths.
         """
         self._dm.auto_save(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
 
     @classmethod
-    def auto_load(cls,options_file='options.yaml',\
-                  sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv',\
-                  ce_history_file='ce_history.json'):
+    def auto_load(cls,options_file=OPTIONS_FILE,\
+                      sc_file=SC_FILE,\
+                      comp_file=COMP_FILE,\
+                      fact_file=FACT_FILE,\
+                      ce_history_file=CE_HISTORY_FILE):
         """
         This method is the recommended way to initialize this object.
         It automatically reads all setting files with FIXED NAMES.
@@ -717,18 +722,17 @@ class StructureEnumerator(MSONable):
             sc_file(str):
                 path to supercell matrix dataframe file, in csv format.
                 Default: 'sc_mats.csv'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'             
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'             
+            comp_file(str):
+                path to compositions file, in csv format.
+                Default: 'comps.csv'             
+            fact_file(str):
+                path to enumerated structures dataframe file, in csv format.
+                Default: 'data.csv'             
             ce_history_file(str):
                 path to cluster expansion history file.
                 Default: 'ce_history.json'
-
         Returns:
-             StructureEnumerator object.
+             Structure enumerator object.
         """
         options = InputsWrapper.auto_load(options_file=options_file,\
                                           ce_history_file=ce_history_file)

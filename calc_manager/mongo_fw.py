@@ -1,6 +1,5 @@
 """
-Launchpad calculation manager class. These classes DO NOT MODIFY 
-fact table!
+Mongodb + Fireworks calculation manager class. 
 """
 __author__ = "Fengyu Xie"
 
@@ -14,6 +13,7 @@ from fireworks.fw_config import QUEUEADAPTER_LOC,LAUNCHPAD_LOC,FWORKER_LOC
 from fireworks.utilities.fw_serializers import load_object_from_file
 
 from .base import BaseManager
+from ..data_manager import DataManager
 
 class MongoFWManager(BaseManager):
     """
@@ -29,18 +29,6 @@ class MongoFWManager(BaseManager):
           I have not implemented any function for checking and re-submission, so
           take care if you may have sudden computer power-off!
 
-    Args:
-        kill_command(str):
-            Killing command of your specific queue. If you queue system belongs to:
-            PBS, SGE, Cobalt, SLURM, LoadLeveler, LoadSharingFacility, or MOAB, and
-            you have set up your atomate configurations correctly, you shouldn't need
-            to specify this value.
-        lp_file(str):
-            path to launchpad setting file. If not given, will use atomate default.
-        fw_file(str):
-            path to fireworker setting file. If not given, will use atomate default.
-        qa_file(str):
-            path to queue adapter file. If not given, will use atomate default.
     """
     default_kill_commands = 
     {
@@ -53,11 +41,38 @@ class MongoFWManager(BaseManager):
         "MOAB": "canceljob"
     }
 
-    def __init__(self,lp_file=None,\
+    def __init__(self,time_limit=345600,\
+                      check_interval=300,\
+                      lp_file=None,\
                       fw_file=None,\
                       qa_file=None,\
                       kill_command=None,\
+                      data_manager=DataManager.auto_load(),\
                       **kwargs):
+        """
+        Args:
+            time_limit(float):
+                Time limit for all calculations to finish. Unit is second.
+                Default is 4 days.
+            check_interval(float):
+                Interval to check status of all computations in queue. Unit is second.
+                Default is every 5 mins.
+            data_manager(DataManager):
+                An interface to the calculated and enumerated data.
+            kill_command(str):
+                Killing command of your specific queue. If you queue system belongs to:
+                PBS, SGE, Cobalt, SLURM, LoadLeveler, LoadSharingFacility, or MOAB, and
+                you have set up your atomate configurations correctly, you shouldn't need
+                to specify this value.
+            lp_file(str):
+                path to launchpad setting file. If not given, will use atomate default.
+            fw_file(str):
+                path to fireworker setting file. If not given, will use atomate default.
+            qa_file(str):
+                path to queue adapter file. If not given, will use atomate default.
+        """
+        super().__init__(time_limit=time_limit,check_interval=check_interval,\
+                         data_manager=data_manager,**kwargs)
 
         self.root_name = os.path.split(os.getcwd())[-1]
 

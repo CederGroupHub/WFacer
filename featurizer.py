@@ -10,6 +10,7 @@ import numpy as np
 import os
 from collections import OrderedDict
 from monty.json import MSONable
+from copy import deepcopy
 
 from pymatgen import Structure,Lattice,Element,Specie,DummySpecie,Species
 from pymatgen.core.periodic_table import get_el_sp
@@ -23,6 +24,8 @@ from .data_manager import DataManager
 from .calc_reader import *
 
 from .utils.serial_utils import decode_from_dict
+
+from .config_paths import *
 
 def decorate_single(s,decor_keys,decor_values):
     """
@@ -142,7 +145,7 @@ class Featurizer(MSONable):
                       decorators=[],\
                       other_props=[],\
                       data_manager=DataManager.auto_load(),\
-                      calc_reader=ArchVaspReader()):
+                      calc_reader=ArchVaspReader.auto_load()):
 
         self.prim = prim
         self.bits = bits
@@ -324,21 +327,12 @@ class Featurizer(MSONable):
         
         self._dm._fact_df = fact_table
 
-    def auto_save(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv',\
-                       decor_file='decors.json'):
+    def auto_save(self,sc_file=SC_FILE,comp_file=COMP_FILE,fact_file=FACT_FILE,
+                       decor_file=DECOR_FILE):
         """
         Automatically save dataframes into specified files, then saves
         trained classifiers.
 
-        Args:
-            sc_file(str):
-                supercell matrix file path
-            comp_file(str):
-                composition file path
-            fact_file(str):
-                fact table file path
-            decor_file(str):
-                decorators save file path
         All optional, but I don't recommend you to change the paths.
         """
         self._dm.auto_save(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
@@ -348,12 +342,11 @@ class Featurizer(MSONable):
             json.dump(decorator_dicts,fout)
 
     @classmethod
-    def auto_load(cls,options_file='options.yaml',\
-                  sc_file='sc_mats.csv',\
-                  comp_file='comps.csv',\
-                  fact_file='data.csv',\
-                  ce_history_file='ce_history.json',\
-                  decor_file='decors.json'):
+    def auto_load(cls,options_file=OPTIONS_FILE,\
+                      sc_file=SC_FILE,\
+                      comp_file=COMP_FILE,\
+                      fact_file=FACT_FILE,\
+                      ce_history_file=CE_HISTORY_FILE):
         """
         This method is the recommended way to initialize this object.
         It automatically reads all setting files with FIXED NAMES.
@@ -367,28 +360,14 @@ class Featurizer(MSONable):
                 path to supercell matrix dataframe file, in csv format.
                 Default: 'sc_mats.csv'
             comp_file(str):
-                path to compositions dataframe file, in csv format.
+                path to compositions file, in csv format.
                 Default: 'comps.csv'             
             fact_file(str):
-                path to fact dataframe file, in csv format.
+                path to enumerated structures dataframe file, in csv format.
                 Default: 'data.csv'             
             ce_history_file(str):
                 path to cluster expansion history file.
                 Default: 'ce_history.json'
-            decor_file(str):
-                decorators save file path
-                Default: 'decors.json'
-        Other important arguments to be passed from InputsWrapper:
-            decorators_types(List[str]):
-                Class names of decorators to be used. If no
-                decor_file is present, this shall be required. 
-                Otherwise we will initialize decorators from saves,
-                and this argument will be ignored.
-            decorators_args(List[Dict]):
-                parameters required to initialize decorators, each
-                dict for a corresponding decorator.
-                See species_decorator module for more information.
-       
         Returns:
              Featurizer object.
         """
@@ -412,6 +391,9 @@ class Featurizer(MSONable):
             decorators = [globals()[name](**args) for name,args in \
                           zip(decorators_types,decorators_args)]
 
+
+        reader = deepcopy(options.calc_reader)
+
         return cls(options.prim,
                    bits=options.bits,\
                    sublat_list=options.sublat_list,\
@@ -420,5 +402,5 @@ class Featurizer(MSONable):
                    other_props=options.featurizer_options['other_props'],\
                    decorators=decorators,\
                    data_manager=dm,\
-                   calc_reader=options.calc_reader
+                   calc_reader=reader
                   )

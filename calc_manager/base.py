@@ -1,6 +1,5 @@
 """
-Base calculation manager class. These classes DO NOT MODIFY 
-fact table!
+Base calculation manager class.
 """
 __author__ = "Fengyu Xie"
 
@@ -8,6 +7,11 @@ from abc import ABC, abstractmethod
 import numpy as np
 import time
 from datetime import datetime
+
+from ..data_manager import DataManager
+from ..inputs_wrapper import InputsWrapper
+
+from ..config_paths import *
 
 class BaseManager(ABC):
     """
@@ -22,18 +26,27 @@ class BaseManager(ABC):
     the fact table. Everything in this class shall be temporary, and will not 
     be saved as dictionaries into disk.
 
-    Args:
-        time_limit(float):
-            Time limit for all calculations to finish. Unit is second.
-            Default is 3 days.
-        check_interval(float):
-            Interval to check status of all computations in queue. Unit is second.
-            Default is every 5 mins.
+    Note: Use get_calc_manager method in InputsWrapper to get any Manager object,
+          or auto_load.
+          Direct init not recommended!
     """
-    def __init__(self,time_limit=259200,check_interval=300):
+    def __init__(self,time_limit=345600,check_interval=300,\
+                      data_manager=DataManager.auto_load(),**kwargs):
+        """
+        Args:
+            time_limit(float):
+                Time limit for all calculations to finish. Unit is second.
+                Default is 4 days.
+            check_interval(float):
+                Interval to check status of all computations in queue. Unit is second.
+                Default is every 5 mins.
+            data_manager(DataManager):
+                An interface to the calculated and enumerated data.
+        """
         self.time_limit=time_limit
         self.check_interval=check_interval
-        
+        self._dm = data_manager        
+
     @abstractmethod
     def entree_in_queue(self,entry_ids):
         """
@@ -108,6 +121,20 @@ class BaseManager(ABC):
 
         return (t_quota>0)
 
+    def auto_run(self):
+        """
+        Automatically submits entree with calc_status 'CC'(computing), and 
+        mark them as 'CL'(computation finished) upon completion.
+
+        The modification in the data repository will be flushed upon update.
+        No return value.
+        """
+        eids = self._dm.get_eid_w_status('CC')
+        _ = self.run_tasks(eids)
+        #Will mark as finished, even if computations exceed walltime limit.
+        self._dm.set_status(eids,'CL')
+        self._dm.auto_save()  #flush data
+
     @abstractmethod
     def kill_tasks(self,entry_ids=None):
         """
@@ -127,3 +154,44 @@ class BaseManager(ABC):
         Submit entree to queue.
         """
         return  
+
+    @classmethod
+    def auto_load(cls,options_file=OPTIONS_FILE,\
+                      sc_file=SC_FILE,\
+                      comp_file=COMP_FILE,\
+                      fact_file=FACT_FILE,\
+                      ce_history_file=CE_HISTORY_FILE):
+        """
+        This method is the recommended way to initialize this object.
+        It automatically reads all setting files with FIXED NAMES.
+        YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
+        YOU MAY BREAK THE INITIALIZATION PROCESS!
+        Args:
+            options_file(str):
+                path to options file. Options must be stored as yaml
+                format. Default: 'options.yaml'
+            sc_file(str):
+                path to supercell matrix dataframe file, in csv format.
+                Default: 'sc_mats.csv'
+            comp_file(str):
+                path to compositions file, in csv format.
+                Default: 'comps.csv'             
+            fact_file(str):
+                path to enumerated structures dataframe file, in csv format.
+                Default: 'data.csv'             
+            ce_history_file(str):
+                path to cluster expansion history file.
+                Default: 'ce_history.json'
+        Returns:
+            BaseManager object.
+        """
+        options = InputsWrapper.auto_load(options_file=options_file,\
+                                          ce_history_file=ce_history_file)
+
+        dm = DataManager.auto_load(options_file=options_file,\
+                                   sc_file=sc_file,\
+                                   comp_file=comp_file,\
+                                   fact_file=fact_file,\
+                                   ce_history_file=ce_history_file)
+
+        return cls(data_manager=dm,**options.calc_manager_options)

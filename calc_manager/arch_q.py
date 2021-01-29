@@ -12,6 +12,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 
 from .base import BaseManager
+from ..data_manager import DataManager
 
 
 ####If you ever define your own queue, you can write your own class like this.
@@ -28,41 +29,49 @@ class ArchQueueManager(BaseManager,ABC):
 
     For materials project users, this manager is not recommended!
 
-    Attributes:
-        path(str in path format):
-            path to calculations archieve
-        queue_name(str):
-            name of queueing system. Currently supports SGE(sun
-            grid engine).
-        ab_command(str):
-            Command used to call the ab_initio program in your system. 
-            For example, in SGE+mpiexec environment with vasp 5.4.4, we can use:
-            'mpiexec.hydra -n $NSLOTS pvasp.5.4.4.intel >> vasp.out' 
-            It is highly recommended that you figure out what your command 
-            should be.
-        ncores(int):
-            Number of cores used in each computation. Default is 16,
-            number of CPU's per node in a common SGE machine.     
-        time_limit(float):
-            Time limit for all calculations to finish. Unit is second.
-            Default is 3 days.
-        check_interval(float):
-            Interval to check status of all computations in queue. Unit is second.
-            Default is every 5 mins.
-
     NOTE: This class uses root folder name (where you run CEAuto under) and entry
           ids to name queue jobs, so be sure that:
           1, No two CE folders have the same name!
           2, Better not to include underscore in your CE folder names.
+
+    Note: Use get_calc_manager method in InputsWrapper to get any Manager object,
+          or auto_load.
+          Direct init not recommended!
     """
         submission_template = ""
         submission_command = ""
         kill_command = ""
 
     def __init__(self,path='vasp_run', ab_command='vasp', ncores = 16,\
-                      time_limit=259200,check_interval=300):
-
-        super().__init__(time_limit=time_limit,check_interval=check_interval)
+                      time_limit=345600,check_interval=300,\
+                      data_manager=DataManager.auto_load(),**kwargs):
+        """
+        Args:
+            path(str in path format):
+                path to calculations archieve
+            queue_name(str):
+                name of queueing system. Currently supports SGE(sun
+                grid engine).
+            ab_command(str):
+                Command used to call the ab_initio program in your system. 
+                For example, in SGE+mpiexec environment with vasp 5.4.4, we can use:
+                'mpiexec.hydra -n $NSLOTS pvasp.5.4.4.intel >> vasp.out' 
+                It is highly recommended that you figure out what your command 
+                should be.
+            ncores(int):
+                Number of cores used in each computation. Default is 16,
+                number of CPU's per node in a common SGE machine.     
+            time_limit(float):
+                Time limit for all calculations to finish. Unit is second.
+                Default is 4 days.
+            check_interval(float):
+                Interval to check status of all computations in queue. Unit is second.
+                Default is every 5 mins.
+            data_manager(DataManager):
+                An interface to the calculated and enumerated data.
+        """
+        super().__init__(time_limit=time_limit,check_interval=check_interval,\
+                         data_manager=data_manager)
         self.path = path
         self.ab_command = ab_command
         self.ncores = ncores
@@ -128,32 +137,14 @@ class ArchSGEManager(ArchQueueManager):
 
     For materials project users, this manager is not recommended!
 
-    Attributes:
-        path(str in path format):
-            path to calculations archieve
-        queue_name(str):
-            name of queueing system. Currently supports SGE(sun
-            grid engine).
-        ab_command(str):
-            Command used to call the ab_initio program in your system. 
-            For example, in SGE+mpiexec environment with vasp 5.4.4, we can use:
-            'mpiexec.hydra -n $NSLOTS pvasp.5.4.4.intel >> vasp.out' 
-            It is highly recommended that you figure out what your command 
-            should be.
-        ncores(int):
-            Number of cores used in each computation. Default is 16,
-            number of CPU's per node in a common SGE machine.     
-        time_limit(float):
-            Time limit for all calculations to finish. Unit is second.
-            Default is 3 days.
-        check_interval(float):
-            Interval to check status of all computations in queue. Unit is second.
-            Default is every 5 mins.
-
     NOTE: This class uses root folder name (where you run CEAuto under) and entry
           ids to name queue jobs, so be sure that:
           1, No two CE folders have the same name!
           2, Better not to include underscore in your CE folder names.
+
+    Note: Use get_calc_manager method in InputsWrapper to get any Manager object,
+          or auto_load.
+          Direct init not recommended!
     """
         submission_template = "#!/bin/bash\n#$ -cwd\n#$ -j y\n"+\
                                    "#$ -N {*jobname*}\n#$ -m es\n#$ -V\n"+\
@@ -164,10 +155,37 @@ class ArchSGEManager(ArchQueueManager):
         kill_command = "qdel"
 
     def __init__(self,path='vasp_run', ab_command='vasp', ncores = 16,\
-                      time_limit=259200,check_interval=300,**kwargs):
+                      time_limit=345600,check_interval=300,\
+                      data_manager=DataManager.auto_load(),**kwargs):
+        """
+        Args:
+            path(str in path format):
+                path to calculations archieve
+            queue_name(str):
+                name of queueing system. Currently supports SGE(sun
+                grid engine).
+            ab_command(str):
+                Command used to call the ab_initio program in your system. 
+                For example, in SGE+mpiexec environment with vasp 5.4.4, we can use:
+                'mpiexec.hydra -n $NSLOTS pvasp.5.4.4.intel >> vasp.out' 
+                It is highly recommended that you figure out what your command 
+                should be.
+            ncores(int):
+                Number of cores used in each computation. Default is 16,
+                number of CPU's per node in a common SGE machine.     
+            time_limit(float):
+                Time limit for all calculations to finish. Unit is second.
+                Default is 4 days.
+            check_interval(float):
+                Interval to check status of all computations in queue. Unit is second.
+                Default is every 5 mins.
+            data_manager(DataManager):
+                An interface to the calculated and enumerated data.
+        """
 
         super().__init__(path=path, ab_command=ab_command, ncores=ncores,\
-                      time_limit=time_limit, check_interval=check_interval)
+                      time_limit=time_limit, check_interval=check_interval,\
+                      data_manager=data_manager,**kwargs)
 
     def entree_in_queue(self,entry_ids):
         """

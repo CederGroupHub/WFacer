@@ -15,6 +15,7 @@ from atomate.vasp.fireworks import OptimizeFW,StaticFW
 from fireworks import LaunchPad,Workflow
 
 from .base import BaseWriter
+from ..data_manger import DataManager
 
 def wf_ce_sample(structure, entry_id, root_name = None, is_metal=False,\
                  relax_set_params = None, static_set_params = None,\
@@ -86,30 +87,39 @@ class MongoVaspWriter(BaseWriter):
     It's your responsibility not to dupe-write a directory and not to waste
     your own time.
 
-    Attributes: 
-        lp_file(str):
-            path to launchpad setting file. Default to None, then launchpad will
-            auto load based on configuration.
-        writer_strain(1*3 or 3*3 arraylike):
-            Strain matrix to apply to structure before writing as 
-            inputs. This helps breaking symmetry, and relax to a
-            more reasonable equilibrium structure.
-        is_metal(Boolean):
-            If true, will use vasp set specifically designed for 
-            metals calculation (MPMetalRelaxSet)
-        ab_setting(Dict):
-            Pass ab-initio software options. For vasp,
-            look at pymatgen.vasp.io.sets doc.
-            May have two keys, 'relax' and 'static'.
-            See pymaten.vasp.io.sets for detail.
+    Note: Use get_calc_write method in InputsWrapper to get any Writer object,
+          or auto_load.
+          Direct init not recommended!
     """
     def __init__(self,lp_file=None,\
                  writer_strain=[1.05,1.03,1.01],\
                  is_metal = False,\
                  ab_setting ={},\
+                 data_manger = DataManager.auto_load(),\
                  **kwargs):
-        
-        super().init_(writer_strain=writer_strain,ab_setting=ab_setting,**kwargs)
+        """
+        Args: 
+            lp_file(str):
+                path to launchpad setting file. Default to None, then launchpad will
+                auto load based on configuration.
+            writer_strain(1*3 or 3*3 arraylike):
+                Strain matrix to apply to structure before writing as 
+                inputs. This helps breaking symmetry, and relax to a
+                more reasonable equilibrium structure.
+            is_metal(Boolean):
+                If true, will use vasp set specifically designed for 
+                metals calculation (MPMetalRelaxSet)
+            ab_setting(Dict):
+                Pass ab-initio software options. For vasp,
+                look at pymatgen.vasp.io.sets doc.
+                May have two keys, 'relax' and 'static'.
+                See pymaten.vasp.io.sets for detail.
+            data_manager(DataManager):
+                A socket to computational data repository.
+        """      
+ 
+        super().init_(writer_strain=writer_strain,ab_setting=ab_setting,\
+                      data_manger=data_manager,**kwargs)
 
         self.root_name = os.path.split(os.getcwd())[-1]
         self.is_metal = is_metal
@@ -118,21 +128,6 @@ class MongoVaspWriter(BaseWriter):
             self._lpad = LaunchPad.from_file(lp_file)
         else:
             self._lpad = LaunchPad.auto_load()
-        
-    def write_tasks(self,strs_undeformed,entry_ids,*args,**kwargs):
-        """
-        Write workflows and add to fireworks launchpad.
-        Inputs(Order of arguments matters):
-            strs_undeformed(List of Structure):
-                Structures in original lattice.(Not deformed.)
-            entry_ids(List of ints):
-                list of entry indices to be checked. Indices in a
-                fact table starts from 0
-                Must be provided.       
-
-        No return value.
-        """
-        super().write_tasks(strs_undeformed,entry_ids,*args,**kwargs)
 
     def _write_single(self,structure,eid,*args,**kwargs):
         """

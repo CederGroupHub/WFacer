@@ -10,6 +10,8 @@ import json
 import pandas as pd
 import os
 
+from .config_paths import *
+
 __author__ = 'Fengyu Xie'
 
 class StatusChecker:
@@ -37,7 +39,7 @@ class StatusChecker:
     #GS considered as the first module in an iteration(except for
     #iteration 0, the first one).
 
-    modules = ['gs','enum','calc','feat','fit']
+    modules = ['gs','enum','write','calc','feat','fit']
 
     def __init__(self,sc_df,comp_df,fact_df,history=[]):
 
@@ -49,6 +51,7 @@ class StatusChecker:
 
     def _get_iter_id_last_module(self):
         """
+        Get the current iteration index and the last completed module name
         Returns:
             iter_id, last_module(str|Nonetype)
         """
@@ -68,8 +71,8 @@ class StatusChecker:
             else:
                 return max_iter_id, 'gs'
 
-        #TODO: mark entree as 'CL' after computation in calc_manager?    
-        #TODO: enable datamanager support in calc_manager.
+        if 'CC' in last_df.calc_status:
+            return max_iter_id, 'write'
 
         if 'CL' in last_df.calc_status: 
             return max_iter_id, 'calc'  
@@ -167,34 +170,21 @@ class StatusChecker:
         return sc_df, comp_df, fact_df
 
     @classmethod
-    def auto_load(cls,sc_file='sc_mats.csv',\
-                      comp_file='comps.csv',\
-                      fact_file='data.csv',\
-                      ce_history_file='cs_history.json'):
+    def auto_load(cls,sc_file=SC_FILE,comp_file=COMP_FILE,fact_file=FACT_FILE,\
+                      ce_history_file = CE_HISTORY_FILE):
         """
         This method is the recommended way to initialize this object.
         It automatically reads all setting files with FIXED NAMES.
         YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
         YOU MAY BREAK THE INITIALIZATION PROCESS!
-        Args:
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'
-            comp_file(str):
-                path to compositions dataframe file, in csv format.
-                Default: 'comps.csv'             
-            fact_file(str):
-                path to fact dataframe file, in csv format.
-                Default: 'data.csv'             
-            ce_history_file(str):
-                path to cluster expansion history file.
-                Default: 'ce_history.json'\      
+
         Returns:
              StatusChecker object.
         """
         sc_df, comp_df, fact_df = cls.load_dataframes(sc_file=sc_file,\
                                                       comp_file=comp_file,\
                                                       fact_file=fact_file)
+
         if os.path.isfile(ce_history_file) as fin:
             history = json.load(fin)
         else:
