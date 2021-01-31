@@ -78,63 +78,9 @@ def decorate_single(s,decor_keys,decor_values):
 class Featurizer(MSONable):
     """
     Featurization of calculation results. Direct initialization of this class is not recommended.
-    Attributes:
-
-        prim(Structure):
-            primitive cell of the structure to do cluster expansion on.
-
-        bits(List[List[Specie]]):
-            Occupying species on each sublattice. Vacancy() should be included.
-
-        sublat_list(List of lists on ints):
-            Stores primitive cell indices of sites in the same sublattices. 
-            If none, sublattices will be automatically generated.
-
-        is_charged(Boolean):
-            If true, will do charged cluster expansion.
-
-        previous_ce(smol.cofe.ClusterExpansion):
-            A previous cluster expansion. By default, is None. If this is given, 
-            will featurize based on this cluster expansion indstead.
-
-        decorators(List of .decorator.Decorator objects):
-            Decorators names called before mapping into feature vectors. For 
-            example, if we do cluster expansion with charge, since vasp
-            calculated structures does not mark charges, we have to assign 
-            charges to atoms before mapping.
-
-            All items in this list must be a name in .decorator. If multiple 
-            decorators are given, decorations will be done in the order of this 
-            list. If None given, will check with prim, and see whether decorations
-            are needed. If decorations are needed, but no decorator is given, 
-            will return an error. If multiple decorators are given on the same 
-            decoration type, for example, charge decoration by magnetization or 
-            bader charge, only the first one in list will be keeped. 
-
-            This duplication is not checked before model training and assignment, 
-            so you must check them on your own to avoid additional training cost.
-
-            Currently, we only support mixture of gaussian charge decoration from 
-            magnetization. You can implement you own decoration in .decoration module, 
-            and add local processing methods at the head of this file, accordingly.
-
-        other_props(List of str):
-            Calculated properties to extract for expansion. Currently none of other 
-            proerties than 'e_prim' is supported. You can add your own properties 
-            extractors in calc_reader classes.
-
-            This class does not check whether a proerty name is legal. Error messages
-            will be given by calc_reader class. Check calc_reader docs for detail.
- 
-            Any physical quantity will always be normalized by supercell size!
-
-        data_manager(DataManager):
-            The database manager class to use for this instance.
-
-        calc_reader(BaseCalcReader):
-            Calculation reader, depends on your selected workflow type.
     """
-    #Add to this dict if you implement more properties assignments
+
+    #Edit this dict as you implement new specie decorators.
     decorator_requirements = {'MagChargeDecorator':['magnetization']}
 
     def __init__(self,prim,\
@@ -146,6 +92,63 @@ class Featurizer(MSONable):
                       other_props=[],\
                       data_manager=DataManager.auto_load(),\
                       calc_reader=ArchVaspReader.auto_load()):
+
+        """
+        Args:
+            prim(Structure):
+                primitive cell of the structure to do cluster expansion on.
+    
+            bits(List[List[Specie]]):
+                Occupying species on each sublattice. Vacancy() should be included.
+    
+            sublat_list(List of lists on ints):
+                Stores primitive cell indices of sites in the same sublattices. 
+                If none, sublattices will be automatically generated.
+    
+            is_charged(Boolean):
+                If true, will do charged cluster expansion.
+    
+            previous_ce(smol.cofe.ClusterExpansion):
+                A previous cluster expansion. By default, is None. If this is given, 
+                will featurize based on this cluster expansion indstead.
+    
+            decorators(List of .specie_decorator.Decorator objects):
+                Decorators names called before mapping into feature vectors. For 
+                example, if we do cluster expansion with charge, since vasp
+                calculated structures does not mark charges, we have to assign 
+                charges to atoms before mapping.
+    
+                All items in this list must be a name in .decorator. If multiple 
+                decorators are given, decorations will be done in the order of this 
+                list. If None given, will check with prim, and see whether decorations
+                are needed. If decorations are needed, but no decorator is given, 
+                will return an error. If multiple decorators are given on the same 
+                decoration type, for example, charge decoration by magnetization or 
+                bader charge, only the first one in list will be keeped. 
+    
+                This duplication is not checked before model training and assignment, 
+                so you must check them on your own to avoid additional training cost.
+    
+                Currently, we only support mixture of gaussian charge decoration from 
+                magnetization. You can implement you own decoration in .decoration module, 
+                and add local processing methods at the head of this file, accordingly.
+    
+            other_props(List of str):
+                Calculated properties to extract for expansion. Currently none of other 
+                proerties than 'e_prim' is supported. You can add your own properties 
+                extractors in calc_reader classes.
+    
+                This class does not check whether a proerty name is legal. Error messages
+                will be given by calc_reader class. Check calc_reader docs for detail.
+     
+                Any physical quantity will always be normalized by supercell size!
+    
+            data_manager(DataManager):
+                The database manager class to use for this instance.
+    
+            calc_reader(BaseCalcReader):
+                Calculation reader, depends on your selected workflow type.
+        """
 
         self.prim = prim
         self.bits = bits
@@ -186,7 +189,14 @@ class Featurizer(MSONable):
     def featurize(self):
         """
         Load and featurize the fact table with vasp data.
+        Will check previous CE flow status. If already 
+        featurized, will not featurize again.
         """
+        if self._dm._schecker.after('feat'):
+            print("**Featurization already done in current iteration {}."\
+                  .format(self._dm._schecker.cur_iter_id))
+            return
+
         sc_df = self.sc_df.copy()
         fact_table = self.fact_df.copy()
         calc_reader = self.calc_reader        

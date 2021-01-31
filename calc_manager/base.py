@@ -93,6 +93,11 @@ class BaseManager(ABC):
            2, This function waits for the calculation resources, therfore
               will always hang for a long time.  
         """
+        if self._dm._schecker.after("calc"):
+            print("**Calculation of entree already done in the current iteration {}"\
+                  .format(self._dm._schecker.cur_iter_id))
+            return True
+
         self._submit_all(entry_ids)
 
         #set timer

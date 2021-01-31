@@ -24,11 +24,14 @@ class ArchVaspReader(BaseReader):
     the fact table. Everything in this class shall be temporary, and will not 
     be saved as dictionaries into disk.
 
-    Args:
-        path(str):
-            path to the archieve. By difault, will be under ./vasp_run
     """
     def __init__(self,path = 'vasp_run',**kwargs):
+        """
+        Args:
+            path(str):
+                path to the archieve. By difault, will be under ./vasp_run
+        """
+
         self.path = path
         if not os.path.isdir(path):
             raise ValueError("Specified archieve {} does not exist!".format(path))

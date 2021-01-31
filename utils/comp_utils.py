@@ -141,3 +141,44 @@ def get_n_links(comp_stat,operations):
         n_links[2*op_id+1] = n_reverse
 
     return n_links
+
+#measure size of the config space.
+def get_Noccus_of_compstat(compstat,scale_by=1):
+    """
+    Get number of possible occupancies in a supercell with
+    a certain composition. Used to reweight samples in
+    the compositional space.
+    Args:
+        compstat(List[List[float]]):
+            Number of species on each sublattice, recorded
+            in a 2D list. See CompSpace documentation for
+            detail.
+        scale_by(int):
+            Since the provided compstat is usually normalize
+            d by supercell size, we often have to scale it
+            back by the supercell size before using this
+            function. If the scaled compstat has values that
+            can not be rounded to an integer, that means 
+            the current supercell size can not host the 
+            composition, and will raise an error.
+    Returns:
+        int, number of all possible occupancy arrays.
+    """
+    int_comp = []
+    for sl_comp in compstat:
+        sl_int_comp = []
+        for n_sp in sl_comp:
+            n_sp_int = int(round(n_sp))
+            if abs(n_sp)-n_sp_int > 1E-3:
+                raise ValueError("Composition can't be rounded!"))
+            sl_int_comp.append(n_sp_int)
+        int_comp.append(sl_int_comp)
+
+    noccus = 1
+    for sl_int_comp in zip(int_comp):
+        N_sl = sum(sl_int_comp)
+        for n_sp in sl_int_comp:
+            noccus = noccus*combinatorial_number(N_sl,n_sp)
+            N_sl = N_sl - n_sp
+
+    return noccus

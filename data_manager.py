@@ -25,30 +25,34 @@ from .config_paths import *
 
 class DataManager:
     """
+    DataManger class to interface all CEAuto generated data.
     You are not recommended to call __init__ directly.
-    Args:
-        prim(Structure):
-            primitive cell containing all comp space info and lattice
-            info. Make sure it is the same with the one used to initialize
-            CE.
-        bits(List[List[Specie|Vacancy]]):
-            Species occupying each sublattice.
-        sublat_list(List[List[int]]):
-            Indices of PRIMITIVE CELL sites in the same sublattices. 
-        subspace(Clustersubspace):
-            The cluster subspace used to featurize structures.
-        schecker(StatusChecker):
-            A status checker object, can check current iteration
-            number and which step of CE cycle we are in, based on 
-            the current data and history files.
-
-        Since this DataManager can not generate or calculate data, you must 
-        provide this necessary arguments to initialize it.
     """
     def __init__(self,prim,bits,sublat_list,subspace,schecker):
         #These attributes are used to convert between occupation/structure/composition.
         #InputsWrapper can read all settings from default or options file, and passes them
         #down to all other modules.
+        """
+        Args:
+            prim(Structure):
+                primitive cell containing all comp space info and lattice
+                info. Make sure it is the same with the one used to initialize
+                CE.
+            bits(List[List[Specie|Vacancy]]):
+                Species occupying each sublattice.
+            sublat_list(List[List[int]]):
+                Indices of PRIMITIVE CELL sites in the same sublattices. 
+            subspace(Clustersubspace):
+                The cluster subspace used to featurize structures.
+            schecker(StatusChecker):
+                A status checker object, can check current iteration
+                number and which step of CE cycle we are in, based on 
+                the current data and history files.
+    
+            Since this DataManager can not generate or calculate data, you must 
+            provide this necessary arguments to initialize it.
+        """
+
         self._prim = prim
         self._bits = bits
         self._sublat_list = sublat_list
@@ -60,18 +64,18 @@ class DataManager:
         self._comp_df = None
         self._fact_df = None
 
-        self._cur_iter_id = None
         self._schecker = schecker
+
+        self._sc_load_path = SC_FILE
+        self._comp_load_path = COMP_FILE
+        self._fact_load_path = FACT_FILE
 
     @property
     def cur_iter_id(self):
         """
         Get the current iteration number from the fact table.
         """
-        if self._cur_iter_id is None:
-            self._cur_iter_id = self._schecker.cur_iter_id
-        #Stored, and can not be changed in the current initialization.
-        return self._cur_iter_id 
+        return self._schecker.cur_iter_id 
 
     @property
     def sc_df(self):
@@ -578,6 +582,31 @@ class DataManager:
         self._fact_df = self._fact_df.drop(drop_ids)
         self._reassign_entry_ids()
 
+    def remove_entree_by_iters_modules(self,iter_ids=[],modules=[],flush_and_reload=True):
+        """
+        Remove entree of specified iteration indices and modules.
+        Args:
+            iter_ids(List[int]):
+                Iteration numbers to remove.
+            modules(List[int]):
+                Modules to remove.
+            flush_and_reload(Boolean):
+                If true, will re-save dataframes, and reload the status checker from the
+                new saves.
+
+        Note:
+            Since this operation might change the status checker's return value,
+            by default we will update the saved dataframes, and reload status checker.
+        """
+        filt = (self.fact_df.iter_id.isin(iter_ids)) & \
+               (self.fact_df.module.isin(modules)
+        eids = self.fact_df[filt].entry_id.tolist()
+        self.remove_entree_by_id(eids)
+        #Flush and read again.
+        if flush_and_reload:
+            self.auto_save(to_load_paths=True)
+            self._schecker.re_load(from_load_paths=True)
+
     def remove_comps_by_id(self,comp_ids=[]):
         """
         Removes one composition from the composition table. Will also remove all entree
@@ -640,11 +669,25 @@ class DataManager:
         filt_ = self._fact_df.entry_id.isin(eids)
         self._fact_df.loc[filt_,'calc_status']=status
 
-    def reset(self):
+    def reset(self,flush_and_reload=True):
         """
         Reset all calculation data. Use this at your own risk!
+        Args:
+             flush_and_reload(Boolean):
+                If true, will re-save dataframes, and reload the status checker from the
+                new saves. Default to true.
         """
-        self.remove_supercells_by_id(sc_id=self.fact_df.sc_id.tolist())
+        print("Any enumerated entree in all iterations will be cleared. Proceed?[y/n]")
+        choice = raw_input().lower()
+        if choice == 'y':
+            self.remove_supercells_by_id(sc_id=self.fact_df.sc_id.tolist())
+        elif choice != 'n':
+            raise ValueError("Please respond with [Y/N] or [y/n]!")
+
+        #Flush and read again.
+        if flush_and_reload:
+            self.auto_save(to_load_paths=True)
+            self._schecker.re_load(from_load_paths=True)
 
     def _reassign_entry_ids(self):
         """
@@ -769,15 +812,24 @@ class DataManager:
 
         socket._load_dataframes(sc_file=sc_file,comp_file=comp_file,\
                                 fact_file=fact_file)
+        socket._sc_load_path = sc_file
+        socket._comp_load_path = comp_file
+        socket._fact_load_path = fact_file
 
         return socket
 
 
-    def auto_save(self,sc_file=SC_FILE,comp_file=COMP_FILE,fact_file=FACT_FILE):
+    def auto_save(self,sc_file=SC_FILE,comp_file=COMP_FILE,fact_file=FACT_FILE,\
+                       to_load_paths=True):
         """
         Saves processed data to the dataframe csvs.
         """
         #Option file is read_only
+        if to_load_paths:
+            sc_file = self._sc_load_path
+            comp_file = self._comp_load_path
+            fact_file = self._fact_load_path
+
         self._save_dataframes(sc_file=sc_file,comp_file=comp_file,\
                               fact_file=fact_file)
         

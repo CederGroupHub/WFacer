@@ -50,6 +50,7 @@ class BaseWriter(ABC):
     def write_tasks(self,strs_undeformed,entry_ids,*args,**kwargs):
         """
         Write input files or push data to fireworks launchpad.
+        Will check status and see if writing is required.
         Inputs:
             strs_undeformed(List of Structure):
                 Structures in original lattice.(Not deformed.)
@@ -59,6 +60,11 @@ class BaseWriter(ABC):
                 Must be provided.       
         No return value.
         """
+        if self._dm._schecker.after("write"):
+            print("**Writing already finished in current iteration {}."\
+                  .format(self._dm._schecker.cur_iter_id))
+            return
+
         for eid,str_undef in zip(entry_ids,structures_undeformed):
             self._write_single(str_undef,eid,*args,**kwargs)
 

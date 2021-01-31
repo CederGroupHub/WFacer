@@ -27,15 +27,17 @@ class MongoVaspReader(BaseReader):
     the fact table. Everything in this class shall be temporary, and will not 
     be saved as dictionaries into disk.
 
-    Args:
-        md_file(str):
-            Path to mongodb setting file. The calculations will be read from
-            this database.
     """
 
     DEFAULT_MONGO_PATH = os.path.join(atomate.__path__[0],'config/json')
 
     def __init__(self,md_file=None,**kwargs):
+       """
+       Args:
+           md_file(str):
+               Path to mongodb setting file. The calculations will be read from
+               this database.
+       """
         md_file = md_file or DEFAULT_MONGO_PATH
         self._mongod = VaspCalcDb.from_db_file(md_file)
         self.root_name = os.path.split(os.get_cwd())[-1]

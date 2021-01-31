@@ -30,24 +30,25 @@ from .config_paths import *
 class InputsWrapper(MSONable):
 
     """
-    This class wrapps options and history into objects required by 
-    other modules. Can be saved and re-initialized from the save.
+    This class wrapps options and history into inputs required to 
+    init other modules. Can be saved and re-initialized from the save.
     Direct initialization is not recommended. You are supposed to 
     initialize it with auto_load().
-
-    Args: 
-        lat_data(Dict):
-            Dictionary of deserialized objects, storing everthing
-            about the expansion lattice, including 'bits', 'lattice',
-            'frac_coords','prim', etc.
-        options(Dict):
-            other options used in modules.
-        history(List[Dict]):
-            history cluster expansions information. Same as history 
-            option in other modules.
     """
     
     def __init__(self, lat_data, options={}, history=[]):
+        """
+        Args: 
+            lat_data(Dict):
+                Dictionary of deserialized objects, storing everthing
+                about the expansion lattice, including 'bits', 'lattice',
+                'frac_coords','prim', etc.
+            options(Dict):
+                other options used in modules.
+            history(List[Dict]):
+                history cluster expansions information. Same as history 
+                option in other modules.
+        """
 
         self._lat_data = lat_data
         self._options = options
@@ -239,7 +240,7 @@ class InputsWrapper(MSONable):
         """
         if self._subspace is None:
             self._subspace = ClusterSubspace.from_cutoffs(self.prim,self.radius,\
-                                                        basis = self.basis_type)
+                                                        basis = self.enumerator_options['basis_type'])
             for ex_name,args in zip(self.other_extern_types,self.other_extern_args):
                 self._subspace.add_external_term(globals()[ex_name](**args))
 
@@ -295,6 +296,7 @@ class InputsWrapper(MSONable):
                 'min_sc_angle':self._options.get('min_sc_angle',30),\
                 'comp_restrictions':self._options.get('comp_restrictions'),\
                 'comp_enumstep':self._options.get('comp_enumstep',1),\
+                'n_strs_enum':self._options.get('n_strs_enum',100),\
                 'basis_type':self._options.get('basis_type','indicator'),\
                 'select_method':self._options.get('select_method','CUR')
                }
@@ -399,7 +401,8 @@ class InputsWrapper(MSONable):
         Get ground state checker options.
         """
         return {'e_tol_in_cv':self._options.get('e_tol_in_cv',3),\
-                'comp_tol':self._options.get('comp_tol',0.05)
+                'comp_tol':self._options.get('comp_tol',0.05),\
+                'cv_change_tol':selfe._options.get('cv_change_tol',0.2)
                }
     
     def gs_generator_options(self):

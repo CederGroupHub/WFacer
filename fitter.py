@@ -30,34 +30,8 @@ class CEFitter(MSONable):
     criteria codes.
     Make sure to init it only ONCE for each CE iteration. And if you have to init
     it multiple times, make sure not to call update_history in your later inits!
-
-    Attributes:
-        cluster_subspace(smol.ClusterSubspace):
-            The cluster subspace used in featurization.
-            Compulsory.
-        estimator_flavor(str):
-            Name of estimator to be used from .regression module. 
-            By default, we will always use L2L0Estimator.
-            Available regressions are listed in .regression
-        weights_flavor(str):
-            Method of adding weights to the rows before fitting.
-            Currently supports three methods:
-                'unweighted': equal weight for each row (default)
-                'e_above_comp': weight by energy above composition
-                'e_above_hull': weight by energy above hull
-        use_hierarchy(Boolean):
-            Whether or not to add hierarchy constraints.
-        estimator_params(Dict{Dict}|Dict):
-            Parameters to pass into the estimators. When is a dictionary, will only
-            use it for fitting 'e_prim'. When is a dictionary
-            of dictionaries, the keys will specify which property are the parameters 
-            being applied to.
-            See regression module.
-        weighter_params(Dict):
-            Parameters to pass into the weighting module. See utils.weight_utils
-        data_manager(DataManager):
-           A data manager object to read and write dataframes.
     """
+
     supported_weights = ('unweighted','e_above_hull','e_above_comp')
 
     def __init__(self,cluster_subspace,\
@@ -67,6 +41,35 @@ class CEFitter(MSONable):
                       estimator_params={},\
                       weighter_params={},\
                       data_manager = DataManager.auto_load()):
+
+        """
+        Args:
+            cluster_subspace(smol.ClusterSubspace):
+                The cluster subspace used in featurization.
+                Compulsory.
+            estimator_flavor(str):
+                Name of estimator to be used from .regression module. 
+                By default, we will always use L2L0Estimator.
+                Available regressions are listed in .regression
+            weights_flavor(str):
+                Method of adding weights to the rows before fitting.
+                Currently supports three methods:
+                    'unweighted': equal weight for each row (default)
+                    'e_above_comp': weight by energy above composition
+                    'e_above_hull': weight by energy above hull
+            use_hierarchy(Boolean):
+                Whether or not to add hierarchy constraints.
+            estimator_params(Dict{Dict}|Dict):
+                Parameters to pass into the estimators. When is a dictionary, will only
+                use it for fitting 'e_prim'. When is a dictionary
+                of dictionaries, the keys will specify which property are the parameters 
+                being applied to.
+                See regression module.
+            weighter_params(Dict):
+                Parameters to pass into the weighting module. See utils.weight_utils
+            data_manager(DataManager):
+               A data manager object to read and write dataframes.
+        """
 
         self.cspc = cluster_subspace
         self.estimator_flavor = estimator_flavor
@@ -100,6 +103,8 @@ class CEFitter(MSONable):
 
         self._dm = data_manager
         self._schecker = self._dm._schecker
+
+        self._history_load_path = CE_HISTORY_FILE
 
     @property
     def sc_df(self):
@@ -173,10 +178,12 @@ class CEFitter(MSONable):
         weighter_params = self.weighter_params       
 
         if self._schecker.after('fit'): #Fitter already finished in current cycle.
-            warnings.warn("ECIs aleady fitted for current cycle. Loading from history.")
+            print("**ECIs aleady fitted for current iteration {}. Loading from history."\
+                  .format(self._schecker.cur_iter_id))
             self._coefs = self._history[-1]['coefs']
             self._cv = self._history[-1]['cv']
             self._rmse = self._history[-1]['rmse']
+            return
 
         fact_df = self.fact_df.copy()
 
@@ -350,7 +357,8 @@ class CEFitter(MSONable):
         return fig,ax
             
 
-    def auto_save(self,update_his= True,ce_history_file = CE_HISTORY_FILE):
+    def auto_save(self,update_his= True,ce_history_file = CE_HISTORY_FILE,\
+                       to_load_paths=True):
         """
         Serialization to file.
         Make sure to call it only ONCE for each CE iteration!
@@ -359,7 +367,13 @@ class CEFitter(MSONable):
                 whether to update history log or not. Default to True.
             ce_history_file(str):
                 path to cluster expansion history file.
+            to_load_paths(Boolean):
+                If true, will save history to the path from which this object is loaded.
+                Default is true.
         """
+        if to_load paths:
+            ce_history_file = self._history_load_path
+
         with open(ce_history_file,'w') as fout:
             if update_his:
                 self._update_history()
@@ -411,5 +425,6 @@ class CEFitter(MSONable):
                     )
 
         socket._history = options.history
+        socket._history_load_path = ce_history_file
 
         return socket

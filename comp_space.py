@@ -221,7 +221,7 @@ class CompSpace(MSONable):
     """
     def __init__(self,bits,sl_sizes=None):
         """
-        Inputs:
+        Args:
             bits(List of Specie/DummySpecie): 
                 bit list.
                 Sorted before use. We don't sort it here in case the order 

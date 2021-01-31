@@ -20,34 +20,42 @@ class GSChecker:
     canoncial ground state convergence, and does not modify the
     fact table.
     Only energies will be checked.
-    Args:
-        cluster_subspace(smol.ClusterSubspace):
-            Previous ClusterSubspace object used in featurizer.
-        e_tol_in_cv(float):
-            Tolerance of energy difference in times of CV.
-        comp_tol(float):
-            Tolerance of ground state composition changes,
-            measured in norm of change of unconstrained 
-            compositional coordinates.
-        ce_history(List of CEFitter dicts):
-            Previous cluster expansion fitting history.
-        data_manager(DataManager):
-            A data manager to interact with calculated data.
-    Notice:
-        We consider structures added in this module as belongs to 
-        the last structure enumeration iteration.
-    You may not want to call this function directly.
     """
     def __init__(self,cluster_subspace=None,\
                       e_tol_in_cv = 3,\
                       comp_tol = 0.05,\
+                      cv_change_tol = 0.2,\
                       ce_history = [],\
                       data_manager=DataManager.auto_load()):
+        """
+        Args:
+            cluster_subspace(smol.ClusterSubspace):
+                Previous ClusterSubspace object used in featurizer.
+            e_tol_in_cv(float):
+                Tolerance of energy difference in times of CV.
+            comp_tol(float):
+                Tolerance of ground state composition changes,
+                measured in norm of change of unconstrained 
+                compositional coordinates.
+            cv_change_tol(float):
+                Tolerance of maximum relative change between
+                the last two CV values. Default to 20%
+            ce_history(List of CEFitter dicts):
+                Previous cluster expansion fitting history.
+            data_manager(DataManager):
+                A data manager to interact with calculated data.
+        Notice:
+            We consider structures added in this module as belongs to 
+            the last structure enumeration iteration.
+        You may not want to call this function directly.
+        """
+
         self.cspc = cluster_subspace
         self.ce_history = ce_history
  
         self.e_tol_in_cv = e_tol_in_cv
         self.comp_tol = comp_tol
+        self.cv_change_tol = cv_change_tol
 
         self._dm = data_manager
 
@@ -208,7 +216,7 @@ class GSChecker:
                            e_tol=self.e_tol_in_cv*cv,comp_tol=self.comp_tol) and \
                hulls_match(self.prev_dft_hull,self.curr_dft_hull,\
                            e_tol=self.e_tol_in_cv*cv,comp_tol=self.comp_tol) and \
-               abs(cv_1-cv)/cv_1 < 0.20  #change of cv < 20 %
+               abs(cv_1-cv)/cv_1 < self.cv_change_tol  #change of cv < 20 % in last 2 iterations.
 
 
     def plot_hull_scatter(self,mode='dft',\

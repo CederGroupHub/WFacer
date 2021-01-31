@@ -8,3 +8,4 @@ smol
 mip
 qstat
 gurobi (if pb_solver is used.)
+tqdm

@@ -17,6 +17,8 @@ from .utils.format_utils import deser_comp,structure_from_occu
 from .utils.hull_utils import estimate_mu_from_hull
 from .utils.math_utils import get_center_grid
 
+from .config_paths import *
+
 NODATAERROR = RuntimeError("No dataframes. You may call data loading methods to load the calculation data first.")
 
 class GSGenerator(MSONable):
@@ -28,46 +30,6 @@ class GSGenerator(MSONable):
     You may not want to call __init_ directly.
 
     Also, do not call this twice in an iteration.
-    Args:
-        ce(smol.ClusterExpansion):
-            Latest cluster expansion object to solve GS from.
-        prim(Structure):
-            Primitive cell of the system. Should be modified 
-            to charge neutral and has every specie in it.
-        bits(List[List[Specie]]):
-            Species on each sublattice, including Vacancy.
-        sublat_list(List[List[int]]):
-            List of prim cell site indices in a sublattice.
-        compspace(CompSpace):
-            Compositional space of the current system.
-        handler_flavor(str):
-            Specifies class name of the handler to be used.
-            Check available handlers in CEAuto.gs_handler module.
-            Will use 'Canonical' as default.
-            When selecting Canoncial as handler, will not add anything,
-            because in structure eneumerator, we are already keeping
-            canoncial ground states.
-        handler_args(Dict):
-            Takes in handler parameters, such as:
-            For semi-grand
-            mu_grid_step(float, or list[float]):
-                grid density on each dimesion of mu in the constrained 
-                compositional coordinate.(see comp_space.py)
-                Default is 0.4.
-            mu_grid_num(int, or List[int]):
-                Number of grid points to scan on each dimension of mu.
-                Default is 5.
-                We recommend to set a lower value, when you are dealing
-                with extremely high-dimensional systems, or give a list
-                to emphasize some dimensions.
-            n_proc(int):
-                Number of mu points to compute simultaneously. Default
-                is 4.
- 
-        data_manager(DataManager):
-            DataManager object of the current CE project.
-
-        Central mu will be estimated from previous CE hull.
     """
     #Modify this when you implement new handlers
     supported_handlers = ('CanonicalHandler','MCGrandHandler','PBGrandHandler')
@@ -80,7 +42,48 @@ class GSGenerator(MSONable):
                       handler_flavor='CanonicalHandler',\
                       handler_args={},\
                       data_manger=DataManager.auto_load()):
-
+        """
+        Args:
+            ce(smol.ClusterExpansion):
+                Latest cluster expansion object to solve GS from.
+            prim(Structure):
+                Primitive cell of the system. Should be modified 
+                to charge neutral and has every specie in it.
+            bits(List[List[Specie]]):
+                Species on each sublattice, including Vacancy.
+            sublat_list(List[List[int]]):
+                List of prim cell site indices in a sublattice.
+            compspace(CompSpace):
+                Compositional space of the current system.
+            handler_flavor(str):
+                Specifies class name of the handler to be used.
+                Check available handlers in CEAuto.gs_handler module.
+                Will use 'Canonical' as default.
+                When selecting Canoncial as handler, will not add anything,
+                because in structure eneumerator, we are already keeping
+                canoncial ground states.
+            handler_args(Dict):
+                Takes in handler parameters, such as:
+                For semi-grand
+                mu_grid_step(float, or list[float]):
+                    grid density on each dimesion of mu in the constrained 
+                    compositional coordinate.(see comp_space.py)
+                    Default is 0.4.
+                mu_grid_num(int, or List[int]):
+                    Number of grid points to scan on each dimension of mu.
+                    Default is 5.
+                    We recommend to set a lower value, when you are dealing
+                    with extremely high-dimensional systems, or give a list
+                    to emphasize some dimensions.
+                n_proc(int):
+                    Number of mu points to compute simultaneously. Default
+                    is 4.
+     
+            data_manager(DataManager):
+                DataManager object of the current CE project.
+    
+            Central mu will be estimated from previous CE hull.
+        """
         self.ce = ce
         self.prim = prim
         self.bits = bits
@@ -97,6 +100,10 @@ class GSGenerator(MSONable):
         self._gss = None
 
         self._dm = data_manager
+
+        self._sc_load_path = SC_FILE
+        self._comp_load_path = COMP_FILE
+        self._fact_load_path = FACT_FILE
 
     @property
     def comp_dim(self):
@@ -161,10 +168,10 @@ class GSGenerator(MSONable):
        
         sc_mus = list(itertools.product(self.sc_df.matrix,_mu_grid))
         pool = mp.Pool(_nproc)
-        gs_occu_es = pool.map(sc_mus,\
-                            lambda p: grand_handler_call(self.flavor,self.ce,\
+        gs_occu_es = pool.map(lambda p: grand_handler_call(self.flavor,self.ce,\
                                                          p[0],p[1],\
-                                                         **self._handler_args))
+                                                         **self._handler_args),\
+                              sc_mus)
 
         self._gss = []
         #Insert new ground states.
@@ -174,9 +181,10 @@ class GSGenerator(MSONable):
 
     #Serializations and de-serializations
 
-    def auto_save(self,sc_file='sc_mats.csv',\
-                       comp_file='comps.csv',\
-                       fact_file='data.csv'):
+    def auto_save(self,sc_file=SC_FILE,\
+                       comp_file=COMP_FILE,\
+                       fact_file=FACT_FILE,\
+                       to_load_paths=True):
         """
         Automatically save object data into specified files.
         Args:
@@ -186,17 +194,25 @@ class GSGenerator(MSONable):
                 composition file path
             fact_file(str):
                 fact table file path
+            to_load_paths(Boolean):
+                If true, will save to the paths from which this object is loaded.
+                Default is true.
         All optional, but I don't recommend you to change the paths.
         """
+        if to_load_paths:
+            sc_file = self._sc_load_path
+            comp_file = self._comp_load_path
+            fact_file = self._fact_load_path
+
         self._dm.auto_save(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
 
     @classmethod
     def auto_load(cls,\
-                  options_file='options.yaml',\
-                  sc_file='sc_mats.csv',\
-                  comp_file='comps.csv',\
-                  fact_file='data.csv',\
-                  ce_history_file='ce_history.json'):
+                  options_file=OPTIONS_FILE,\
+                  sc_file=SC_FILE,\
+                  comp_file=COMP_FILE,\
+                  fact_file=DATA_FILE,\
+                  ce_history_file=CE_HISTORY_FILE):
         """
         This method is the recommended way to initialize this object.
         It automatically reads all setting files with FIXED NAMES.
@@ -230,10 +246,18 @@ class GSGenerator(MSONable):
                                    fact_file=data_file,\
                                    ce_history_file=ce_history_file)
 
-        return cls(options.last_ce,\
-                   options.prim,\
-                   options.bits,\
-                   options.sublat_list,\
-                   options.comp_space,\
-                   data_manager=dm,\
-                   **options.gs_generator_options)
+        socket = cls(options.last_ce,\
+                     options.prim,\
+                     options.bits,\
+                     options.sublat_list,\
+                     options.comp_space,\
+                     data_manager=dm,\
+                     **options.gs_generator_options)
+
+        socket._sc_load_path = sc_file
+        socket._comp_load_path = comp_file
+        socket._fact_load_path = fact_file
+
+        return socket
+
+
