@@ -39,7 +39,7 @@ class GSGenerator(MSONable):
                       bits,\
                       sublat_list,\
                       compspace,\
-                      handler_flavor='CanonicalHandler',\
+                      handler_flavor='CanonicalMCHandler',\
                       handler_args={},\
                       data_manger=DataManager.auto_load()):
         """
@@ -136,9 +136,13 @@ class GSGenerator(MSONable):
         """
         return self._dm.fact_df
 
-    def solve_gss(self):
+    def solve_gss(self,insert_to_df = True):
         """
         Solve for new ground state entree.
+        Args:
+            insert_to_df(Boolean):
+                If true(default), will insert generated ground state structures to
+                the dataframe.
         """
         if self._gss is not None: #Already solved, no need to do again.
             return
@@ -177,7 +181,8 @@ class GSGenerator(MSONable):
         #Insert new ground states.
         for (gs_occu,gs_e),(sc,mu) in zip(gs_occu_es,sc_mus):
             self._gss.append((gs_occu,sc))
-            self._dm.insert_one_occu(gs_occu,sc_mat=sc,module_name='gs')
+            if insert_to_df:
+                self._dm.insert_one_occu(gs_occu,sc_mat=sc,module_name='gs')
 
     #Serializations and de-serializations
 

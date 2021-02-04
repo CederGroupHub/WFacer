@@ -54,6 +54,7 @@ class StructureEnumerator(MSONable):
                  comp_restrictions=None,\
                  comp_enumstep=1,\
                  n_strs_enum=100,\
+                 handler_args={},\
                  basis_type = 'indicator',\
                  select_method = 'CUR',
                  data_manager=DataManager.auto_load()):
@@ -132,6 +133,10 @@ class StructureEnumerator(MSONable):
                 Number of structures to add in the current iteration. Default to 100.
                 Please choose this value properly, so each composition point can get
                 at least one sample.             
+ 
+            handler_args(Dict):
+                Arguments for MCHandler. See documentation for MCHandler for more 
+                reference.
     
             basis_type(string):
                 Type of basis used in cluster expansion. Needs to be specified if you 
@@ -353,7 +358,7 @@ class StructureEnumerator(MSONable):
             return self.fact_df.loc[filt_,:]
 
         #Generate Structures, and add to dataframes!(Takes in compstat)
-        def raw_sample_under_sc_comp(ce,sc_mat,compstat,is_indicator):
+        def raw_sample_under_sc_comp(ce,sc_mat,compstat,**handler_args):
             """
             Sample a single composition point. Do selection later.
             """
@@ -361,7 +366,7 @@ class StructureEnumerator(MSONable):
             print("****Supercell size: {}, compositon stat: {}.".format(sc_size,compstat))
             tot_noccus = get_Noccus_of_compstat(compstat,scale_by=sc_size)
             #Handler will automatically initialize an occupation
-            handler = CanonicalMCHandler(ce,sc_mat,compstat,is_indicator=is_indicator)
+            handler = CanonicalMCHandler(ce,sc_mat,compstat,**handler_args)
             #Handler will de-freeze from 0K, creating samples. for all runs.
             return handler.get_unfreeze_sample(),tot_noccus
 
@@ -376,10 +381,8 @@ class StructureEnumerator(MSONable):
         all_sc_comps = list(zip(comp_df.matrix,comp_df.compstat))
         all_sc_comp_ids = list(zip(comp_df.sc_id,comp_df.comp_id))
 
-        is_indicator = (self.basis_type=='indicator')
-
         print("**Generating raw samples under compositions.")
-        all_occus_n = pool.map(lambda sc,comp: raw_sample_under_sc_comp(self.ce,sc,comp,is_indicator),\
+        all_occus_n = pool.map(lambda sc,comp: raw_sample_under_sc_comp(self.ce,sc,comp,**self.handler_args),\
                              all_sc_comps)
 
         #Filter raw samples by weights.

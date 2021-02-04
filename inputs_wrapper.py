@@ -297,6 +297,7 @@ class InputsWrapper(MSONable):
                 'comp_restrictions':self._options.get('comp_restrictions'),\
                 'comp_enumstep':self._options.get('comp_enumstep',1),\
                 'n_strs_enum':self._options.get('n_strs_enum',100),\
+                'unfreeze_series':self._options.get('unfreeze_series',[500,1500,5000]),\
                 'basis_type':self._options.get('basis_type','indicator'),\
                 'select_method':self._options.get('select_method','CUR')
                }
@@ -409,7 +410,7 @@ class InputsWrapper(MSONable):
         """
         Get ground state generator options.
         """
-        return {'handler_flavor':self._options.get('handler_flavor','CanonicalHandler'),\
+        return {'handler_flavor':self._options.get('handler_flavor','CanonicalMCHandler'),\
                 'handler_args':self._options.get('handler_args',{})
                }
 

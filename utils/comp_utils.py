@@ -142,6 +142,39 @@ def get_n_links(comp_stat,operations):
 
     return n_links
 
+#Scale normalized compstat back to integer
+def scale_compstat(compstat,by=1):
+    """
+    Scale compositonal statistics into integer table.
+    Args:
+        compstat(List[List[float]]):
+            Number of species on each sublattice, recorded
+            in a 2D list. See CompSpace documentation for
+            detail.
+        scale_by(int):
+            Since the provided compstat is usually normalize
+            d by supercell size, we often have to scale it
+            back by the supercell size before using this
+            function. If the scaled compstat has values that
+            can not be rounded to an integer, that means 
+            the current supercell size can not host the 
+            composition, and will raise an error.
+    Returns:
+        scaled compstat, all composed of ints.  
+    """
+    int_comp = []
+    for sl_comp in compstat:
+        sl_int_comp = []
+        for n_sp in sl_comp:
+            n_sp_int = int(round(n_sp*by))
+            if abs(n_sp)-n_sp_int > 1E-3:
+                raise ValueError("Composition can't be rounded after scale by {}!".format(by)))
+
+            sl_int_comp.append(n_sp_int)
+        int_comp.append(sl_int_comp)   
+
+    return int_comp
+
 #measure size of the config space.
 def get_Noccus_of_compstat(compstat,scale_by=1):
     """
@@ -164,15 +197,7 @@ def get_Noccus_of_compstat(compstat,scale_by=1):
     Returns:
         int, number of all possible occupancy arrays.
     """
-    int_comp = []
-    for sl_comp in compstat:
-        sl_int_comp = []
-        for n_sp in sl_comp:
-            n_sp_int = int(round(n_sp))
-            if abs(n_sp)-n_sp_int > 1E-3:
-                raise ValueError("Composition can't be rounded!"))
-            sl_int_comp.append(n_sp_int)
-        int_comp.append(sl_int_comp)
+    int_comp = scale_compstat(compstat,by=scale_by)
 
     noccus = 1
     for sl_int_comp in zip(int_comp):
