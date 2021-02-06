@@ -16,7 +16,10 @@ import warnings
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
 from .utils.serial_utils import serialize_comp, deser_comp
-from .utils.occu_utils import structure_from_occu, occu_to_species_stat
+from .utils.occu_utils import structure_from_occu, occu_to_species_stat,\
+                              get_sc_sllist_from_prim
+from .utils.comp_utils import normalize_compstat
+
 from .comp_space import CompSpace
 from .inputs_wrapper import InputsWrapper #Used in auto_load()
 from .status_check import StatusChecker #Used in auto_load()
@@ -388,7 +391,11 @@ class DataManager:
 
         if comp_id is None and comp is None:
             #Get compositional statistics.(Must be normalized)
-            cstat = occu_to_species_stat(occu,self._bits,self._sublat_list,normalize=True)
+            sc_size = int(round(abs(np.linalg.det(sc_mat))))
+            sc_sublat_list = get_sc_sllist_from_prim(self._sublat_list,sc_size=sc_size)
+            cstat = occu_to_species_stat(occu,self._bits,sc_sublat_list)
+            cstat = normalize_compstat(cstat,sc_size=sc_size)
+
             ucoords = self._compspace.translate_format(cstat,\
                                                        from_format='compstat',\
                                                        to_format='unconstr').tolist()
@@ -468,10 +475,16 @@ class DataManager:
             raise ValueError("Arguments sc_id and sc_mat can not be both none.")
 
         sc_id = sc_id or self.insert_one_supercell(sc_mat)
-        
+        sc_mat = sc_mat or self.sc_df[self.sc_df.sc_id==sc_id]\
+                           .reset_index().iloc[0]['matrix']
+       
         if comp_id is None and comp is None:
             #Get compositional statistics.(Must be normalized)
-            cstat = occu_to_species_stat(occu,self._bits,self._sublat_list,normalize=True)
+            sc_size = int(round(abs(np.linalg.det(sc_mat))))
+            sc_sublat_list = get_sc_sllist_from_prim(self._sublat_list,sc_size=sc_size)
+            cstat = occu_to_species_stat(occu,self._bits,sc_sublat_list)
+            cstat = normalize_compstat(cstat,sc_size=sc_size)
+
             ucoords = self._compspace.translate_format(cstat,\
                                                        from_format='compstat',\
                                                        to_format='unconstr').tolist()

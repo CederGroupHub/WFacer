@@ -32,7 +32,8 @@ class GSGenerator(MSONable):
     Also, do not call this twice in an iteration.
     """
     #Modify this when you implement new handlers
-    supported_handlers = ('CanonicalHandler','MCGrandHandler','PBGrandHandler')
+    supported_handlers = ('CanonicalMCHandler','CanonicalPBHandler',\
+                          'SemigrandMCHandler','SemigrandPBHandler')
 
     def __init__(self,ce,\
                       prim,\

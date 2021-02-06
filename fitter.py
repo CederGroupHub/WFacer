@@ -80,7 +80,8 @@ class CEFitter(MSONable):
         #check if possible to use hierarchy.
         self._estimator = globals()[estimator_flavor]()
         self.use_hierarchy = use_hierarchy
-        self.hierarchy = self.cspc.bit_combo_hierarchy()
+        #Use low-to-up hierarchy
+        self.hierarchy = self.cspc.bit_combo_hierarchy(invert=True)
 
         #Will be refreshed after every fit, so it is your respoinsibility not to 
         #double-fit the same dataset!!

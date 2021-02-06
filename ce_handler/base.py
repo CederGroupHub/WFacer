@@ -37,38 +37,3 @@ class BaseHandler(ABC):
                 Ground state occupation, ground state energy.
         """
         return
-
-class MCHandler(BaseHandler,ABC):
-    """
-    Base monte-carlo handler class. Provides ground states, de-freeze
-    sampling.
-    Note: In the future, will support auto-equilibration.
-    """
-    def __init__(self,ce,sc_mat,**kwargs):
-        """
-        Args:
-            ce(ClusterExpansion):
-                A cluster expansion object to solve on.
-            sc_mat(3*3 ArrayLike):
-                Supercell matrix to solve on.
-        """
-        super().__init__(ce,sc_mat,**kwargs)
- 
-    @abstractmethod
-    def get_unfreeze_sample(self,unfreeze_series=[500,1500,5000]):
-        """
-        Starting from the ground state, get samples under a series 
-        if increasing temperatures.
-        Will take 100 entree under each temperature.
-       
-        Args:
-            unfreeze_series(List[float]):
-                A series of increasing temperatures to sample on.
-                By default, will sample under 500, 1500 and 5000 K.
-
-        Return:
-            sample_occus(List[List[int]]):
-                A list of sampled encoded occupation arrays. The first
-                one will always be the one with lowest energy!
-        """
-        return
