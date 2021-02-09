@@ -5,7 +5,7 @@ import polytope as pc
 from scipy.spatial import ConvexHull
 
 from collections import OrderedDict
-from itertools import combinations,product
+from itertools import combinations,product,chain
 from copy import deepcopy
 from monty.json import MSONable
 import json
@@ -181,7 +181,7 @@ class CompSpace(MSONable):
         This class generates a CN-compositional space from a list of Species or DummySpecies
         and sublattice sizes.
 
-        A composition in CEAuto can be expressed in two forms:
+        A composition in CEAuto can be expressed in 5 forms:
         1, A Coordinate in unconstrained space, with 'single site flips' as basis vectors, and
            a 'background occupation' as the origin.
            We call this 'unconstr_coord'
@@ -189,6 +189,12 @@ class CompSpace(MSONable):
            conserving elementary flips as basis vectors, and a charge neutral composition as 
            the origin.(Usually selected as one vertex of the constrained space.)
            We call this 'constr_coord'.
+        3, List of species counts on each sublattices, in the order of bits table. We call this,
+           'compositional_statistics'. 2D List of ints(un-normalized) or floats(normalized).
+        4, Normalized compostions of each sublattice. (This form is always normalized).
+        5, The above are all sublattice discriminative descriptions of the compositonal space.
+           By merging same specie on different sublattices into one coordinate, we can establish
+           'non-discriminative_coordinates'.
 
         For example, if bits = [[Li+,Mn3+,Ti4+],[P3-,O2-]] and sl_sizes = [1,1] (LMTOF rock-salt), then:
            'single site flips' basis are:
@@ -232,6 +238,21 @@ class CompSpace(MSONable):
                 If None given, sl_sizes will be reset to [1,1,....]
         """
         self.bits = bits
+
+        #For non-discriminative coordinates
+        species = list(set(chain(*self.bits)))
+        self.species = []
+        for b in species:
+            if isinstance(b,Vacancy):
+                vac_dupe = False
+                for b_old in self.species:
+                    if isinstance(b_old,Vacancy):
+                        vac_dupe=True
+                        break
+                if vac_dupe:
+                    continue
+            self.species.append(b)
+
         self.nbits = [list(range(len(sl_bits))) for sl_bits in bits]
         if sl_sizes is None:
             self.sl_sizes = [1 for i in range(len(self.bits))]
@@ -290,7 +311,7 @@ class CompSpace(MSONable):
     @property
     def dim(self):
         """
-        Type: Boolean
+        Type: Int
 
         Dimensionality of the allowed conpositional space.
         """
@@ -299,6 +320,14 @@ class CompSpace(MSONable):
             return d
         else:
             return d-1
+
+    @property
+    def dim_nondisc(self):
+        """
+        Type: int
+        Dimension of non-discriminative coordinates
+        """
+        return len(self.species)
 
     @property
     def unit_spc_basis(self):
@@ -816,6 +845,33 @@ class CompSpace(MSONable):
 
         return np.array(x)
 
+    def _unconstr_to_nondisc(self,x,sc_size=1):
+        """
+        Translates an unconstrained coordinate into non-discriminative 
+        coordinate. Same specie on different sublattices will be summed
+        up as one coordinate.
+
+        Returns:
+            np.array
+        """
+        nondisc = np.zeros(self.dim_nondisc)
+        compstat = self._unconstr_to_compstat(x,sc_size=sc_size)
+   
+        for sl_bits,sl_ns in zip(self.bits,compstat):
+            for b,n in zip(sl_bits,sl_ns):
+                for sp_id,sp in enumerate(self.species):       
+                    if sp == b:
+                        nondisc[sp_id] += n
+                        break
+                    elif (isinstance(sp,Vacancy) and isinstance(b,Vacancy)):
+                        nondisc[sp_id] += n
+                        break
+
+        if np.sum(nondisc) != sc_size*sum(self.sl_sizes):
+            raise  OUTOFSUBSPACEERROR
+ 
+        return nondisc
+                        
 
     def _convert_unconstr_to(self,x,form='unconstr',sc_size=1):
         """
@@ -833,11 +889,12 @@ class CompSpace(MSONable):
                 'compstat': use compstat lists.(See self._unconstr_to_compstat doc)
                 'composition': use a pymatgen.composition for each sublattice 
                                (vacancies not explicitly included)
+                'nondisc': non-discriminate coordinates.
         """
         if len(np.array(x).shape)>1:
             result = [self._convert_unconstr_to(x_sub,form=form,sc_size=sc_size) \
                       for x_sub in x])
-            if form in ['constr','unconstr']:
+            if form in ['constr','unconstr','nondisc']:
                 return np.array(result)
             else:
                 return result
@@ -850,6 +907,8 @@ class CompSpace(MSONable):
             return self._unconstr_to_compstat(x,sc_size=sc_size)
         elif form == 'composition':
             return self._unconstr_to_composition(x,sc_size=sc_size)
+        elif form == 'nondisc':
+            return self._unconstr_to_nondisc(x,sc_size=sc_size)
         else:
             raise ValueError('Requested format not supported.')
 
@@ -870,6 +929,8 @@ class CompSpace(MSONable):
                 'compstat': use compstat lists.(See self._unconstr_to_compstat doc)
                 'composition': use a pymatgen.composition for each sublattice 
                                (vacancies not explicitly included, and must be normalized.
+
+        Note: 'non-disc' can not be converted back to 'unconstr'
         """
         if form in ['unconstr','constr']:
             if len(np.array(x).shape)>1:
@@ -918,6 +979,9 @@ class CompSpace(MSONable):
                 'composition': use a pymatgen.composition for each sublattice 
                                (vacancies not explicitly included)
         """
+        if from_format == 'nondisc':
+            raise ValueError('Non-discriminative coordinates can not be converted to discriminative!')
+
         ucoords = self._convert_to_unconstr(x,form=from_format,sc_size=sc_size)
         return self._convert_unconstr_to(ucoords,form=to_format,sc_size=sc_size)
 

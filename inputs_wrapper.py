@@ -96,8 +96,11 @@ class InputsWrapper(MSONable):
                         self._sublat_list[sl_id].append(s_id)
                     else:
                         self._sublat_list.append([s_id])
-                        self._bits.append(s_bits)                  
-
+                        self._bits.append(s_bits)
+                  
+        #sort every sublattice!
+        self._bits = list(map(sorted,self._bits))
+            
         return self._bits
 
     @property
