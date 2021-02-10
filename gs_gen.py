@@ -30,10 +30,14 @@ class GSGenerator(MSONable):
     You may not want to call __init_ directly.
 
     Also, do not call this twice in an iteration.
+
+    Note: Since when studying ground state occupations, we actually care
+          about INTERNAL DISTRIBUTION on sublattices, we MUST use DISCRIMINATIVE
+          handler!
     """
     #Modify this when you implement new handlers
     supported_handlers = ('CanonicalMCHandler','CanonicalPBHandler',\
-                          'SemigrandMCHandler','SemigrandPBHandler')
+                          'SemigrandDiscMCHandler','SemigrandDiscPBHandler')
 
     def __init__(self,ce,\
                       prim,\
@@ -158,7 +162,7 @@ class GSGenerator(MSONable):
             _checker = GSChecker(self.ce.cluster_subspace,ce_history=history,\
                                  data_manager=self._dm)
             _cehull = _checker.curr_ce_hull
-            self._mu_center = estimate_mu_from_hull(self._cehull)
+            self._mu_center = estimate_mu_from_hull(_cehull)
 
         _mu_step = self._handler_args.get('mu_grid_step',0.4)
         _mu_num = self._handler_args.get('mu_grid_num',5)
@@ -171,6 +175,7 @@ class GSGenerator(MSONable):
             gs_occu = list(gs_occu)
             return gs_occu,gs_e
        
+        #This number can be huge!! How to lower this?
         sc_mus = list(itertools.product(self.sc_df.matrix,_mu_grid))
         pool = mp.Pool(_nproc)
         gs_occu_es = pool.map(lambda p: grand_handler_call(self.flavor,self.ce,\

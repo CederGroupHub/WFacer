@@ -115,6 +115,9 @@ class DataManager:
             cstat(List[List[float]]):
                 Normalized species statistics table by each sublattice.
                 (Normalized by supercell size)
+            nondisc(List[float]):
+                Non discriminative composition vector, sums same specie on
+                different sublattices up. This is the only physical composition.
             eq_occu(List[int]):
                 MC equilibrated occupation array in encoded form.
         """
@@ -122,6 +125,7 @@ class DataManager:
             self._comp_df = pd.DataFrame(columns=['comp_id','sc_id',\
                                                   'ucoord','ccoord',\
                                                   'comp','cstat',\
+                                                  'nondisc',\
                                                   'eq_occu'])
         return self.._comp_df
 
@@ -334,12 +338,16 @@ class DataManager:
         cstat = self._compspace.translate_format(new_comp,\
                                                  from_format=comp_format,\
                                                  to_format='compstat').tolist()      
-
+        nondisc = self._compsace.translate_format(new_comp,\
+                                                  from_format=comp_format,\
+                                                  to_format='nondisc').tolist()
+       
         comp_id = self.comp_df.comp_id.max()+1 if len(self.comp_df)>0 else 0
 
         self._comp_df = self._comp_df.append({'comp_id':comp_id,'sc_id':sc_id,\
                                               'ucoord':ucoord,'coord':ccoord,\
                                               'cstat':cstat,'comp':comp,\
+                                              'nondisc':nondisc,\
                                               'eq_occu':None},ignore_index=True)
         return sc_id, comp_id
 
@@ -670,7 +678,7 @@ class DataManager:
         filt_ = self.fact_df.calc_status==status:
         return self.fact_df[filt_].entry_id.tolist()
 
-    def set_status(self,eids = [],status='NC'):
+    def set_status(self,eids = [],status='NC',flush_and_reload=True):
         """
         Set calc_status column of corresponding entree indices in the fact table.
         Args:
@@ -678,9 +686,18 @@ class DataManager:
                 entree indices to rewrite calc_status
             status(str):
                 The status to rewrite with. See self.fact_df for allowed values.
+            flush_and_reload(Boolean):
+                If true, will re-save dataframes, and reload the status checker from the
+                new saves. Default to true.
+      
         """
         filt_ = self._fact_df.entry_id.isin(eids)
         self._fact_df.loc[filt_,'calc_status']=status
+
+        #Flush and read again.
+        if flush_and_reload:
+            self.auto_save(to_load_paths=True)
+            self._schecker.re_load(from_load_paths=True)
 
     def reset(self,flush_and_reload=True):
         """
@@ -766,6 +783,7 @@ class DataManager:
                                         converters={'ucoord':list_conv,
                                                     'ccoord':list_conv,
                                                     'cstat':list_conv,
+                                                    'nondisc':list_conv,
                                                     'eq_occu':list_conv,
                                                     'comp':deser_comp
                                                    })

@@ -353,6 +353,7 @@ class Featurizer(MSONable):
 
     @classmethod
     def auto_load(cls,options_file=OPTIONS_FILE,\
+                      decor_file=DECOR_FILE,\
                       sc_file=SC_FILE,\
                       comp_file=COMP_FILE,\
                       fact_file=FACT_FILE,\
@@ -366,6 +367,8 @@ class Featurizer(MSONable):
             options_file(str):
                 path to options file. Options must be stored as yaml
                 format. Default: 'options.yaml'
+            decor_file(str):
+                Decorators data file. Optional, default: 'decors.json'.
             sc_file(str):
                 path to supercell matrix dataframe file, in csv format.
                 Default: 'sc_mats.csv'

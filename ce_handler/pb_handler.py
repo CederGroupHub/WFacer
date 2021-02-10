@@ -10,6 +10,10 @@ class CanonicalPBHandler(PBHandler):
      def __init__(self):
          pass
 
+class SemigrandDiscPBHandler(PBHandler):
+     def __init__(self):
+         pass
+
 class SemigrandPBHandler(PBHandler):
      def __init__(self):
          pass

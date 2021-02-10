@@ -112,10 +112,12 @@ def estimate_mu_from_hull(hull):
     This util function estimates the central mu in compositional space
     from grounds states hull vertices.(Constrained compositional space,
     refer to comp_space.py)
+
+    Note: THIS IS FOR SUBLATTICE DISCRIMINATIVE ONLY!
     Args:
         hull(pd.DataFrame):
             A hull in dataframe form, must contain at least two columns:
-            'ccoord','e_prim'
+            'ccoord','e_prim', and the coord must be normalized!
     Return:
         List of length ndim, each component contains a central estimate 
         of mu on that compositional dimension.
@@ -131,6 +133,41 @@ def estimate_mu_from_hull(hull):
         y.append(hull.iloc[0]['e_prim'] - hull.iloc[v_id]['e_prim'])
     X = np.array(X)
     y = np.array(y)
+    return (np.linalg.inv(X.T@X)@X.T@y).tolist()
+
+
+def estimate_chempot_from_hull_nondisc(hull_nondisc):
+    """
+    Estimate a central chemical potential from NON-DISCRIMINATIVE hull.
+    For what is a non-discriminative compositional coordinate, see comp_space
+    documents.
+
+    Args:
+        hull(pd.DataFrame):
+            A hull in dataframe form, must contain at least two columns:
+            'nondisc','e_prim', and the nondisc must be normalized!
+    Return:
+        List of length n_species, each component contains an estimated chemical
+        potential corresponding to a specie in comp_space.species.
+    """
+    hull = hull.reset_index()
+    all_nodiscs = hull['nodisc'].tolist()
+    boundhull = ConvexHull(all_nodiscs)
+    #Select edges originating from the first vertex only
+    X = []
+    y = []
+    for v_id in boundhull.vertices[1:]:
+        X.append(np.array(hull.iloc[0]['nodisc'])-np.array(hull.iloc[v_id]['nodisc']))
+        y.append(hull.iloc[0]['e_prim'] - hull.iloc[v_id]['e_prim'])
+
+    #Enforce the last chemical potential as 0.
+    X = np.array(X)
+    base_line = np.zeros(X.shape[1])
+    base_line[-1]=1
+    X = np.vstack((X,base_line))
+    y = np.array(y)
+    y = np.append(y,0)
+
     return (np.linalg.inv(X.T@X)@X.T@y).tolist()
 
 

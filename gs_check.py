@@ -16,9 +16,13 @@ from .data_manager import DataManager
 
 class GSChecker:
     """
-    A ground state checker class. This class only checks grand
+    A ground state checker class. This class only checks DISCRIMINATIVE 
     canoncial ground state convergence, and does not modify the
     fact table.
+    We check DISCRIMINATIVE instead of NONDISCRIMINATIVE because when
+    talking about ground state occupation we actually care about internal
+    distribution across sublattices!
+
     Only energies will be checked.
     """
     def __init__(self,cluster_subspace=None,\

@@ -9,7 +9,8 @@ from abc import ABC,abstractmethod
 import random
 
 from smol.cofe.space.domain import get_allowed_species
-from smol.moca import CanonicalEnsemble, CNSemiGrandEnsemble, sampler
+from smol.moca import CanonicalEnsemble, CNSemiGrandDiscEnsemble,\
+                      CNSemiGrandEnsemble,Sampler
 
 from .base import BaseHandler
 from ..comp_space import CompSpace
@@ -276,9 +277,10 @@ class CanonicalMCHandler(MCHandler):
         self._processor = self._ensemble.processor
 
 
-class SemigrandMCHandler(MCHandler):
+class SemigrandDiscMCHandler(MCHandler):
     """
-    Charge neutral semigrand canonical ensemble, used for grand canonical ground states.
+    Sublattice DISCRIMINATIVE Charge neutral semigrand canonical ensemble!
+    Used for grand canonical ground states only.
     """
     def __init__(self,ce,sc_mat,mu,\
                       gs_occu=None,\
@@ -329,9 +331,72 @@ class SemigrandMCHandler(MCHandler):
         int_comp = random.choice(compspace.int_grids(sc_size=self.sc_size,form='compstat'))
         self._gs_occu = gs_occu or self._initialize_occu_from_int_comp(int_comp)
 
-        self._ensemble = CNSemiGrandEnsemble.from_cluster_expansion(self.ce, self.sc_mat,\
+        self._ensemble = CNSemiGrandDiscEnsemble.from_cluster_expansion(self.ce, self.sc_mat,\
                                                    optimize_inidicator=self.is_indicator,\
                                                    mu=self.mu)
+
+        self._sampler = Sampler.from_ensemble(ensemble,temperature=1000)
+        self._processor = self._ensemble.processor
+
+class SemigrandMCHandler(MCHandler):
+    """
+    Sublattice NON-DISCRIMINATIVE, Charge neutral semigrand canonical ensemble!
+    Used for other physical applications!
+    """
+    def __init__(self,ce,sc_mat,chemical_potentials,\
+                      gs_occu=None,\
+                      anneal_series=[3200,1600,800,400,200,100,50],\
+                      unfreeze_series=[500,1500,5000],\
+                      n_runs_sa = 100,\
+                      n_runs_unfreeze = 500,\
+                      **kwargs):
+
+        """
+        Args:
+            ce(ClusterExpansion):
+                A cluster expansion object to solve on.
+            sc_mat(3*3 ArrayLike):
+                Supercell matrix to solve on.
+            chemical_potentials(Dict{Specie|Vacancy|DummySpecie:float}):
+                Chemical potentials of all species, regardless of their
+                sublattices.
+            anneal_series(List[float]):
+                A series of temperatures to use in simulated annealing.
+                Must be strictly decreasing.
+            unfreeze_series(List[float]):
+                A series of increasing temperatures to sample on.
+                By default, will sample under 500, 1500 and 5000 K.
+            n_runs_sa(int):
+                Number of runs per simulated annealing step. 1 run = 
+                # of sites in a supercell.
+            n_runs_unfreeze(int):
+                Number of runs per unfreezing step. 1 run = 
+                # of sites in a supercell.
+            gs_occu(List[int]):
+                Encoded occupation array of previous ground states.
+                 Optional, but if you have it, you can save the 
+                 ground state solution time when sampling.
+
+        """
+        super().__init__(ce,sc_mat,gs_occu=gs_occu,\
+                                   anneal_series = anneal_series,\
+                                   unfreeze_series = unfreeze_series,\
+                                   n_runs_sa = n_runs_sa,\
+                                   n_runs_unfreeze = n_runs_unfreeze,\
+                                   **kwargs)
+
+        self.sl_sizes = [len(sl) for sl in self.sublat_list]
+
+        self.mu = mu
+
+        compspace = CompSpace(self.bits,self.sl_sizes)
+
+        int_comp = random.choice(compspace.int_grids(sc_size=self.sc_size,form='compstat'))
+        self._gs_occu = gs_occu or self._initialize_occu_from_int_comp(int_comp)
+
+        self._ensemble = CNSemiGrandEnsemble.from_cluster_expansion(self.ce, self.sc_mat,\
+                                                   optimize_inidicator=self.is_indicator,\
+                                                   chemical_potentials=chemical_potentials)
 
         self._sampler = Sampler.from_ensemble(ensemble,temperature=1000)
         self._processor = self._ensemble.processor

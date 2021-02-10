@@ -184,6 +184,7 @@ class CEFitter(MSONable):
             self._coefs = self._history[-1]['coefs']
             self._cv = self._history[-1]['cv']
             self._rmse = self._history[-1]['rmse']
+            self._updated = True #mute history update!
             return
 
         fact_df = self.fact_df.copy()
@@ -237,8 +238,7 @@ class CEFitter(MSONable):
         Status Checker will prevent double appending in a same iteration, therefore 
         lenth of history should always be the same as the current iteration number.
         """
-        if len(self._cv) and len(self._rmse) and len(self._coefs) and not self._updated \
-           and self._schecker.last_completed_module_id<5: #Fitter not finished in current cycle.
+        if len(self._cv) and len(self._rmse) and len(self._coefs) and not self._updated:
             self._history.append({"cv":self._cv,
                                   "rmse":self._rmse,
                                   "coefs":self._coefs})
