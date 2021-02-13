@@ -34,19 +34,21 @@ class CEFitter(MSONable):
 
     supported_weights = ('unweighted','e_above_hull','e_above_comp')
 
-    def __init__(self,cluster_subspace,\
+    def __init__(self,cluster_subspace,data_manager,\
                       estimator_flavor='L2L0Estimator',\
                       weights_flavor='unweighted',\
                       use_hierarchy=True,\
                       estimator_params={},\
-                      weighter_params={},\
-                      data_manager = DataManager.auto_load()):
+                      weighter_params={}
+                ):
 
         """
         Args:
             cluster_subspace(smol.ClusterSubspace):
                 The cluster subspace used in featurization.
                 Compulsory.
+            data_manager(DataManager):
+               A data manager object to read and write dataframes.
             estimator_flavor(str):
                 Name of estimator to be used from .regression module. 
                 By default, we will always use L2L0Estimator.
@@ -67,8 +69,6 @@ class CEFitter(MSONable):
                 See regression module.
             weighter_params(Dict):
                 Parameters to pass into the weighting module. See utils.weight_utils
-            data_manager(DataManager):
-               A data manager object to read and write dataframes.
         """
 
         self.cspc = cluster_subspace

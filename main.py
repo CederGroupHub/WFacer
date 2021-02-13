@@ -16,7 +16,7 @@ from CEAuto import Fitter
 from CEAuto import GSChecker
 from CEAuto import GSGenerator
 
-def main():
+def CEAuto_run():
     #Load and flush once for easier realoading later.
     iwrapper = InputsWrapper.auto_load()
     iwrapper.auto_save()
@@ -53,4 +53,4 @@ def main():
     print("Congradulations! CE has reached convergence!")
 
 if __name__=="__main__":
-    main()
+    CEAuto_run()

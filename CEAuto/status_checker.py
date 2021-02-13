@@ -187,8 +187,9 @@ class StatusChecker:
                                                   comp_file=comp_file,\
                                                   fact_file=fact_file)
 
-        if os.path.isfile(ce_history_file) as fin:
-            history = json.load(fin)
+        if os.path.isfile(ce_history_file):
+            with open(ce_history_file) as fin:
+                history = json.load(fin)
         else:
             history = []
 
@@ -221,8 +222,9 @@ class StatusChecker:
                                                   comp_file=comp_file,\
                                                   fact_file=fact_file)
 
-        if os.path.isfile(ce_history_file) as fin:
-            history = json.load(fin)
+        if os.path.isfile(ce_history_file):
+            with open(ce_history_file) as fin:
+                history = json.load(fin)
         else:
             history = []
 

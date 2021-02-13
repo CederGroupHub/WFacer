@@ -83,20 +83,24 @@ class Featurizer(MSONable):
     #Edit this dict as you implement new specie decorators.
     decorator_requirements = {'MagChargeDecorator':['magnetization']}
 
-    def __init__(self,prim,\
+    def __init__(self,prim,data_manager,calc_reader,\
                       bits=None,\
                       sublat_list=None,\
                       is_charged=False,\
                       previous_ce=None,\
                       decorators=[],\
-                      other_props=[],\
-                      data_manager=DataManager.auto_load(),\
-                      calc_reader=ArchVaspReader.auto_load()):
+                      other_props=[]):
 
         """
         Args:
             prim(Structure):
                 primitive cell of the structure to do cluster expansion on.
+
+            data_manager(DataManager):
+                The database manager class to use for this instance.
+    
+            calc_reader(BaseCalcReader):
+                Calculation reader, depends on your selected CalcWriter and CalcManager type.
     
             bits(List[List[Specie]]):
                 Occupying species on each sublattice. Vacancy() should be included.
@@ -142,12 +146,7 @@ class Featurizer(MSONable):
                 will be given by calc_reader class. Check calc_reader docs for detail.
      
                 Any physical quantity will always be normalized by supercell size!
-    
-            data_manager(DataManager):
-                The database manager class to use for this instance.
-    
-            calc_reader(BaseCalcReader):
-                Calculation reader, depends on your selected workflow type.
+   
         """
 
         self.prim = prim

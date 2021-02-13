@@ -22,7 +22,7 @@ from .utils.comp_utils import normalize_compstat
 
 from .comp_space import CompSpace
 from .inputs_wrapper import InputsWrapper #Used in auto_load()
-from .status_check import StatusChecker #Used in auto_load()
+from .status_checker import StatusChecker #Used in auto_load()
 
 from .config_paths import *
 
@@ -127,7 +127,7 @@ class DataManager:
                                                   'comp','cstat',\
                                                   'nondisc',\
                                                   'eq_occu'])
-        return self.._comp_df
+        return self._comp_df
 
     @property
     def fact_df(self):
@@ -528,7 +528,7 @@ class DataManager:
                                               'map_occu':calculated_info.get('map_occu'),\
                                               'map_corr':calculated_info.get('map_corr'),\
                                               'e_prim':calculated_info.get('e_prim'),\
-                                              'other_props':calculated_info.get('other_props'),\
+                                              'other_props':calculated_info.get('other_props')},\
                                               ignore_index = True
                                              )
 
@@ -620,7 +620,7 @@ class DataManager:
             by default we will update the saved dataframes, and reload status checker.
         """
         filt = (self.fact_df.iter_id.isin(iter_ids)) & \
-               (self.fact_df.module.isin(modules)
+               (self.fact_df.module.isin(modules))
         eids = self.fact_df[filt].entry_id.tolist()
         self.remove_entree_by_id(eids)
         #Flush and read again.
@@ -675,7 +675,7 @@ class DataManager:
             List[int], indices in the fact table with that
             calc_status.
         """
-        filt_ = self.fact_df.calc_status==status:
+        filt_ = (self.fact_df.calc_status==status)
         return self.fact_df[filt_].entry_id.tolist()
 
     def set_status(self,eids = [],status='NC',flush_and_reload=True):
@@ -727,7 +727,7 @@ class DataManager:
         self._fact_df.entry_id = list(range(len(self._fact_df)))
         self._fact_df = self._fact_df.reset_index()
 
-   def _reassign_comp_ids(self):
+    def _reassign_comp_ids(self):
         """
         Reassign comp_id by the length of the comp dataframe. Both fact_df and the
         comp_df will be changed.
@@ -739,7 +739,7 @@ class DataManager:
         self._fact_df = self._fact_df.reset_index()
         self._comp_df = self._comp_df.reset_index()
 
-   def _reassign_sc_ids(self):
+    def _reassign_sc_ids(self):
         """
         Reassign sc_id by the length of the sc dataframe. All fact_df, comp_df and 
         sc_df will be changed.

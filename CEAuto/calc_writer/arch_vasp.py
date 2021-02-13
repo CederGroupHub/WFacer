@@ -10,7 +10,6 @@ from pymatgen.io.vasp.sets import MPRelaxSet, MPMetalRelaxSet,\
                                   MPStaticSet
 
 from .base import BaseWriter
-from ..data_manager import DataManager
 
 class ArchVaspWriter(BaseWriter):
     """
@@ -45,14 +44,16 @@ class ArchVaspWriter(BaseWriter):
         If you provide both 'relax' and 'static' options, only 'relax' options will be
         used.
     """
-    def __init__(self, path = 'vasp_run', 
+    def __init__(self, data_manager,\
+                       path = 'vasp_run', 
                        writer_strain=[1.05,1.03,1.01],\
                        is_metal = False,\
                        ab_setting={},\
-                       data_manager=DataManager.auto_load(),\
                        **kwargs):
         """
         Args: 
+            data_manager(DataManger):
+                A socket to computational data.
             path(str):
                 path to the calculation archieve.
             writer_strain(1*3 or 3*3 arraylike):
@@ -68,11 +69,9 @@ class ArchVaspWriter(BaseWriter):
                 May have two keys, 'relax' and 'static'. If you provide both,
                 only 'relax' will be used.
                 See pymaten.vasp.io.sets for detail.
-            data_manger(DataManger):
-                A socket to computational data.
         """
         super().init_(writer_strain=writer_strain,ab_setting=ab_setting,\
-                      data_manger=data_manager,**kwargs)
+                      data_manager=data_manager,**kwargs)
         self.path = path
         self.is_metal = is_metal
                

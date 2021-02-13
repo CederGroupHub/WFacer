@@ -8,9 +8,6 @@ import numpy as np
 import time
 from datetime import datetime
 
-from ..data_manager import DataManager
-from ..inputs_wrapper import InputsWrapper
-
 from ..config_paths import *
 
 class BaseManager(ABC):
@@ -30,18 +27,19 @@ class BaseManager(ABC):
           or auto_load.
           Direct init not recommended!
     """
-    def __init__(self,time_limit=345600,check_interval=300,\
-                      data_manager=DataManager.auto_load(),**kwargs):
+    def __init__(self,data_manager,\
+                      time_limit=345600,check_interval=300,\
+                      **kwargs):
         """
         Args:
+            data_manager(DataManager):
+                An interface to the calculated and enumerated data.
             time_limit(float):
                 Time limit for all calculations to finish. Unit is second.
                 Default is 4 days.
             check_interval(float):
                 Interval to check status of all computations in queue. Unit is second.
                 Default is every 5 mins.
-            data_manager(DataManager):
-                An interface to the calculated and enumerated data.
         """
         self.time_limit=time_limit
         self.check_interval=check_interval
@@ -114,7 +112,7 @@ class BaseManager(ABC):
             if not np.any(self.entree_in_quque(entry_ids)): 
                 break          
             print(">>Time: {}, Remaining(seconds): {}\n  {}/{} calculations finished!".\
-                  format(datetime.now(),t_quota,int(np.sum(status)),len(status))
+                  format(datetime.now(),t_quota,int(np.sum(status)),len(status)))
         
         if t_quota>0:            
             print("**Calculations finished at: {}".format(datetime.now()))
@@ -159,44 +157,3 @@ class BaseManager(ABC):
         Submit entree to queue.
         """
         return  
-
-    @classmethod
-    def auto_load(cls,options_file=OPTIONS_FILE,\
-                      sc_file=SC_FILE,\
-                      comp_file=COMP_FILE,\
-                      fact_file=FACT_FILE,\
-                      ce_history_file=CE_HISTORY_FILE):
-        """
-        This method is the recommended way to initialize this object.
-        It automatically reads all setting files with FIXED NAMES.
-        YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
-        YOU MAY BREAK THE INITIALIZATION PROCESS!
-        Args:
-            options_file(str):
-                path to options file. Options must be stored as yaml
-                format. Default: 'options.yaml'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'
-            comp_file(str):
-                path to compositions file, in csv format.
-                Default: 'comps.csv'             
-            fact_file(str):
-                path to enumerated structures dataframe file, in csv format.
-                Default: 'data.csv'             
-            ce_history_file(str):
-                path to cluster expansion history file.
-                Default: 'ce_history.json'
-        Returns:
-            BaseManager object.
-        """
-        options = InputsWrapper.auto_load(options_file=options_file,\
-                                          ce_history_file=ce_history_file)
-
-        dm = DataManager.auto_load(options_file=options_file,\
-                                   sc_file=sc_file,\
-                                   comp_file=comp_file,\
-                                   fact_file=fact_file,\
-                                   ce_history_file=ce_history_file)
-
-        return cls(data_manager=dm,**options.calc_manager_options)

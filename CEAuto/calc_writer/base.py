@@ -3,9 +3,6 @@ Base calculation writer class.
 """
 __author__ = "Fengyu Xie"
 
-from ..data_manager import DataManager
-from ..inputs_wrapper import InputsWrapper
-
 from ..config_paths import *
 
 from abc import ABC, abstractmethod
@@ -27,11 +24,14 @@ class BaseWriter(ABC):
           or auto_load.
           Direct init not recommended!
     """
-    def __init__(self,writer_strain=[1.05,1.03,1.01],ab_setting={},\
-                      data_manager=DataManager.auto_load(),\
+    def __init__(self,data_manager,\
+                      writer_strain=[1.05,1.03,1.01],ab_setting={},\
                       **kwargs):
         """
         Args:
+            data_manager(DataManager):
+                An interface to previous calculation and enumerated 
+                data.
             writer_strain(1*3 or 3*3 arraylike):
                 Strain matrix to apply to structure before writing as 
                 inputs. This helps breaking symmetry, and relax to a
@@ -39,9 +39,6 @@ class BaseWriter(ABC):
             ab_setting(Dict):
                 Pass ab-initio software options. For vasp,
                 look at pymatgen.vasp.io.sets doc.
-            data_manager(DataManager):
-                An interface to previous calculation and enumerated 
-                data.
         """
         self.strain = writer_strain
         self.ab_setting = ab_setting
@@ -90,44 +87,3 @@ class BaseWriter(ABC):
         
         self._dm.set_status(eids,'CC') #Set status to 'computing'
         self._dm.auto_save() #flush data
-
-    @classmethod
-    def auto_load(cls,options_file=OPTIONS_FILE,\
-                      sc_file=SC_FILE,\
-                      comp_file=COMP_FILE,\
-                      fact_file=FACT_FILE,\
-                      ce_history_file=CE_HISTORY_FILE):
-        """
-        This method is the recommended way to initialize this object.
-        It automatically reads all setting files with FIXED NAMES.
-        YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
-        YOU MAY BREAK THE INITIALIZATION PROCESS!
-        Args:
-            options_file(str):
-                path to options file. Options must be stored as yaml
-                format. Default: 'options.yaml'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'
-            comp_file(str):
-                path to compositions file, in csv format.
-                Default: 'comps.csv'             
-            fact_file(str):
-                path to enumerated structures dataframe file, in csv format.
-                Default: 'data.csv'             
-            ce_history_file(str):
-                path to cluster expansion history file.
-                Default: 'ce_history.json'
-        Returns:
-             BaseWriter object.
-        """
-        options = InputsWrapper.auto_load(options_file=options_file,\
-                                          ce_history_file=ce_history_file)
-
-        dm = DataManager.auto_load(options_file=options_file,\
-                                   sc_file=sc_file,\
-                                   comp_file=comp_file,\
-                                   fact_file=fact_file,\
-                                   ce_history_file=ce_history_file)
-
-        return cls(data_manager=dm,**options.calc_writer_options)

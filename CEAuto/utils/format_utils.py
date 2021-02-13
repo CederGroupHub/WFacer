@@ -37,14 +37,14 @@ def merge_dicts(ds,keep_all=False):
 
 
 # flatten and de-flatten a 2d array
-def flatten_2d(2d_lst,remove_nan=True):
+def flatten_2d(lst_2d,remove_nan=True):
     """
     Sequentially flatten any 2D list into 1D, and gives a deflatten rule.
     Inputs:
-        2d_lst(List of list):
+        lst_2d(List of list):
             A 2D list to flatten
         remove_nan(Boolean):
-            If true, will disregard all None values in 2d_lst when compressing.
+            If true, will disregard all None values in lst_2d when compressing.
             Default is True
     Outputs:
         flat(List):
@@ -56,7 +56,7 @@ def flatten_2d(2d_lst,remove_nan=True):
     """
     deflat_rule = []
     flat = []
-    for sl in 2d_lst:
+    for sl in lst_2d:
         if remove_nan:
             sl_return = [item for item in sl if item is not None]
         else:
@@ -78,17 +78,17 @@ def deflat_2d(flat_lst,deflat_rule,remove_nan=True):
             unpack to each sublist based on these numbers.
         remove_nan(Boolean):
             If true, will first deflat on deflat rule, then remove all 
-            None values in resulting 2d_lst.
+            None values in resulting lst_2d.
             Default is True.
 
     Outputs:
-        2d_lst(List of list):
+        lst_2d(List of list):
             Deflatten 2D list
     """
     if sum(deflat_rule)!= len(flat_lst):
         raise ValueError("Deflatten length does not match original length!")
 
-    2d_lst = []
+    lst_2d = []
     it = 0
     for sl_len in deflat_rule:
         sl = []
@@ -96,6 +96,6 @@ def deflat_2d(flat_lst,deflat_rule,remove_nan=True):
             if flat_lst[i] is None and remove_nan:
                 continue
             sl.append(flat_lst[i])
-        2d_lst.append(sl)
+        lst_2d.append(sl)
         it = it + sl_len
-    return 2d_lst
+    return lst_2d

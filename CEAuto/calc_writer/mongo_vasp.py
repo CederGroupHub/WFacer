@@ -15,7 +15,6 @@ from atomate.vasp.fireworks import OptimizeFW,StaticFW
 from fireworks import LaunchPad,Workflow
 
 from .base import BaseWriter
-from ..data_manger import DataManager
 
 def wf_ce_sample(structure, entry_id, root_name = None, is_metal=False,\
                  relax_set_params = None, static_set_params = None,\
@@ -91,14 +90,16 @@ class MongoVaspWriter(BaseWriter):
           or auto_load.
           Direct init not recommended!
     """
-    def __init__(self,lp_file=None,\
+    def __init__(self,data_manager,\
+                 lp_file=None,\
                  writer_strain=[1.05,1.03,1.01],\
                  is_metal = False,\
                  ab_setting ={},\
-                 data_manger = DataManager.auto_load(),\
                  **kwargs):
         """
         Args: 
+            data_manager(DataManager):
+                A socket to computational data repository.
             lp_file(str):
                 path to launchpad setting file. Default to None, then launchpad will
                 auto load based on configuration.
@@ -114,12 +115,10 @@ class MongoVaspWriter(BaseWriter):
                 look at pymatgen.vasp.io.sets doc.
                 May have two keys, 'relax' and 'static'.
                 See pymaten.vasp.io.sets for detail.
-            data_manager(DataManager):
-                A socket to computational data repository.
         """      
  
         super().init_(writer_strain=writer_strain,ab_setting=ab_setting,\
-                      data_manger=data_manager,**kwargs)
+                      data_manager=data_manager,**kwargs)
 
         self.root_name = os.path.split(os.getcwd())[-1]
         self.is_metal = is_metal

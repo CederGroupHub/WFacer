@@ -15,7 +15,7 @@ from pymatgen import Structure,Element,Lattice
 
 from smol.cofe import ClusterSubspace,ClusterExpansion
 from smol.cofe.space.domain import get_allowed_species,Vacancy
-from smol.cofe.space.extern import *
+from smol.cofe.extern import *
 
 from .utils.serial_utils import decode_from_dict,serialize_any
 from .utils.format_utils import merge_dicts
@@ -590,8 +590,11 @@ class InputsWrapper(MSONable):
         All paths can be changed, but I don't recommend 
         you to do so.
         """
-        with open(ce_history_file) as his:
-            history = json.load(his)
+        if os.path.isfile(ce_history_file):
+            with open(ce_history_file) as his:
+                history = json.load(his)
+        else:
+            history = []
 
         if os.path.isfile(wrapper_file):
             with open(wrapper_file) as ops:

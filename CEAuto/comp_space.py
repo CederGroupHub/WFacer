@@ -16,7 +16,6 @@ from smol.cofe.space.domain import Vacancy
 from pymatgen import Element
 
 from .utils.math_utils import *
-from .utils.format_utils import *
 
 """
 This file contains functions related to implementing and navigating the 

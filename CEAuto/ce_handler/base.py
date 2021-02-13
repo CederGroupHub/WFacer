@@ -4,7 +4,7 @@ with either monte-carlo or pseudo boolean methods, to generate
 useful configurational space information, such as critical samples
 and ground states.
 """
-__author__ == 'Fengyu Xie'
+__author__ = 'Fengyu Xie'
 
 from abc import ABC,abstractmethod
 

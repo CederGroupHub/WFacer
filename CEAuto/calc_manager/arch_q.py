@@ -12,8 +12,6 @@ import numpy as np
 from abc import ABC, abstractmethod
 
 from .base import BaseManager
-from ..data_manager import DataManager
-
 
 ####If you ever define your own queue, you can write your own class like this.
 class ArchQueueManager(BaseManager,ABC):
@@ -38,15 +36,18 @@ class ArchQueueManager(BaseManager,ABC):
           or auto_load.
           Direct init not recommended!
     """
-        submission_template = ""
-        submission_command = ""
-        kill_command = ""
+    submission_template = ""
+    submission_command = ""
+    kill_command = ""
 
-    def __init__(self,path='vasp_run', ab_command='vasp', ncores = 16,\
+    def __init__(self,data_manager,\
+                      path='vasp_run', ab_command='vasp', ncores = 16,\
                       time_limit=345600,check_interval=300,\
-                      data_manager=DataManager.auto_load(),**kwargs):
+                      **kwargs):
         """
         Args:
+            data_manager(DataManager):
+                An interface to the calculated and enumerated data.
             path(str in path format):
                 path to calculations archieve
             queue_name(str):
@@ -67,8 +68,6 @@ class ArchQueueManager(BaseManager,ABC):
             check_interval(float):
                 Interval to check status of all computations in queue. Unit is second.
                 Default is every 5 mins.
-            data_manager(DataManager):
-                An interface to the calculated and enumerated data.
         """
         super().__init__(time_limit=time_limit,check_interval=check_interval,\
                          data_manager=data_manager)
@@ -146,19 +145,22 @@ class ArchSGEManager(ArchQueueManager):
           or auto_load.
           Direct init not recommended!
     """
-        submission_template = "#!/bin/bash\n#$ -cwd\n#$ -j y\n"+\
-                                   "#$ -N {*jobname*}\n#$ -m es\n#$ -V\n"+\
-                                   "#$ -pe impi {*ncores*}\n#$ -o ll_out\n"+\
-                                   "#$ -e ll_er\n#$ -S /bin/bash\n"+\
-                                   "\n{*abcommand*}"
-        submission_command = "qsub"
-        kill_command = "qdel"
+    submission_template = "#!/bin/bash\n#$ -cwd\n#$ -j y\n"+\
+                               "#$ -N {*jobname*}\n#$ -m es\n#$ -V\n"+\
+                               "#$ -pe impi {*ncores*}\n#$ -o ll_out\n"+\
+                               "#$ -e ll_er\n#$ -S /bin/bash\n"+\
+                               "\n{*abcommand*}"
+    submission_command = "qsub"
+    kill_command = "qdel"
 
-    def __init__(self,path='vasp_run', ab_command='vasp', ncores = 16,\
+    def __init__(self,data_manager,\
+                      path='vasp_run', ab_command='vasp', ncores = 16,\
                       time_limit=345600,check_interval=300,\
-                      data_manager=DataManager.auto_load(),**kwargs):
+                      **kwargs):
         """
         Args:
+            data_manager(DataManager):
+                An interface to the calculated and enumerated data.
             path(str in path format):
                 path to calculations archieve
             queue_name(str):
@@ -179,8 +181,6 @@ class ArchSGEManager(ArchQueueManager):
             check_interval(float):
                 Interval to check status of all computations in queue. Unit is second.
                 Default is every 5 mins.
-            data_manager(DataManager):
-                An interface to the calculated and enumerated data.
         """
 
         super().__init__(path=path, ab_command=ab_command, ncores=ncores,\

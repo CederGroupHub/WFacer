@@ -13,7 +13,6 @@ from fireworks.fw_config import QUEUEADAPTER_LOC,LAUNCHPAD_LOC,FWORKER_LOC
 from fireworks.utilities.fw_serializers import load_object_from_file
 
 from .base import BaseManager
-from ..data_manager import DataManager
 
 class MongoFWManager(BaseManager):
     """
@@ -30,7 +29,7 @@ class MongoFWManager(BaseManager):
           take care if you may have sudden computer power-off!
 
     """
-    default_kill_commands = 
+    default_kill_commands = \
     {
         "PBS": "qdel",
         "SGE": "qdel",
@@ -41,24 +40,24 @@ class MongoFWManager(BaseManager):
         "MOAB": "canceljob"
     }
 
-    def __init__(self,time_limit=345600,\
+    def __init__(self,data_manager,\
+                      time_limit=345600,\
                       check_interval=300,\
                       lp_file=None,\
                       fw_file=None,\
                       qa_file=None,\
                       kill_command=None,\
-                      data_manager=DataManager.auto_load(),\
                       **kwargs):
         """
         Args:
+            data_manager(DataManager):
+                An interface to the calculated and enumerated data.
             time_limit(float):
                 Time limit for all calculations to finish. Unit is second.
                 Default is 4 days.
             check_interval(float):
                 Interval to check status of all computations in queue. Unit is second.
                 Default is every 5 mins.
-            data_manager(DataManager):
-                An interface to the calculated and enumerated data.
             kill_command(str):
                 Killing command of your specific queue. If you queue system belongs to:
                 PBS, SGE, Cobalt, SLURM, LoadLeveler, LoadSharingFacility, or MOAB, and

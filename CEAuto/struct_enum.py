@@ -27,9 +27,9 @@ from smol.cofe.space.domain import get_allowed_species,get_species, Vacancy
 from smol.cofe.expansion import ClusterExpansion
 from smol.moca import CanonicalEnsemble,Sampler
 
-from .utils.math_utils import enumerate_matrices,select_rows,combinatorial_number
-from .utils.format_utils import flatten_2d,deflat_2d,serialize_comp,deser_comp,\
-                                structure_from_occu
+from .utils.sc_utils import enumerate_matrices
+from .utils.math_utils import select_rows,combinatorial_number
+from .utils.serial_utils import serialize_comp,deser_comp
 from .utils.calc_utils import get_ewald_from_occu
 from .utils.comp_utils import check_comp_restriction
 
@@ -42,7 +42,7 @@ from .config_paths import *
 
 class StructureEnumerator(MSONable):
 
-    def __init__(self,prim,
+    def __init__(self,data_manager,prim,\
                  bits=None,\
                  sublat_list=None,\
                  is_charged=False,\
@@ -56,12 +56,15 @@ class StructureEnumerator(MSONable):
                  n_strs_enum=100,\
                  handler_args={},\
                  basis_type = 'indicator',\
-                 select_method = 'CUR',
-                 data_manager=DataManager.auto_load()):
+                 select_method = 'CUR'
+                 ):
 
         """
         Direct initialization no longer recommended!
         Args:
+            data_manager(DataManager):
+                The datamanager object to socket enumerated data.
+
             prim(Structure):
                 primitive cell of the structure to do cluster expansion on.
     
@@ -153,8 +156,6 @@ class StructureEnumerator(MSONable):
                     Select randomly
                 Both methods guarantee inclusion of the ground states at initialization.
     
-            data_manager(DataManager):
-                The datamanager to use for this instance.
             All generated structure entree will be saved in a star-schema:
             The dimension tables will contain serialized supercell matrices and compositions,
             and their id's as primary keys.(sc_id, comp_id). These dimension tables will mostly be fixed
@@ -400,7 +401,7 @@ class StructureEnumerator(MSONable):
             all_occus_filt = all_occus
         
 
-	print("**Deduplicating structures by pre_insertion.")
+        print("**Deduplicating structures by pre_insertion.")
         inserted_eids = []  #List of ints
         is_gs = []   #List of booleans
 
@@ -418,7 +419,7 @@ class StructureEnumerator(MSONable):
                     inserted_eids.append(new_eid)
                     is_gs.append((oid==0))
 
-        print("**Generated {} new deduplicated structures.".format(len(inserted_eids))
+        print("**Generated {} new deduplicated structures.".format(len(inserted_eids)))
 
         #Compute indices to keep.
         keep = []
@@ -429,7 +430,7 @@ class StructureEnumerator(MSONable):
         femat = dm_copy.fact_df.loc[dm_copy.entry_id.isin(inserted_eids),'ori_corr'].tolist()
         old_femat = self.fact_df.ori_corr.tolist()
         if self.n_strs_enum>len(femat):
-            warnings.warn("**Number of deduplicated structures fewer than the number you
+            warnings.warn("**Number of deduplicated structures fewer than the number you \
                            wish to enumerate!")
         selected_rids = select_rows(femat,n_select=min(self.n_strs_enum,len(femat)),\
                                           old_femat=old_femat,\
@@ -456,7 +457,7 @@ class StructureEnumerator(MSONable):
                 If true, will flush the cleared dataframes and reload the status checker.
                 Default to true.
         """
-        print("All enumerated entree in the current iteration will be cleared.
+        print("All enumerated entree in the current iteration will be cleared. \
                Current iteration number: {}. Proceed?[y/n]".format(self.cur_iter_id))
         choice = raw_input().lower()
         if choice == 'y':

@@ -6,7 +6,7 @@ __author__ = 'Fengyu Xie'
 
 from monty.json import MontyDecoder
 import json
-import np
+import numpy as np
 
 from pymatgen import Composition
 

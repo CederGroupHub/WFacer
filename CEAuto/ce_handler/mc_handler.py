@@ -90,7 +90,7 @@ class MCHandler(BaseHandler,ABC):
         self._sampler = None
         self._processor = None
 
-     def _get_min_occu_enthalpy(self):
+    def _get_min_occu_enthalpy(self):
         """
         Get minimum thermo function from the current ensemble's sampler.
         Different ensemble types have different thermo potentials. For 

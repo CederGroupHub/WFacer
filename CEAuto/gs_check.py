@@ -25,16 +25,16 @@ class GSChecker:
 
     Only energies will be checked.
     """
-    def __init__(self,cluster_subspace=None,\
+    def __init__(self,data_manager,\
                       e_tol_in_cv = 3,\
                       comp_tol = 0.05,\
                       cv_change_tol = 0.2,\
-                      ce_history = [],\
-                      data_manager=DataManager.auto_load()):
+                      ce_history = []
+                      ):
         """
         Args:
-            cluster_subspace(smol.ClusterSubspace):
-                Previous ClusterSubspace object used in featurizer.
+            data_manager(DataManager):
+                A data manager to interact with calculated data.
             e_tol_in_cv(float):
                 Tolerance of energy difference in times of CV.
             comp_tol(float):
@@ -46,15 +46,11 @@ class GSChecker:
                 the last two CV values. Default to 20%
             ce_history(List of CEFitter dicts):
                 Previous cluster expansion fitting history.
-            data_manager(DataManager):
-                A data manager to interact with calculated data.
         Notice:
             We consider structures added in this module as belongs to 
             the last structure enumeration iteration.
         You may not want to call this function directly.
         """
-
-        self.cspc = cluster_subspace
         self.ce_history = ce_history
  
         self.e_tol_in_cv = e_tol_in_cv
@@ -330,8 +326,7 @@ class GSChecker:
                                    fact_file=fact_file,\
                                    ce_history_file=ce_history_file)
 
-        return cls(options.subspace,\
-                   ce_history = options.history,\
+        return cls(ce_history = options.history,\
                    data_manager=dm,\
                    **options.gs_checker_options
                   )

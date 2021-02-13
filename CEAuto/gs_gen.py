@@ -39,14 +39,10 @@ class GSGenerator(MSONable):
     supported_handlers = ('CanonicalMCHandler','CanonicalPBHandler',\
                           'SemigrandDiscMCHandler','SemigrandDiscPBHandler')
 
-    def __init__(self,ce,\
-                      prim,\
-                      bits,\
-                      sublat_list,\
-                      compspace,\
+    def __init__(self,ce,prim,bits,sublat_list,compspace,data_manager,\
                       handler_flavor='CanonicalMCHandler',\
-                      handler_args={},\
-                      data_manger=DataManager.auto_load()):
+                      handler_args={}
+                      ):
         """
         Args:
             ce(smol.ClusterExpansion):
@@ -60,6 +56,8 @@ class GSGenerator(MSONable):
                 List of prim cell site indices in a sublattice.
             compspace(CompSpace):
                 Compositional space of the current system.
+            data_manager(DataManager):
+                DataManager object of the current CE project.
             handler_flavor(str):
                 Specifies class name of the handler to be used.
                 Check available handlers in CEAuto.gs_handler module.
@@ -83,9 +81,6 @@ class GSGenerator(MSONable):
                 n_proc(int):
                     Number of mu points to compute simultaneously. Default
                     is 4.
-     
-            data_manager(DataManager):
-                DataManager object of the current CE project.
     
             Central mu will be estimated from previous CE hull.
         """
