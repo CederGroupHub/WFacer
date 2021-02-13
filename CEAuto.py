@@ -7,14 +7,14 @@ __author__ = "Fengyu Xie"
 #Status checker not explicitly included! Every sub-module
 #will automatically check status and skip if already finished
 #In current iteration!
-from .inputs_wrapper import InputsWrapper
-from .data_manager import DataManager
+from CEAuto import InputsWrapper
+from CEAuto import DataManager
 
-from .struct_enum import StructureEnumerator
-from .featurizer import Featurizer
-from .fitter import Fitter
-from .gs_check import GSChecker
-from .gs_gen import GSGenerator
+from CEAuto import StructureEnumerator
+from CEAuto import Featurizer
+from CEAuto import Fitter
+from CEAuto import GSChecker
+from CEAuto import GSGenerator
 
 def main():
     #Load and flush once for easier realoading later.
