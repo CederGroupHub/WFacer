@@ -309,25 +309,19 @@ def get_integer_grid(subspc_normv,right_side=0,limiters=None):
                 grids.append([right_side//k])    
         else:
             if right_side == 0:
-                grids.append([0])
-                grids.append([1])
+                for i in range(limiters[-1][0],limiters[-1][1]+1):
+                    grids.append([i])
 
     else:
         new_limiters = limiters[:-1]
         #Move the last variable to the right hand side of hyperplane expression
         grids = []
-        if subspc_normv[-1]!=0:
-            for val in range(limiters[-1][0],limiters[-1][1]+1):
-                partial_grids = get_integer_grid(subspc_normv[:-1],right_side-val*subspc_normv[-1],\
-                                                 limiters=new_limiters)
-                for p_grid in partial_grids:
-                    grids.append(p_grid+[val])
-        else:
-            partial_grids = get_integer_grid(subspc_normv[:-1],right_side,\
+        for val in range(limiters[-1][0],limiters[-1][1]+1):
+            partial_grids = get_integer_grid(subspc_normv[:-1],right_side-val*subspc_normv[-1],\
                                              limiters=new_limiters)
             for p_grid in partial_grids:
-                grids.append(p_grid+[0])
-                grids.append(p_grid+[1])
+                grids.append(p_grid+[val])
+
     #print('Grids:\n',grids,'\ndim:',d)
     return grids
       

@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from ..comp_space import CompSpace
+from CEAuto.comp_space import CompSpace
 from pymatgen import Specie,Element,Composition
 from smol.cofe.space.domain import Vacancy
 
