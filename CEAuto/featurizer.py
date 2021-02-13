@@ -393,8 +393,8 @@ class Featurizer(MSONable):
                                    ce_history_file=ce_history_file)
 
         if os.path.isfile(decor_file):
-            with open(decor_file) as :
-                decor_dicts = json.load(decor_file)
+            with open(decor_file) as fin:
+                decor_dicts = json.load(fin)
                 decorators = [decode_from_dict(d) for d in decor_dicts]
         else:
             decorators_types = options.featurizer_options['decorators_types']

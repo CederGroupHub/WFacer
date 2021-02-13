@@ -2,7 +2,7 @@
 Ground state scanner that checks grounds states for convergence.
 THIS CLASS DOES NOT CHANGE DATA TABLES!
 """
-__author__ == "Fengyu Xie"
+__author__ = "Fengyu Xie"
 
 
 import json
@@ -11,7 +11,7 @@ import pandas as pd
 
 from smol.cofe import ClusterSubspace
 
-from utils.hull_utils import hulls_match, plot_hull
+from .utils.hull_utils import hulls_match, plot_hull
 from .data_manager import DataManager
 
 class GSChecker:
@@ -102,7 +102,7 @@ class GSChecker:
                                       .format(mode))           
 
         filt_ = (self._fact_table.iter_id <= self.n_iter-n_it_ahead) & \
-                (self._fact_table.calc_status=='SC') &
+                (self._fact_table.calc_status=='SC') & \
                 (~self._fact_table.e_prim.isna())
 
         if filt_.sum()==0: #Might be the first iteration, or fact_table is empty
@@ -120,7 +120,7 @@ class GSChecker:
             _prev_hull = fact_prev.groupby('comp_id').agg(lambda df: df.loc[df['e_ce'].idxmin()])\
                          .reset_index()
             _prev_hull = _prev_hull.loc[:,['comp_id','e_ce']]
-            _prev_hull = _prev_hull.merge(self._comp_table,how='left',on='comp_id')a
+            _prev_hull = _prev_hull.merge(self._comp_table,how='left',on='comp_id')
             _prev_hull = _prev_hull.rename(columns={'e_ce':'e_prim'})
             self._ce_hulls_ahead[n_it_ahead] = _prev_hull.copy()
             return self._ce_hulls_ahead[n_it_ahead]
@@ -252,7 +252,7 @@ class GSChecker:
         """
 
         filt_ = (self._fact_table.iter_id <= self.n_iter) & \
-                (self._fact_table.calc_status=='SC') &
+                (self._fact_table.calc_status=='SC') & \
                 (~self._fact_table.e_prim.isna())           
         fact_cur = self._fact_table[filt_]
         fact_cur = fact_cur.merge(self._comp_table,how='left',on='comp_id')

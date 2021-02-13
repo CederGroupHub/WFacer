@@ -13,7 +13,7 @@ from smol.cofe.space.domain import get_allowed_species
 
 from .ce_handler import *
 from .data_manager import DataManager
-from .utils.format_utils import deser_comp,structure_from_occu
+
 from .utils.hull_utils import estimate_mu_from_hull
 from .utils.math_utils import get_center_grid
 
@@ -217,7 +217,7 @@ class GSGenerator(MSONable):
                   options_file=OPTIONS_FILE,\
                   sc_file=SC_FILE,\
                   comp_file=COMP_FILE,\
-                  fact_file=DATA_FILE,\
+                  fact_file=FACT_FILE,\
                   ce_history_file=CE_HISTORY_FILE):
         """
         This method is the recommended way to initialize this object.
@@ -249,7 +249,7 @@ class GSGenerator(MSONable):
         dm = DataManager.auto_load(options_file=options_file,\
                                    sc_file=sc_file,\
                                    comp_file=comp_file,\
-                                   fact_file=data_file,\
+                                   fact_file=fact_file,\
                                    ce_history_file=ce_history_file)
 
         socket = cls(options.last_ce,\

@@ -180,7 +180,7 @@ class MagChargeDecorator(BaseDecorator):
             assignments_e = [ self.labels_table[e][clusorders_by_element[e].index(c_id)] for \
                               c_id in clusters_e ]
             for a_id,a in enumerate(assignments_e):
-                s_id, st_id = (sites_by_elements[e][a_id][1:]
+                s_id, st_id = (sites_by_elements[e][a_id][1:])
                 assignments[s_id][st_id]=a
 
         oxi_assigned = []
@@ -204,7 +204,7 @@ class MagChargeDecorator(BaseDecorator):
         """
         return {'labels_table':self.labels_table,
                 'model_params':self.params_by_elements,
-                "@module": self.__class__.__module__
+                "@module": self.__class__.__module__,
                 "@class": self.__class__.__name__
                }
     

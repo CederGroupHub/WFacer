@@ -252,7 +252,7 @@ class StructureEnumerator(MSONable):
         """
         return self._dm.comp_df
 
-    @proeprty
+    @property
     def fact_df(self):
         """
         Fact dataframe, storing all generated structures and their caluclated properties.

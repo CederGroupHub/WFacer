@@ -372,7 +372,7 @@ class CEFitter(MSONable):
                 If true, will save history to the path from which this object is loaded.
                 Default is true.
         """
-        if to_load paths:
+        if to_load_paths:
             ce_history_file = self._history_load_path
 
         with open(ce_history_file,'w') as fout:

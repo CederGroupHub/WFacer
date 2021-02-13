@@ -6,10 +6,10 @@ __author__ = 'Fengyu Xie'
 
 import numpy as np
 
-from smol.cofe.wrangling.wrangler import weights_energy_above_composition,\
-                                         weights_energy_above_hull
+from smol.cofe.wrangling.tools import weights_energy_above_composition,\
+                                      weights_energy_above_hull
 
-from .format_utils import structure_from_occu
+from .occu_utils import structure_from_occu
 
 def weights_from_fact(fact, flavor='unweighted', **kwargs):
     """

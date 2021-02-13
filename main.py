@@ -12,7 +12,7 @@ from CEAuto import DataManager
 
 from CEAuto import StructureEnumerator
 from CEAuto import Featurizer
-from CEAuto import Fitter
+from CEAuto import CEFitter
 from CEAuto import GSChecker
 from CEAuto import GSGenerator
 
@@ -36,7 +36,7 @@ def CEAuto_run():
         feat.featurize()
         feat.auto_save()
 
-        fitter = Fitter.auto_load()
+        fitter = CEFitter.auto_load()
         fitter.fit()
         fitter.auto_save()
 
