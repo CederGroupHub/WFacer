@@ -12,7 +12,7 @@ def check_comp_restriction(comp,sl_sizes,comp_restrictions=None):
     """
     Check whether a composition satisfies compositional limits.
     Args:
-        compstat(List[Composition]):
+        comp(List[Composition]):
             Normalized composition on each sublattice. Same as in compspace.py.
         comp_restrictions(List[dict]|Dict):
 
@@ -49,20 +49,22 @@ def check_comp_restriction(comp,sl_sizes,comp_restrictions=None):
 
     if isinstance(comp_restrictions,dict):
         for sp,(lb,ub) in comp_restrictions.items():
-           sp_name = get_species(sp)
-           sp_num = 0
-           for sl_comp,sl_size in zip(comp,sl_sizes):
-               if sp_name in sl_comp:
-                   sp_num += sl_comp[sp_name]*sl_size   
-           sp_frac = float(sp_num)/sum(sl_sizes)
-           if not (sp_frac<=ub and sp_frac >=lb):
-               return False
+            sp_name = get_species(sp)
+            sp_num = 0
+            all_sl_size = 0
+            for sl_comp,sl_size in zip(comp,sl_sizes):
+                if sp_name in sl_comp:
+                    sp_num += sl_comp[sp_name]*sl_size   
+                    all_sl_size += sl_size
+            sp_frac = float(sp_num)/all_sl_size
+            if not (sp_frac<=ub and sp_frac >=lb):
+                return False
 
     #Sublattice-specific restriction.
     elif isinstance(comp_restrictions,list) and len(comp_restrictions)>=1 \
         and isinstance(comp_restrictions[0],dict):
         for sl_restriction, sl_comp in zip(comp_restrictions,comp):
-            for sp in sl_restriction:
+            for sp,(lb,ub) in sl_restriction.items():
                 sp_name = get_species(sp)
                 if sp_name not in sl_comp:
                     sp_frac = 0
@@ -70,9 +72,42 @@ def check_comp_restriction(comp,sl_sizes,comp_restrictions=None):
                     sp_frac = sl_comp[sp_name]
  
                 if not (sp_frac<=ub and sp_frac >=lb):
-                   return False                   
+                    return False                   
 
     return True
+
+#measure size of the config space.
+def get_Noccus_of_compstat(compstat,scale_by=1):
+    """
+    Get number of possible occupancies in a supercell with
+    a certain composition. Used to reweight samples in
+    the compositional space.
+    Args:
+        compstat(List[List[float]]):
+            Number of species on each sublattice, recorded
+            in a 2D list. See CompSpace documentation for
+            detail.
+        scale_by(int):
+            Since the provided compstat is usually normalize
+            d by supercell size, we often have to scale it
+            back by the supercell size before using this
+            function. If the scaled compstat has values that
+            can not be rounded to an integer, that means 
+            the current supercell size can not host the 
+            composition, and will raise an error.
+    Returns:
+        int, number of all possible occupancy arrays.
+    """
+    int_comp = scale_compstat(compstat,by=scale_by)
+
+    noccus = 1
+    for sl_int_comp in int_comp:
+        N_sl = sum(sl_int_comp)
+        for n_sp in sl_int_comp:
+            noccus = noccus*combinatorial_number(N_sl,n_sp)
+            N_sl = N_sl - n_sp
+
+    return noccus
 
 # Composition linkage number for Charge neutral semi-grand flip rules
 def get_n_links(comp_stat,flip_table):
@@ -167,7 +202,7 @@ def scale_compstat(compstat,by=1):
         sl_int_comp = []
         for n_sp in sl_comp:
             n_sp_int = int(round(n_sp*by))
-            if abs(n_sp)-n_sp_int > 1E-3:
+            if abs(n_sp*by-n_sp_int) > 1E-3:
                 raise ValueError("Composition can't be rounded after scale by {}!".format(by))
 
             sl_int_comp.append(n_sp_int)
@@ -175,38 +210,5 @@ def scale_compstat(compstat,by=1):
 
     return int_comp
 
-def normalize_compstat(compstat,sc_size=1):
-    return [[float(n)/sc_size for n in sl] for sl in compstat]
-
-#measure size of the config space.
-def get_Noccus_of_compstat(compstat,scale_by=1):
-    """
-    Get number of possible occupancies in a supercell with
-    a certain composition. Used to reweight samples in
-    the compositional space.
-    Args:
-        compstat(List[List[float]]):
-            Number of species on each sublattice, recorded
-            in a 2D list. See CompSpace documentation for
-            detail.
-        scale_by(int):
-            Since the provided compstat is usually normalize
-            d by supercell size, we often have to scale it
-            back by the supercell size before using this
-            function. If the scaled compstat has values that
-            can not be rounded to an integer, that means 
-            the current supercell size can not host the 
-            composition, and will raise an error.
-    Returns:
-        int, number of all possible occupancy arrays.
-    """
-    int_comp = scale_compstat(compstat,by=scale_by)
-
-    noccus = 1
-    for sl_int_comp in zip(int_comp):
-        N_sl = sum(sl_int_comp)
-        for n_sp in sl_int_comp:
-            noccus = noccus*combinatorial_number(N_sl,n_sp)
-            N_sl = N_sl - n_sp
-
-    return noccus
+def normalize_compstat(compstat):
+    return [[float(n)/sum(sl) for n in sl] for sl in compstat]

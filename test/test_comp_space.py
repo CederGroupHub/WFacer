@@ -90,7 +90,6 @@ class TestCompSpace1(unittest.TestCase):
         comp = [Composition({'Li+':1/2,'Mn3+':1/6,'Ti4+':1/3}),\
                 Composition({'P3-':1/3,'O2-':2/3})]
         compstat = [[3,1,2],[2,4]]
-        nondisc = [3,1,2,2,4]
 
         ccoord_t = self.comp_space.translate_format(ucoord,from_format='unconstr',to_format='constr',sc_size=6)
         ucoord_t1 = self.comp_space.translate_format(ccoord_t,from_format='constr',to_format='unconstr',sc_size=6)
@@ -101,11 +100,8 @@ class TestCompSpace1(unittest.TestCase):
         compstat_t = self.comp_space.translate_format(ucoord,from_format='unconstr',to_format='compstat',sc_size=6)
         ucoord_t3 = self.comp_space.translate_format(comp_t,from_format='compstat',to_format='unconstr',sc_size=6)
 
-        nondisc_t = self.comp_space.translate_format(ucoord,from_format='unconstr',to_format='nondisc',sc_size=6)
-
         self.assertTrue(np.allclose(ucoord,ucoord_t1))
         self.assertTrue(np.allclose(ucoord,ucoord_t2))
         self.assertTrue(np.allclose(ucoord,ucoord_t3))
-        self.assertTrue(np.allclose(nondisc,nondisc_t)) 
         self.assertEqual(comp,comp_t)
         self.assertEqual(compstat,compstat_t)

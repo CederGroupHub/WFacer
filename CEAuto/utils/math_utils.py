@@ -272,6 +272,8 @@ def combinatorial_number(n,m):
     m,n: 
         integers.
     """
+    if m>n:
+        return 0
     return math.factorial(n)//(math.factorial(m)*math.factorial(n-m))
 
 def get_integer_grid(subspc_normv,right_side=0,limiters=None):
