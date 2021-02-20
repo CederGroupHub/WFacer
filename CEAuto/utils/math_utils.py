@@ -103,7 +103,7 @@ def select_rows(femat,n_select=10,old_femat=[],method='CUR',keep=[]):
         old_inv = np.linalg.pinv(old_cov)
         # Used Penrose-Moore inverse
 
-        reduction = np.zeros(n_add)
+        reduction = np.zeros(len(total_indices))
 
         if method == 'CUR':
             for i_id, i in enumerate(total_indices):
@@ -113,7 +113,7 @@ def select_rows(femat,n_select=10,old_femat=[],method='CUR',keep=[]):
                 trial_inv = np.linalg.pinv(trial_cov)
 
                 reduction[i_id] = np.sum(np.multiply( (trial_inv-old_inv), domain))
-                
+
             add_indices = [total_indices[iid] for iid in np.argsort(reduction)[:n_add]]
 
         elif method == 'random':
@@ -152,9 +152,7 @@ def get_diag_matrices(n,d=3):
         for f_id,factor in enumerate(factors):
             for p_id, power in enumerate(p_combo[f_id]):
                 factor_partition[p_id]*=(factor**p_combo[f_id][p_id])
-
-        if sorted(factor_partition,reverse=True) not in factor_partitions:
-            factor_partitions.append(sorted(factor_partition,reverse=True))
+        factor_partitions.append(factor_partition)
 
     mats = [np.diag(f_part).tolist() for f_part in sorted(factor_partitions)]
     return mats

@@ -27,7 +27,7 @@ def is_proper_sc(sc_matrix,lat,max_cond=8,min_angle=30):
     Output:
        Boolean
     """
-    newmat = np.matmul(lat.matrix, sc_matrix)
+    newmat = np.dot(sc_matrix,lat.matrix)
     newlat = Lattice(newmat)
     angles = [newlat.alpha,newlat.beta,newlat.gamma,\
               180-newlat.alpha,180-newlat.beta,180-newlat.gamma]
@@ -71,13 +71,16 @@ def enumerate_matrices(det, lat,\
         raise ValueError("Supercell size must be divisible by transformation matrix determinant!")
     scs_unsk=get_diag_matrices(det//trans_size)
 
-    scs_unsk = [np.matmul(sc,transmat,dtype=np.int64).tolist() for sc in scs_unsk \
-           if is_proper_sc(np.matmul(sc,transmat), lat,\
-                            max_sc_cond = max_sc_cond,\
-                            min_sc_angle = min_sc_angle)]
+    scs_unsk_new = []
+    for sc in scs_unsk:
+        proper = is_proper_sc(np.dot(sc,transmat),lat,\
+                              max_sc_cond=max_sc_cond,\
+                              max_sc_angle=max_sc_angle)
+        if proper:
+            scs_unsk_new.append(sc)
 
     #Take the unskewed matrix with minimal conditional number
-    sc_unsk = sorted(scs_unsk,key=lambda x:np.linalg.cond(x))[0]
+    sc_unsk = sorted(scs_unsk_new,key=lambda x:np.linalg.cond(x))[0]
     n1 = sc_unsk[0][0]
     n2 = sc_unsk[1][1]
     n3 = sc_unsk[2][2]

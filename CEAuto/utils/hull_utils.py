@@ -50,7 +50,7 @@ def hulls_match(old_hull,new_hull, e_tol, comp_tol=0.05):
         min_d = np.min(dists)
         if min_d > comp_tol:
             return False
-        min_d_idx = np.nargmin(dists)
+        min_d_idx = np.argmin(dists)
         old_e = inner_hull.iloc[min_d_idx]['e_prim_x']
 
         if np.abs(new_e-old_e) > e_tol: #The new CE is very pronounced.
@@ -67,6 +67,7 @@ def fix_convex_hull(hull_list):
     Returns:
         Fixed hull list.
     """
+    hull = hull_list
     if len(hull[0])<3:
         return hull
     else:
@@ -123,17 +124,36 @@ def estimate_mu_from_hull(hull):
         of mu on that compositional dimension.
     """
     hull = hull.reset_index()
-    all_ccoords = hull['ccoord'].tolist()
-    boundhull = ConvexHull(all_ccorrds)
+    all_ccoords = np.array(hull['ccoord'].tolist())
+    all_eprims = hull['e_prim'].tolist()
+
+    if all_ccoords.shape[1]<2:
+        all_ccoords = all_ccoords.flatten()
+        if max(all_ccoords)==min(all_ccoords):
+            raise ValueError("Given composition points less than dimension of space.")
+
+        max_id = np.argmax(all_ccoords)
+        min_id = np.argmin(all_ccoords)
+        return [(all_eprims[max_id]-all_eprims[min_id])/(all_ccoords[max_id]-all_ccoords[min_id])]        
+
+    if len(all_ccoords)<all_ccoords.shape[1]+1:
+        raise ValueError("Given composition points less than dimension of space.")
+
+    boundhull = ConvexHull(all_ccoords)
     #Select edges originating from the first vertex only
     X = []
     y = []
+
+    if len(boundhull.vertices)<all_ccoords.shape[1]+1:
+        raise ValueError("Given composition points less than dimension of space.")
+
     for v_id in boundhull.vertices[1:]:
-        X.append(np.array(hull.iloc[0]['ccoord'])-np.array(hull.iloc[v_id]['coord']))
-        y.append(hull.iloc[0]['e_prim'] - hull.iloc[v_id]['e_prim'])
+        X.append(all_ccoords[boundhull.vertices[0]]-all_ccoords[v_id])
+        y.append(all_eprims[boundhull.vertices[0]] - all_eprims[v_id])
     X = np.array(X)
     y = np.array(y)
-    return (np.linalg.inv(X.T@X)@X.T@y).tolist()
+
+    return (np.linalg.pinv(X.T@X)@X.T@y).tolist()
 
 
 def estimate_chempot_from_hull_nondisc(hull_nondisc):
@@ -150,25 +170,41 @@ def estimate_chempot_from_hull_nondisc(hull_nondisc):
         List of length n_species, each component contains an estimated chemical
         potential corresponding to a specie in comp_space.species.
     """
-    hull = hull.reset_index()
-    all_nodiscs = hull['nodisc'].tolist()
-    boundhull = ConvexHull(all_nodiscs)
+    hull = hull_nondisc.reset_index()
+    #Truncate the last dimension
+    all_nondiscs = np.array(hull['nondisc'].tolist())[:,:-1]
+    all_eprims = hull['e_prim'].tolist()
+
+    if all_nondiscs.shape[1]==0:
+        return 0
+    elif all_nondiscs.shape[1]==1:
+        if np.min(all_nondiscs)==np.max(all_nondiscs):
+            raise ValueError("Given composition points less than dimension of space.")
+        
+        max_id = np.argmax(all_nondiscs.flatten())
+        min_id = np.argmin(all_nondiscs.flatten())
+        return [(all_eprims[max_id]-all_eprims[min_id])/(all_nondiscs[max_id,0]-all_nondiscs[min_id,0]),0]        
+
+    if len(all_nondiscs)<all_nondiscs.shape[1]+1:
+        raise ValueError("Given composition points less than dimension of space.")
+
+    boundhull = ConvexHull(all_nondiscs)
+
+    if len(boundhull.vertices)<all_nondiscs.shape[1]+1:
+        raise ValueError("Given composition points less than dimension of space.")
+
     #Select edges originating from the first vertex only
     X = []
     y = []
     for v_id in boundhull.vertices[1:]:
-        X.append(np.array(hull.iloc[0]['nodisc'])-np.array(hull.iloc[v_id]['nodisc']))
-        y.append(hull.iloc[0]['e_prim'] - hull.iloc[v_id]['e_prim'])
+        X.append(all_nondiscs[boundhull.vertices[0]]-all_nondiscs[v_id])
+        y.append(all_eprims[boundhull.vertices[0]] - all_eprims[v_id])
 
     #Enforce the last chemical potential as 0.
     X = np.array(X)
-    base_line = np.zeros(X.shape[1])
-    base_line[-1]=1
-    X = np.vstack((X,base_line))
     y = np.array(y)
-    y = np.append(y,0)
 
-    return (np.linalg.inv(X.T@X)@X.T@y).tolist()
+    return (np.linalg.inv(X.T@X)@X.T@y).tolist()+[0]
 
 
 def plot_hull(hull,axis_id=None, fix_hull=True,\
@@ -219,7 +255,7 @@ def plot_hull(hull,axis_id=None, fix_hull=True,\
     hull_sort = hull_sort.sort_values(by=['ccoord']).reset_index()
      
    
-    hull_list = hull_sort.loc[:,['ccoord','e_prim']].T.tolist()
+    hull_list = hull_sort.loc[:,['ccoord','e_prim']].to_numpy().T.tolist()
     if fix_hull:
         hull_list = fix_convex_hull(hull_list)
 
@@ -228,9 +264,9 @@ def plot_hull(hull,axis_id=None, fix_hull=True,\
         e2 = hull_list[1][-1]
         x_min = hull_list[0][0]
         x_max = hull_list[0][-1]
-        hulls_list = np.array(hulls_list)
-        hulls_list[0] = (hulls_list[0]-x_min)/(x_max-x_min)
-        hulls_list[1] = hulls_list[1] - (hulls_list[0]*e1 + hulls_list[0]*e2)
+        hull_list = np.array(hull_list)
+        hull_list[0] = (hull_list[0]-x_min)/(x_max-x_min)
+        hull_list[1] = hull_list[1] - (hull_list[0]*e2 + (1-hull_list[0])*e1)
     else:
         e1 = None
         e2 = None
@@ -240,10 +276,9 @@ def plot_hull(hull,axis_id=None, fix_hull=True,\
     comp1 = hull_sort.iloc[0]['comp']
     comp2 = hull_sort.iloc[-1]['comp']
     fig,ax = plt.subplots()
-    ax.plot(hull_list[0],hull_list[1],color='g',label='Min Hull\nx=0:{},x=1:[]'\
+    ax.plot(hull_list[0],hull_list[1],color='g',label='Min Hull\nx=0:{},x=1:{}'\
                                                       .format(comp1,comp2))
     ax.set_title(title)
-    ax.text()
     ax.set_xlabel(x_label or 'constrained_composition_axis_{}'.format(axis_id or 0))
     ax.set_ylabel(y_label)
     ax.legend(fontsize=10)
