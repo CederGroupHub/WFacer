@@ -12,11 +12,11 @@ import warnings
 import matplotlib.pyplot as plt
 
 from smol.cofe import ClusterExpansion
+from smol.cofe.wrangling.tools import weights_energy_above_composition,\
+                                      weights_energy_above_hull
 
 from .regression import *
 from .data_manager import DataManager
-
-from .utils.weight_utils import weights_from_fact
 
 from .config_paths import *
 
@@ -38,7 +38,7 @@ class CEFitter(MSONable):
                       estimator_flavor='L2L0Estimator',\
                       weights_flavor='unweighted',\
                       use_hierarchy=True,\
-                      estimator_params={},\
+                      estimator_params={}
                       weighter_params={}
                 ):
 
@@ -67,8 +67,9 @@ class CEFitter(MSONable):
                 of dictionaries, the keys will specify which property are the parameters 
                 being applied to.
                 See regression module.
-            weighter_params(Dict):
-                Parameters to pass into the weighting module. See utils.weight_utils
+            weighter_params(Dict): 
+                parameters of weighting methods. For example, for e_above_comp and 
+                e_above_hull, a temperature 'T' is required.
         """
 
         self.cspc = cluster_subspace
@@ -176,7 +177,6 @@ class CEFitter(MSONable):
 
         """
         estimator_params = self.estimator_params
-        weighter_params = self.weighter_params       
 
         if self._schecker.after('fit'): #Fitter already finished in current cycle.
             print("**ECIs aleady fitted for current iteration {}. Loading from history."\
@@ -191,8 +191,25 @@ class CEFitter(MSONable):
 
         fact_avail = fact_df[fact_df.calc_status=='SC']
 
-        #Given a fact table (pd.DataFrame), computes weights.
-        weights = weights_from_fact(fact_avail, flavor = self.weights_flavor, **weighter_params)
+        #computes weights.
+        if self.weights_flavor=='unweighted':
+            weights = None
+
+        else:
+            fact_w_strs = self._dm.fact_df_with_structures.copy()
+            fact_w_strs_avail = fact_w_strs[fact_w_strs.calc_status=='SC']
+            structs = fact_w_strs.map_str
+            sc_sizes = fact_w_strs.matrix.map(lambda m: round(abs(np.linalg.det(m))))
+            energies = fact_w_strs.e_prim*sc_sizes
+            if self.weights_flavor == 'e_above_comp':
+                weights = weights_energy_above_composition(structs,energies,\
+                                                           **self.weighter_params)
+            elif self.weights_flavor=='e_above_hull':
+                weights = weights_energy_above_hull(structs,energies,self.cspc.structure,\
+                                                           **self.weighter_params)
+            else:
+                raise NotImplementedError("Weigthing scheme {} not implemented!"\
+                                           .format(self.weights_flavor))
 
         self._femat = fact_avail.map_corr.tolist()
         X = np.array(self._femat)

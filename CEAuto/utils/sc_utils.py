@@ -5,6 +5,7 @@ Utility functions to enumerate supercell matrices.
 """
 import numpy as np
 from .math_utils import get_diag_matrices
+from copy import deepcopy
 
 from pymatgen import Lattice
 
@@ -66,7 +67,7 @@ def enumerate_matrices(det, lat,\
     Outputs:
         List of 2D lists.
     """
-    trans_size = int(round(abs(np.linalg.det(self.transmat))))
+    trans_size = int(round(abs(np.linalg.det(transmat))))
     if det%trans_size!=0:
         raise ValueError("Supercell size must be divisible by transformation matrix determinant!")
     scs_unsk=get_diag_matrices(det//trans_size)
@@ -74,8 +75,8 @@ def enumerate_matrices(det, lat,\
     scs_unsk_new = []
     for sc in scs_unsk:
         proper = is_proper_sc(np.dot(sc,transmat),lat,\
-                              max_sc_cond=max_sc_cond,\
-                              max_sc_angle=max_sc_angle)
+                              max_cond=max_sc_cond,\
+                              min_angle=min_sc_angle)
         if proper:
             scs_unsk_new.append(sc)
 
@@ -89,9 +90,9 @@ def enumerate_matrices(det, lat,\
     sc_sk2 = deepcopy(sc_unsk)
     sc_sk3 = deepcopy(sc_unsk)
     
-    sc_sk1[0][1] = np.random.choice(np.arange(n1))
-    sc_sk2[0][2] = np.random.choice(np.arange(n1))
-    sc_sk3[1][2] = np.random.choice(np.arange(n2))
+    sc_sk1[0][1] = np.random.choice(np.arange(1,n1+1))
+    sc_sk2[0][2] = np.random.choice(np.arange(1,n1+1))
+    sc_sk3[1][2] = np.random.choice(np.arange(1,n2+1))
 
     selected_scs = [sc_unsk,sc_sk1,sc_sk2,sc_sk3]
 
