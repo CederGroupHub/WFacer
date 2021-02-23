@@ -84,7 +84,7 @@ class MCHandler(BaseHandler,ABC):
         self.sc_sublat_list = get_sc_sllist_from_prim(self.sublat_list,sc_size=self.sc_size)
  
         self._skip_anneal = (gs_occu is not None)
-        self._gs_occu = gs_occu
+        self._gs_occu = np.array(gs_occu)
  
         self._ensemble = None
         self._sampler = None
@@ -130,7 +130,7 @@ class MCHandler(BaseHandler,ABC):
                         occu[s_id] = sp_id
                     n_assigned += n_sp
 
-            rand_occus.append(occu)
+            rand_occus.append(np.array(occu))
 
         rand_occus = sorted(rand_occus,key=lambda occu:get_ewald_from_occu(occu,self.prim,self.sc_mat))
 

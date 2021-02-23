@@ -6,6 +6,7 @@ and ground states.
 """
 __author__ = 'Fengyu Xie'
 
+import numpy as np
 from abc import ABC,abstractmethod
 
 class BaseHandler(ABC):
@@ -26,7 +27,7 @@ class BaseHandler(ABC):
                 Supercell matrix to solve on.
         """
         self.ce = ce
-        self.sc_mat = sc_mat
+        self.sc_mat = np.array(sc_mat)
 
     @abstractmethod
     def solve(self):
