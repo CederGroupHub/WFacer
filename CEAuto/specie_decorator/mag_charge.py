@@ -4,8 +4,9 @@ __author__='Fengyu Xie'
 For charge assignment, charges will be assigned by magnitudes of magnetization vectors.
 """
 
-from pymatgen import Specie,Structure,Element,DummySpecie
-from pymatgen.core.periodic_table import get_el_sp
+from pymatgen import Specie,Structure,Element,DummySpecies
+
+from smol.cofe.space.domain import get_species
 
 from .base import BaseDecorator
 
@@ -176,7 +177,8 @@ class MagChargeDecorator(BaseDecorator):
         assignments = [[None for st in str_mags] for str_mags in mags]
 
         for e in sites_by_elements:
-            clusters_e = self._models_by_elements[e].predict(sites_by_elements[e])
+            mags_e = np.array(sites_by_elements[e])[:,0].reshape((-1,1))
+            clusters_e = self._models_by_elements[e].predict(mags_e)
             assignments_e = [ self.labels_table[e][clusorders_by_element[e].index(c_id)] for \
                               c_id in clusters_e ]
             for a_id,a in enumerate(assignments_e):
