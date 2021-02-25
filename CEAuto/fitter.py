@@ -38,7 +38,7 @@ class CEFitter(MSONable):
                       estimator_flavor='L2L0Estimator',\
                       weights_flavor='unweighted',\
                       use_hierarchy=True,\
-                      estimator_params={}
+                      estimator_params={},\
                       weighter_params={}
                 ):
 

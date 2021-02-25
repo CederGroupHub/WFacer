@@ -31,8 +31,9 @@ class BaseEstimator(ABC):
             target_vector = target_vector * sample_weight ** 0.5
 
         feature_av = np.mean(feature_matrix,axis=0)
-        feature_centered = feature_matrix - feature_av
-        traget_av = np.mean(target_vector)
+        #Since first column will become zero, reduce rank by 1.
+        feature_centered = (feature_matrix - feature_av)[:,1:]
+        target_av = np.mean(target_vector)
         target_centered = target_vector - target_av
 
         #TODO: implement separate fitting of single-point terms. Is it necessary?
@@ -40,7 +41,8 @@ class BaseEstimator(ABC):
         coef_ = self._solve(feature_centered, target_centered,
                                  *args, **kwargs)
         self.coef_ = coef_.copy()
-        self.coef_[0] += (target_av-np.dot(feature_av,coef_))
+        coef_0 = target_av-np.dot(feature_av[1:],coef_)
+        self.coef_ = np.concatenate(([coef_0],self.coef_))
 
     def predict(self, feature_matrix):
         """Predict a new value based on fit"""
@@ -59,8 +61,11 @@ class BaseEstimator(ABC):
         Partition the sample into k partitions, calculate out-of-sample
         variance for each of these partitions, and add them together
         """
+        X = feature_matrix
+        y = target_vector
+
         if sample_weight is None:
-            weights = np.ones(len(X[:, 0]))
+            weights = np.ones(len(X))
         else:
             weights = np.array(sample_weight)
 
@@ -71,21 +76,24 @@ class BaseEstimator(ABC):
 
         all_cv = []
         #Compute 3 times and take average
-        for n in range(3):
+        for n in range(5):
             ssr = 0
-            ssr_uw = 0
+
             for i in range(k):
                 ins = (partitions != i)  # in the sample for this iteration
                 oos = (partitions == i)  # out of the sample for this iteration
     
-                self.fit(feature_matrix[ins], target_vector[ins],*args,\
+                self.fit(X[ins], y[ins],*args,\
                          sample_weight=weights[ins],\
                          **kwargs)
-                res = (self.predict(feature_matrix[oos]) - target_vector[oos]) ** 2
+                res = (self.predict(X[oos]) - y[oos]) ** 2
+
                 ssr += np.sum(res * weights[oos]) / np.average(weights[oos])
-                ssr_uw += np.sum(res)
-            cv = 1 - ssr / np.sum((y - np.average(y)) ** 2)
+
+            cv = 1 - ssr / np.sum((y - np.average(y)) ** 2 * weights)
+
             all_cv.append(cv)
+
         return np.average(all_cv)
 
     def optimize_mu(self,feature_matrix, target_vector,*args,sample_weight=None,\
@@ -128,17 +136,21 @@ class BaseEstimator(ABC):
         if log_mu_steps is None:
             log_mu_steps = [11 for i in range(dim_mu)]
 
-        log_widths = np.array([ub-lb for ub,lb in log_mu_ranges])
-        log_centers = np.array([(ub+lb)/2 for ub,lb in log_mu_ranges])
+        log_widths = np.array([ub-lb for ub,lb in log_mu_ranges],dtype=np.float64)
+        log_centers = np.array([(ub+lb)/2 for ub,lb in log_mu_ranges],dtype=np.float64)
         #cvs_opt = 0
 
         for it in range(n_iter):
             for d in range(dim_mu):
+
                 lb = log_centers[-d]-log_widths[-d]/2
                 ub = log_centers[-d]+log_widths[-d]/2
                 s = log_mu_steps[-d]
+
+                #print("Current log centers:",log_centers)
+
                 cur_mus = np.power(10,[log_centers for i in range(s)])
-                cur_mus[:,-d] = np.power(10,np.linspace(lb,ub,s))
+                cur_mus[:,-d] = np.power(10,np.linspace(lb,ub,s,dtype=np.float64))
                 cur_cvs = [self.calc_cv_score(feature_matrix,target_vector,*args,\
                                               sample_weight=sample_weight,\
                                               mu=mu,**kwargs) for mu in cur_mus]
