@@ -9,9 +9,9 @@ from abc import ABC,abstractmethod
 import random
 
 from smol.cofe.space.domain import get_allowed_species
-from smol.moca import CanonicalEnsemble, CNSemiGrandDiscEnsemble,\
-                      CNSemiGrandEnsemble,Sampler
-
+from smol.moca import (CanonicalEnsemble, MuSemiGrandEnsemble,
+                       DiscChargeNeutralSemiGrandEnsemble)
+                      
 from .base import BaseHandler
 from ..comp_space import CompSpace
 from ..utils.comp_utils import scale_compstat
@@ -331,9 +331,10 @@ class SemigrandDiscMCHandler(MCHandler):
         int_comp = random.choice(compspace.int_grids(sc_size=self.sc_size,form='compstat'))
         self._gs_occu = gs_occu or self._initialize_occu_from_int_comp(int_comp)
 
-        self._ensemble = CNSemiGrandDiscEnsemble.from_cluster_expansion(self.ce, self.sc_mat,\
-                                                   optimize_inidicator=self.is_indicator,\
-                                                   mu=self.mu)
+        self._ensemble = DiscChargeNeutralSemiGrandEnsemble.\
+                         from_cluster_expansion(self.ce, self.sc_mat,\
+                                                optimize_inidicator=self.is_indicator,\
+                                                mu=self.mu)
 
         self._sampler = Sampler.from_ensemble(ensemble,temperature=1000)
         self._processor = self._ensemble.processor
@@ -394,9 +395,9 @@ class SemigrandMCHandler(MCHandler):
         int_comp = random.choice(compspace.int_grids(sc_size=self.sc_size,form='compstat'))
         self._gs_occu = gs_occu or self._initialize_occu_from_int_comp(int_comp)
 
-        self._ensemble = CNSemiGrandEnsemble.from_cluster_expansion(self.ce, self.sc_mat,\
+        self._ensemble = MuSemiGrandEnsemble.from_cluster_expansion(self.ce, self.sc_mat,\
                                                    optimize_inidicator=self.is_indicator,\
                                                    chemical_potentials=chemical_potentials)
 
-        self._sampler = Sampler.from_ensemble(ensemble,temperature=1000)
+        self._sampler = Sampler.from_ensemble(ensemble,temperature=1000,step_type='charge-neutral-flip')
         self._processor = self._ensemble.processor

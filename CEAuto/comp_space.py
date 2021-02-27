@@ -7,7 +7,7 @@ from scipy.spatial import ConvexHull
 from collections import OrderedDict
 from itertools import combinations,product,chain
 from copy import deepcopy
-from monty.json import MSONable
+from monty.json import MSONable,MontyDecoder
 import json
 
 from pymatgen import Composition
@@ -16,7 +16,6 @@ from smol.cofe.space.domain import Vacancy
 from pymatgen import Element
 
 from .utils.math_utils import *
-from .utils.serial_utils import *
 
 """
 This file contains functions related to implementing and navigating the 
@@ -1018,7 +1017,7 @@ class CompSpace(MSONable):
 
     @classmethod
     def from_dict(cls,d):
-        bits = [[decode_from_dict(sp_d) for sp_d in sl_sps] for sl_sps in d['bits']]
+        bits = [[MontyDecoder().process_decoded(sp_d) for sp_d in sl_sps] for sl_sps in d['bits']]
         
         obj = cls(bits,d['sl_sizes'])        
  

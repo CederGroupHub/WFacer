@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from CEAuto.comp_space import CompSpace
+from smol.moca.comp_space import CompSpace
 from pymatgen import Specie,Element,Composition
 from smol.cofe.space.domain import Vacancy
 
@@ -105,3 +105,35 @@ class TestCompSpace1(unittest.TestCase):
         self.assertTrue(np.allclose(ucoord,ucoord_t3))
         self.assertEqual(comp,comp_t)
         self.assertEqual(compstat,compstat_t)
+
+#Uncharged, with vacancy.
+class TestCompSpace2(unittest.TestCase):
+    def setUp(self) -> None:
+        li = Element('Li')
+        ag = Element('Ag')
+        vac = Vacancy()
+        
+        self.bits = [[li,ag,vac]]
+        self.nbits = [[0,1,2]]
+        self.unit_n_swps = [(0,2,0),(1,2,0)]
+        self.chg_of_swps = [0,0]
+        self.swp_ids_in_sublat = [[0,1]]
+
+        op1 = {'from':{0:{2:1}}, \
+               'to':{0:{0:1}}}
+        op2 = {'from':{0:{2:1}}, \
+               'to':{0:{1:1}}}
+        self.flip_table = [op1,op2]
+        self.comp_space = CompSpace(self.bits)
+
+    def test_swps(self):
+        self.assertEqual(self.comp_space.unit_n_swps,self.unit_n_swps)
+        self.assertEqual(self.comp_space.chg_of_swps,self.chg_of_swps)
+        self.assertEqual(self.comp_space.swp_ids_in_sublat,self.swp_ids_in_sublat)
+
+    def test_space_specs(self):
+        self.assertEqual(self.comp_space.bkgrnd_chg,0)
+        self.assertEqual(self.comp_space.unconstr_dim,2)
+        self.assertEqual(self.comp_space.is_charge_constred,False)
+        self.assertEqual(self.comp_space.dim,2)
+        self.assertEqual(self.comp_space.dim_nondisc,3)
