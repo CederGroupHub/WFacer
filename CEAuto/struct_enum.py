@@ -23,9 +23,9 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 
 from smol.cofe.extern.ewald import EwaldTerm
 from smol.cofe.space.clusterspace import ClusterSubspace
-from smol.cofe.space.domain import get_allowed_species,get_species, Vacancy
+from smol.cofe.space.domain import get_allowed_species, get_species, Vacancy
 from smol.cofe.expansion import ClusterExpansion
-from smol.moca import CanonicalEnsemble,Sampler
+from smol.moca import CanonicalEnsemble, Sampler, CompSpace
 
 from .utils.sc_utils import enumerate_matrices
 from .utils.math_utils import select_rows,combinatorial_number
@@ -33,7 +33,6 @@ from .utils.serial_utils import serialize_comp,deser_comp
 from .utils.calc_utils import get_ewald_from_occu
 from .utils.comp_utils import check_comp_restriction
 
-from .comp_space import CompSpace
 from .data_manager import DataManager 
 from .inputs_wrapper import InputsWrapper
 from .ce_handler import CanonicalMCHandler

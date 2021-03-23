@@ -76,7 +76,8 @@ def check_comp_restriction(comp,sl_sizes,comp_restrictions=None):
 
     return True
 
-#measure size of the config space.
+
+# measure size of the config space.
 def get_Noccus_of_compstat(compstat,scale_by=1):
     """
     Get number of possible occupancies in a supercell with
@@ -177,7 +178,8 @@ def get_n_links(comp_stat,flip_table):
 
     return n_links
 
-#Scale normalized compstat back to integer
+
+# Scale normalized compstat back to integer
 def scale_compstat(compstat,by=1):
     """
     Scale compositonal statistics into integer table.

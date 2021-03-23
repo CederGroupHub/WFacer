@@ -108,9 +108,9 @@ class ArchQueueManager(BaseManager,ABC):
         #Jobs will be named after root path (Current directory where you run 
         #CEAuto main program).
         jobname = self._root_name+'_ce_{}'.format(eid)
-        script = re.sub('\{\*jobname\*\}',jobname,script) 
-        script = re.sub('\{\*abcommand\*\}',self.ab_command,script)
-        script = re.sub('\{\*ncores\*\}',self.ncores,script)
+        script = re.sub('\*jobname\*',jobname,script) 
+        script = re.sub('\*abcommand\*',self.ab_command,script)
+        script = re.sub('\*ncores\*',self.ncores,script)
      
         #change to executable and submit
         os.chdir(epath)
@@ -146,10 +146,10 @@ class ArchSGEManager(ArchQueueManager):
           Direct init not recommended!
     """
     submission_template = "#!/bin/bash\n#$ -cwd\n#$ -j y\n"+\
-                               "#$ -N {*jobname*}\n#$ -m es\n#$ -V\n"+\
-                               "#$ -pe impi {*ncores*}\n#$ -o ll_out\n"+\
+                               "#$ -N *jobname*\n#$ -m es\n#$ -V\n"+\
+                               "#$ -pe impi *ncores*\n#$ -o ll_out\n"+\
                                "#$ -e ll_er\n#$ -S /bin/bash\n"+\
-                               "\n{*abcommand*}"
+                               "\n*abcommand*"
     submission_command = "qsub"
     kill_command = "qdel"
 

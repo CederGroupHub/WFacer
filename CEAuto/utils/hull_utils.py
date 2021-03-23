@@ -3,6 +3,7 @@ from scipy.spatial import ConvexHull
 import matplotlib.pyplot as plt
 import warnings
 
+
 def hulls_match(old_hull,new_hull, e_tol, comp_tol=0.05):
     """
     This util function compares two hulls based on energy and composition differences.
@@ -57,6 +58,7 @@ def hulls_match(old_hull,new_hull, e_tol, comp_tol=0.05):
             return False
 
     return e_match
+
 
 def fix_convex_hull(hull_list):
     """
@@ -283,5 +285,4 @@ def plot_hull(hull,axis_id=None, fix_hull=True,\
     ax.set_ylabel(y_label)
     ax.legend(fontsize=10)
 
-    return fig, ax, e1, e2, x_min, x_max
-    
+    return fig, ax, e1, e2, x_min, x_max   

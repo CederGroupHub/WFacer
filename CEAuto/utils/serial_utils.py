@@ -14,7 +14,8 @@ from pymatgen import Composition
 def decode_from_dict(d):
     return MontyDecoder().process_decoded(d)
 
-#serialize and de-serialize compositions
+
+# Serialize and de-serialize compositions
 def serialize_comp(comp):
     """
     Serialize a pymatgen.Composition or a list of pymatgen.Composition.
@@ -31,6 +32,7 @@ def serialize_comp(comp):
         return [serialize_comp(sl_comp) for sl_comp in comp]
 
     return [(sp.as_dict(),n) for sp,n in comp.items()]
+
 
 def deser_comp(comp_ser):
     """
@@ -51,7 +53,8 @@ def deser_comp(comp_ser):
 
     return Composition({decode_from_dict(sp_d):n for sp_d,n in comp_ser})
 
-#Serialize anything
+
+# Serialize anything
 def serialize_any(obj):
     """
     Serialize any object or list of objects.

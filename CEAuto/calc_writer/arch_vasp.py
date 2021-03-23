@@ -70,8 +70,8 @@ class ArchVaspWriter(BaseWriter):
                 only 'relax' will be used.
                 See pymaten.vasp.io.sets for detail.
         """
-        super().init_(writer_strain=writer_strain,ab_setting=ab_setting,\
-                      data_manager=data_manager,**kwargs)
+        super().__init__(writer_strain=writer_strain, ab_setting=ab_setting,
+                         data_manager=data_manager, **kwargs)
         self.path = path
         self.is_metal = is_metal
                

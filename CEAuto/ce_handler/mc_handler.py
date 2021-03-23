@@ -10,10 +10,11 @@ import random
 
 from smol.cofe.space.domain import get_allowed_species
 from smol.moca import (CanonicalEnsemble, MuSemiGrandEnsemble,
-                       DiscChargeNeutralSemiGrandEnsemble)
+                       ChargeNeutralSemiGrandEnsemble,
+                       DiscChargeNeutralSemiGrandEnsemble,
+                       CompSpace)
                       
 from .base import BaseHandler
-from ..comp_space import CompSpace
 from ..utils.comp_utils import scale_compstat
 from ..utils.occu_utils import get_sc_sllist_from_prim
 from ..utils.calc_utils import get_ewald_from_occu
@@ -388,14 +389,14 @@ class SemigrandMCHandler(MCHandler):
 
         self.sl_sizes = [len(sl) for sl in self.sublat_list]
 
-        self.mu = mu
+        self.chemical_potentials = chemical_potentials
 
         compspace = CompSpace(self.bits,self.sl_sizes)
 
         int_comp = random.choice(compspace.int_grids(sc_size=self.sc_size,form='compstat'))
         self._gs_occu = gs_occu or self._initialize_occu_from_int_comp(int_comp)
 
-        self._ensemble = MuSemiGrandEnsemble.from_cluster_expansion(self.ce, self.sc_mat,\
+        self._ensemble = ChargeNeutralSemiGrandEnsemble.from_cluster_expansion(self.ce, self.sc_mat,\
                                                    optimize_inidicator=self.is_indicator,\
                                                    chemical_potentials=chemical_potentials)
 

@@ -283,9 +283,9 @@ class CEFitter(MSONable):
         else:
             _cv = self._cv[prop_name]
             _rmse = self._rmse[prop_name]
-            _coefs = self._rmse[prop_name]
+            _coefs = self._coefs[prop_name]
 
-        ce = ClusterExpansion(self.cspc,_coefs,np.array(self._femat))
+        ce = ClusterExpansion(self.cspc,np.array(_coefs),np.array(self._femat))
         ecis = ce.eci
 
         fs = 16

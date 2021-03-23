@@ -16,11 +16,11 @@ from pymatgen import Structure,Element,Lattice
 from smol.cofe import ClusterSubspace,ClusterExpansion
 from smol.cofe.space.domain import get_allowed_species,Vacancy
 from smol.cofe.extern import *
+from smol.moca import CompSpace
 
 from .utils.serial_utils import decode_from_dict,serialize_any
 from .utils.format_utils import merge_dicts
 
-from .comp_space import CompSpace
 from .calc_reader import *
 from .calc_writer import *
 from .calc_manager import *
@@ -59,17 +59,28 @@ class InputsWrapper(MSONable):
         self._frac_coords = lat_data.get('frac_coords')
         self._sublat_list = lat_data.get('sublat_list')
         self._prim = lat_data.get('prim')
-        if self._prim is None and (self._bits is None or \
-                                   self._lattice is None or \
-                                   self._frac_coords is None or \
-                                   self._sublat_list is None):
-            raise ValueError("Lattice information not sufficient!")
+        self._prim_file = lat_data.get('prim_file')
+
+        if (self._prim is None
+            and (self._bits is None or
+                 self._lattice is None or
+                 self._frac_coords is None or
+                 self._sublat_list is None)):
+            if (self._prim_file is not None and
+                os.path.isfile(self._prim_file)):
+                self._prim = Structure.from_file(self._prim_file)
+            else:
+                raise ValueError("Lattice information not sufficient!")
 
         self._compspace = None     
         self._is_charged_ce = None
 
         self._radius = options.get('radius')
         self._subspace = None
+
+    @property
+    def prim_file(self):
+        return self._prim_file
 
     @property
     def bits(self):
@@ -98,7 +109,7 @@ class InputsWrapper(MSONable):
                         self._sublat_list.append([s_id])
                         self._bits.append(s_bits)
                   
-        #sort every sublattice!
+        # Sort every sublattice!!
         self._bits = list(map(sorted,self._bits))
             
         return self._bits
@@ -158,7 +169,7 @@ class InputsWrapper(MSONable):
             CompSpace
         """
         if self._compspace is None:
-            self._compspace = Compspace(self.bits,self.sl_sizes)
+            self._compspace = CompSpace(self.bits,self.sl_sizes)
         return self._compspace
 
     @property
@@ -191,12 +202,12 @@ class InputsWrapper(MSONable):
         #included. This will make a lot of things easier.
         if self._prim is None or self._prim.charge!=0:
             typical_comp = self.compspace.\
-                      get_random_point_in_unit_spc(form='composition')
+                      get_random_point_in_unit_space(form='composition')
 
             N_sites = sum(self.sl_sizes)
             prim_comps = [{} for i in range(N_sites)]
             for i in range(N_sites):
-                for sl_id,sl in self.sublat_list:
+                for sl_id, sl in enumerate(self.sublat_list):
                     if i in sl:
                         prim_comps[i] = typical_comp[sl_id]
                         break
@@ -242,9 +253,11 @@ class InputsWrapper(MSONable):
             ClusterSubspace
         """
         if self._subspace is None:
-            self._subspace = ClusterSubspace.from_cutoffs(self.prim,self.radius,\
-                                                        basis = self.enumerator_options['basis_type'])
-            for ex_name,args in zip(self.other_extern_types,self.other_extern_args):
+            self._subspace = ClusterSubspace.from_cutoffs(self.prim, self.radius,
+                                                          basis =
+                                                          self.enumerator_options['basis_type'])
+
+            for ex_name,args in zip(self.extern_types,self.extern_args):
                 self._subspace.add_external_term(globals()[ex_name](**args))
 
         return self._subspace
@@ -264,17 +277,18 @@ class InputsWrapper(MSONable):
         Returns:
             ClusterExpansion.
         """
-        if len(self.history)<n_ago:
+        if len(self._history) < n_ago:
             warnings.warn("Cluster expansion history can not be dated back to {} \
-                           iteration(s) ago. Making dummy cluster expasnion"\
-                           .format(n_ago))
+                          iteration(s) ago. Making dummy cluster expasnion"
+                          .format(n_ago))
 
-            coefs = np.zeros(self.subspace.num_corr_functions+\
+            coefs = np.zeros(self.subspace.num_corr_functions +
                              len(self.subspace.external_terms))
-            coefs[-len(self.subspace.external_terms)] = 1.0
+            if len(self.subspace.external_terms) > 0:
+                coefs[ - len(self.subspace.external_terms): ] = 1.0
         else:
-            coefs = np.array(self.history[-n_ago]['coefs'])
-        return ClusterExpansion(self.subspace,coefs,[])
+            coefs = np.array(self._history[ - n_ago]['coefs'])
+        return ClusterExpansion(self.subspace, coefs, None)
 
     @property
     def last_ce(self):
@@ -286,6 +300,14 @@ class InputsWrapper(MSONable):
             ClusterExpansion
         """
         return self.get_ce_n_iters_ago(n_ago=1)
+
+    @property
+    def extern_types(self):
+        return self.featurizer_options.get('extern_types')
+  
+    @property
+    def extern_args(self):
+        return self.featurizer_options.get('extern_args')
 
     @property
     def enumerator_options(self):
@@ -372,9 +394,10 @@ class InputsWrapper(MSONable):
         """
         Get featurizer options.
         """
-        #Since we can not automatically generate labels_table, currently we don't have
-        #automatic species_decorator detection. If your system needs decoration, you have
-        #to provide the decorator types and arguments in your options file.
+        # Since we can not automatically generate labels_table, currently
+        # we don't have automatic species_decorator detection. If your
+        # system needs decoration, you have to provide the decorator types
+        # and arguments in your options file.
         decorators_types = self._options.get('decorators_types',[])
 
         for b in itertools.chain(*self.bits):
@@ -382,9 +405,14 @@ class InputsWrapper(MSONable):
                 raise ValueError('Cluster expasion requires decorated {}, \
                                   but no decoration is given!'.format(b))
 
-        return {'other_props':self._options.get('other_props',[]),\
-                'decorators_types':decorators_types,\
-                'decorators_args':self._options.get('decorators_args',[])
+        default_extern_types = ['EwaldTerm'] if self.is_charged_ce else []
+        default_extern_args = [{}] if self.is_charged_ce else []
+
+        return {'other_props':self._options.get('other_props',[]),
+                'decorators_types':decorators_types,
+                'decorators_args':self._options.get('decorators_args',[]),
+                'extern_types':self._options.get('extern_types',default_extern_types),
+                'extern_args':self._options.get('extern_args',default_extern_args)
                }
 
     @property
@@ -406,9 +434,10 @@ class InputsWrapper(MSONable):
         """
         return {'e_tol_in_cv':self._options.get('e_tol_in_cv',3),\
                 'comp_tol':self._options.get('comp_tol',0.05),\
-                'cv_change_tol':selfe._options.get('cv_change_tol',0.2)
+                'cv_change_tol':self._options.get('cv_change_tol',0.2)
                }
     
+    @property
     def gs_generator_options(self):
         """
         Get ground state generator options.
@@ -499,21 +528,16 @@ class InputsWrapper(MSONable):
         Returns:
             InputsWrapper object.
         """    
-        lat_keys = ['prim_file','prim',\
-                    'lattice','frac_coords',\
+        lat_keys = ['prim_file','prim','lattice','frac_coords',
                     'bits','sublat_list']
        
-        attr_keys = ['_subspace',\
-                     '_compspace'\
-                    ]
+        attr_keys = ['_subspace','_compspace']
 
-        prim_file = d.get('prim_file','prim.cif')
+
+        prim_file = d.get('prim_file')
         prim = d.get('prim')
         if isinstance(prim,dict):
             prim = Structure.from_dict(prim)
-        if prim is None:
-            if os.path.isfile(prim_file):
-                prim = Structure.from_file(prim_file)
 
         lattice = d.get('lattice')
         if isinstance(lattice,dict):
@@ -533,9 +557,12 @@ class InputsWrapper(MSONable):
                         sl_bits_deser.append(b)
                 bits_deser.append(sl_bits_deser)
 
-        lat_vals = [prim,lattice,frac_coords,bits,sublat_list]
+        sublat_list = d.get('sublat_list')
+
+        lat_vals = [prim_file, prim,lattice, frac_coords,
+                    bits_deser, sublat_list]
         
-        lat_data = {k:v for k,v in zip(lat_keys[:-1],lat_vals) if v is not None}
+        lat_data = {k:v for k,v in zip(lat_keys,lat_vals) if v is not None}
        
         options = {k:v for k,v in d.items() if k not in lat_keys}
 
@@ -558,20 +585,16 @@ class InputsWrapper(MSONable):
             dict. Containing all serialized lattice data, options,\
             and important attributes 
         """     
-        lat_keys = ['prim_file','prim',\
-                    'lattice','frac_coords',\
-                    'bits','sublat_list']
+        lat_keys = ['prim_file','prim', 'lattice', 'frac_coords',
+                    'bits', 'sublat_list']
        
-        attr_keys = ['_subspace',\
-                     '_compspace'\
-                    ]
+        attr_keys = ['_subspace', '_compspace']
 
-        ds = [{k:serialize_any(getattr(self,k)) for k in lat_keys},\
-              self.options,\
-              {k:serialize(getattr(self,k[1:])) for k in attr_keys},\
-              {'@module':self.__class__.__module__,\
-               '@class':self.__class__.__name__\
-              }\
+        ds = [{k:serialize_any(getattr(self,k)) for k in lat_keys},
+              self.options,
+              {k:serialize_any(getattr(self,k[1:])) for k in attr_keys},
+              {'@module':self.__class__.__module__,
+               '@class':self.__class__.__name__}
              ]
 
         return merge_dicts(ds)

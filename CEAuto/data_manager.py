@@ -16,13 +16,15 @@ import warnings
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
 from .utils.serial_utils import serialize_comp, deser_comp
-from .utils.occu_utils import structure_from_occu, occu_to_species_stat,\
-                              get_sc_sllist_from_prim
+from .utils.occu_utils import (structure_from_occu, occu_to_species_stat,
+                              get_sc_sllist_from_prim)
 from .utils.comp_utils import normalize_compstat
+from .utils.frame_utils import load_dataframes
 
-from .comp_space import CompSpace
-from .inputs_wrapper import InputsWrapper #Used in auto_load()
-from .status_checker import StatusChecker #Used in auto_load()
+from smol.moca import CompSpace
+
+from .inputs_wrapper import InputsWrapper  # Used in auto_load()
+from .status_checker import StatusChecker  # Used in auto_load()
 
 from .config_paths import *
 
@@ -767,35 +769,17 @@ class DataManager:
         if self.fact_df is not None:
             self.fact_df.to_csv(fact_file,index=False)
 
-    def _load_dataframes(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+    def _load_dataframes(self, sc_file='sc_mats.csv', comp_file='comps.csv',
+                         fact_file='data.csv'):
         """
         Loading dimension tables and the fact table. 
         comp_df needs a little bit de-serialization.
         File names can be changed, but not recommended!
         Notice: pandas loads lists as strings. You have to serialize them!
         """
-        list_conv = lambda x: json.loads(x) if x is not None else None
-        if os.path.isfile(sc_file):
-            self._sc_df = pd.read_csv(sc_file,converters={'matrix':list_conv})
-        if os.path.isfile(comp_file):
-            #De-serialize compositions and list values
-            self._comp_df = pd.read_csv(comp_file,
-                                        converters={'ucoord':list_conv,
-                                                    'ccoord':list_conv,
-                                                    'cstat':list_conv,
-                                                    'nondisc':list_conv,
-                                                    'eq_occu':list_conv,
-                                                    'comp':deser_comp
-                                                   })
-        if os.path.isfile(fact_file):
-            self._fact_df = pd.read_csv(fact_file,
-                                        converters={'ori_occu':list_conv,
-                                                    'ori_corr':list_conv,
-                                                    'map_occu':list_conv,
-                                                    'map_corr':list_conv,
-                                                    'other_props':list_conv
-                                                   })
-
+        self._sc_df, self._comp_df, self._fact_df = load_dataframes(sc_file,
+                                                                    comp_file,
+                                                                    fact_file)
 
     @classmethod
     def auto_load(cls,options_file=OPTIONS_FILE,\
@@ -850,8 +834,8 @@ class DataManager:
         return socket
 
 
-    def auto_save(self,sc_file=SC_FILE,comp_file=COMP_FILE,fact_file=FACT_FILE,\
-                       to_load_paths=True):
+    def auto_save(self, sc_file=SC_FILE, comp_file=COMP_FILE,
+                  fact_file=FACT_FILE, to_load_paths=True):
         """
         Saves processed data to the dataframe csvs.
         """
@@ -863,4 +847,3 @@ class DataManager:
 
         self._save_dataframes(sc_file=sc_file,comp_file=comp_file,\
                               fact_file=fact_file)
-        

@@ -53,4 +53,4 @@ def test_mag_charge_decorator():
     label_assign2 = decor2.assign(s_pool,mags,check_neutral=False)['charge']
     for i in range(100):
         for j in range(4):
-            assert label_assign[i][j]!=label_assign2[i][j]
+            assert label_assign[i][j]==label_assign2[i][j]
