@@ -48,10 +48,12 @@ def deser_comp(comp_ser):
         comp(Composition or List of Composition):
             the composition to serialize
     """
-    if isinstance(comp_ser,list) and isinstance(comp_ser[0],list):
+    if (isinstance(comp_ser,list) and isinstance(comp_ser[0],list) and
+        not isinstance(comp_ser[0][0],dict)):
         return [deser_comp(sl_comp_ser) for sl_comp_ser in comp_ser]
 
-    return Composition({decode_from_dict(sp_d):n for sp_d,n in comp_ser})
+    return Composition({decode_from_dict(sp_d):n
+                       for sp_d,n in comp_ser})
 
 
 # Serialize anything
@@ -73,4 +75,4 @@ def serialize_any(obj):
     if 'as_dict' in dir(obj):
         return obj.as_dict()
 
-    return obj #Not serializable, or serialization not needed.
+    return obj # Not serializable, or serialization not needed.

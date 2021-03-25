@@ -43,7 +43,7 @@ def test_bits(inputs_wrapper):
         sl_bits = prim_bits[sl[0]]
         for sid in sl:
             assert prim_bits[sid] == sl_bits
-    assert inputs_wrapper.bits == [sorted(prim_bits[sl[0]])
+    assert inputs_wrapper.bits == [prim_bits[sl[0]]
                                    for sl in inputs_wrapper.sublat_list]
     bits = [tuple(sl_bits) for sl_bits in inputs_wrapper.bits]
 

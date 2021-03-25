@@ -19,7 +19,7 @@ from .utils.serial_utils import serialize_comp, deser_comp
 from .utils.occu_utils import (structure_from_occu, occu_to_species_stat,
                               get_sc_sllist_from_prim)
 from .utils.comp_utils import normalize_compstat
-from .utils.frame_utils import load_dataframes
+from .utils.frame_utils import load_dataframes, save_dataframes
 
 from smol.moca import CompSpace
 
@@ -150,7 +150,7 @@ class DataManager:
                 table.
             module(str):
                 Specifying the module name that generated and added this entry into the
-                fact table. Can be 'enum' or 'gscheck'
+                fact table. Can be 'enum' or 'gs'
             ori_occu(List of int):
                 Original occupancy as it was enumerated. (Encoded, and turned into list)
             ori_corr(List of float):
@@ -755,19 +755,19 @@ class DataManager:
         self._fact_df = self._fact_df.reset_index()
         self._comp_df = self._comp_df.reset_index()
 
-    def _save_dataframes(self,sc_file='sc_mats.csv',comp_file='comps.csv',fact_file='data.csv'):
+    def _save_dataframes(self, sc_file='sc_mats.csv', comp_file='comps.csv',
+                         fact_file='data.csv'):
         """
-        Saving dimension tables and the fact table. Must set index=False, otherwise will always add
-        One more row for each save and load.
+        Saving dimension tables and the fact table. Must set index=False,
+        otherwise will always add one more row for each save and load.
+
         comp_df needs a little bit serialization.
+
         File names can be changed, but not recommended!
         """
-        self.sc_df.to_csv(sc_file,index=False)
-        comp_ser = self.comp_df.copy()
-        comp_ser.comp = comp_ser.comp.map(lambda c: serialize_comp(c))
-        comp_ser.to_csv(comp_file,index=False)
-        if self.fact_df is not None:
-            self.fact_df.to_csv(fact_file,index=False)
+        save_dataframes(self.sc_df, self.comp_df, self.fact_df,
+                        sc_file=sc_file, comp_file=comp_file,
+                        fact_file= fact_file)
 
     def _load_dataframes(self, sc_file='sc_mats.csv', comp_file='comps.csv',
                          fact_file='data.csv'):

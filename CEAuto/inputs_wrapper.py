@@ -11,7 +11,7 @@ import json
 import yaml
 
 from monty.json import MSONable
-from pymatgen import Structure,Element,Lattice
+from pymatgen import Structure,Element,Lattice,Composition
 
 from smol.cofe import ClusterSubspace,ClusterExpansion
 from smol.cofe.space.domain import get_allowed_species,Vacancy
@@ -109,9 +109,7 @@ class InputsWrapper(MSONable):
                         self._sublat_list.append([s_id])
                         self._bits.append(s_bits)
                   
-        # Sort every sublattice!!
-        self._bits = list(map(sorted,self._bits))
-            
+        # No sort on sublattices!
         return self._bits
 
     @property
@@ -209,7 +207,10 @@ class InputsWrapper(MSONable):
             for i in range(N_sites):
                 for sl_id, sl in enumerate(self.sublat_list):
                     if i in sl:
-                        prim_comps[i] = typical_comp[sl_id]
+                        processed_comp = Composition({sp:n for sp,n in
+                                                      typical_comp[sl_id].items()
+                                                      if not isinstance(sp, Vacancy)})
+                        prim_comps[i] = processed_comp
                         break
                 
             self._prim = Structure(self.lattice,prim_comps,self.frac_coords)

@@ -53,6 +53,11 @@ class StatusChecker:
 
         self.history = history
 
+        self._sc_load_path = None
+        self._comp_load_path = None
+        self._fact_load_path = None
+        self._history_load_path = None
+
     def _get_iter_id_last_module(self):
         """
         Get the current iteration index and the last completed module name
@@ -68,29 +73,35 @@ class StatusChecker:
 
         last_df = self.fact_df[filt_]
         
-        if 'NC' in last_df.calc_status:
+        # pd.Series must be converted to list before checking 'in'.
+        if 'NC' in last_df.calc_status.tolist():
             last_nc_df = last_df[last_df.calc_status=='NC']
             if 'enum' in last_nc_df.module:
                 return max_iter_id, 'enum'
             elif 'gs' in last_nc_df.module:
                 return max_iter_id, 'gs'
             else:
-                raise ValueError("Module other than enumerator or gs solver appeared.")
+                raise ValueError("Module other than enumerator or gs \
+                                  solver appeared.")
 
-        if 'CC' in last_df.calc_status:
+        if 'CC' in last_df.calc_status.tolist():
             return max_iter_id, 'write'
 
-        if 'CL' in last_df.calc_status: 
+        if 'CL' in last_df.calc_status.tolist():
             return max_iter_id, 'calc'  
 
-        if len(history)<max_iter_id or len(history)>max_iter_id+1:
-            raise ValueError("History record broken! Currently at iteration {}, but only {} history steps found!".format(max_iter_id,len(history)))
+        if (len(self.history) < max_iter_id or
+            len(self.history) > max_iter_id + 1):
+            raise ValueError("History record broken! \
+                             Currently at iteration {}, \
+                             but only {} history steps found!"
+                             .format(max_iter_id,len(self.history)))
 
-        if len(history)==max_iter_id:
+        if len(self.history) == max_iter_id:
             return max_iter_id, 'feat'
 
-        if len(history)==max_iter_id+1:
-            return max_iter_id+1, 'fit'
+        if len(self.history) == max_iter_id + 1:
+            return max_iter_id + 1, 'fit'
 
     @property
     def cur_iter_id(self):
@@ -116,7 +127,8 @@ class StatusChecker:
         """
         if self.last_completed_module is None:
             return True
-        return modules.index(self.last_completed_module)<modules.index(module_name)
+        return (StatusChecker.modules.index(self.last_completed_module) < 
+                StatusChecker.modules.index(module_name))
 
     def after(self,module_name):
         """
@@ -140,16 +152,16 @@ class StatusChecker:
         Returns:
              StatusChecker object.
         """
-        (self.sc_df, self.comp_df,
-         self.fact_df) = load_dataframes(sc_file=sc_file,
-                                         comp_file=comp_file,
-                                         fact_file=fact_file)
-
         if os.path.isfile(ce_history_file):
             with open(ce_history_file) as fin:
                 history = json.load(fin)
         else:
             history = []
+
+        (sc_df, comp_df,
+         fact_df) = load_dataframes(sc_file=sc_file,
+                                    comp_file=comp_file,
+                                    fact_file=fact_file)
 
         sock = cls(sc_df,comp_df,fact_df,history)
         sock._sc_load_path = sc_file
@@ -171,10 +183,10 @@ class StatusChecker:
         No return value.
         """
         if from_load_paths:
-            sc_file = self._sc_load_path
-            comp_file = self._comp_load_path
-            fact_file = self._fact_load_path
-            ce_history_file = self._history_load_path
+            sc_file = self._sc_load_path or sc_file
+            comp_file = self._comp_load_path or comp_file
+            fact_file = self._fact_load_path or fact_file
+            ce_history_file = self._history_load_path or ce_history_file
 
         sc_df, comp_df, fact_df = load_dataframes(sc_file=sc_file,\
                                                   comp_file=comp_file,\
