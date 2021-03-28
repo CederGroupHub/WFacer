@@ -304,10 +304,17 @@ class InputsWrapper(MSONable):
 
     @property
     def extern_types(self):
+        """Types of external terms in clustersubspace.
+ 
+        If given system is charge cluster expansion,
+        will add ewald term.
+        """
         return self.featurizer_options.get('extern_types')
   
     @property
     def extern_args(self):
+        """Args of external terms.
+        """
         return self.featurizer_options.get('extern_args')
 
     @property

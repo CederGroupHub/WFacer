@@ -12,6 +12,7 @@ __author__ = 'Fengyu Xie'
 import json
 import pandas as pd
 import os
+from copy import deepcopy
 
 from .config_paths import *
 from .utils.frame_utils import load_dataframes
@@ -139,6 +140,20 @@ class StatusChecker:
                 name of the module to check.
         """
         return (not self.before(module_name))
+
+    def copy(self):
+        """Deepcopy of StatusChecker"""
+        sock = StatusChecker(self.sc_df.copy(),
+                             self.comp_df.copy(),
+                             self.fact_df.copy(),
+                             deepcopy(self.history))
+
+        sock._sc_load_path = self._sc_load_path
+        sock._comp_load_path = self._comp_load_path
+        sock._fact_load_path = self._fact_load_path
+        sock._history_load_path = self._history_load_path
+
+        return sock
 
     @classmethod
     def auto_load(cls,sc_file=SC_FILE,comp_file=COMP_FILE,fact_file=FACT_FILE,\

@@ -12,6 +12,7 @@ __author__ = "Fengyu Xie"
 import numpy as np
 import pandas as pd
 import warnings 
+from copy import deepcopy
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
@@ -71,9 +72,9 @@ class DataManager:
 
         self._schecker = schecker
 
-        self._sc_load_path = SC_FILE
-        self._comp_load_path = COMP_FILE
-        self._fact_load_path = FACT_FILE
+        self._sc_load_path = None
+        self._comp_load_path = None
+        self._fact_load_path = None
 
     @property
     def cur_iter_id(self):
@@ -176,11 +177,11 @@ class DataManager:
                 In format: {'prop_name':prop_value,...}
         """
         if self._fact_df is None:
-            self._fact_df = pd.DataFrame(columns=['entry_id','sc_id','comp_id',\
-                                                  'iter_id','module',\
-                                                  'ori_occu','ori_corr',\
-                                                  'calc_status',\
-                                                  'map_occu','map_corr',\
+            self._fact_df = pd.DataFrame(columns=['entry_id','sc_id','comp_id',
+                                                  'iter_id','module',
+                                                  'ori_occu','ori_corr',
+                                                  'calc_status',
+                                                  'map_occu','map_corr',
                                                   'e_prim','other_props'])
         return self._fact_df
 
@@ -196,12 +197,19 @@ class DataManager:
         fact = self.fact_df.copy()
         fact = fact.merge(self.sc_df,how='left',on='sc_id')
         #pd.isna must be used, because np.nan may not be considered is None.
-        fact['ori_str'] = fact.apply(lambda r: \
-                                     structure_from_occu(r['ori_occu'],self._prim,r['matrix']) \
-                                     if not pd.isna(r['ori_occu']) else None,axis=1)
-        fact['map_str'] = fact.apply(lambda r: \
-                                     structure_from_occu(r['map_occu'],self._prim,r['matrix']) \
-                                     if not pd.isna(r['map_occu']) else None,axis=1)
+        fact['ori_str'] = fact.apply(lambda r:
+                                     structure_from_occu(r['ori_occu'],
+                                                         self._prim,
+                                                         r['matrix'])
+                                     if not np.any(pd.isna(r['ori_occu']))
+                                     else None, axis=1)
+
+        fact['map_str'] = fact.apply(lambda r:
+                                     structure_from_occu(r['map_occu'],
+                                                         self._prim,
+                                                         r['matrix'])
+                                     if not np.any(pd.isna(r['map_occu']))
+                                     else None, axis=1)
         return fact
 
     def find_sc_id(self,sc_mat):
@@ -214,14 +222,12 @@ class DataManager:
         Returns:
             sc_id(int) or None.
         """
-        new_sc = self.prim.copy()
-        new_sc.make_supercell(sc_mat)
-
-        sm = StructureMatcher()
         for old_id,old_mat in zip(self.sc_df.sc_id,self.sc_df.matrix):
-            old_sc = self.prim.copy()
-            old_sc.make_supercell(old_mat)
-            if sm.fit(new_sc,old_sc):
+            old_lat = np.dot(old_mat, self._prim.lattice.matrix)
+            new_lat = np.dot(sc_mat, self._prim.lattice.matrix)
+            R = np.linalg.inv(old_lat) @ new_lat
+            if (np.allclose(R @ R.T, np.identity(3)) and
+                abs(abs(np.linalg.det(R)) - 1) < 1E-7):
                 return old_id
 
         return None
@@ -242,11 +248,10 @@ class DataManager:
 
         oid = self.find_sc_id(new_sc_mat)
         if oid is not None:
-            warnings.warn("Matrix {} found in previous supercell with index: {}."\
-                          .format(new_sc_mat,oid))
             return oid
 
-        sc_id = self.sc_df.sc_id.max()+1 if len(self.sc_df)>0 else 0
+        print(self.sc_df)
+        sc_id = self.sc_df.sc_id.max() + 1 if len(self.sc_df)>0 else 0
         self._sc_df = self._sc_df.append({'sc_id':sc_id, 'matrix':new_sc_mat},\
                                           ignore_index=True)
         return sc_id
@@ -275,7 +280,8 @@ class DataManager:
         if sc_id is None and sc_mat is None:
             raise ValueError("Arguments sc_id and sc_mat can not be both None.")       
 
-        sc_id = sc_id or self.find_sc_id(sc_mat)
+        sc_id = sc_id if sc_id is not None else self.find_sc_id(sc_mat)
+
         if sc_id is None:
             return None
 
@@ -283,12 +289,11 @@ class DataManager:
                                                   from_format=comp_format,\
                                                   to_format='unconstr').tolist()      
 
-        dupe_filt_ = (self.comp_df.sc_id == sc_id) \
-                     & (np.isclose(self.comp_df.ucoord.tolist(),ucoord).any(axis=1))
-
-        for i,dupe in enumerate(dupe_filt_):
-            if dupe:
-                return self.comp_df.iloc[i]['comp_id']
+        for cid, sid, x in zip(self.comp_df.comp_id,
+                               self.comp_df.sc_id,
+                               self.comp_df.ucoord):
+            if np.allclose(x, ucoord) and sid == sc_id:
+                return cid
 
         return None
 
@@ -320,11 +325,17 @@ class DataManager:
             sc_id(int), comp_id(int):
                 Indices of the inserted supercell and composition.
         """
-        sc_id = sc_id or self.insert_one_supercell(sc_mat)
+        if sc_id is None and sc_mat is None:
+            raise ValueError("Arguments sc_id and sc_mat can not be both none.")
+
+        if sc_id is not None and sc_id not in self.sc_df.sc_id:
+            raise ValueError("Supercell index {} given, but not in supercell table!"
+                             .format(sc_id))
+
+        sc_id = sc_id if sc_id is not None else self.insert_one_supercell(sc_mat)
         o_cid = self.find_comp_id(new_comp,sc_id=sc_id,comp_format=comp_format)
         if o_cid is not None:
-            warnings.warn("Composition {}({}) found in previous composition with index: {}."\
-                          .format(new_comp,comp_format,o_cid))
+            # If found previous match, no insertion.
             return sc_id, o_cid
 
         #Convert to list for proper serialization
@@ -339,8 +350,8 @@ class DataManager:
                                                 to_format='composition')
         cstat = self._compspace.translate_format(new_comp,\
                                                  from_format=comp_format,\
-                                                 to_format='compstat').tolist()      
-        nondisc = self._compsace.translate_format(new_comp,\
+                                                 to_format='compstat')
+        nondisc = self._compspace.translate_format(new_comp,\
                                                   from_format=comp_format,\
                                                   to_format='nondisc').tolist()
        
@@ -393,9 +404,10 @@ class DataManager:
         if sc_id is None and sc_mat is None:
             raise ValueError("Arguments sc_id and sc_mat can not be both none.")
 
-        sc_id = sc_id or self.find_sc_id(sc_mat)
-        sc_mat = sc_mat or self.sc_df[self.sc_df.sc_id==sc_id]\
-                           .reset_index().iloc[0]['matrix']
+        sc_id = sc_id if sc_id is not None else self.find_sc_id(sc_mat)
+        sc_mat = (sc_mat or self.sc_df[self.sc_df.sc_id==sc_id]
+                  .reset_index().iloc[0]['matrix'])
+
         if sc_id is None:
             return None
 
@@ -404,7 +416,7 @@ class DataManager:
             sc_size = int(round(abs(np.linalg.det(sc_mat))))
             sc_sublat_list = get_sc_sllist_from_prim(self._sublat_list,sc_size=sc_size)
             cstat = occu_to_species_stat(occu,self._bits,sc_sublat_list)
-            cstat = normalize_compstat(cstat,sc_size=sc_size)
+            cstat = normalize_compstat(cstat, sc_size=sc_size)
 
             ucoords = self._compspace.translate_format(cstat,\
                                                        from_format='compstat',\
@@ -438,7 +450,6 @@ class DataManager:
                 return fact.iloc[i]['entry_id']
 
         return None
-
 
     def insert_one_occu(self, occu, comp_id=None, comp=None, comp_format='ucoord',\
                               sc_id=None, sc_mat=None,\
@@ -484,16 +495,24 @@ class DataManager:
         if sc_id is None and sc_mat is None:
             raise ValueError("Arguments sc_id and sc_mat can not be both none.")
 
-        sc_id = sc_id or self.insert_one_supercell(sc_mat)
+        if sc_id is not None and sc_id not in self.sc_df.sc_id:
+            raise ValueError("Supercell index {} given, but not in supercell table."
+                             .format(sc_id))
+
+        if comp_id is not None and comp_id not in self.comp_df.comp_id:
+            raise ValueError("Composition index {} given, but not in composition table."
+                             .format(comp_id))
+
+        sc_id = sc_id if sc_id is not None else self.insert_one_supercell(sc_mat)
         sc_mat = sc_mat or self.sc_df[self.sc_df.sc_id==sc_id]\
                            .reset_index().iloc[0]['matrix']
        
         if comp_id is None and comp is None:
-            #Get compositional statistics.(Must be normalized)
+            # Get compositional statistics.(Must be normalized)
             sc_size = int(round(abs(np.linalg.det(sc_mat))))
             sc_sublat_list = get_sc_sllist_from_prim(self._sublat_list,sc_size=sc_size)
             cstat = occu_to_species_stat(occu,self._bits,sc_sublat_list)
-            cstat = normalize_compstat(cstat,sc_size=sc_size)
+            cstat = normalize_compstat(cstat, sc_size=sc_size)
 
             ucoords = self._compspace.translate_format(cstat,\
                                                        from_format='compstat',\
@@ -580,17 +599,35 @@ class DataManager:
             sc_id(int),comp_id(int),entry_id(int):
                 indices in sc_df,comp_df,fact_df of this new entry
         """
-        sc_mat = sc_mat or self._subspace.scmatrix_from_structure(s)
+        if sc_id is None and sc_mat is None:
+            try:
+                sc_mat = self._subspace.scmatrix_from_structure(s)
+            except:
+                raise ValueError("Arguments sc_id and sc_mat are both none, but \
+                                  sc_mat can't be found. If you are computing a \
+                                  system with vacancies, consider giving one of \
+                                  the two args.")
+
+        if sc_id is not None and sc_id not in self.sc_df.sc_id:
+            raise ValueError("Supercell index {} given, but not in supercell table."
+                             .format(sc_id))
+
         if isinstance(sc_mat,np.ndarray):
             sc_mat = sc_mat.tolist()
 
+        sc_id = sc_id if sc_id is not None else self.insert_one_supercell(sc_mat)
+        sc_mat = (sc_mat or
+                  self.sc_df[self.sc_df.sc_id == sc_id].
+                  reset_index().iloc[0]['matrix'])
+
         occu = self._subspace.occupancy_from_structure(s,scmatrix=sc_mat,encode=True)
         if isinstance(occu,np.ndarray):
-            occu = occu.tolist()       
+            occu = occu.tolist()
 
-        return self.insert_one_occu(occu,comp_id=comp_id,comp=comp,comp_format=comp_format,\
-                                         sc_id=sc_id,sc_mat=sc_mat,\
-                                         module_name=module_name,**calculated_info)
+        return self.insert_one_occu(occu, comp_id=comp_id, comp=comp,
+                                    comp_format=comp_format,
+                                    sc_id=sc_id, sc_mat=sc_mat,
+                                    module_name=module_name, **calculated_info)
 
 
     def remove_entree_by_id(self,entry_ids=[]):
@@ -647,7 +684,7 @@ class DataManager:
         self._reassign_entry_ids()
         self._reassign_comp_ids()
 
-    def remove_supercells_by_id(self,sc_id=[]):
+    def remove_supercells_by_id(self, sc_ids=[]):
         """
         Removes one supercell matrix from the supercell table. Will also remove all entree
         in the fact table that have this supercell, and all related compositions.
@@ -709,17 +746,30 @@ class DataManager:
                 If true, will re-save dataframes, and reload the status checker from the
                 new saves. Default to true.
         """
-        print("Any enumerated entree in all iterations will be cleared. Proceed?[y/n]")
-        choice = raw_input().lower()
-        if choice == 'y':
-            self.remove_supercells_by_id(sc_id=self.fact_df.sc_id.tolist())
-        elif choice != 'n':
-            raise ValueError("Please respond with [Y/N] or [y/n]!")
+        warnings.warn("Clearing all previous records. \
+                      Do this at your own risk!")
+        self.remove_supercells_by_id(sc_ids=self.fact_df.sc_id.tolist())
 
         #Flush and read again.
         if flush_and_reload:
             self.auto_save(to_load_paths=True)
             self._schecker.re_load(from_load_paths=True)
+
+    def copy(self):
+        """Deepcopy of DataManager."""
+        sock = DataManager(self._prim.copy(), deepcopy(self._bits),
+                           deepcopy(self._sublat_list), self._subspace.copy(),
+                           self._schecker.copy())
+
+        sock._sc_df = self._sc_df.copy()
+        sock._comp_df = self._comp_df.copy()
+        sock._fact_df = self._fact_df.copy()
+
+        sock._sc_load_path = self._sc_load_path
+        sock._comp_load_path = self._comp_load_path
+        sock._fact_load_path = self._fact_load_path
+
+        return sock
 
     def _reassign_entry_ids(self):
         """
@@ -727,7 +777,6 @@ class DataManager:
         Order of rows will not be changed.
         """
         self._fact_df.entry_id = list(range(len(self._fact_df)))
-        self._fact_df = self._fact_df.reset_index()
 
     def _reassign_comp_ids(self):
         """
@@ -738,8 +787,6 @@ class DataManager:
         old_cid = self._comp_df.comp_id.tolist()
         self._comp_df.comp_id = list(range(len(self._comp_df)))
         self._fact_df.comp_id = self._fact_df.comp_id.map(lambda ocid: old_cid.index(ocid))
-        self._fact_df = self._fact_df.reset_index()
-        self._comp_df = self._comp_df.reset_index()
 
     def _reassign_sc_ids(self):
         """
@@ -751,9 +798,6 @@ class DataManager:
         self._sc_df.sc_id = list(range(len(self._sc_df)))
         self._fact_df.sc_id = self._fact_df.sc_id.map(lambda osid: old_sid.index(osid))
         self._comp_df.sc_id = self._comp_df.sc_id.map(lambda osid: old_sid.index(osid))
-        self._sc_df = self._sc_df.reset_index()
-        self._fact_df = self._fact_df.reset_index()
-        self._comp_df = self._comp_df.reset_index()
 
     def _save_dataframes(self, sc_file='sc_mats.csv', comp_file='comps.csv',
                          fact_file='data.csv'):
@@ -841,9 +885,9 @@ class DataManager:
         """
         #Option file is read_only
         if to_load_paths:
-            sc_file = self._sc_load_path
-            comp_file = self._comp_load_path
-            fact_file = self._fact_load_path
+            sc_file = self._sc_load_path or sc_file
+            comp_file = self._comp_load_path or comp_file
+            fact_file = self._fact_load_path or fact_file
 
         self._save_dataframes(sc_file=sc_file,comp_file=comp_file,\
                               fact_file=fact_file)

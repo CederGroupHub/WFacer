@@ -143,5 +143,5 @@ def scale_compstat(compstat,by=1):
 
     return int_comp
 
-def normalize_compstat(compstat):
-    return [[float(n)/sum(sl) for n in sl] for sl in compstat]
+def normalize_compstat(compstat, sc_size=1):
+    return [[float(n)/sc_size for n in sl] for sl in compstat]
