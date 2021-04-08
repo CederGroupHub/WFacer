@@ -50,28 +50,31 @@ class MongoFWManager(BaseManager):
                       **kwargs):
         """
         Args:
-            data_manager(DataManager):
-                An interface to the calculated and enumerated data.
             time_limit(float):
                 Time limit for all calculations to finish. Unit is second.
                 Default is 4 days.
             check_interval(float):
-                Interval to check status of all computations in queue. Unit is second.
+                Interval to check status of all computations in queue. Unit
+                is second.
                 Default is every 5 mins.
             kill_command(str):
-                Killing command of your specific queue. If you queue system belongs to:
-                PBS, SGE, Cobalt, SLURM, LoadLeveler, LoadSharingFacility, or MOAB, and
-                you have set up your atomate configurations correctly, you shouldn't need
-                to specify this value.
+                Killing command of your specific queue. If you queue system
+                belongs to: PBS, SGE, Cobalt, SLURM, LoadLeveler,
+                LoadSharingFacility, or MOAB, and you have set up your atomate
+                configurations correctly, you shouldn't need to specify this
+                value.
             lp_file(str):
-                path to launchpad setting file. If not given, will use atomate default.
+                path to launchpad setting file. If not given, will use atomate
+                default.
             fw_file(str):
-                path to fireworker setting file. If not given, will use atomate default.
+                path to fireworker setting file. If not given, will use atomate
+                default.
             qa_file(str):
-                path to queue adapter file. If not given, will use atomate default.
+                path to queue adapter file. If not given, will use atomate
+                default.
         """
-        super().__init__(time_limit=time_limit,check_interval=check_interval,\
-                         data_manager=data_manager,**kwargs)
+        super().__init__(time_limit=time_limit,check_interval=check_interval,
+                         **kwargs)
 
         self.root_name = os.path.split(os.getcwd())[-1]
 
@@ -81,10 +84,12 @@ class MongoFWManager(BaseManager):
 
         #If you define any other qadapter than CommonQadapter, make sure
         #to implement a q_type attribute!
-        self.kill_command = kill_command or \
-                     default_kill_commands.get(self._qadapter.q_type,None)
+        self.kill_command = (kill_command or
+                             default_kill_commands.get(self._qadapter.q_type,
+                                                       None))
         if self.kill_command is None:
-            raise ValueError("Queue type {} not supported, but no kill command given in init!"\
+            raise ValueError("Queue type {} not archieved, but no kill \
+                             command given!"
                              .format(self._qadapter.q_type))
 
     def entree_in_queue(self,entry_ids):
@@ -126,7 +131,6 @@ class MongoFWManager(BaseManager):
         """
         print("**Submitting entree"+(': {}'.format(eids) if eids is not None else '.'))
         rapidfire(self._lpad,self._fworker,self._qadapter,reserve=True)
-
                
     def kill_tasks(self,entry_ids=None):
         """
@@ -144,16 +148,19 @@ class MongoFWManager(BaseManager):
 
         import re
 
-        regex_ = re.compile("^ce_{}".format(self.root_name))
-        all_wids = [wf['nodes'] for wf in self._lpad.workflows.find({'name':regex_})]
-        all_qids = [[self._lpad.get_reservation_id_from_fw_id(fw_id) for fw_id in e_fwids]\
-                     for e_fwids in all_wids]
-        all_eids = [int(wf['name'].split('_')[-1])\
-                    for wf in self._lpad.workflows.find({'name':regex_})]        
+        regex_ = re.compile(r"^ce_{}_[0-9]+".format(self.root_name))
+        all_wids = [wf['nodes'] for wf in
+                    self._lpad.workflows.find({'name':regex_})]
+        all_qids = [[self._lpad.get_reservation_id_from_fw_id(fw_id)
+                    for fw_id in e_fwids]
+                    for e_fwids in all_wids]
+        all_eids = [int(wf['name'].split('_')[-1])
+                    for wf in self._lpad.workflows.find({'name':regex_})]
 
         entry_ids = entry_ids or all_eids
         qstats = self.entree_in_queue(entry_ids) 
-        entry_ids = [eid for eid,e_in_q in zip(entry_ids,qstats) if e_in_q]      
+        entry_ids = [eid for eid, e_in_q in zip(entry_ids, qstats)
+                     if e_in_q]
 
         print("**Killing tasks associated with entree: ",entry_ids)
         all_eids_2k = []

@@ -419,8 +419,10 @@ class InputsWrapper(MSONable):
         return {'other_props':self._options.get('other_props',[]),
                 'decorators_types':decorators_types,
                 'decorators_args':self._options.get('decorators_args',[]),
-                'extern_types':self._options.get('extern_types',default_extern_types),
-                'extern_args':self._options.get('extern_args',default_extern_args)
+                'extern_types':self._options.get('extern_types',
+                                                 default_extern_types),
+                'extern_args':self._options.get('extern_args',
+                                                default_extern_args)
                }
 
     @property
@@ -428,10 +430,12 @@ class InputsWrapper(MSONable):
         """
         Get fitter options.
         """
-        return {'estimator_flavor':self._options.get('estimator_flavor','L2L0Estimator'),\
-                'weights_flavor':self._options.get('weights_flavor','unweighted'),\
-                'use_hierarchy':self._options.get('use_hierarchy',True),\
-                'estimator_params':self._options.get('estimator_params',{}),\
+        return {'estimator_flavor':self._options.get('estimator_flavor',
+                                                     'L2L0Estimator'),
+                'weights_flavor':self._options.get('weights_flavor',
+                                                   'unweighted'),
+                'use_hierarchy':self._options.get('use_hierarchy',True),
+                'estimator_params':self._options.get('estimator_params',{}),
                 'weighter_params':self._options.get('weighter_params',{})
                }
 
@@ -440,8 +444,8 @@ class InputsWrapper(MSONable):
         """
         Get ground state checker options.
         """
-        return {'e_tol_in_cv':self._options.get('e_tol_in_cv',3),\
-                'comp_tol':self._options.get('comp_tol',0.05),\
+        return {'e_tol_in_cv':self._options.get('e_tol_in_cv',3),
+                'comp_tol':self._options.get('comp_tol',0.05),
                 'cv_change_tol':self._options.get('cv_change_tol',0.2)
                }
     
@@ -450,58 +454,47 @@ class InputsWrapper(MSONable):
         """
         Get ground state generator options.
         """
-        return {'handler_flavor':self._options.get('handler_flavor','CanonicalMCHandler'),\
+        return {'handler_flavor':self._options.get('handler_flavor',
+                                                   'CanonicalMCHandler'),
                 'handler_args':self._options.get('handler_args',{})
                }
 
-    def get_calc_writer(self,data_manager):
+    @property
+    def calc_writer(self):
         """
         Calculation writer object initialized from the options.
 
-        Inputs:
-            data_manager(DataManager):
-                socket to datamanager object.
-
-                Since the initialization of a DataManager requires InputsWrapper, we have
-                to provide this socket explicitly to avoid loop.
         Return:
             BaseCalcWriter
         """
-        name = self.calc_writer_options['writer_type']
         kwargs = self.calc_writer_options.copy()
-        kwargs.pop('writer_type')
-        return globals()[name](data_manager=data_manager,**kwargs)
+        name = kwargs.pop('writer_type')
+        return globals()[name](**kwargs)
 
-    def get_calc_manager(self,data_manager):
+    @property
+    def calc_manager(self):
         """
         Calculation manager object initialized from the options.
-        Inputs:
-            data_manager(DataManager):
-                socket to datamanager object.
 
-                Since the initialization of a DataManager requires InputsWrapper, we have
-                to provide this socket explicitly to avoid loop.
         Return:
             BaseCalcManager
         """
-        name = self.calc_manager_options['manager_type']
         kwargs = self.calc_manager_options.copy()
-        kwargs.pop('manager_type')
-        return globals()[name](data_manager=data_manager,**kwargs)
+        name = kwargs.pop('manager_type')
+        return globals()[name](**kwargs)
 
-    #Used in featurizer. Calc reader will usually not be explicitly called.
+    #Used in featurizer. Calc reader usually will not be explicitly called.
     @property
     def calc_reader(self):
         """
         Calculation reader object initialized from the options.
-        This class does not directly interact with the datamanager. It only serves
-        as an attachment to Featurizer.
+        This class does not directly interact with the datamanager.
+        It only serves as an attachment to Featurizer.
         Return:
-            BaseCalcManager
+            BaseCalcReader
         """
-        name = self.calc_reader_options['reader_type']
         kwargs = self.calc_reader_options.copy()
-        kwargs.pop('reader_type')
+        name = kwargs.pop('reader_type')
         return globals()[name](**kwargs)
 
     @property

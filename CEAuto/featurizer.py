@@ -191,9 +191,9 @@ class Featurizer(MSONable):
         Will check previous CE flow status. If already 
         featurized, will not featurize again.
         """
-        if self._dm._schecker.after('feat'):
+        if self._dm.schecker.after('feat'):
             print("**Featurization already done in current iteration {}."\
-                  .format(self._dm._schecker.cur_iter_id))
+                  .format(self._dm.schecker.cur_iter_id))
             return
 
         sc_df = self.sc_df.copy()
@@ -293,7 +293,7 @@ class Featurizer(MSONable):
 
         self._dm._fact_df = fact_table
 
-    def get_properties(self,sc_table,fact_table,calc_reader):
+    def get_properties(self):
         """
         Load expansion properties. By default, only loads energies.
         Properties will be noralized to per prim, if possible.
@@ -306,9 +306,9 @@ class Featurizer(MSONable):
         fact_table = self.fact_df.copy()
         calc_reader = self.calc_reader
 
-        fact_unchecked = fact_table[(fact_table.calc_status=='SC') & \
-                                    (fact_table.e_prim.isna())]\
-                         .merge(sc_table,how='left',on='sc_id')
+        fact_unchecked = (fact_table[(fact_table.calc_status=='SC') &
+                                    (fact_table.e_prim.isna())]
+                          .merge(sc_table,how='left',on='sc_id'))
         
         eid_unchecked = fact_unchecked.entry_id
 
@@ -321,8 +321,8 @@ class Featurizer(MSONable):
         #Dictionary with {prop_name:[List of values]}
 
         other_props = calc_reader.load_properties(entry_ids = eid_unchecked,
-                                                   prop_names = self.other_props,\
-                                                   include_pnames = True)
+                                                  prop_names = self.other_props,\
+                                                  include_pnames = True)
 
         #Normalize properties
         sc_sizes = fact_unchecked.matrix.map(lambda x: int(abs(round(np.linalg.det(x)))) )
@@ -351,46 +351,32 @@ class Featurizer(MSONable):
             json.dump(decorator_dicts,fout)
 
     @classmethod
-    def auto_load(cls,options_file=OPTIONS_FILE,\
-                      decor_file=DECOR_FILE,\
-                      sc_file=SC_FILE,\
-                      comp_file=COMP_FILE,\
-                      fact_file=FACT_FILE,\
-                      ce_history_file=CE_HISTORY_FILE):
+    def auto_load(cls, data_manager,
+                  options_file=OPTIONS_FILE,
+                  decor_file=DECOR_FILE,
+                  ce_history_file=CE_HISTORY_FILE):
         """
         This method is the recommended way to initialize this object.
         It automatically reads all setting files with FIXED NAMES.
         YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
         YOU MAY BREAK THE INITIALIZATION PROCESS!
         Args:
+            data_manager(DataManager):
+                A DataManager object to read and write when
+                featurizing.
             options_file(str):
                 path to options file. Options must be stored as yaml
                 format. Default: 'options.yaml'
             decor_file(str):
                 Decorators data file. Optional, default: 'decors.json'.
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'
-            comp_file(str):
-                path to compositions file, in csv format.
-                Default: 'comps.csv'             
-            fact_file(str):
-                path to enumerated structures dataframe file, in csv format.
-                Default: 'data.csv'             
             ce_history_file(str):
                 path to cluster expansion history file.
                 Default: 'ce_history.json'
         Returns:
              Featurizer object.
         """
-        options = InputsWrapper.auto_load(options_file=options_file,\
+        options = InputsWrapper.auto_load(options_file=options_file,
                                           ce_history_file=ce_history_file)
-
-        dm = DataManager.auto_load(options_file=options_file,\
-                                   sc_file=sc_file,\
-                                   comp_file=comp_file,\
-                                   fact_file=fact_file,\
-                                   ce_history_file=ce_history_file)
 
         if os.path.isfile(decor_file):
             with open(decor_file) as fin:
@@ -400,19 +386,18 @@ class Featurizer(MSONable):
             decorators_types = options.featurizer_options['decorators_types']
             decorators_args = options.featurizer_options['decorators_args']
 
-            decorators = [globals()[name](**args) for name,args in \
+            decorators = [globals()[name](**args) for name,args in
                           zip(decorators_types,decorators_args)]
 
-
-        reader = deepcopy(options.calc_reader)
+        reader = options.calc_reader
 
         return cls(options.prim,
-                   bits=options.bits,\
-                   sublat_list=options.sublat_list,\
-                   is_charged=options.is_charged_ce,\
-                   previous_ce=options.last_ce,\
-                   other_props=options.featurizer_options['other_props'],\
-                   decorators=decorators,\
-                   data_manager=dm,\
+                   bits=options.bits,
+                   sublat_list=options.sublat_list,
+                   is_charged=options.is_charged_ce,
+                   previous_ce=options.last_ce,
+                   other_props=options.featurizer_options['other_props'],
+                   decorators=decorators,
+                   data_manager=data_manager,
                    calc_reader=reader
                   )

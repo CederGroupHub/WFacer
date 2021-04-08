@@ -36,13 +36,12 @@ class GSGenerator(MSONable):
           handler!
     """
     #Modify this when you implement new handlers
-    supported_handlers = ('CanonicalMCHandler','CanonicalPBHandler',\
+    supported_handlers = ('CanonicalMCHandler','CanonicalPBHandler',
                           'SemigrandDiscMCHandler','SemigrandDiscPBHandler')
 
-    def __init__(self,ce,prim,bits,sublat_list,compspace,data_manager,\
-                      handler_flavor='CanonicalMCHandler',\
-                      handler_args={}
-                      ):
+    def __init__(self, ce, prim, bits, sublat_list, compspace, data_manager,
+                 handler_flavor='CanonicalMCHandler',
+                 handler_args={}):
         """
         Args:
             ce(smol.ClusterExpansion):
@@ -213,11 +212,8 @@ class GSGenerator(MSONable):
         self._dm.auto_save(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
 
     @classmethod
-    def auto_load(cls,\
-                  options_file=OPTIONS_FILE,\
-                  sc_file=SC_FILE,\
-                  comp_file=COMP_FILE,\
-                  fact_file=FACT_FILE,\
+    def auto_load(cls, data_manager,
+                  options_file=OPTIONS_FILE,
                   ce_history_file=CE_HISTORY_FILE):
         """
         This method is the recommended way to initialize this object.
@@ -225,18 +221,11 @@ class GSGenerator(MSONable):
         YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
         YOU MAY BREAK THE INITIALIZATION PROCESS!
         Args:
+            data_manager(DataManager):
+                Data manager to read and write.
             options_file(str):
                 path to options file. Options must be stored as yaml
-                format. Default: 'options.yaml'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'             
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'             
+                format. Default: 'options.yaml'           
             ce_history_file(str):
                 path to cluster expansion history file.
                 Default: 'ce_history.json'
@@ -246,18 +235,12 @@ class GSGenerator(MSONable):
         options = InputsWrapper.auto_load(options_file=options_file,\
                                           ce_history_file=ce_history_file)
 
-        dm = DataManager.auto_load(options_file=options_file,\
-                                   sc_file=sc_file,\
-                                   comp_file=comp_file,\
-                                   fact_file=fact_file,\
-                                   ce_history_file=ce_history_file)
-
         socket = cls(options.last_ce,\
                      options.prim,\
                      options.bits,\
                      options.sublat_list,\
                      options.comp_space,\
-                     data_manager=dm,\
+                     data_manager=data_manager,\
                      **options.gs_generator_options)
 
         socket._sc_load_path = sc_file
@@ -265,5 +248,3 @@ class GSGenerator(MSONable):
         socket._fact_load_path = fact_file
 
         return socket
-
-

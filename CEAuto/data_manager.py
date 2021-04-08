@@ -25,7 +25,7 @@ from .utils.frame_utils import load_dataframes, save_dataframes
 from smol.moca import CompSpace
 
 from .inputs_wrapper import InputsWrapper  # Used in auto_load()
-from .status_checker import StatusChecker  # Used in auto_load()
+from .status_checker import StatusChecker
 
 from .config_paths import *
 
@@ -34,7 +34,7 @@ class DataManager:
     DataManger class to interface all CEAuto generated data.
     You are not recommended to call __init__ directly.
     """
-    def __init__(self,prim,bits,sublat_list,subspace,schecker):
+    def __init__(self,prim,bits,sublat_list,subspace,history=[]):
         #These attributes are used to convert between occupation/structure/composition.
         #InputsWrapper can read all settings from default or options file, and passes them
         #down to all other modules.
@@ -50,10 +50,8 @@ class DataManager:
                 Indices of PRIMITIVE CELL sites in the same sublattices. 
             subspace(Clustersubspace):
                 The cluster subspace used to featurize structures.
-            schecker(StatusChecker):
-                A status checker object, can check current iteration
-                number and which step of CE cycle we are in, based on 
-                the current data and history files.
+            history(List[Dict]):
+                History CE coefficients and CV scores. Used in StatusChecker.
     
             Since this DataManager can not generate or calculate data, you must 
             provide this necessary arguments to initialize it.
@@ -70,18 +68,23 @@ class DataManager:
         self._comp_df = None
         self._fact_df = None
 
-        self._schecker = schecker
+        self.history = history
 
         self._sc_load_path = None
         self._comp_load_path = None
         self._fact_load_path = None
 
     @property
+    def schecker(self):
+        return StatusChecker(self.sc_df, self.comp_df, self.fact_df,
+                             self.history)
+
+    @property
     def cur_iter_id(self):
         """
         Get the current iteration number from the fact table.
         """
-        return self._schecker.cur_iter_id 
+        return self.schecker.cur_iter_id
 
     @property
     def sc_df(self):
@@ -620,15 +623,16 @@ class DataManager:
                   self.sc_df[self.sc_df.sc_id == sc_id].
                   reset_index().iloc[0]['matrix'])
 
-        occu = self._subspace.occupancy_from_structure(s,scmatrix=sc_mat,encode=True)
+        occu = self._subspace.occupancy_from_structure(s, scmatrix=sc_mat,
+                                                       encode=True)
         if isinstance(occu,np.ndarray):
             occu = occu.tolist()
 
         return self.insert_one_occu(occu, comp_id=comp_id, comp=comp,
                                     comp_format=comp_format,
                                     sc_id=sc_id, sc_mat=sc_mat,
-                                    module_name=module_name, **calculated_info)
-
+                                    module_name=module_name,
+                                    **calculated_info)
 
     def remove_entree_by_id(self,entry_ids=[]):
         """
@@ -642,7 +646,7 @@ class DataManager:
         self._fact_df = self._fact_df.drop(drop_ids)
         self._reassign_entry_ids()
 
-    def remove_entree_by_iters_modules(self,iter_ids=[],modules=[],flush_and_reload=True):
+    def remove_entree_by_iters_modules(self,iter_ids=[],modules=[]):
         """
         Remove entree of specified iteration indices and modules.
         Args:
@@ -650,9 +654,6 @@ class DataManager:
                 Iteration numbers to remove.
             modules(List[int]):
                 Modules to remove.
-            flush_and_reload(Boolean):
-                If true, will re-save dataframes, and reload the status checker from the
-                new saves.
 
         Note:
             Since this operation might change the status checker's return value,
@@ -662,10 +663,6 @@ class DataManager:
                (self.fact_df.module.isin(modules))
         eids = self.fact_df[filt].entry_id.tolist()
         self.remove_entree_by_id(eids)
-        #Flush and read again.
-        if flush_and_reload:
-            self.auto_save(to_load_paths=True)
-            self._schecker.re_load(from_load_paths=True)
 
     def remove_comps_by_id(self,comp_ids=[]):
         """
@@ -717,7 +714,7 @@ class DataManager:
         filt_ = (self.fact_df.calc_status==status)
         return self.fact_df[filt_].entry_id.tolist()
 
-    def set_status(self,eids = [],status='NC',flush_and_reload=True):
+    def set_status(self,eids = [],status='NC'):
         """
         Set calc_status column of corresponding entree indices in the fact table.
         Args:
@@ -725,41 +722,23 @@ class DataManager:
                 entree indices to rewrite calc_status
             status(str):
                 The status to rewrite with. See self.fact_df for allowed values.
-            flush_and_reload(Boolean):
-                If true, will re-save dataframes, and reload the status checker from the
-                new saves. Default to true.
-      
         """
         filt_ = self._fact_df.entry_id.isin(eids)
         self._fact_df.loc[filt_,'calc_status']=status
 
-        #Flush and read again.
-        if flush_and_reload:
-            self.auto_save(to_load_paths=True)
-            self._schecker.re_load(from_load_paths=True)
-
-    def reset(self,flush_and_reload=True):
+    def reset(self):
         """
         Reset all calculation data. Use this at your own risk!
-        Args:
-             flush_and_reload(Boolean):
-                If true, will re-save dataframes, and reload the status checker from the
-                new saves. Default to true.
         """
         warnings.warn("Clearing all previous records. \
                       Do this at your own risk!")
         self.remove_supercells_by_id(sc_ids=self.fact_df.sc_id.tolist())
 
-        #Flush and read again.
-        if flush_and_reload:
-            self.auto_save(to_load_paths=True)
-            self._schecker.re_load(from_load_paths=True)
-
     def copy(self):
         """Deepcopy of DataManager."""
         sock = DataManager(self._prim.copy(), deepcopy(self._bits),
                            deepcopy(self._sublat_list), self._subspace.copy(),
-                           self._schecker.copy())
+                           deepcopy(self.history))
 
         sock._sc_df = self._sc_df.copy()
         sock._comp_df = self._comp_df.copy()
@@ -855,19 +834,14 @@ class DataManager:
         Returns:
              DataManager object.
         """        
-        options = InputsWrapper.auto_load(options_file=options_file,\
+        options = InputsWrapper.auto_load(options_file=options_file,
                                           ce_history_file=ce_history_file)
 
-        schecker = StatusChecker.auto_load(sc_file=sc_file,\
-                                           comp_file=comp_file,\
-                                           fact_file=fact_file,\
-                                           ce_history_file=ce_history_file)
-
-        socket = cls(options.prim,\
-                     options.bits,\
-                     options.sublat_list,\
-                     options.subspace,\
-                     schecker)
+        socket = cls(options.prim,
+                     options.bits,
+                     options.sublat_list,
+                     options.subspace,
+                     history=options.history)
 
         socket._load_dataframes(sc_file=sc_file,comp_file=comp_file,\
                                 fact_file=fact_file)
@@ -883,11 +857,12 @@ class DataManager:
         """
         Saves processed data to the dataframe csvs.
         """
-        #Option file is read_only
+        # Option file is read_only
         if to_load_paths:
             sc_file = self._sc_load_path or sc_file
             comp_file = self._comp_load_path or comp_file
             fact_file = self._fact_load_path or fact_file
 
+        # History not saved, because it can't be changed by DataManager.
         self._save_dataframes(sc_file=sc_file,comp_file=comp_file,\
                               fact_file=fact_file)

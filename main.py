@@ -17,36 +17,44 @@ from CEAuto import GSChecker
 from CEAuto import GSGenerator
 
 def CEAuto_run():
-    #Load and flush once for easier realoading later.
+    # Load and flush once for easier realoading later.
     iwrapper = InputsWrapper.auto_load()
-    iwrapper.auto_save()
-    while True:
 
-        enum = StructureEnumerator.auto_load()
+    # Flush parsed options for easy reading next time.
+    iwrapper.auto_save()
+
+    while True:
+        #Passed down, and changed on-the-fly.
+        dm = DataManager.auto_load()
+
+        enum = StructureEnumerator.auto_load(dm)
         _ = enum.generate_structures()
         enum.auto_save()
 
-        writer = InputsWrapper.auto_load().get_calc_writer(DataManager.auto_load())
-        writer.auto_write_entree()
+        writer = InputsWrapper.auto_load().calc_writer
+        writer.write_df_entree(dm)
+        dm.auto_save()
 
-        manager = InputsWrapper.auto_load().get_calc_manager(DataManager.auto_load())
-        manager.auto_run()
+        manager = InputsWrapper.auto_load().calc_manager
+        manager.run_df_entree(dm)
+        dm.auto_save()
 
-        feat = Featurizer.auto_load()
+        feat = Featurizer.auto_load(dm)
         feat.featurize()
+        feat.get_properties()
         feat.auto_save()
 
-        fitter = CEFitter.auto_load()
+        fitter = CEFitter.auto_load(dm)
         fitter.fit()
         fitter.auto_save()
 
         #An iteration actually starts here. But for the first
         #iteration, it must start at enumerator.
-        checker = GSChecker.auto_load()
+        checker = GSChecker.auto_load(dm)
         if checker.check_convergence():
             break
 
-        gen = GSGenerator.auto_load()
+        gen = GSGenerator.auto_load(dm)
         gen.solve_gss()
         gen.auto_save()
 

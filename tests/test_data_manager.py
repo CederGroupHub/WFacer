@@ -1,5 +1,4 @@
 from CEAuto import DataManager, InputsWrapper
-from CEAuto.status_checker import StatusChecker
 from CEAuto.utils.frame_utils import load_dataframes
 from CEAuto.utils.occu_utils import structure_from_occu
 
@@ -54,25 +53,13 @@ def history(subspace):
 
 
 @pytest.fixture
-def schecker(history):
-    sc_file = os.path.join(DATADIR,'sc_df_test.csv')
-    comp_file = os.path.join(DATADIR,'comp_df_test.csv')
-    fact_file = os.path.join(DATADIR,'fact_df_test.csv')
-
-    sc_df, comp_df, fact_df = load_dataframes(sc_file=sc_file,
-                                              comp_file=comp_file,
-                                              fact_file=fact_file)
-
-    return StatusChecker(sc_df, comp_df, fact_df, history = history)
-
-
-@pytest.fixture
-def data_manager(inputs_wrapper, schecker):
+def data_manager(inputs_wrapper, history):
     sock =  DataManager(inputs_wrapper.prim,
                         inputs_wrapper.bits,
                         inputs_wrapper.sublat_list,
                         inputs_wrapper.subspace,
-                        schecker)
+                        history)
+
     sc_file = os.path.join(DATADIR,'sc_df_test.csv')
     comp_file = os.path.join(DATADIR,'comp_df_test.csv')
     fact_file = os.path.join(DATADIR,'fact_df_test.csv')
@@ -90,15 +77,20 @@ def data_manager(inputs_wrapper, schecker):
 
 def test_copy(data_manager):
     dm = data_manager.copy()
-    dm.reset(flush_and_reload=True)
+    dm.reset()
     assert dm.cur_iter_id == 0 
     assert len(dm.fact_df) == 0
     assert len(data_manager.fact_df) == 8
 
-    CURDIR = os.getcwd()
-    sc_file = os.path.join(CURDIR,'sc_mats.csv')
-    comp_file = os.path.join(CURDIR,'comps.csv')
-    data_file = os.path.join(CURDIR,'data.csv')
+
+def test_save(data_manager):
+    data_manager.auto_save(sc_file='sc_mats.csv',
+                           comp_file='comps.csv',
+                           fact_file='data.csv')
+
+    assert os.path.isfile('sc_mats.csv')
+    assert os.path.isfile('comps.csv')
+    assert os.path.isfile('data.csv')
 
     os.remove(sc_file)
     os.remove(comp_file)

@@ -2,7 +2,6 @@ from CEAuto import *
 from CEAuto.calc_writer.base import BaseWriter
 from CEAuto.calc_manager.base import BaseManager
 from CEAuto.calc_reader.base import BaseReader
-from CEAuto.status_checker import StatusChecker
 
 import pytest
 import numpy as np
@@ -28,14 +27,6 @@ def inputs_wrapper(structure):
                'radius':{2:4.0,3:3.0,4:3.0}}
     return InputsWrapper(lat_data, options=options)
 
-@pytest.fixture
-def data_manager(inputs_wrapper):
-    schecker = StatusChecker.auto_load()
-    return DataManager(inputs_wrapper.prim,
-                       inputs_wrapper.bits,
-                       inputs_wrapper.sublat_list,
-                       inputs_wrapper.subspace,
-                       schecker)
 
 def test_bits(inputs_wrapper):
     prim_bits = get_allowed_species(inputs_wrapper.prim)
@@ -71,13 +62,18 @@ def test_subspace(inputs_wrapper):
     assert cs == inputs_wrapper.subspace
     _ = inputs_wrapper.get_ce_n_iters_ago()
 
-def test_calc_writer(inputs_wrapper, data_manager):
-    assert isinstance(inputs_wrapper.get_calc_writer(data_manager),
+def test_calc_writer(inputs_wrapper):
+    assert isinstance(inputs_wrapper.calc_writer,
                       BaseWriter)
 
-def test_calc_manager(inputs_wrapper, data_manager):
-    assert isinstance(inputs_wrapper.get_calc_manager(data_manager),
+def test_calc_manager(inputs_wrapper):
+    assert isinstance(inputs_wrapper.calc_manager,
                       BaseManager)
+
+
+def test_calc_reader(inputs_wrapper):
+    assert isinstance(inputs_wrapper.calc_reader,
+                      BaseReader)
 
 def test_msonable(inputs_wrapper):
     iw_reload = InputsWrapper.from_dict(inputs_wrapper.as_dict())

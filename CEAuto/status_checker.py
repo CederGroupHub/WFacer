@@ -1,10 +1,7 @@
-"""
-A module to check the current iteration number and the last finished module
-from the dataframes.
+"""Module to check the current iter number and module from dataframes.
 
 This class only appears as an attachment to DataManager.
-
-No save.
+No save or load.
 """
 
 __author__ = 'Fengyu Xie'
@@ -148,72 +145,4 @@ class StatusChecker:
                              self.fact_df.copy(),
                              deepcopy(self.history))
 
-        sock._sc_load_path = self._sc_load_path
-        sock._comp_load_path = self._comp_load_path
-        sock._fact_load_path = self._fact_load_path
-        sock._history_load_path = self._history_load_path
-
         return sock
-
-    @classmethod
-    def auto_load(cls,sc_file=SC_FILE,comp_file=COMP_FILE,fact_file=FACT_FILE,\
-                      ce_history_file = CE_HISTORY_FILE):
-        """
-        This method is the recommended way to initialize this object.
-        It automatically reads all setting files with FIXED NAMES.
-        YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
-        YOU MAY BREAK THE INITIALIZATION PROCESS!
-
-        Returns:
-             StatusChecker object.
-        """
-        if os.path.isfile(ce_history_file):
-            with open(ce_history_file) as fin:
-                history = json.load(fin)
-        else:
-            history = []
-
-        (sc_df, comp_df,
-         fact_df) = load_dataframes(sc_file=sc_file,
-                                    comp_file=comp_file,
-                                    fact_file=fact_file)
-
-        sock = cls(sc_df,comp_df,fact_df,history)
-        sock._sc_load_path = sc_file
-        sock._comp_load_path = comp_file
-        sock._fact_load_path = fact_file
-        sock._history_load_path = ce_history_file
-
-        return sock
-
-    def re_load(self,from_load_paths=True,\
-                sc_file=SC_FILE,comp_file=COMP_FILE,fact_file=FACT_FILE,\
-                ce_history_file = CE_HISTORY_FILE):
-        """
-        During a cluster expansion flow, the database might be frequently modified,
-        therefore an easy renew of statuschecker is required.
-        Args: 
-            from_load_paths(Boolean):
-                If true, will re-load status checker from where it is initialized.
-        No return value.
-        """
-        if from_load_paths:
-            sc_file = self._sc_load_path or sc_file
-            comp_file = self._comp_load_path or comp_file
-            fact_file = self._fact_load_path or fact_file
-            ce_history_file = self._history_load_path or ce_history_file
-
-        sc_df, comp_df, fact_df = load_dataframes(sc_file=sc_file,\
-                                                  comp_file=comp_file,\
-                                                  fact_file=fact_file)
-
-        if os.path.isfile(ce_history_file):
-            with open(ce_history_file) as fin:
-                history = json.load(fin)
-        else:
-            history = []
-
-        self.sc_df = sc_df
-        self.comp_df = comp_df
-        self.fact_df = fact_df
-        self.history = history

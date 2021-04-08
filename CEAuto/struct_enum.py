@@ -41,20 +41,20 @@ from .config_paths import *
 
 class StructureEnumerator(MSONable):
 
-    def __init__(self,data_manager,prim,\
-                 bits=None,\
-                 sublat_list=None,\
-                 is_charged=False,\
-                 previous_ce = None,\
-                 transmat=[[1,0,0],[0,1,0],[0,0,1]],\
-                 sc_size=32,\
-                 max_sc_cond = 8,\
-                 min_sc_angle = 30,\
-                 comp_restrictions=None,\
-                 comp_enumstep=1,\
-                 n_strs_enum=100,\
-                 handler_args={},\
-                 basis_type = 'indicator',\
+    def __init__(self,data_manager,prim,
+                 bits=None,
+                 sublat_list=None,
+                 is_charged=False,
+                 previous_ce = None,
+                 transmat=[[1,0,0],[0,1,0],[0,0,1]],
+                 sc_size=32,
+                 max_sc_cond = 8,
+                 min_sc_angle = 30,
+                 comp_restrictions=None,
+                 comp_enumstep=1,
+                 n_strs_enum=100,
+                 handler_args={},
+                 basis_type = 'indicator',
                  select_method = 'CUR'
                  ):
 
@@ -352,7 +352,7 @@ class StructureEnumerator(MSONable):
         Return:
             DataFrame, newly generated piece of fact_table.
         """
-        if self._dm._schecker.after('enum'):       
+        if self._dm.schecker.after('enum'):       
             print("Currently at iteration number {}, already generated structures.") 
             filt = self.fact_df.iter_id == self.cur_iter_id
             return self.fact_df.loc[filt_,:]
@@ -489,49 +489,34 @@ class StructureEnumerator(MSONable):
         self._dm.auto_save(sc_file=sc_file,comp_file=comp_file,fact_file=fact_file)
 
     @classmethod
-    def auto_load(cls,options_file=OPTIONS_FILE,\
-                      sc_file=SC_FILE,\
-                      comp_file=COMP_FILE,\
-                      fact_file=FACT_FILE,\
-                      ce_history_file=CE_HISTORY_FILE):
+    def auto_load(cls, data_manager,
+                  options_file=OPTIONS_FILE,
+                  ce_history_file=CE_HISTORY_FILE):
         """
         This method is the recommended way to initialize this object.
         It automatically reads all setting files with FIXED NAMES.
         YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
         YOU MAY BREAK THE INITIALIZATION PROCESS!
         Args:
+            data_manager(DataManager):
+                Data manager object to read and save enumerated
+                structures.
             options_file(str):
                 path to options file. Options must be stored as yaml
                 format. Default: 'options.yaml'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'
-            comp_file(str):
-                path to compositions file, in csv format.
-                Default: 'comps.csv'             
-            fact_file(str):
-                path to enumerated structures dataframe file, in csv format.
-                Default: 'data.csv'             
             ce_history_file(str):
                 path to cluster expansion history file.
                 Default: 'ce_history.json'
         Returns:
              Structure enumerator object.
         """
-        options = InputsWrapper.auto_load(options_file=options_file,\
+        options = InputsWrapper.auto_load(options_file=options_file,
                                           ce_history_file=ce_history_file)
 
-        dm = DataManager.auto_load(options_file=options_file,\
-                                   sc_file=sc_file,\
-                                   comp_file=comp_file,\
-                                   fact_file=fact_file,\
-                                   ce_history_file=ce_history_file)
-
         return cls(options.prim,
-                   bits=options.bits,\
-                   sublat_list=options.sublat_list,\
-                   is_charged=options.is_charged_ce,\
-                   previous_ce=options.last_ce,\
-                   data_manager=dm,\
-                   **options.enumerator_options
-                  )
+                   bits=options.bits,
+                   sublat_list=options.sublat_list,
+                   is_charged=options.is_charged_ce,
+                   previous_ce=options.last_ce,
+                   data_manager=data_manager,
+                   **options.enumerator_options)

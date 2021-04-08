@@ -44,16 +44,13 @@ class ArchVaspWriter(BaseWriter):
         If you provide both 'relax' and 'static' options, only 'relax' options will be
         used.
     """
-    def __init__(self, data_manager,\
-                       path = 'vasp_run', 
-                       writer_strain=[1.05,1.03,1.01],\
-                       is_metal = False,\
-                       ab_setting={},\
-                       **kwargs):
+    def __init__(self, path = 'vasp_run', 
+                 writer_strain=[1.05,1.03,1.01],
+                 is_metal = False,
+                 ab_setting={},
+                 **kwargs):
         """
         Args: 
-            data_manager(DataManger):
-                A socket to computational data.
             path(str):
                 path to the calculation archieve.
             writer_strain(1*3 or 3*3 arraylike):
@@ -71,7 +68,7 @@ class ArchVaspWriter(BaseWriter):
                 See pymaten.vasp.io.sets for detail.
         """
         super().__init__(writer_strain=writer_strain, ab_setting=ab_setting,
-                         data_manager=data_manager, **kwargs)
+                         **kwargs)
         self.path = path
         self.is_metal = is_metal
                
@@ -98,7 +95,7 @@ class ArchVaspWriter(BaseWriter):
    
         if strain.shape != (3,3):
             raise ValueError("Incorrect strain format.")
-           
+
         str_input = Deformation(strain).apply_to_structure(structure)
 
         relax_setting = self.ab_setting.get('relax',{})
@@ -118,4 +115,4 @@ class ArchVaspWriter(BaseWriter):
         io_set.poscar.write_file(os.path.join(entry_path,'POSCAR'))
         io_set.potcar.write_file(os.path.join(entry_path,'POTCAR'))
         io_set.kpoints.write_file(os.path.join(entry_path,'KPOINTS'))
-        print("****{} calculations written for entry: {}.".format(mode,eid))
+        print("****Calculations written for entry: {}.".format(eid))

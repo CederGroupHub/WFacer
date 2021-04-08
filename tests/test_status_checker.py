@@ -64,27 +64,6 @@ def schecker(history):
                                               fact_file=fact_file)
     return StatusChecker(sc_df, comp_df, fact_df, history=history)
 
-def test_auto_load():
-    assert isinstance(StatusChecker.auto_load(), StatusChecker)
-
-def test_re_load():
-    sc_file = os.path.join(DATADIR,'sc_df_test.csv')
-    comp_file = os.path.join(DATADIR,'comp_df_test.csv')
-    fact_file = os.path.join(DATADIR,'fact_df_test.csv')
-    checker = StatusChecker.auto_load(sc_file=sc_file,
-                                      comp_file=comp_file,
-                                      fact_file=fact_file)
-
-    old_sc_df = checker.sc_df.copy()
-    old_comp_df = checker.comp_df.copy()
-    old_fact_df = checker.fact_df.copy()
-    
-    checker.re_load()
-
-    assert old_sc_df.equals(checker.sc_df)
-    assert old_comp_df.equals(checker.comp_df)
-    assert old_fact_df.equals(checker.fact_df)
-
 def test_iter_id(schecker):
     assert schecker.cur_iter_id == 1
 

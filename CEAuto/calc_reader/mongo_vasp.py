@@ -29,7 +29,7 @@ class MongoVaspReader(BaseReader):
 
     """
 
-    DEFAULT_MONGO_PATH = os.path.join(atomate.__path__[0],'config/json')
+    DEFAULT_MONGO_PATH = os.path.join(atomate.__path__[0],'config/db.json')
 
     def __init__(self,md_file=None,**kwargs):
         """

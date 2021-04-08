@@ -1,5 +1,4 @@
-"""
-Canonical monte-carlo handler.
+"""Monte-carlo handlers to compute ground states and sample structures.
 """
 __author__="Fengyu Xie"
 
@@ -26,12 +25,12 @@ class MCHandler(BaseHandler,ABC):
     sampling.
     Note: In the future, will support auto-equilibration.
     """
-    def __init__(self,ce,sc_mat,\
-                      gs_occu=None,\
-                      anneal_series=[3200,1600,800,400,200,100,50],\
-                      unfreeze_series=[500,1500,5000],\
-                      n_runs_sa = 100,\
-                      n_runs_unfreeze = 500,\
+    def __init__(self,ce,sc_mat,
+                      gs_occu=None,
+                      anneal_series=[3200,1600,800,400,100],
+                      unfreeze_series=[500,1500,5000],
+                      n_runs_sa = 100,
+                      n_runs_unfreeze = 500,
                       **kwargs):
         """
         Args:
@@ -65,7 +64,8 @@ class MCHandler(BaseHandler,ABC):
 
         self.sc_size = int(round(abs(np.linalg.det(sc_mat))))
 
-        self.is_indicator = (self.ce.cluster_subspace.orbits[0].basis_type == 'indicator')
+        self.is_indicator = (self.ce.cluster_subspace.orbits[0]
+                             .basis_type == 'indicator')
 
         self.prim = self.ce.cluster_subspace.structure
         prim_bits = get_allowed_species(self.prim)
@@ -85,7 +85,7 @@ class MCHandler(BaseHandler,ABC):
         self.sc_sublat_list = get_sc_sllist_from_prim(self.sublat_list,sc_size=self.sc_size)
  
         self._skip_anneal = (gs_occu is not None)
-        self._gs_occu = np.array(gs_occu)
+        self._gs_occu = np.array(gs_occu) if gs_occu is not None else None
  
         self._ensemble = None
         self._sampler = None
@@ -168,15 +168,15 @@ class MCHandler(BaseHandler,ABC):
         
         """
 
-        #Anneal n_atoms*100 per temp, Sample n_atoms*500, give 100 samples for practical ccomputation
+        #Anneal n_atoms*100 per temp, Sample n_atoms*500, give 200 samples for practical ccomputation
         n_steps_sample = self.sc_sizes*len(self.prim)*self.n_runs_unfreeze
         thin = max(1,n_steps_sample//200)
-
-        sm = StructureMatcher()
  
         #In structure enumerator, will always not skip anneal.
         if not self._skip_anneal:
             sa_occu, sa_e = self.solve()
+            self._skip_anneal = True
+            self._gs_occu = sa_occu
         else:
             sa_occu = self._gs_occu
  
@@ -205,8 +205,12 @@ class MCHandler(BaseHandler,ABC):
             #default flat=True will remove n_walkers dimension. See moca docs.
             rand_occus.extend(np.array(self._sampler.samples.get_occupancies()).tolist())          
 
-        rand_strs = [self._processor.structure_from_occupancy(occu) for occu in rand_occus]
+        rand_strs = [self._processor.structure_from_occupancy(occu)
+                     for occu in rand_occus]
+
         #Internal deduplication
+        sm = StructureMatcher()
+
         rand_dedup = []
         for s1_id,s1 in enumerate(rand_strs):
             duped = False
@@ -218,7 +222,7 @@ class MCHandler(BaseHandler,ABC):
                 rand_dedup.append(s1_id)
 
         print('****{} unique structures generated.'.format(len(rand_dedup)))
-        rand_strs_dedup = [rand_strs[s_id] for s_id in rand_dedup]
+        # rand_strs_dedup = [rand_strs[s_id] for s_id in rand_dedup]
         rand_occus_dedup = [rand_occus[s_id] for s_id in rand_dedup]
 
         return rand_occus_dedup
@@ -228,13 +232,13 @@ class CanonicalMCHandler(MCHandler):
     """
     MC handler that solves and samples the canonical ensemble.
     """
-    def __init__(self,ce,sc_mat,compstat,\
-                      gs_occu=None,\
-                      anneal_series=[3200,1600,800,400,200,100,50],\
-                      unfreeze_series=[500,1500,5000],\
-                      n_runs_sa = 100,\
-                      n_runs_unfreeze = 500,\
-                      **kwargs):
+    def __init__(self,ce,sc_mat,compstat,
+                 gs_occu=None,
+                 anneal_series=[3200,1600,800,400,100],
+                 unfreeze_series=[500,1500,5000],
+                 n_runs_sa = 100,
+                 n_runs_unfreeze = 500,
+                 **kwargs):
         """
         Args:
             ce(ClusterExpansion):
@@ -261,20 +265,22 @@ class CanonicalMCHandler(MCHandler):
                  ground state solution time when sampling.
 
         """
-        super().__init__(ce,sc_mat,gs_occu=gs_occu,\
-                                   anneal_series = anneal_series,\
-                                   unfreeze_series = unfreeze_series,\
-                                   n_runs_sa = n_runs_sa,\
-                                   n_runs_unfreeze = n_runs_unfreeze,\
-                                   **kwargs)
+        super().__init__(ce,sc_mat,gs_occu=gs_occu,
+                         anneal_series = anneal_series,
+                         unfreeze_series = unfreeze_series,
+                         n_runs_sa = n_runs_sa,
+                         n_runs_unfreeze = n_runs_unfreeze,
+                         **kwargs)
 
         self.compstat = compstat
         self.int_comp = scale_compstat(compstat,scale_by=self.sc_size)
 
         self._gs_occu = gs_occu or self._initialize_occu_from_int_comp(self.int_comp)
-        self._ensemble = CanonicalEnsemble.from_cluster_expansion(self.ce, self.sc_mat, 
-                                                            optimize_inidicator=self.is_indicator)
-        self._sampler = Sampler.from_ensemble(ensemble,temperature=1000)
+        self._ensemble = (CanonicalEnsemble.
+                          from_cluster_expansion(self.ce, self.sc_mat,
+                                                 optimize_inidicator=
+                                                 self.is_indicator))
+        self._sampler = Sampler.from_ensemble(ensemble, temperature=1000)
         self._processor = self._ensemble.processor
 
 
@@ -283,15 +289,14 @@ class SemigrandDiscMCHandler(MCHandler):
     Sublattice DISCRIMINATIVE Charge neutral semigrand canonical ensemble!
     Used for grand canonical ground states only.
     """
-    def __init__(self,ce,sc_mat,mu,\
-                      gs_occu=None,\
-                      anneal_series=[3200,1600,800,400,200,100,50],\
-                      unfreeze_series=[500,1500,5000],\
-                      n_runs_sa = 100,\
-                      n_runs_unfreeze = 500,\
-                      **kwargs):
-
-        """
+    def __init__(self,ce,sc_mat,mu,
+                 gs_occu=None,
+                 anneal_series=[3200,1600,800,400,100],
+                 unfreeze_series=[500,1500,5000],
+                 n_runs_sa = 1000,
+                 n_runs_unfreeze = 5000,
+                 **kwargs):
+        """Initialize class.
         Args:
             ce(ClusterExpansion):
                 A cluster expansion object to solve on.
@@ -317,27 +322,31 @@ class SemigrandDiscMCHandler(MCHandler):
                  ground state solution time when sampling.
 
         """
-        super().__init__(ce,sc_mat,gs_occu=gs_occu,\
-                                   anneal_series = anneal_series,\
-                                   unfreeze_series = unfreeze_series,\
-                                   n_runs_sa = n_runs_sa,\
-                                   n_runs_unfreeze = n_runs_unfreeze,\
-                                   **kwargs)
+        super().__init__(ce,sc_mat,gs_occu=gs_occu,
+                         anneal_series = anneal_series,
+                         unfreeze_series = unfreeze_series,
+                         n_runs_sa = n_runs_sa,
+                         n_runs_unfreeze = n_runs_unfreeze,
+                         **kwargs)
         self.sl_sizes = [len(sl) for sl in self.sublat_list]
 
         self.mu = mu
 
         compspace = CompSpace(self.bits,self.sl_sizes)
 
-        int_comp = random.choice(compspace.int_grids(sc_size=self.sc_size,form='compstat'))
+        # Don't use int_grids, the enumeration will take exponential time!
+        int_comp = random.choice(compspace.int_vertices(sc_size=self.sc_size,
+                                 form='compstat'))
+
         self._gs_occu = gs_occu or self._initialize_occu_from_int_comp(int_comp)
 
-        self._ensemble = DiscChargeNeutralSemiGrandEnsemble.\
-                         from_cluster_expansion(self.ce, self.sc_mat,\
-                                                optimize_inidicator=self.is_indicator,\
-                                                mu=self.mu)
+        self._ensemble = (DiscChargeNeutralSemiGrandEnsemble.
+                          from_cluster_expansion(self.ce, self.sc_mat,
+                                                 optimize_inidicator=
+                                                 self.is_indicator,
+                                                 mu=self.mu))
 
-        self._sampler = Sampler.from_ensemble(ensemble,temperature=1000)
+        self._sampler = Sampler.from_ensemble(ensemble, temperature=1000)
         self._processor = self._ensemble.processor
 
 class SemigrandMCHandler(MCHandler):
@@ -349,8 +358,8 @@ class SemigrandMCHandler(MCHandler):
                       gs_occu=None,\
                       anneal_series=[3200,1600,800,400,200,100,50],\
                       unfreeze_series=[500,1500,5000],\
-                      n_runs_sa = 100,\
-                      n_runs_unfreeze = 500,\
+                      n_runs_sa = 1000,\
+                      n_runs_unfreeze = 5000,\
                       **kwargs):
 
         """
@@ -392,13 +401,15 @@ class SemigrandMCHandler(MCHandler):
         self.chemical_potentials = chemical_potentials
 
         compspace = CompSpace(self.bits,self.sl_sizes)
-
-        int_comp = random.choice(compspace.int_grids(sc_size=self.sc_size,form='compstat'))
-        self._gs_occu = gs_occu or self._initialize_occu_from_int_comp(int_comp)
-
-        self._ensemble = ChargeNeutralSemiGrandEnsemble.from_cluster_expansion(self.ce, self.sc_mat,\
-                                                   optimize_inidicator=self.is_indicator,\
-                                                   chemical_potentials=chemical_potentials)
-
-        self._sampler = Sampler.from_ensemble(ensemble,temperature=1000,step_type='charge-neutral-flip')
+        int_comp = random.choice(compspace.int_vertices(sc_size=self.sc_size,
+                                                        form='compstat'))
+        self._gs_occu = (gs_occu or
+                         self._initialize_occu_from_int_comp(int_comp))
+        self._ensemble = (ChargeNeutralSemiGrandEnsemble.
+                          from_cluster_expansion(self.ce, self.sc_mat,
+                                                 optimize_inidicator=
+                                                 self.is_indicator,
+                                                 chemical_potentials=
+                                                 chemical_potentials))
+        self._sampler = Sampler.from_ensemble(ensemble, temperature=1000)
         self._processor = self._ensemble.processor

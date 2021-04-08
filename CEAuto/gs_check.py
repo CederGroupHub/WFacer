@@ -287,11 +287,8 @@ class GSChecker:
 
 
     @classmethod
-    def auto_load(cls,\
-                  options_file='options.yaml',\
-                  sc_file='sc_mats.csv',\
-                  comp_file='comps.csv',\
-                  fact_file='data.csv',\
+    def auto_load(cls, data_manager,
+                  options_file='options.yaml',
                   ce_history_file='ce_history.json'):
         """
         This method is the recommended way to initialize this object.
@@ -299,34 +296,20 @@ class GSChecker:
         YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
         YOU MAY BREAK THE INITIALIZATION PROCESS!
         Args:
+            data_manager(DataManager):
+                Data manager object to read and write.
             options_file(str):
                 path to options file. Options must be stored as yaml
-                format. Default: 'options.yaml'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'             
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'             
+                format. Default: 'options.yaml'           
             ce_history_file(str):
                 path to cluster expansion history file.
                 Default: 'ce_history.json'
         Returns:
             GSChecker object.
         """
-        options = InputsWrapper.auto_load(options_file=options_file,\
+        options = InputsWrapper.auto_load(options_file=options_file,
                                           ce_history_file=ce_history_file)
 
-        dm = DataManager.auto_load(options_file=options_file,\
-                                   sc_file=sc_file,\
-                                   comp_file=comp_file,\
-                                   fact_file=fact_file,\
-                                   ce_history_file=ce_history_file)
-
-        return cls(ce_history = options.history,\
-                   data_manager=dm,\
-                   **options.gs_checker_options
-                  )
+        return cls(ce_history = options.history,
+                   data_manager=data_manager,
+                   **options.gs_checker_options)

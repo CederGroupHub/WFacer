@@ -12,6 +12,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 
 from .base import BaseManager
+from .utils.qstat_sge import qstat
 
 ####If you ever define your own queue, you can write your own class like this.
 class ArchQueueManager(BaseManager,ABC):
@@ -40,14 +41,10 @@ class ArchQueueManager(BaseManager,ABC):
     submission_command = ""
     kill_command = ""
 
-    def __init__(self,data_manager,\
-                      path='vasp_run', ab_command='vasp', ncores = 16,\
-                      time_limit=345600,check_interval=300,\
-                      **kwargs):
+    def __init__(self, path='vasp_run', ab_command='vasp', ncores = 16,
+                 time_limit=345600, check_interval=300, **kwargs):
         """
         Args:
-            data_manager(DataManager):
-                An interface to the calculated and enumerated data.
             path(str in path format):
                 path to calculations archieve
             queue_name(str):
@@ -69,8 +66,7 @@ class ArchQueueManager(BaseManager,ABC):
                 Interval to check status of all computations in queue. Unit is second.
                 Default is every 5 mins.
         """
-        super().__init__(time_limit=time_limit,check_interval=check_interval,\
-                         data_manager=data_manager)
+        super().__init__(time_limit=time_limit,check_interval=check_interval)
         self.path = path
         self.ab_command = ab_command
         self.ncores = ncores
@@ -153,14 +149,10 @@ class ArchSGEManager(ArchQueueManager):
     submission_command = "qsub"
     kill_command = "qdel"
 
-    def __init__(self,data_manager,\
-                      path='vasp_run', ab_command='vasp', ncores = 16,\
-                      time_limit=345600,check_interval=300,\
-                      **kwargs):
+    def __init__(self, path='vasp_run', ab_command='vasp', ncores = 16,
+                 time_limit=345600, check_interval=300, **kwargs):
         """
         Args:
-            data_manager(DataManager):
-                An interface to the calculated and enumerated data.
             path(str in path format):
                 path to calculations archieve
             queue_name(str):
@@ -168,9 +160,10 @@ class ArchSGEManager(ArchQueueManager):
                 grid engine).
             ab_command(str):
                 Command used to call the ab_initio program in your system. 
-                For example, in SGE+mpiexec environment with vasp 5.4.4, we can use:
-                'mpiexec.hydra -n $NSLOTS pvasp.5.4.4.intel >> vasp.out' 
-                It is highly recommended that you figure out what your command 
+                For example, in SGE+mpiexec environment with vasp 5.4.4,
+                we can use:
+                  'mpiexec.hydra -n $NSLOTS pvasp.5.4.4.intel >> vasp.out' 
+                It is highly recommended that you figure out what your command
                 should be.
             ncores(int):
                 Number of cores used in each computation. Default is 16,
@@ -179,15 +172,16 @@ class ArchSGEManager(ArchQueueManager):
                 Time limit for all calculations to finish. Unit is second.
                 Default is 4 days.
             check_interval(float):
-                Interval to check status of all computations in queue. Unit is second.
+                Interval to check status of all computations in queue. Unit is
+                second.
                 Default is every 5 mins.
         """
 
-        super().__init__(path=path, ab_command=ab_command, ncores=ncores,\
-                      time_limit=time_limit, check_interval=check_interval,\
-                      data_manager=data_manager,**kwargs)
+        super().__init__(path=path, ab_command=ab_command, ncores=ncores,
+                         time_limit=time_limit, check_interval=check_interval,
+                         **kwargs)
 
-    def entree_in_queue(self,entry_ids):
+    def entree_in_queue(self, entry_ids):
         """
         Check ab-initio task status for given entree indices.
         (same as in the doc of  CEAuto.featurizer.)        
@@ -209,7 +203,7 @@ class ArchSGEManager(ArchQueueManager):
         import qstat #package for SGE only
 
         waiting, running = qstat.qstat()
-        all_jobs = waiting+running
+        all_jobs = waiting + running
 
         all_eids_in_q = []
         for job in all_jobs:
@@ -220,7 +214,7 @@ class ArchSGEManager(ArchQueueManager):
 
         return [(eid in all_eids_in_q) for eid in entry_ids]       
 
-    def kill_tasks(self,entry_ids=None):
+    def kill_tasks(self, entry_ids=None):
         """
          Kill specified tasks if they are still in queue.
          Inputs:
@@ -230,14 +224,13 @@ class ArchSGEManager(ArchQueueManager):
                 If None given, will kill anything in the queue
                 with the current job root name.
         No return value.
-        """  
-        import qstat
+        """
 
         job_ids_to_kill = []
         entry_ids_to_kill = []
         
-        waiting, running = qstat.qstat()
-        all_jobs = waiting+running
+        waiting, running = qstat()
+        all_jobs = waiting + running
         for job in all_jobs:
             if isinstance(job,dict) and job['JB_name'].find(self._root_name)==0:
                 #A job name must begins exactly with the root name!

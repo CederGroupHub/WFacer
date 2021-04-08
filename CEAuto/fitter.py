@@ -84,15 +84,6 @@ class CEFitter(MSONable):
         #Use low-to-up hierarchy
         self.hierarchy = self.cspc.bit_combo_hierarchy(invert=True)
 
-        #Will be refreshed after every fit, so it is your respoinsibility not to 
-        #double-fit the same dataset!!
-        self._history = []
-        self._updated = False
-        self._coefs = {}
-        self._cv = {}
-        self._rmse = {}
-        self._femat = []
-
         if len(estimator_params) == 0:
             self.estimator_params = estimator_params
 
@@ -104,9 +95,16 @@ class CEFitter(MSONable):
         self.weighter_params = weighter_params
 
         self._dm = data_manager
-        self._schecker = self._dm._schecker
 
         self._history_load_path = CE_HISTORY_FILE
+
+        #Will be refreshed after every fit, so it is your respoinsibility not to 
+        #double-fit the same dataset!!
+        self._history = []
+        self._coefs = {}
+        self._cv = {}
+        self._rmse = {}
+        self._femat = []
 
     @property
     def sc_df(self):
@@ -178,13 +176,12 @@ class CEFitter(MSONable):
         """
         estimator_params = self.estimator_params
 
-        if self._schecker.after('fit'): #Fitter already finished in current cycle.
-            print("**ECIs aleady fitted for current iteration {}. Loading from history."\
-                  .format(self._schecker.cur_iter_id))
+        if self._dm.schecker.after('fit'): #Fitter already finished in current cycle.
+            print("**ECIs aleady fitted for nearest iteration {}. Loading from history."
+                  .format(self._dm.schecker.cur_iter_id -1))
             self._coefs = self._history[-1]['coefs']
             self._cv = self._history[-1]['cv']
             self._rmse = self._history[-1]['rmse']
-            self._updated = True #mute history update!
             return
 
         fact_df = self.fact_df.copy()
@@ -255,11 +252,12 @@ class CEFitter(MSONable):
         Status Checker will prevent double appending in a same iteration, therefore 
         lenth of history should always be the same as the current iteration number.
         """
-        if len(self._cv) and len(self._rmse) and len(self._coefs) and not self._updated:
+        if (len(self._cv) and len(self._rmse) and len(self._coefs)
+            and not self._dm.schecker.after('fit')):
             self._history.append({"cv":self._cv,
                                   "rmse":self._rmse,
                                   "coefs":self._coefs})
-            self._updated = True
+            self._dm.history = self._history
 
 
     def get_eci_plot(self,prop_name='e_prim'):
@@ -399,48 +397,32 @@ class CEFitter(MSONable):
 
 
     @classmethod
-    def auto_load(cls,options_file=OPTIONS_FILE,\
-                      sc_file=SC_FILE,\
-                      comp_file=COMP_FILE,\
-                      fact_file=FACT_FILE,\
-                      ce_history_file=CE_HISTORY_FILE):
+    def auto_load(cls, data_manager,
+                  options_file=OPTIONS_FILE,
+                  ce_history_file=CE_HISTORY_FILE):
         """
         This method is the recommended way to initialize this object.
         It automatically reads all setting files with FIXED NAMES.
         YOU ARE NOT RECOMMENDED TO CHANGE THE FILE NAMES, OTHERWISE 
         YOU MAY BREAK THE INITIALIZATION PROCESS!
         Args:
+            data_manager(DataManager):
+                A data manager object to read and write.
             options_file(str):
                 path to options file. Options must be stored as yaml
-                format. Default: 'options.yaml'
-            sc_file(str):
-                path to supercell matrix dataframe file, in csv format.
-                Default: 'sc_mats.csv'
-            comp_file(str):
-                path to compositions file, in csv format.
-                Default: 'comps.csv'             
-            fact_file(str):
-                path to enumerated structures dataframe file, in csv format.
-                Default: 'data.csv'             
+                format. Default: 'options.yaml'           
             ce_history_file(str):
                 path to cluster expansion history file.
                 Default: 'ce_history.json'
         Returns:
              Fitter object.
         """
-        options = InputsWrapper.auto_load(options_file=options_file,\
+        options = InputsWrapper.auto_load(options_file=options_file,
                                           ce_history_file=ce_history_file)
 
-        dm = DataManager.auto_load(options_file=options_file,\
-                                   sc_file=sc_file,\
-                                   comp_file=comp_file,\
-                                   fact_file=fact_file,\
-                                   ce_history_file=ce_history_file)
-
-        socket = cls(options.subspace,\
-                     data_manager=dm,\
-                     **options.fitter_options
-                    )
+        socket = cls(options.subspace,
+                     data_manager=data_manager,
+                     **options.fitter_options)
 
         socket._history = options.history
         socket._history_load_path = ce_history_file
