@@ -7,7 +7,7 @@ __author__ = "Fengyu Xie"
 import numpy as np
 import os
 
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.io.vasp.outputs import Outcar
 
 import atomate
@@ -172,7 +172,7 @@ class MongoVaspReader(BaseReader):
                            get('outcar',None) or \
                         rd.get('calcs_reversed',[{}])[0].\
 			   get('output',{}).\
-			   get('outcar', None)                           
+			   get('outcar', None)
                 if ocard is None:
                     raise ValueError("Specified entry {} does not have OUTCAR!"\
                                      .format(eid))               

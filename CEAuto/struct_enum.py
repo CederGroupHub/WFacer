@@ -18,7 +18,8 @@ from tqdm import tqdm
 
 from monty.json import MSONable
 
-from pymatgen import Structure,Element
+from pymatgen.core import Structure
+from pymatgen.core.periodic_table import Element
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
 from smol.cofe.extern.ewald import EwaldTerm

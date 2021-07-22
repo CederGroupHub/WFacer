@@ -11,7 +11,8 @@ import json
 import yaml
 
 from monty.json import MSONable
-from pymatgen import Structure,Element,Lattice,Composition
+from pymatgen.core import Structure, Lattice, Composition
+from pymatgen.core.periodic_table import Element
 
 from smol.cofe import ClusterSubspace,ClusterExpansion
 from smol.cofe.space.domain import get_allowed_species,Vacancy

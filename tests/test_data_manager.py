@@ -8,7 +8,7 @@ import pandas as pd
 
 import os
 from copy import deepcopy
-from pymatgen import Structure, Composition
+from pymatgen.core import Structure, Composition
 from smol.cofe.space.domain import Vacancy
 
 from monty.serialization import loadfn

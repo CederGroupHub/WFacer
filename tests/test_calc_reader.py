@@ -1,2 +1,4 @@
 """Test calc_reader modules"""
-from CEAuto.calc_reader import 
+from CEAuto.calc_reader import *
+
+

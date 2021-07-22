@@ -6,7 +6,8 @@ import pandas as pd
 import numpy as np
 import shutil
 
-from pymatgen import Specie, Structure
+from pymatgen.core import Structure
+from pymatgen.core.periodic_table import Specie
 from pymatgen.io.vasp import *
 from pymatgen.analysis.structure_matcher import StructureMatcher
 

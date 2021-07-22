@@ -4,7 +4,7 @@ Utils that helps to calculate a few properties.
 __author__ = 'Fengyu Xie'
 
 from pymatgen.analysis.ewald import EwaldSummation
-from pymatgen import Element
+from pymatgen.core.periodic_table import Element
 
 from smol.cofe.space.domain import Vacancy
 

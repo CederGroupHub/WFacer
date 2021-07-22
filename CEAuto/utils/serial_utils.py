@@ -8,7 +8,7 @@ from monty.json import MontyDecoder
 import json
 import numpy as np
 
-from pymatgen import Composition
+from pymatgen.core import Composition
 
 # Monty decoding any dict
 def decode_from_dict(d):

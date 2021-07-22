@@ -5,7 +5,7 @@ from smol.cofe import ClusterSubspace
 from monty.serialization import loadfn
 import pytest
 import numpy as np
-from pymatgen import Composition
+from pymatgen.core import Composition
 import os
 
 DATADIR = os.path.join(os.path.dirname(__file__),'data')

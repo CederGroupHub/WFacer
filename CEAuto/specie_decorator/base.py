@@ -31,8 +31,26 @@ class BaseDecorator(ABC,MSONable):
             a order of [4,3,2], because this is the order of the magnetic moment
             in these three types of oxidation states.
     """
+    # Edit this as you implement new child classes.
+    required_props = []
+
     def __init__(self):
         pass
+
+    @staticmethod
+    def _get_sites_info_by_element(str_pool, properties):
+        """Build catalog of sites information."""
+        #flatten all structures, and group by elements.
+        sites_by_elements = {e: [] for e in self.labels_table.keys()}
+        
+        for s_id,s in enumerate(str_pool):
+            for st_id,st in enumerate(s):
+                entry = ([properties[p][s_id][st_id]
+                         for p in self.required_props] +
+                         [s_id, st_id])
+                sites_by_elements[st.specie.symbol].append(entry)
+
+        return sites_by_elements
 
     @property
     @abstractmethod
@@ -51,9 +69,10 @@ class BaseDecorator(ABC,MSONable):
         Args:
             str_pool(List[Structure]):
                 Unassigned structures, must contain only pymatgen.Element
-            properties(3D ArrayLike):
-                Numerical properties used to classify sites.
-                Shape should be N_different_proerties*N_strs*N_sites
+            properties(Dict{String: 2D ArrayLike}):
+                Numerical properties used to classify sites, and property
+                names.
+                Each property array has shape N_strs*N_sites.
             reset(Boolean):
                 If you want to re-train the decorator model, set this value
                 to true. Otherwise we will skip training if self.trained is 
@@ -70,10 +89,9 @@ class BaseDecorator(ABC,MSONable):
         Args:
             str_pool(List[Structure]):
                 Unassigned structures, must contain only pymatgen.Element
-            properties(2D ArrayLike):
+            properties(3D ArrayLike):
                 Numerical properties used to classify sites.
-                Shape should be N_strs*N_sites       
-        Returns:
+                Shape should be N_different_proerties*N_strs*N_sites        Returns:
             A dictionary, specifying name of assigned properties and their
             values by structure and by site. If assignment failed for a
             structure, will give None for it.

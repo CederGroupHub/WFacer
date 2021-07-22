@@ -7,7 +7,7 @@ import numpy as np
 from .math_utils import get_diag_matrices
 from copy import deepcopy
 
-from pymatgen import Lattice
+from pymatgen.core import Lattice
 
 def is_proper_sc(sc_matrix,lat,max_cond=8,min_angle=30):
     """

@@ -1,5 +1,5 @@
 from CEAuto.specie_decorator import *
-from pymatgen import Lattice,Structure
+from pymatgen.core import Lattice,Structure
 import numpy as np
 import random
 

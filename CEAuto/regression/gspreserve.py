@@ -4,7 +4,7 @@ Ground State Preserving solver from Wenxhuan Huang (implemented by Daniil?)
 import warnings
 import logging
 import numpy as np
-from pymatgen import Composition
+from pymatgen.core import Composition
 from pymatgen.analysis.phase_diagram import PhaseDiagram, PDEntry
 from cvxopt import matrix, solvers
 from .base import BaseEstimator
