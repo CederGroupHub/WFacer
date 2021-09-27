@@ -107,13 +107,14 @@ class MagChargeDecorator(BaseDecorator):
         return n_fails  # To minimize.
 
     def _optimize_cuts(self, cuts_by_elements_init,
-                       str_pool, properties):
+                       str_pool, properties, search_range=0.1):
         """Optimize cuts with gaussian optimization."""
         cut_params_init = []
         for e, labels in sorted(self.labels_table.items()):
             cut_params_init.extend(cuts_by_elements_init[e])
 
-        domains = [(c - 0.1, c + 0.1) for c in cut_params_init]
+        domains = [(c - search_range, c + search_range)
+                   for c in cut_params_init]
         objective = partial(self._evaluate_cut_params, str_pool, properties)
         res = gp_minimize(objective, domains, n_calls=50,
                           acq_optimizer='sampling',
@@ -129,7 +130,7 @@ class MagChargeDecorator(BaseDecorator):
 
         return cuts_by_elements
 
-    def train(self, str_pool, properties, reset=False):
+    def train(self, str_pool, properties, search_range=0.1, reset=False):
         """
         Train a properties assignment model. Model or model parameters
         should be stored in a property of the object.
@@ -141,6 +142,8 @@ class MagChargeDecorator(BaseDecorator):
                 names.
                 Each property array has shape N_strs*N_sites.
                 In this case, only use magnetization.
+            search_range(float):
+                Optimizing range for cutting bounds. Default to 0.1
             reset(Boolean):
                 If you want to re-train the decorator model, set this value
                 to true. Otherwise we will skip training if self.trained is 
@@ -193,7 +196,9 @@ class MagChargeDecorator(BaseDecorator):
         if not self.maximize_balance:
             self._cuts_by_elements = _cuts_by_elements_gm
         else:
-            self._cuts_by_elements = self._optimize_cuts(_cuts_by_elements_gm)
+            self._cuts_by_elements = self._optimize_cuts(_cuts_by_elements_gm,
+                                                         search_range=
+                                                         search_range)
 
         logging.log("Trained magnetization separators:\n {}."
                     .format(self._cuts_by_elements))

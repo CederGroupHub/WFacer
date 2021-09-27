@@ -6,6 +6,7 @@ Ground state structures will also be added to the structure pool, but
 they are not added here. They will be added in the convergence checker
 module.
 """
+
 import warnings
 import random
 from copy import deepcopy
@@ -31,202 +32,92 @@ from smol.moca import CanonicalEnsemble, Sampler, CompSpace
 from .utils.sc_utils import enumerate_matrices
 from .utils.math_utils import select_rows,combinatorial_number
 from .utils.serial_utils import serialize_comp,deser_comp
-from .utils.calc_utils import get_ewald_from_occu
 from .utils.comp_utils import check_comp_restriction
 
 from .data_manager import DataManager 
-from .inputs_wrapper import InputsWrapper
+from .wrappers import InputsWrapper
 from .ce_handler import CanonicalMCHandler
 
 from .config_paths import *
 
+
 class StructureEnumerator(MSONable):
+    """Structure enumeration class."""
+    def __init__(self, data_manager, history_wrapper):
 
-    def __init__(self,data_manager,prim,
-                 bits=None,
-                 sublat_list=None,
-                 is_charged=False,
-                 previous_ce = None,
-                 transmat=[[1,0,0],[0,1,0],[0,0,1]],
-                 sc_size=32,
-                 max_sc_cond = 8,
-                 min_sc_angle = 30,
-                 comp_restrictions=None,
-                 comp_enumstep=1,
-                 n_strs_enum=100,
-                 handler_args={},
-                 basis_type = 'indicator',
-                 select_method = 'CUR'
-                 ):
+        """Initialization. (Not recommended.)
 
-        """
-        Direct initialization no longer recommended!
         Args:
             data_manager(DataManager):
                 The datamanager object to socket enumerated data.
-
-            prim(Structure):
-                primitive cell of the structure to do cluster expansion on.
-    
-            bits(List[List[Specie]]):
-                Occupying species on each sublattice. Vacancy() should be included.
-    
-            sublat_list(List of lists):
-                Stores primitive cell indices of sites in the same sublattices
-                If none, sublattices will be automatically generated.
-    
-            is_charged(Boolean):
-                If true, will do charged cluster expansion.
-    
-            previous_ce(ClusterExpansion):
-                A cluster expansion containing information of cluster expansion
-                in previously enumerated structures. Used when doing mc sampling.
-    
-            transmat(3*3 arraylike):
-                A transformation matrix to apply to the primitive cell before
-                enumerating supercell shapes. This can help to increase the 
-                symmetry of the enumerated supercell. For example, for a rocksalt
-                primitive cell, you can use [[1,-1,-1],[-1,1,-1],[-1,-1,1]] as a
-                transmat to modify the primitive cell as cubic.
-    
-            sc_size(Int): 
-                Supercell matrix deternimant of each enumerated structure.
-                By default, set to 32, to restrict DFT computation cost.
-                Currently, better not to make supercell have over 200 atoms!
-                We recommend up to 64 atoms in a supercell.
-    
-            max_sc_cond(float):
-                Maximum allowed lattice matrix conditional number of the enumerated 
-                supercells.
-    
-            min_sc_angle(float):
-                Minumum allowed lattice angle of the enumerated supercells.
-     
-            max_sc_cond and min_sc_angle controls the skewness of a supercell, so you
-            can avoid potential structural instability during DFT structural relaxation.
-    
-            comp_restrictions(Dict or List of Dict or None):
-                Restriction on certain species.
-                If this is a dictionary, this dictionary provide constraint of the 
-                atomic fraction of specified species in the whole structure;
-                If this is a List of dictionary, then each dictionary provides
-                atomic fraction constraints on each sublattice.
-    
-                For each dictionary, the keys should be Specie/Vacancy object
-                or String repr of a specie (anything readable by get_specie() in
-                smol.cofe.configspace.domain). And the values shall be tuples 
-                consisting of 2 float numbers, in the form of (lb,ub). 
-                lb constrains the lower bound of atomic fraction, while ub constrains
-                the upperbound. lb <= x <= ub.
-    
-                You may need to specify this in phases with high concentration of 
-                vancancy, so you structure does not collapse.
-                
-                By default, is None (no constraint is applied.)
-       
-            comp_enumstep(int):
-                Enumeration step for compositions. If otherwise specified, will thin
-                enumerated compositions by this value. For example, if we have BCC 
-                Ag-Li alloy, and a supercell of totally 256 sites. If step = 1, we 
-                can have 257 compositions. But if we don't want to enumerate so many,
-                we can simply write step = 4, so 4 sites are replaced each time, we 
-                get totally 65 compositions.
-    
-            n_strs_enum(int):
-                Number of structures to add in the current iteration. Default to 100.
-                Please choose this value properly, so each composition point can get
-                at least one sample.             
- 
-            handler_args(Dict):
-                Arguments for MCHandler. See documentation for MCHandler for more 
-                reference.
-    
-            basis_type(string):
-                Type of basis used in cluster expansion. Needs to be specified if you 
-                initalize enumeration from an existing CE, and its basis is different 
-                from 'indicator'!
-                If you used custom basis, just type 'custom' for this term. But hopefully
-                this will not happen too often.
-        
-            select_method(str): 
-                Method used in structure selection from enumerated pool.
-                'CUR'(default):
-                    Select by highest CUR scores
-                'random':
-                    Select randomly
-                Both methods guarantee inclusion of the ground states at initialization.
-    
-            All generated structure entree will be saved in a star-schema:
-            The dimension tables will contain serialized supercell matrices and compositions,
-            and their id's as primary keys.(sc_id, comp_id). These dimension tables will mostly be fixed
-            as they were initalized, unless new ground state compostions has been detected.
-    
-            The fact table will contain entrees of enumerated occupations(encoded), structures, their original
-            feature vectors, computation convergence(Boolean), properties used for charge assignment if ever, 
-            mapped occupation(encoded,None if can't map), mapped feature vector, sc_comp_id as foreign key, 
-            and entry_id as primary key. The primary keys will be sorted by their order of adding into this
-            table. 
-     
-            Both the dimension tables and the fact table can be changed by all modules in CEAuto. They are 
-            main repositories of CEdata.
-    
-            Computation results will be stored under 'vasp_run/{}'.format(entry_id). CEAuto will parse these 
-            files for charge assignment and featurization only.
+            history_wrapper(Hisotory_wrapper):
+                Wrapper containing previous CE fits.
         """
 
-
-        self.prim = prim
-
-        #Calculation of bits, sublat_list, is_charges_ce
-        #previous_ce are no longer computed here.
-        #I have moved them to InputsWrapper.
-        self.bits = bits
-        self.sublat_list = sublat_list
-        self.sl_sizes = [len(sl) for sl in sublat_list]
-
-        #Check if this cluster expansion should be charged ce
-        self.is_charged_ce = is_charged
-
-        self.n_strs_enum = n_strs_enum
-        self.basis_type = basis_type
-        self.ce = previous_ce
-            
-        self.transmat = transmat
-        self.sc_size = sc_size
-        self.max_sc_cond = max_sc_cond
-        self.min_sc_angle = min_sc_angle
-
-        self._compspace = compspace
-        self.comp_restrictions = comp_restrictions
-        self.comp_enumstep = comp_enumstep
-
-        if self.sc_size%self.comp_enumstep!=0:
-            raise ValueError("Composition enumeration step can't divide supercell size.")
-
-        self.select_method = select_method
-
-        #data manager
         self._dm = data_manager
-    
+
+        self.prim = self.inputs_wrapper.prim
+        self.bits = self.inputs_wrapper.bits
+        self.sublat_list = self.inputs_wrapper.sublat_list
+        self.sl_sizes = self.inputs_wrapper.sl_sizes
+        self.is_charged_ce = self.inputs_wrapper.is_charged_ce
+
+        self.n_strs_enum = (self.inputs_wrapper.
+                            enumerator_options['n_strs_enum'])
+        self.basis_type = self.inputs_wrapper.enumerator_options['basis_type']
+            
+        self.transmat = self.inputs_wrapper.enumerator_options['transmat']
+        self.sc_size = self.inputs_wrapper.enumerator_options['sc_size']
+        self.max_sc_cond = (self.inputs_wrapper.
+                            enumerator_options['max_sc_cond'])
+        self.min_sc_angle = (self.inputs_wrapper.
+                             enumerator_options['min_sc_angle'])
+
+        #TODO: improve compspace to allow more sophisticated composition
+        # constraints.
+        self.comp_restrictions = (self.inputs_wrapper.
+                                  enumerator_options['comp_restrictions'])
+        self.comp_enumstep = (self.inputs_wrapper.
+                              enumerator_options['comp_enumstep'])
+        self.select_method = (self.inputs_wrapper.
+                              enumerator_options['select_method'])
+
+        self.ce = history_wrapper.last_ce
+
+        if self.sc_size % self.comp_enumstep!=0:
+            raise ValueError("Composition enumeration step can't divide " +
+                             "supercell size.")
+
     @property
     def n_strs(self):
-        """
-        Number of enumerated structures.
+        """Number of enumerated structures.
+
+        Returns:
+           int.
         """
         return len(self.fact_df)
 
     @property
-    def n_iter(self):
+    def data_manager(self):
+        """DataManager object.
+
+        Returns:
+           DataManager.
         """
-        Current iteration number. This index starts from 0.
+        return self._data_manager
+
+    @property
+    def inputs_wrapper(self):
+        """Inputs wrapper object.
+
+        Returns:
+           InputsWrapper.
         """
-        return self._dm.cur_iter_id
+        return self.data_manager._iw
 
     @property
     def compspace(self):
-        """
-        Constained compositional space of this system.
-        """
+        """Constained composition space."""
         if self._compspace is None:
             self._compspace = CompSpace(self.bits,self.sl_sizes)
         return self._compspace

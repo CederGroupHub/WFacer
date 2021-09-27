@@ -15,7 +15,7 @@ from atomate.vasp.database import VaspCalcDb
 
 from .base import BaseReader
 
-class MongoVaspReader(BaseReader):
+class MongovaspReader(BaseReader):
     """
     A calculation reader class, to read calculation results from 
     various data warehouses. Current implementation includes local 

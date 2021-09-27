@@ -4,6 +4,7 @@ Base calculation writer class.
 __author__ = "Fengyu Xie"
 
 from ..config_paths import *
+from ..utils.class_utils import derived_class_factory
 
 from abc import ABC, abstractmethod
 import numpy as np
@@ -89,3 +90,19 @@ class BaseWriter(ABC):
 
         data_manager.set_status(eids,'CC')
         # Set status to 'computing'
+
+
+def writer_factory(writer_name, *args, **kwargs):
+    """Create a calculation writer with given name.
+
+    Args:
+       writer_name(str):
+         Name of a calc writer class.
+       *args, **kwargs:
+         Arguments used to initialize a manager class.
+
+    Returns:
+       BaseWriter.
+    """
+    name = writer_name.capitalize() + 'Writer'
+    return derived_class_factory(name, BaseWriter, *args, **kwargs)

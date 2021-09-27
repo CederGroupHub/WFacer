@@ -11,6 +11,59 @@ a new class Assignment class, and write assignment methods accordingly.
 from abc import ABC, abstractmethod
 from monty.json import MSONable
 
+
+def decorate_single_structure(s, decor_keys, decor_values):
+    """
+    This function decorates a single, undecorated structure
+    composed of pymatgen.Element into structure of pymatgen.Species.
+    Vacancies not considered.
+
+    Args:
+        s(pymatgen.Structure):
+            Structure to be decorated.
+        decor_keys(list of str):
+            Names of properties to be decorated onto the structure.
+        decor_values(2D list, second dimension can be None):
+            Values of properties to be assigned to each site. Shaped in:
+            N_properties* N_sites.
+            Charges will be stored in each specie.oxidation_state, while
+            other properties will be stoered in specie._properties, if
+            allowed by Species class.
+            If any of the properties in the second dimension is None, will
+            return None. (Decoration failed.)
+    Returns:
+        Pymatgen.Structure: Decorated structure.
+    """
+    for val in decor_values:
+        if val is None:
+            return None
+    
+    #transpose to N_sites*N_properties
+    decors_by_sites = list(zip(*decor_values))
+    species_new = []
+
+    for sp, decors_of_site in zip(s.species, decor_by_sites):
+        try:
+            sp_new = Specie(sp.symbol)
+        except:
+            sp_new = DummySpecie(sp.symbol)
+        
+        other_props = {}
+        for key,val in zip(decor_keys,decors_of_site):
+            if key == 'charge':
+                sp_new._oxi_state = val
+            else:  # Other properties
+                if key in Species.supported_properties:
+                    other_props[key] = val
+                else:
+                    warnings.warn("{} is not a supported pymatgen property."
+                                  .format(key))
+        sp_new._properties = other_props
+        species_new.append(sp_new)
+
+    return Structure(s.lattice,species_new,s.frac_coords)
+
+
 class BaseDecorator(ABC,MSONable):
     """
     Abstract decorator class.

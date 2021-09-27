@@ -14,7 +14,7 @@ from fireworks.utilities.fw_serializers import load_object_from_file
 
 from .base import BaseManager
 
-class MongoFWManager(BaseManager):
+class MongofwManager(BaseManager):
     """
     A calculation manager class, to write, call ab-initio calculations.
     Current implementation includes mongo database+fireworks. Interacts with 

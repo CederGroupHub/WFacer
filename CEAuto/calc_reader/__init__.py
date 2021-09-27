@@ -1,4 +1,5 @@
-from .arch_vasp import ArchVaspReader
-from .mongo_vasp import MongoVaspReader
+from .arch_vasp import ArchvaspReader
+from .mongo_vasp import MongovaspReader
+from .base import reader_factory
 
-__all__ = ['ArchVaspReader','MongoVaspReader']
+__all__ = ['reader_factory', 'ArchvaspReader', 'MongovaspReader']

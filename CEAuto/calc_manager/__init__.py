@@ -1,4 +1,6 @@
-from .arch_q import * #May have more queues later.
-from .mongo_fw import MongoFWManager
+from .arch_q import ArchsgeManager 
+# You may implement for more queues.
+from .mongo_fw import MongofwManager
+from .base import manager_factory
 
-__all__ = ['ArchQueueManager', 'ArchSGEManager','MongoFWManager']
+__all__ = ['manager_factory', 'ArchsgeManager', 'MongofwManager']

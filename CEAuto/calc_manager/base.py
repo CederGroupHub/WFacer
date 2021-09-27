@@ -9,7 +9,7 @@ import time
 from datetime import datetime
 
 from ..config_paths import *
-
+from ..utils.class_utils import derived_class_factory
 
 class BaseManager(ABC):
     """
@@ -29,7 +29,7 @@ class BaseManager(ABC):
           Direct init not recommended!
     """
     def __init__(self, time_limit=345600, check_interval=300,
-                 **kwargs):
+                 *args, **kwargs):
         """
         Args:
             time_limit(float):
@@ -166,3 +166,19 @@ class BaseManager(ABC):
         Submit entree to queue.
         """
         return
+
+
+def manager_factory(manager_name, *args, **kwargs):
+    """Create a calculation manager with given name.
+
+    Args:
+       manager_name(str):
+         Name of a calc manager class.
+       *args, **kwargs:
+         Arguments used to initialize a manager class.
+
+    Returns:
+       BaseManager.
+    """
+    name = manager_name.capitalize() + 'Manager'
+    return derived_class_factory(name, BaseManager, *args, **kwargs)

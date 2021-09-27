@@ -15,7 +15,7 @@ from .base import BaseManager
 from .utils.qstat_sge import qstat
 
 ####If you ever define your own queue, you can write your own class like this.
-class ArchQueueManager(BaseManager,ABC):
+class ArchqueueManager(BaseManager,ABC):
     """
     Base queue calculation manager class, to call and monitor ab-initio calculations.
 
@@ -119,7 +119,8 @@ class ArchQueueManager(BaseManager,ABC):
         os.chdir(self._root)  #It is essential to move back!
         print('****Submitted ab_initio for entry: {}.'.format(entry_id))
 
-class ArchSGEManager(ArchQueueManager):
+
+class ArchsgeManager(ArchqueueManager):
     """
     SGE queue calculation manager class, to call and monitor ab-initio calculations.
 

@@ -1,8 +1,6 @@
-"""
-Mongo+vasp calculation writer class. These classes DO NOT MODIFY 
-fact table!
+"""Mongo+vasp calculation writer class.
 
-Configure you atomate and fireworks before using this!
+These classes DO NOT MODIFY fact table!
 """
 __author__ = "Fengyu Xie"
 
@@ -11,8 +9,8 @@ import itertools
 
 from pymatgen.io.vasp.sets import (MPRelaxSet, MPMetalRelaxSet,
                                    MPStaticSet)
-from atomate.vasp.fireworks import OptimizeFW,StaticFW
-from fireworks import LaunchPad,Workflow
+from atomate.vasp.fireworks import OptimizeFW, StaticFW
+from fireworks import LaunchPad, Workflow
 
 from .base import BaseWriter
 
@@ -51,34 +49,34 @@ def wf_ce_sample(structure, entry_id, root_name=None, is_metal=False,
     entry_name = 'ce_{}_{}'.format(root_name,entry_id)
     opt_setting = relax_set_params or {}
     sta_setting = static_set_params or {}
- 
+
     if is_metal:
-        opt_set = MPMetalRelaxSet(structure,**opt_setting)
+        opt_set = MPMetalRelaxSet(structure, **opt_setting)
     else:
-        opt_set = MPRelaxSet(structure,**sta_setting)
+        opt_set = MPRelaxSet(structure, **sta_setting)
     sta_set = MPStaticSet(structure)
 
-    #fireworks encoded with root and entry names.
-    opt_fw = OptimizeFW(structure,vasp_input_set = opt_set,\
-                        name = entry_name+'_optimization') 
-    sta_fw = StaticFW(structure,vasp_input_set = sta_set,\
-                      overwrite_default_vasp_params = sta_fw,\
-                      parents = [opt_fw],\
-                      name = entry_name+'_static')
+    # Fireworks encoded with root and entry names.
+    opt_fw = OptimizeFW(structure, vasp_input_set=opt_set,
+                        name=entry_name + '_optimization')
+    sta_fw = StaticFW(structure, vasp_input_set=sta_set,
+                      overwrite_default_vasp_params=sta_fw,
+                      parents=[opt_fw],
+                      name=entry_name + '_static')
 
-    #workflow encoded with root and entry names
-    return Workflow([opt_fw,sta_fw], name=entry_name,**kwargs)
+    # Workflow encoded with root and entry names
+    return Workflow([opt_fw, sta_fw], name=entry_name, **kwargs)
 
-class MongoVaspWriter(BaseWriter):
-    """
-    A calculation write class, to write ab-initio calculations to various 
-    data warehouses. Current implementation
-    includes local archive and mongo+fireworks.
 
-    Does not interact with your computing resource.
+class MongovaspWriter(BaseWriter):
+    """A calculation writer class. 
+
+    To write ab-initio calculations to various data warehouses. Does not
+    interact with your computing resource.
    
-    This class writes vasp input files into local folders. Relaxation and 
-    static step will be two separate submissions!!
+    This class writes vasp input files into mongodb (remote/local, to your
+    specification). Relaxation and static step will be two separate
+    submissions!!
 
     Current implementations only support vasp.
 
@@ -86,17 +84,16 @@ class MongoVaspWriter(BaseWriter):
     the fact table. Everything in this class shall be temporary, and will not 
     be saved as dictionaries into disk.
 
-    It's your responsibility not to dupe-write a directory and not to waste
-    your own time.
+    It's your responsibility not to dupe-write a directory.
 
     Note: Use get_calc_write method in InputsWrapper to get any Writer object,
           or auto_load.
           Direct init not recommended!
     """
     def __init__(self, lp_file=None,
-                 writer_strain=[1.05,1.03,1.01],
-                 is_metal = False,
-                 ab_setting ={},
+                 writer_strain=[1.05, 1.03, 1.01],
+                 is_metal=False,
+                 ab_setting={},
                  **kwargs):
         """
         Args:
@@ -115,9 +112,8 @@ class MongoVaspWriter(BaseWriter):
                 look at pymatgen.vasp.io.sets doc.
                 May have two keys, 'relax' and 'static'.
                 See pymaten.vasp.io.sets for detail.
-        """      
- 
-        super().__init__(writer_strain=writer_strain,ab_setting=ab_setting,
+        """
+        super().__init__(writer_strain=writer_strain, ab_setting=ab_setting,
                          **kwargs)
 
         self.root_name = os.path.split(os.getcwd())[-1]
@@ -128,30 +124,29 @@ class MongoVaspWriter(BaseWriter):
         else:
             self._lpad = LaunchPad.auto_load()
 
-    def _write_single(self,structure,eid,*args,**kwargs):
-        """
-        Write a single computation task to archieve.
-        """
-        #Apply a slight deformation.
+    def _write_single(self, structure, eid, *args, **kwargs):
+        """Write a single computation task to archieve."""
+        # Apply a deformation.
         strain = np.array(self.strain)
         if strain.shape == (3,):
             strain = np.diag(strain)
-   
+
         if strain.shape != (3,3):
             raise ValueError("Incorrect strain format.")
            
-        relax_set_params = self.ab_setting.get('relax',{})
-        static_set_params = self.ab_setting.get('static',{})
+        relax_set_params = self.ab_setting.get('relax', {})
+        static_set_params = self.ab_setting.get('static', {})
 
         str_input = Deformation(strain).apply_to_structure(structure)
 
-        wf = wf_ce_sample(str_input, eid, root_name=self.root_name,\
-                          is_metal=self.is_metal,\
-                          relax_set_params = relax_set_params,\
-                          static_set_params = static_set_params,\
-                          **kwargs)               
+        wf = wf_ce_sample(str_input, eid, root_name=self.root_name,
+                          is_metal=self.is_metal,
+                          relax_set_params=relax_set_params,
+                          static_set_params=static_set_params,
+                          **kwargs)      
 
-        #Check duplicacy. If any duplicacy occurs, will OVERWRITE for a re-run.
+        # Check duplicacy. If any duplicacy occurs, will OVERWRITE
+        # and re-run!
         fw_ids = self._lpad.get_fw_ids()
 
         all_dupe_fw_ids = []
@@ -162,7 +157,7 @@ class MongoVaspWriter(BaseWriter):
                 wf_old = self._lpad.get_wf_by_fw_id(fw_id)
                 dupe_fw_ids = [fw.fw_id for fw in wf_old.fws]
                 all_dupe_fw_ids.append(dupe_fw_ids)
-      
+
         for dupe_fw_ids in all_dupe_fw_ids:
             self._lpad.delete_wf(dupe_fw_ids[0])
 

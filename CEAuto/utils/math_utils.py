@@ -157,6 +157,7 @@ def get_diag_matrices(n,d=3):
     mats = [np.diag(f_part).tolist() for f_part in sorted(factor_partitions)]
     return mats
 
+
 def GCD(a,b):
     """ The Euclidean Algorithm, giving positive GCD's """
     if round(a)!=a or round(b)!=b:
@@ -167,6 +168,7 @@ def GCD(a,b):
         a, b = b%a, a
     return b    
 
+
 def GCD_list(l):
     """ Find GCD of a list of numbers """
     if len(l)<1:
@@ -175,6 +177,7 @@ def GCD_list(l):
         return l[0]
     else:
         return reduce(lambda a,b:GCD(a,b),l)
+
 
 def LCM(a,b):
     if a==0 and b==0:
@@ -185,6 +188,7 @@ def LCM(a,b):
         return a
     else:
         return a*b // GCD(a,b)
+
 
 def LCM_list(l):
     if len(l)<1:

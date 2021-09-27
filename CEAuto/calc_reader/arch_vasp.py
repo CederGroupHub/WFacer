@@ -12,7 +12,7 @@ from pymatgen.io.vasp.inputs import Poscar
 
 from .base import BaseReader
 
-class ArchVaspReader(BaseReader):
+class ArchvaspReader(BaseReader):
     """
     A calculation reader class, to read calculation results from 
     various data warehouses. Current implementation includes local 

@@ -8,6 +8,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 from ..config_paths import *
+from ..utils.class_utils import derived_class_factory
+
 
 class BaseReader(ABC):
     """
@@ -110,3 +112,19 @@ class BaseReader(ABC):
             entree.
         """
         return 
+
+
+def reader_factory(reader_name, *args, **kwargs):
+    """Create a calculation reader with given name.
+
+    Args:
+       reader_name(str):
+         Name of a calc reader class.
+       *args, **kwargs:
+         Arguments used to initialize a manager class.
+
+    Returns:
+       BaseReader.
+    """
+    name = reader_name.capitalize() + 'Reader'
+    return derived_class_factory(name, BaseReader, *args, **kwargs)

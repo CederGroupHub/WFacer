@@ -32,12 +32,15 @@ def hulls_match(old_hull,new_hull, e_tol, comp_tol=0.05):
     inner_hull = old_hull.merge(new_hull,how='inner',on='comp_id')
     e_match = np.all(np.abs(inner_hull['e_prim_x']-inner_hull['e_prim_y'])<=e_tol)
 
+    if not e_match:
+        return False
+
     #Compare new compositions
     outer_hull = old_hull.merge(new_hull,how='outer',on='comp_id')
     comple_hull = outer_hull[outer_hull['e_prim_x'].isnull()]
 
     if len(comple_hull)==0:
-        return e_match  #No new GS compositions detected!
+        return True  #No new GS compositions detected!
 
     inner_hull = inner_hull.reset_index()
     comple_hull = comple_hull.reset_index()
@@ -57,14 +60,14 @@ def hulls_match(old_hull,new_hull, e_tol, comp_tol=0.05):
         if np.abs(new_e-old_e) > e_tol: #The new CE is very pronounced.
             return False
 
-    return e_match
+    return True
 
 
 def fix_convex_hull(hull_list):
     """
     Fix a hull into convex hull. Only works for 1D comp space!
     Args:
-        hull_list(List[List[float]]):
+        hull_list(List[(float, float)]):
             (compositions, energies)
     Returns:
         Fixed hull list.
@@ -108,105 +111,6 @@ def fix_convex_hull(hull_list):
 
         clean_hull = clean_hull.T.tolist()
         return clean_hull
-
-
-def estimate_mu_from_hull(hull):
-    """
-    This util function estimates the central mu in compositional space
-    from grounds states hull vertices.(Constrained compositional space,
-    refer to comp_space.py)
-
-    Note: THIS IS FOR SUBLATTICE DISCRIMINATIVE ONLY!
-    Args:
-        hull(pd.DataFrame):
-            A hull in dataframe form, must contain at least two columns:
-            'ccoord','e_prim', and the coord must be normalized!
-    Return:
-        List of length ndim, each component contains a central estimate 
-        of mu on that compositional dimension.
-    """
-    hull = hull.reset_index()
-    all_ccoords = np.array(hull['ccoord'].tolist())
-    all_eprims = hull['e_prim'].tolist()
-
-    if all_ccoords.shape[1]<2:
-        all_ccoords = all_ccoords.flatten()
-        if max(all_ccoords)==min(all_ccoords):
-            raise ValueError("Given composition points less than dimension of space.")
-
-        max_id = np.argmax(all_ccoords)
-        min_id = np.argmin(all_ccoords)
-        return [(all_eprims[max_id]-all_eprims[min_id])/(all_ccoords[max_id]-all_ccoords[min_id])]        
-
-    if len(all_ccoords)<all_ccoords.shape[1]+1:
-        raise ValueError("Given composition points less than dimension of space.")
-
-    boundhull = ConvexHull(all_ccoords)
-    #Select edges originating from the first vertex only
-    X = []
-    y = []
-
-    if len(boundhull.vertices)<all_ccoords.shape[1]+1:
-        raise ValueError("Given composition points less than dimension of space.")
-
-    for v_id in boundhull.vertices[1:]:
-        X.append(all_ccoords[boundhull.vertices[0]]-all_ccoords[v_id])
-        y.append(all_eprims[boundhull.vertices[0]] - all_eprims[v_id])
-    X = np.array(X)
-    y = np.array(y)
-
-    return (np.linalg.pinv(X.T@X)@X.T@y).tolist()
-
-
-def estimate_chempot_from_hull_nondisc(hull_nondisc):
-    """
-    Estimate a central chemical potential from NON-DISCRIMINATIVE hull.
-    For what is a non-discriminative compositional coordinate, see comp_space
-    documents.
-
-    Args:
-        hull(pd.DataFrame):
-            A hull in dataframe form, must contain at least two columns:
-            'nondisc','e_prim', and the nondisc must be normalized!
-    Return:
-        List of length n_species, each component contains an estimated chemical
-        potential corresponding to a specie in comp_space.species.
-    """
-    hull = hull_nondisc.reset_index()
-    #Truncate the last dimension
-    all_nondiscs = np.array(hull['nondisc'].tolist())[:,:-1]
-    all_eprims = hull['e_prim'].tolist()
-
-    if all_nondiscs.shape[1]==0:
-        return 0
-    elif all_nondiscs.shape[1]==1:
-        if np.min(all_nondiscs)==np.max(all_nondiscs):
-            raise ValueError("Given composition points less than dimension of space.")
-        
-        max_id = np.argmax(all_nondiscs.flatten())
-        min_id = np.argmin(all_nondiscs.flatten())
-        return [(all_eprims[max_id]-all_eprims[min_id])/(all_nondiscs[max_id,0]-all_nondiscs[min_id,0]),0]        
-
-    if len(all_nondiscs)<all_nondiscs.shape[1]+1:
-        raise ValueError("Given composition points less than dimension of space.")
-
-    boundhull = ConvexHull(all_nondiscs)
-
-    if len(boundhull.vertices)<all_nondiscs.shape[1]+1:
-        raise ValueError("Given composition points less than dimension of space.")
-
-    #Select edges originating from the first vertex only
-    X = []
-    y = []
-    for v_id in boundhull.vertices[1:]:
-        X.append(all_nondiscs[boundhull.vertices[0]]-all_nondiscs[v_id])
-        y.append(all_eprims[boundhull.vertices[0]] - all_eprims[v_id])
-
-    #Enforce the last chemical potential as 0.
-    X = np.array(X)
-    y = np.array(y)
-
-    return (np.linalg.inv(X.T@X)@X.T@y).tolist()+[0]
 
 
 def plot_hull(hull,axis_id=None, fix_hull=True,\
