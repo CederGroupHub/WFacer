@@ -7,9 +7,11 @@ from abc import ABC, abstractmethod
 import numpy as np
 import time
 from datetime import datetime
+import logging
 
 from ..config_paths import *
 from ..utils.class_utils import derived_class_factory
+
 
 class BaseManager(ABC):
     """
@@ -65,9 +67,9 @@ class BaseManager(ABC):
         return
  
     def _run_tasks(self,entry_ids):
-        """
-        Run all calculation tasks specified by entree ids.
-        And monitor status. 
+        """Run all calculation tasks specified by entree ids.
+
+        Also monitors status. 
         If CEAuto job is interrupted, for arch+queue, will
         resubmit the specified jobs; for mongodb+atomate,
         will check for unreserved tasks, and resubmit to
@@ -93,8 +95,8 @@ class BaseManager(ABC):
 
         #set timer
         t_quota = self.time_limit
-        print("**Calculations started at: {}".format(datetime.now()))
-        print("**Number of calculations {}".format(len(entry_ids)))
+        logging.log("**Calculations started at: {}".format(datetime.now()))
+        logging.log("**Number of calculations {}".format(len(entry_ids)))
 
         n_checks = 0
         while t_quota>0:
@@ -104,39 +106,44 @@ class BaseManager(ABC):
             status = self.entree_in_queue(entry_ids)
             if not np.any(status): 
                 break          
-            print(">>Time: {}, Remaining(seconds): {}\n  {}/{} calculations finished!".
-                  format(datetime.now(),t_quota,int(np.sum(status)),len(status)))
+            logging.log(">>Time: {}, Remaining(seconds): {}, " +
+                        "{}/{} calculations finished.".
+                        format(datetime.now(), t_quota,
+                               int(np.sum(status)), len(status)))
         
         if t_quota>0:            
-            print("**Calculations finished at: {}".format(datetime.now()))
+            logging.log("**Calculations finished at: {}."
+                        .format(datetime.now()))
         else:
             self.kill_tasks()
-            print("**Warning: only {}/{} calculations finished in time limit {}!".\
-                  format(int(np.sum(status)),len(status),self.time_limit))
-            print("**You may want to use a longer time limit.")
+            warnings.warn("**Warning: only {}/{} calculations finished "
+                          .format(int(np.sum(status)), len(status)) +
+                          "in time limit {}!".format(self.time_limit) +
+                          " You may want to use a LONGER time limit.")
 
         return t_quota
 
     def run_df_entrees(self, data_manager):
-        """
-        Automatically submits entree with calc_status 'CC'(computing), and 
+        """Automatically submits entree.
+
+        Submit entree with calc_status 'CC'(computing), and 
         mark them as 'CL'(computation finished) upon completion.
 
         The modification in the data repository will be flushed upon update.
+
+        Note: Use your TimeKeeper to check before running this, unless you
+              wish to re-run all DFT calculations in this iteration.
+
         Args:
             data_manager(DataManager):
                 A data manager object containing info of all the calculations
                 so far.
                 Since python uses 'pass object reference' in functions, this
                 dataframe will be updated on-the-fly.
+
         Returns:
             float: remaining time.
         """
-        if data_manager.schecker.after("calc"):
-            print("**Calculation of entree already done in the \
-                  current iteration {}"
-                  .format(data_manager.schecker.cur_iter_id))
-            return self.time_limit
 
         eids = data_manager.get_eid_w_status('CC')
         remain_quota = self._run_tasks(eids)
@@ -149,9 +156,10 @@ class BaseManager(ABC):
 
     @abstractmethod
     def kill_tasks(self, entry_ids=None):
-        """
-         Kill specified tasks if they are still in queue.
-         Inputs:
+        """Kill specified tasks if they are still in queue.
+
+        Use caution.
+        Args:
             entry_ids(List of ints):
                 list of entry indices to be checked. Indices in a
                 fact table starts from 0
@@ -162,9 +170,7 @@ class BaseManager(ABC):
 
     @abstractmethod
     def _submit_all(self, eids=None):
-        """
-        Submit entree to queue.
-        """
+        """Submit entree to queue."""
         return
 
 

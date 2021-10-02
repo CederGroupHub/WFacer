@@ -50,14 +50,17 @@ class BaseEstimator(ABC):
             raise NotFittedError('This estimator has not been fitted.')
         return np.dot(feature_matrix, self.coef_)
 
-    def calc_cv_score(self, feature_matrix, target_vector, *args, sample_weight=None,\
-                      k=5, **kwargs):
-        """
+    def calc_cv_score(self, feature_matrix, target_vector, *args,
+                      sample_weight=None, k=5, **kwargs):
+        """Calculate CV score.
+
         Args:
             feature_matrix: sensing matrix (scaled appropriately)
             target_vector: data to fit (scaled appropriately)
             k: number of partitions
 
+        Return:
+            float, between 0 and 1.
         Partition the sample into k partitions, calculate out-of-sample
         variance for each of these partitions, and add them together
         """
@@ -83,8 +86,8 @@ class BaseEstimator(ABC):
                 ins = (partitions != i)  # in the sample for this iteration
                 oos = (partitions == i)  # out of the sample for this iteration
     
-                self.fit(X[ins], y[ins],*args,\
-                         sample_weight=weights[ins],\
+                self.fit(X[ins], y[ins], *args,
+                         sample_weight=weights[ins],
                          **kwargs)
                 res = (self.predict(X[oos]) - y[oos]) ** 2
 

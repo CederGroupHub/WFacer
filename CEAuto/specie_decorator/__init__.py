@@ -1,4 +1,5 @@
-from .base import decorate_single_structure
-from .mag_charge import MagChargeDecorator
+from .base import (decorate_single_structure,
+                   decorator_factory)
+from .mag_charge import MagchargeDecorator
 
-__all__ = ['MagChargeDecorator']
+__all__ = ['MagchargeDecorator', 'decorator_factory']

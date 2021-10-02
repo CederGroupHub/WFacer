@@ -23,7 +23,8 @@ from .utils.comp_utils import normalize_compstat
 from .utils.frame_utils import load_dataframes, save_dataframes
 
 from .wrappers import InputsWrapper
-from .config_paths import *
+from .config_paths import (WRAPPER_FILE, OPTIONS_FILE,
+                           SC_FILE, COMP_FILE, FACT_FILE)
 
 from smol.moca import CompSpace
 from smol.moca.utils.occu_utils import occu_to_species_stat
@@ -706,6 +707,7 @@ class DataManager:
         return self.insert_one_occu(occu, comp_id=comp_id, comp=comp,
                                     comp_format=comp_format,
                                     sc_id=sc_id, sc_mat=sc_mat,
+                                    iter_id=iter_id,
                                     module_name=module_name,
                                     **calculated_info)
 

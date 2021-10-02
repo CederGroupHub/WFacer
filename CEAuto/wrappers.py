@@ -23,11 +23,13 @@ from smol.moca.ensemble.sublattice import Sublattice
 from .utils.serial_utils import decode_from_dict, serialize_any
 from .utils.format_utils import merge_dicts
 
-from .calc_reader import *
-from .calc_writer import *
-from .calc_manager import *
+from .calc_reader import reader_factory
+from .calc_writer import writer_factory
+from .calc_manager import manager_factory
 
-from .config_paths import *
+from .config_paths import (CE_HISTORY_FILE,
+                           WRAPPER_FILE,
+                           OPTIONS_FILE)
 
 
 class InputsWrapper(MSONable):
@@ -116,7 +118,6 @@ class InputsWrapper(MSONable):
         self._compspace = None
         self._is_charged_ce = None
 
-        self._radius = options.get('radius')
         self._subspace = None
 
     @classmethod
@@ -298,6 +299,50 @@ class InputsWrapper(MSONable):
            Dict{size(int):radius(float)}
         """
         if self._radius is None or len(self._radius) == 0:
+
+
+        return self._radius
+
+    @property
+    def subspace(self):
+        """Cluster subspace of this system.
+
+        Will be saved and re-utilized!
+        Returns:
+            ClusterSubspace
+        """
+        if self._subspace is None:
+            self._subspace = (ClusterSubspace.
+                              from_cutoffs(self.prim, self.radius,
+                                           basis=
+                                           self.basis_type))
+
+            extern_types = self.space_options['extern_types']
+            extern_args = self.space_options['extern_args']
+            for ex_name,args in zip(extern_types, extern_args):
+                self._subspace.add_external_term(globals()[ex_name](**args))
+
+        return self._subspace
+
+    @property
+    def space_options(self):
+        """ClusterSubspace options.
+
+        return:
+            Dict.
+
+        radius(Dict{int: float}):
+            Cutoff radius of clusters with different sizes.
+        basis_type(str):
+            Type of basis. Default to 'indicator'
+        extern_types(List[str]):
+            Types of smol.cofe external terms to add.
+            Default to [].
+        extern_args(List[Dict]):
+            Arguments of external terms.
+            Default to all empty.
+        """
+        if self._options.get('radius') is None:
             d_nns = []
             for i, site1 in enumerate(self.prim):
                 d_ij = []
@@ -310,56 +355,68 @@ class InputsWrapper(MSONable):
                 d_nns.append(min(d_ij))
             d_nn = min(d_nns)
     
-            self._radius = {}
+            radius = {}
             # Default cluster radius
-            self._radius[2] = d_nn * 4.0
-            self._radius[3] = d_nn * 2.0
-            self._radius[4] = d_nn * 2.0
+            radius[2] = d_nn * 4.0
+            radius[3] = d_nn * 2.0
+            radius[4] = d_nn * 2.0
+            self._options['radius'] = radius
 
-        return self._radius
+        radius = self._options.get('radius')
 
-    @property
-    def subspace(self):
-        """
-        Cluster subspace of this system. Will be saved and re-utilized!
-        Returns:
-            ClusterSubspace
-        """
-        if self._subspace is None:
-            self._subspace = (ClusterSubspace.
-                              from_cutoffs(self.prim, self.radius,
-                                           basis=
-                                           self.enumerator_options['basis_type']))
+        extern_types = self._options.get('extern_types', [])
+        extern_args = self._options.get('extern_args',
+                                        [{} for _ in extern_types])
 
-            for ex_name,args in zip(self.extern_types,self.extern_args):
-                self._subspace.add_external_term(globals()[ex_name](**args))
-
-        return self._subspace
-        
-    @property
-    def extern_types(self):
-        """Types of external terms in clustersubspace.
- 
-        If given system is charge cluster expansion,
-        will add ewald term by default. If you don't want it,
-        You have to specify empty list in options file.
-        """
-        return self.featurizer_options.get('extern_types')
-  
-    @property
-    def extern_args(self):
-        """Args of external terms.
-
-        If given system is charge cluster expansion,
-        will add ewald term by default. If you don't want it,
-        You have to specify empty list in options file.
-        """
-        return self.featurizer_options.get('extern_args')
+        return {'radius': radius,
+                'basis_type': self._options.get('basis_type', 'indicator'),
+                'extern_types': extern_types
+                'extern_args': extern_args
+               }
 
     @property
     def enumerator_options(self):
-        """
-        Get enumerator options.
+        """Get enumerator options.
+
+        Return:
+            Dict.
+
+        transmat(3*3 List of int):
+            Transformation matrix applied to primitive cell before
+            enumerating supercell matrix.
+            For example when handling FCC primitive cell,
+            you may want to multiply by [[-1, 1, 1], ...] first.
+            Default to identity.
+        sc_size(int):
+            Supercel size (by determinant) to enumerate with.
+            Default to 32.
+        max_sc_cond(float):
+            Maximum conditional number of the supercell lattice vectors.
+            Default to 8, prevent overly slender supercell matrix.
+        max_sc_angle(float):
+            Minimum allowed angle of the supercell lattice.
+            Default to 30, prevent overly skewed structures.
+        sc_mats(List of 3*3 int list):
+            Supercell matrices. Will overwrite supercell enumeration
+            if given.
+        comp_restrictions(List[dict]|dict):
+            Restriction to species concentrations. See utils.comp_utils.
+            check_comp_restrictions.
+        comp_enumstep(int):
+            Enumeration step of composition. Compositions will be generated
+            by multiplying this factor to the composition space integer
+            basis, and walking with them. Default to 1 but not always
+            recommended!
+        n_strs_init(int):
+            Number of structures to initialize CE. Default to 100.
+        n_strs_add(int):
+            Number of structures to add at each cycle. Default to 100.
+        handler_args_enum(Dict): optional
+            Arguments to pass into CanonicalmcHander. See
+            ce_handlers.CanonicalmcHandler.
+        select_method(str):
+            Structure selection method. Default is 'CUR'.
+            Allowed options are: 'CUR' and 'random'.
         """
         return {'transmat': self._options.get('transmat',
                 [[1, 0, 0], [0, 1, 0], [0, 0, 1]]),
@@ -370,10 +427,10 @@ class InputsWrapper(MSONable):
                 # If sc_mats is given, will overwrite enumerated sc matrices.
                 'comp_restrictions': self._options.get('comp_restrictions'),
                 'comp_enumstep': self._options.get('comp_enumstep', 1),
-                'n_strs_enum': self._options.get('n_strs_enum', 100),
-                'unfreeze_series': self._options.get('unfreeze_series',
-                                                     [500, 1500, 5000]),
-                'basis_type': self._options.get('basis_type','indicator'),
+                'n_strs_init': self._options.get('n_strs_init', 100),
+                'n_strs_add': self._options.get('n_strs_add', 100),
+                'handler_args_enum': self._options.get('handler_args_enum',
+                                                       {}),
                 'select_method': self._options.get('select_method','CUR')
                }
 
@@ -382,6 +439,8 @@ class InputsWrapper(MSONable):
         """Name of interface preset.
 
         Default is arch_sge, if not specified.
+        Return:
+            str.
         """
         return self._options.get("io_preset_name", 'arch_sge')
 
@@ -391,6 +450,26 @@ class InputsWrapper(MSONable):
 
         Returns:
             Dict.
+
+        path(str):
+            Path to write VASP output files locally (only used by ArchQueue)
+            Default to 'vasp_run/'
+        lp_file(str):
+            Fireworks launchpad file path.
+        writer_strain(3*3 ArrayLike or length 3 ArrayLike of float):
+            Strain to apply in vasp POSCAR. Default is [1.05, 1.03, 1.01],
+            meaning 5%, 3% and 1% strain in a, b, and c axis. This is to
+            break symmetry and help more accurate relaxation.
+        is_metal(bool):
+            Whether this system is a metal or not. Default to False.
+            Determines what set of INCAR settings will be used.
+        ab_setting(dict): optional
+            Settings to pass into calc writer. Can have 2 keys:
+            'relax', 'static', each is a MITSet setting dictionary.
+            Refer to documentation of calc_writer and
+            pymatgen.io.sets.
+        writer_type(str):
+            Name of CalcWriter to be used.
         """
         return {'path': self._options.get('path', 'vasp_run'),
                 'lp_file': self._options.get('lp_file'),
@@ -407,6 +486,31 @@ class InputsWrapper(MSONable):
 
         Returns:
             Dict.
+
+        path(str):
+            Path to write VASP output files locally (only used by ArchQueue)
+            Default to 'vasp_run/'
+        lp_file(str):
+            Fireworks launchpad file path.
+        fw_file(str):
+            Fireworks fireworker file path.
+        qa_file(str):
+            Fireworks queue adapter file.
+        I would recommend you to set up your Fireworks properly before using,
+        rather than specifying here.
+        kill_command(str):
+            queued job kill command of the current Queue system.
+        ab_command(str):
+            Command to run ab initio package, such as vasp.
+        ncores(int):
+            Number of cores to use for each DFT calculation. Default to 16.
+        time_limit(float):
+            Time limit to run a single DFT (in seconds). Defualt to 72 hours.
+        check_interval(float):
+            Time interval to check queue status (in seconds).
+            Default to 300 seconds.
+        manager_type(str):
+            Name of the CalcManager class to use.
         """
         return {'path': self._options.get('path', 'vasp_run'),
                 'lp_file': self._options.get('lp_file'),
@@ -426,6 +530,14 @@ class InputsWrapper(MSONable):
 
         Returns:
             Dict.
+
+        path(str):
+            Path to write VASP output files locally (only used by ArchQueue)
+            Default to 'vasp_run/'
+        md_file(str):
+            Path to mongodb setting file. Only used by MongoFWReader.
+        reader_type(str):
+            Name of the CalcReader to use.
         """ 
         return {'path': self._options.get('path', 'vasp_run'),
                 'md_file': self._options.get('md_file'),
@@ -438,6 +550,15 @@ class InputsWrapper(MSONable):
 
         Returns:
             Dict.
+
+        other_props(list[str]):
+            Name of other properties to expand except energy.
+        decorator_types(str):
+            Name of decorator class to use before mapping structure.
+            For example, expansion with charge needs MagChargeDecorator.
+        decorator_args(str):
+            Arguments to pass into decorator. See documentation of 
+            each in species_decorator.
         """
         # Since we can not automatically generate labels_table, currently
         # we don't have automatically specify species decorator. If your
@@ -451,17 +572,10 @@ class InputsWrapper(MSONable):
                 raise ValueError('Cluster expasion requires decoration, "+
                                  "but no decorator to {} is given!'.format(b))
 
-        default_extern_types = ['EwaldTerm'] if self.is_charged_ce else []
-        default_extern_args = [{}] if self.is_charged_ce else []
-
         return {'other_props': self._options.get('other_props', []),
                 'decorators_types': decorators_types,
-                'decorators_args': self._options.get('decorators_args', []),
-                'extern_types': self._options.get('extern_types',
-                                                  default_extern_types),
-                'extern_args': self._options.get('extern_args',
-                                                 default_extern_args)
-               }
+                'decorators_args': self._options.get('decorators_args',
+                                                     [])}
 
     @property
     def fitter_options(self):
@@ -469,13 +583,30 @@ class InputsWrapper(MSONable):
 
         Returns:
             Dict.
+
+        regression_flavor(str):
+            Choosen theorytoolkit regularization method. Default to
+            'lasso'.
+        weights_flavor(str):
+            Weights to use in theorytoolkit estimators. Default to
+            'unweighted'.
+        use_hierarchy(str):
+            Whether or not to use hierarchy in regularization fitting.
+            Default to True.
+        regression_params(dict):
+            Argument to pass into estimator.
+            See theorytoolkit.regression documentations.
+        weighter_params(dict):
+            Argument to pass into weights generator.
+            See smol.cofe.wangling.tool.
         """
-        return {'estimator_flavor': self._options.get('estimator_flavor',
-                                                      'L2L0Estimator'),
+        return {'regression_flavor': self._options.get('regression_flavor',
+                                                       'lasso'),
                 'weights_flavor': self._options.get('weights_flavor',
                                                     'unweighted'),
                 'use_hierarchy': self._options.get('use_hierarchy', True),
-                'estimator_params': self._options.get('estimator_params', {}),
+                'regression_params': self._options.get('regression_params',
+                                                       {}),
                 'weighter_params': self._options.get('weighter_params', {})
                }
 
@@ -483,24 +614,21 @@ class InputsWrapper(MSONable):
     def gs_checker_options(self):
         """Get ground state checker options.
 
+        Note: currently only checks canonical GS convergence!
         Returns:
             Dict.
+
+        e_tol_in_cv(float):
+            Energy tolerance in the unit of CV value. Default is 3*CV.
+            When new GS is within 3*CV of the previous one under each
+            composition, we will see CE as converged.
+        cv_change_tol(float):
+            Relative tolerance to decrease in CV. Default is 20%(0.2).
+            If decrease of CE is smaller than this precentage, we see
+            CE as converged.
         """
         return {'e_tol_in_cv': self._options.get('e_tol_in_cv', 3),
-                'comp_tol': self._options.get('comp_tol', 0.05),
                 'cv_change_tol': self._options.get('cv_change_tol', 0.2)
-               }
-    
-    @property
-    def gs_generator_options(self):
-        """Get ground state generator options.
-
-        Returns:
-            Dict.
-        """
-        return {'handler_flavor': self._options.get('handler_flavor',
-                                                    'CanonicalMCHandler'),
-                'handler_args': self._options.get('handler_args', {})
                }
 
     @property
@@ -512,7 +640,7 @@ class InputsWrapper(MSONable):
         """
         kwargs = self.calc_writer_options.copy()
         name = kwargs.pop('writer_type')
-        return globals()[name](**kwargs)  #TODO: this is not very safe, better write a generic class factory like Luis did.
+        return writer_factory(name, **kwargs)
 
     @property
     def calc_manager(self):
@@ -523,7 +651,7 @@ class InputsWrapper(MSONable):
         """
         kwargs = self.calc_manager_options.copy()
         name = kwargs.pop('manager_type')
-        return globals()[name](**kwargs)
+        return manager_factory(name, **kwargs)
 
     #Used in featurizer. Calc reader usually will not be explicitly called.
     @property
@@ -537,7 +665,7 @@ class InputsWrapper(MSONable):
         """
         kwargs = self.calc_reader_options.copy()
         name = kwargs.pop('reader_type')
-        return globals()[name](**kwargs)
+        return reader_factory(name, **kwargs)
 
     @property
     def options(self):
@@ -553,7 +681,7 @@ class InputsWrapper(MSONable):
                        self.featurizer_options,
                        self.fitter_options,
                        self.gs_checker_options,
-                       self.gs_generator_options]
+                       self.space_options]
 
         # If conflicting keys appear, will only take the first value.
         # It is your responsibility to avoid conflicting keys!
@@ -674,9 +802,11 @@ class InputsWrapper(MSONable):
         if os.path.isfile(wrapper_file):
             with open(wrapper_file) as ops:
                 d = json.load(ops)
-        else:
+        elif os.path.isfile(options_file):
             with open(options_file) as ops:
                 d = yaml.load(ops, Loader=yaml.FullLoader)
+        else:
+            raise ValueError("No calculation setting specified!")
 
         socket = cls.from_dict(d)
 
@@ -694,13 +824,13 @@ class InputsWrapper(MSONable):
 class HistoryWrapper(MSONable):
     """History reader class."""
 
-    def __init__(self, cluster_subspace, history):
+    def __init__(self, cluster_subspace, history=[]):
         """Initialize HistoryWrapper.
 
         Args:
             cluster_subspace(smol.cofe.ClusterSubspace):
               Cluster subspace of CE.
-            history(List[dict]):
+            history(List[dict]): optional
               A list storing all past history CE models.
         """
         self._history = history
@@ -719,7 +849,9 @@ class HistoryWrapper(MSONable):
     def get_ce_n_iters_ago(self, n_ago=1):
         """Get the cluster expansion object n iterations ago.
 
-        Does not store past feature matrices!
+        Does not store past feature matrices, and only handles
+        energy cluster expansion.
+
         If none exist, will initialize a dummy CE, with all
         external terms with coef 1, and cluster terms with coef 0.
 
@@ -740,13 +872,16 @@ class HistoryWrapper(MSONable):
             if len(self.subspace.external_terms) > 0:
                 coefs[-len(self.subspace.external_terms): ] = 1.0
         else:
+            if pname not in self._history[-n_ago]:
+                raise ValueError("History does not include CE on {}!"
+                                 .format(pname))
             coefs = np.array(self._history[-n_ago]['coefs'])
 
         return ClusterExpansion(self.subspace, coefs, None)
 
     @property
     def last_ce(self):
-        """Get the last cluster expansion in history.
+        """Get the last energy CE in history.
 
         If none exist, will initialize a cluster expansion with
         external ECIs=1, and cluster ECIs=0.
@@ -761,15 +896,15 @@ class HistoryWrapper(MSONable):
 
         Args:
            new_entry(dict):
-               Dict containing latest CE fit information.
-               Must have the following keys:
+               Dict containing past energy CE fit information.
+               must have the following keys:
                  "cv", "rmse", "coefs".
         """
         self._history.append(new_entry)
 
     def copy(self):
         """Copy HistoryWrapper."""
-        return HistoryWrapper(self.subspace,
+        return HistoryWrapper(self.subspace.copy(),
                               deepcopy(self.history))
 
     def as_dict(self):
@@ -809,18 +944,18 @@ class HistoryWrapper(MSONable):
             json.dump(self.as_dict(), fout)
 
     @classmethod
-    def auto_load(cls, history_path=CE_HISTORY_PATH):
+    def auto_load(cls, history_file=CE_HISTORY_FILE):
         """Automatically load object from file.
 
         Args:
-            history_path(str):
+            history_file(str):
               Path to history file. Default set in config_paths.py.
               Not recommend to change.
 
         Returns:
             HistoryWrapper.
         """
-        with open(history_path, 'r') as fin:
+        with open(history_file, 'r') as fin:
             d = json.load(fin)
 
         return cls.from_dict(d)

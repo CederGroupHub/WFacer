@@ -30,10 +30,10 @@ class MCHandler(ABC):
     """
     def __init__(self, ce, sc_mat,
                  gs_occu=None,
-                 anneal_series=[3200, 1600, 800, 400, 100],
+                 anneal_series=[5000, 3200, 1600, 800, 400, 100],
                  unfreeze_series=[500, 1500, 5000],
-                 n_runs_sa=100,
-                 n_runs_unfreeze=300,
+                 n_runs_sa=300,
+                 n_runs_unfreeze=600,
                  **kwargs):
         """Initialize.
 
@@ -250,10 +250,10 @@ class CanonicalmcHandler(MCHandler):
     """MC handler in canonical ensemble."""
     def __init__(self, ce, sc_mat, compstat,
                  gs_occu=None,
-                 anneal_series=[3200, 1600, 800, 400, 100],
+                 anneal_series=[5000, 3200, 1600, 800, 400, 100],
                  unfreeze_series=[500, 1500, 5000],
-                 n_runs_sa = 100,
-                 n_runs_unfreeze = 300,
+                 n_runs_sa = 300,
+                 n_runs_unfreeze = 600,
                  **kwargs):
         """Initialize.
 
@@ -298,21 +298,22 @@ class CanonicalmcHandler(MCHandler):
                                                  optimize_inidicator=
                                                  self.is_indicator))
         self._sampler = Sampler.from_ensemble(ensemble,
-                                              temperature=1000,
+                                              temperature=5000,
                                               nwalkers=1)
         self._processor = self._ensemble.processor
 
 
+# Not used in release version.
 class SemigrandmcHandler(MCHandler):
     """
     Charge neutral semigrand canonical ensemble.
     """
     def __init__(self, ce, sc_mat, chemical_potentials,
                  gs_occu=None,
-                 anneal_series=[3200, 1600, 800, 400, 200, 100, 50],
+                 anneal_series=[5000, 3200, 1600, 800, 400, 100],
                  unfreeze_series=[500, 1500, 5000],
-                 n_runs_sa=400,
-                 n_runs_unfreeze=1000,
+                 n_runs_sa=300,
+                 n_runs_unfreeze=600,
                  **kwargs):
         """
         Args:
@@ -370,3 +371,16 @@ class SemigrandmcHandler(MCHandler):
                                               nwalkers=1,
                                               temperature=1000)
         self._processor = self._ensemble.processor
+
+
+def mchandler_factory(mchandler_name, *args, **kwargs):
+    """Create a MCHandler with given name.
+
+    Args:
+        mchandler_name(str):
+            Name of a MCHandler class.
+        *args, **kwargs:
+            Arguments used to intialize the class.
+    """
+    name = mchandler_name.capitalize() + 'Handler'
+    return derived_class_factory(name, MCHandler, *args, **kwargs)

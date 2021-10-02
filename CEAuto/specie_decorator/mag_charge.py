@@ -1,9 +1,10 @@
-__author__='Fengyu Xie'
+"""For charge assignment.
 
-"""
-For charge assignment, charges will be assigned by magnitudes of magnetization
+Charges will be assigned by magnitudes of magnetization
 vectors.
 """
+
+__author__='Julia Yang, Fengyu Xie'
 
 from pymatgen.core import Structure
 from pymatgen.core.periodic_table import Element, Specie, DummySpecies
@@ -38,7 +39,7 @@ def get_section_id(x, cuts):
     return sorted(cuts.copy() + [x]).index(x)
 
 
-class MagChargeDecorator(BaseDecorator):
+class MagchargeDecorator(BaseDecorator):
     """
     Assign charges from magnitudes of magentic moments. Partition dividers
     will be initialized by a mixture of gaussians model, then optimized with

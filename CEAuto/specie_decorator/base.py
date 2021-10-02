@@ -11,6 +11,7 @@ a new class Assignment class, and write assignment methods accordingly.
 from abc import ABC, abstractmethod
 from monty.json import MSONable
 
+from ..utils.class_utils import derived_class_factory
 
 def decorate_single_structure(s, decor_keys, decor_values):
     """
@@ -61,7 +62,7 @@ def decorate_single_structure(s, decor_keys, decor_values):
         sp_new._properties = other_props
         species_new.append(sp_new)
 
-    return Structure(s.lattice,species_new,s.frac_coords)
+    return Structure(s.lattice, species_new, s.frac_coords)
 
 
 class BaseDecorator(ABC,MSONable):
@@ -169,3 +170,16 @@ class BaseDecorator(ABC,MSONable):
     @abstractmethod
     def from_dict(cls,d):
         return
+
+
+def decorator_factory(decorator_name, *args, **kwargs):
+    """Create a species decorator with given name.
+
+    Args:
+        decorator_name(str):
+            Name of a BaseDecorator subclass.
+        *args, **kwargs:
+            Arguments used to intialize the class.
+    """
+    name = decorator_name.capitalize() + 'Decorator'
+    return derived_class_factory(name, BaseDecorator, *args, **kwargs)

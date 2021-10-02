@@ -25,6 +25,7 @@ class BaseWriter(ABC):
     Note: Use get_calc_writer method in InputsWrapper to get any Writer object,
           or auto_load.
           Direct init not recommended!
+          Also check your TimeKeeper before writing or submitting tasks!
     """
     def __init__(self, writer_strain=[1.05,1.03,1.01], ab_setting={},
                  **kwargs):
@@ -41,11 +42,11 @@ class BaseWriter(ABC):
         self.strain = writer_strain
         self.ab_setting = ab_setting
 
-    def write_tasks(self,strs_undeformed,entry_ids,*args,**kwargs):
-        """
-        Write input files or push data to fireworks launchpad.
-        Will check status and see if writing is required.
-        Inputs:
+    def write_tasks(self, strs_undeformed, entry_ids,
+                    *args, **kwargs):
+        """Write input files or push data to fireworks launchpad.
+
+        Args:
             strs_undeformed(List of Structure):
                 Structures in original lattice.(Not deformed.)
             entry_ids(List of ints):
@@ -54,30 +55,24 @@ class BaseWriter(ABC):
                 Must be provided.       
         No return value.
         """
-        for eid,str_undef in zip(entry_ids,structures_undeformed):
-            self._write_single(str_undef,eid,*args,**kwargs)
+        for eid,str_undef in zip(entry_ids, structures_undeformed):
+            self._write_single(str_undef, eid, *args, **kwargs)
 
     @abstractmethod
-    def _write_single(self,structure,eid,*args,**kwargs):
+    def _write_single(self, structure, eid, *args, **kwargs):
         return
 
     def write_df_entree(self, data_manager):
-        """
-        Automatically detect uncomputed entree, writes the entree, and 
-        updates the status in the fact table.
- 
-        No return value. The updated datamanager will be flushed!
+        """Detect and write uncomputed entree.
+
+        No return value. Will update data_manager.fact_table.calc_status.
         Args:
             data_manager(DataManager):
                 An interface to previous calculation and enumerated 
                 data.
         Return: 
-            Data manager after change.
+            Data manager, after status update.
         """
-        if data_manager.schecker.after("write"):
-            print("**Writing already finished in current iteration {}."
-                  .format(data_manager.schecker.cur_iter_id))
-            return
 
         eids = data_manager.get_eid_w_status('NC')
 
@@ -86,7 +81,7 @@ class BaseWriter(ABC):
 
         strs_undeformed = fact_w_strs.loc[filt_,'ori_str']
 
-        self.write_tasks(strs_undeformed,eids)
+        self.write_tasks(strs_undeformed, eids)
 
         data_manager.set_status(eids,'CC')
         # Set status to 'computing'

@@ -11,18 +11,16 @@ from .base import BaseEstimator
 
 
 class LassoEstimator(BaseEstimator):
-    """
-    Lasso Estimator implemented with cvxpy.
-    """
+    """Lasso Estimator implemented with cvxpy."""
 
     def __init__(self):
         super().__init__()
 
     def fit(self, feature_matrix, target_vector, sample_weight=None,\
             mu=None, log_mu_ranges=[(-3,6)], log_mu_steps = [8]):
-        """
-        Fit the estimator. If mu not given, will optimize it.
-        Inputs:
+        """Fit the estimator. If mu not given, will optimize it.
+
+        Args:
             feature_matrix(2d ArrayLike, n_structures*n_bit_orbits):
                 Feature matrix of structures.
             target_vector(1d ArrayLike):

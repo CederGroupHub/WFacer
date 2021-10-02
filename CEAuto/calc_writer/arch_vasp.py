@@ -45,7 +45,8 @@ class ArchvaspWriter(BaseWriter):
                  is_metal=False,
                  ab_setting={},
                  **kwargs):
-        """
+        """Initialize.
+
         Args: 
             path(str):
                 path to the calculation archieve.
@@ -78,7 +79,7 @@ class ArchvaspWriter(BaseWriter):
         if not os.path.isdir(epath):
             os.makedirs(epath)
 
-        #Apply a slight deformation.
+        # Apply a slight deformation.
         strain = np.array(self.strain)
         if strain.shape == (3, ):
             strain = np.diag(strain)

@@ -23,47 +23,54 @@ class TimeKeeper(MSONable):
 
     Returns current iteration number and the last completed module
     from the dataframes and the history.
-
-    You may not need to directly initialize this.
     """
-    # CEAuto modules in their cycle order
-    # calc includes calc_reader, calc_writer, calc_manager;
-    # gs includes gs_check, gs_solve
-    # GS considered as the first module in an iteration(except for
-    # iteration 0, the first one).
 
-    modules = ['gs', 'enum', 'write', 'calc', 'feat', 'fit']
+    modules = ['enum', 'write', 'calc', 'feat', 'fit', 'check']
+    # Check module may include ground state generation
+    # (canonical or grand canonical) in the future.
 
-    def __init__(self, cur_iter_id=0, last_completed_module='gs'):
+    def __init__(self, cursor=0):
         """Initialize TimeKeeper.
 
         Args:
-           cur_iter_id(int):
-             Index of the current CE iteration. Default to 0.
-           last_completed_module(str):
-             Name of the last completed module. Default to 'gs'.
+           cursor(int):
+               Cursor pointing to the NEXT tast to do in 
+               workflow. Default is 0, which it starts.
         """
-        if last_completed_module not in self.modules:
-            raise ValueError("{} is not a valid CEAuto module!"
-                             .format(last_completed_module))
-
-        self._cur_iter_id = cur_iter_id
-        self._last_completed_module = last_completed_module
+        self._cursor = cursor
 
     @property
-    def cur_iter_id(self):
-        """Current iteration id."""
-        return self._cur_iter_id
+    def cursor(self):
+        """Interger cursor state.
+
+        Note: last status of the cursor is the NEXT task TO DO!
+        which means if you resume broken workflow, you need to start
+        from the exact task which this cursor is pointing at!
+        """
+        return self._cursor
+
+    @cursor.setter
+    def cursor(self, c):
+        """Setter method for cursor."""
+        if c < 0:
+            raise ValueError("Cursor value can't be negative!")
+
+        self._cursor = c
 
     @property
-    def last_completed_module(self):
-        """Last completed module."""
-        return self._last_completed_module
+    def iter_id(self):
+        """Iteration id at cursor state."""
+        return self.cursor // len(self.modules)
+
+    @property
+    def next_module_todo(self):
+        """Name of the next module to do."""
+        return self.modules[self.cursor % len(self.modules)]
 
     @staticmethod
     def check_data_status(sc_df=None, comp_df=None, fact_df=None,
                           history=[]):
-        """Get the current iteration index and the last completed module.
+        """Get the cursor state from dataframes and history.
 
         Args:
             sc_df(pd.DataFrame):
@@ -76,12 +83,11 @@ class TimeKeeper(MSONable):
                 History ce written in dict. Default None.
 
         Returns:
-            int, str
+            int, the next cursor state to compute.
         """
-        # 0, gs is the beginning status of a time keeper.
         if (len(sc_df) == 0 or len(comp_df) == 0 or len(fact_df) == 0
             or sc_df is None or comp_df is None or fact_df is None):
-            return 0, 'gs'
+            return 0
         # No previous sample, or any data frame is damaged.
 
         max_iter_id = fact_df.iter_id.max()
@@ -91,35 +97,43 @@ class TimeKeeper(MSONable):
         last_df = fact_df[filt_]
         
         # pd.Series must be converted to list before checking 'in'.
+        # enum and check are the only 2 modules that may generate
+        # new entree.
         if 'NC' in last_df.calc_status.tolist():
             last_nc_df = last_df[last_df.calc_status == 'NC']
-            if 'enum' in last_nc_df.module:
-                return max_iter_id, 'enum'
-            elif 'gs' in last_nc_df.module:
-                return max_iter_id, 'gs'
+            if 'enum' in last_nc_df.module.tolist():
+                return (max_iter_id * len(self.modules) +
+                        self.modules.index('enum') + 1)
+            elif 'check' in last_nc_df.module.tolist():
+                return (max_iter_id * len(self.modules) +
+                        self.modules.index('check') + 1)
             else:
-                raise ValueError("Module other than enumerator or gs "+
-                                 "solver appeared.")
+                raise ValueError("Module other than enumerator or gs " +
+                                 "solver inserted entree.")
 
         if 'CC' in last_df.calc_status.tolist():
-            return max_iter_id, 'write'
+            return (max_iter_id * len(self.modules) +
+                    self.modules.index('write') + 1)
 
         if 'CL' in last_df.calc_status.tolist():
-            return max_iter_id, 'calc'
+            return (max_iter_id * len(self.modules) +
+                    self.modules.index('calc') + 1)
 
         if (len(history) < max_iter_id or
             len(history) > max_iter_id + 1):
             raise ValueError("History record broken! "+
                              "Currently at iteration {}, "
                              .format(max_iter_id)+
-                             "but only {} history steps found!"
+                             "but {} history steps found!"
                              .format(len(history)))
 
         if len(history) == max_iter_id:
-            return max_iter_id, 'feat'
+            return (max_iter_id * len(self.modules) +
+                    self.modules.index('feat') + 1)
 
         if len(history) == max_iter_id + 1:
-            return max_iter_id + 1, 'fit'
+            return (max_iter_id * len(self.modules) +
+                    self.modules.index('fit') + 1)
 
     def set_to_data_status(self, sc_df=None, comp_df=None, fact_df=None,
                            history=[]):
@@ -139,19 +153,21 @@ class TimeKeeper(MSONable):
               called frequently. You should only use this when DataManager
               clears all data from some iterations.
         """
-        iter_id, module = self.check_data_status(sc_df=sc_df, comp_df=comp_df,
-                                                 fact_df=fact_df,
-                                                 history=history)
-        if (iter_id != self.cur_iter_id or
-            module != self.last_completed_module):
-            warnings.warn("Status inicated by dataframes: {}, {};"
+        c = self.check_data_status(sc_df=sc_df, comp_df=comp_df,
+                                   fact_df=fact_df,
+                                   history=history)
+
+        if c != self.cursor:
+            iter_id = c // len(self.modules)
+            module = self.modules[c % len(self.modules)]
+            warnings.warn("Next indicated by dataframes: {}, {};"
                           .format(iter_id, module) +
-                          " Status of time keeper: {}, {};"
-                          .format(self.cur_iter_id,
-                                  self.last_completed_module) +
+                          " Next by this time keeper: {}, {};"
+                          .format(self.iter_id,
+                                  self.next_module_todo) +
                           " Resetting time keeper.")
-            self._cur_iter_id = iter_id
-            self._last_completed_module = _last_completed_module
+
+        self.cursor = c
 
     def set_to_file_status(self,
                            sc_file=SC_FILE,
@@ -160,6 +176,7 @@ class TimeKeeper(MSONable):
                            ce_history_file=CE_HISTORY_FILE):
         """Set to status indicated by data files.
 
+        Recommend not to use this unless timekeeper is broken.
         Args:
            sc_file(str):
              Path to sc table. Default set in config_paths.json.
@@ -178,44 +195,41 @@ class TimeKeeper(MSONable):
 
         history = d['history']
 
-        return self.get_iter_id_last_module(sc_df, comp_df, fact_df,
-                                            history)
+        self.set_to_data_status(sc_df, comp_df, fact_df, history)
 
-    def before(self, module_name):
-        """Check if the specified module has NOT completed in current iter.
+    def todo(self, module_name):
+        """Check if the specified module has not been done in current iter.
 
-        Args:
-            module_name(str):
-                name of the module to check.
-        """
-        if self.cur_iter_id == 0 and self.last_completed_module == 'gs':
-            return True
-
-        return (self.modules.index(self.last_completed_module) < 
-                self.modules.index(module_name))
-
-    def after(self, module_name):
-        """Check if the specified module has completed in current iter.
+        If it is not done yet, we can still run it in the current iteration.
 
         Args:
             module_name(str):
                 name of the module to check.
         """
-        return (not self.before(module_name))
+        mid = self.modules.index(module_name)
+
+        return self.cursor % len(self.modules) <= mid
+
+    def done(self, module_name):
+        """Check if the specified module has been done in current iter.
+
+        Args:
+            module_name(str):
+                name of the module to check.
+        """
+        return (not self.todo(module_name))
 
     def advance(self, n_modules=1):
         """Advance number of modules for the time keeper.
+
+        It is recommended you auto_save immediately after an
+        advance.
 
         Args:
             n_modules(int):
               Number of modules to advance. Default is 1 module.
         """
-        last_module_id = self.modules.index(self.last_completed_module)
-        next_module_id = (last_module_id + n_modules) % len(self.modules)
-        iter_advance = (last_module_id + n_modules) // len(self.modules)
-
-        self._last_completed_module = self.modules[next_module_id]
-        self._cur_iter_id += iter_advance
+        self.cursor = self.cursor + n_modules
 
     def as_dict(self):
         """Serialize into dict.
@@ -223,8 +237,7 @@ class TimeKeeper(MSONable):
         Returns:
             Dict.
         """
-        return {'cur_iter_id': self.cur_iter_id,
-                'last_completed_module': self.last_completed_module,
+        return {'cursor': self.cursor,
                 '@module': self.__class__.__module__,
                 '@class': self.__class__.__name__}
 
@@ -239,8 +252,7 @@ class TimeKeeper(MSONable):
         Return:
             TimeKeeper.
         """
-        return cls(d.get('cur_iter_id', 0),
-                   d.get('last_completed_module', 'gs'))
+        return cls(d.get('cursor', 0))
 
     def auto_save(self, time_keeper_file=TIME_KEEPER_FILE):
         """Automatically save to time keeper file.
@@ -265,7 +277,10 @@ class TimeKeeper(MSONable):
         Return:
             TimeKeeper.
         """
-        with open(time_keeper_file, 'r') as fin:
-            d = json.load(fin)
+        if os.path.isfile(time_keeper_file):
+            with open(time_keeper_file, 'r') as fin:
+                d = json.load(fin)
+        else:
+            d = {}  # Set a 0 cursor.
 
         return cls.from_dict(d)

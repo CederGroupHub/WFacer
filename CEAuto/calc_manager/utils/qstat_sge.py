@@ -1,45 +1,54 @@
-"""Parse qstat output of SGE."""
+"""Parse qstat output of SGE.
+
+Copied from qstat implementation by Sebastian Achim Mueller:
+git@github.com:relleums/qstat.git
+"""
+__author__ = "Sebastian Achim Mueller"
+
 
 import subprocess as sp
 import xmltodict
-
+import warnings
 
 def qstat(qstat_path='qstat', xml_option='-xml'):
-    """
-    Parameters
-    ----------
-    qstat_path : string
-        The path to the qstat executable.
+    """Parse qstat output of SunGridEngine.
 
-    Returns
-    -------
-    queue_info : list
-        A list of jobs in 'queue_info'. Jobs are dictionaries with both string 
-        keys and string names.
-    job_info : list
+    Args:
+    qstat_path(str) :
+        The path to the qstat executable.
+    xml_option(str) :
+        Option to qstat command to generate an xml output.
+
+    Returns:
+    queue_info(list) :
+        A list of jobs in 'queue_info'.
+        Jobs are dictionaries with both str keys and str names.
+    job_info(list) :
         A list of jobs in 'job_info'.
     """
-    xml = qstat2xml(qstat_path=qstat_path)
+    xml = qstat2xml(qstat_path=qstat_path, xml_option=xml_option)
     return xml2queue_and_job_info(xml)
 
 
 def qstat2xml(qstat_path='qstat', xml_option='-xml'):
-    """
-    Parameters
-    ----------
-    qstat_path : string
-        The path to the qstat executable.
+    """Convert qstat output to xml.
 
-    Returns
-    -------
-    qstatxml : string
+    Args:
+    qstat_path(str):
+        The path to the qstat executable.
+    xml_option(str) :
+        Option to qstat command to generate an xml output.
+
+    Returns:
+    qstatxml(str) :
         The xml stdout string of the 'qstat -xml' call.
     """
     try:
-        qstatxml = sp.check_output([qstat_path, xml_option], stderr=sp.STDOUT)
+        qstatxml = sp.check_output([qstat_path, xml_option],
+                                   stderr=sp.STDOUT)
     except sp.CalledProcessError as e:
-        print('qstat returncode:', e.returncode)
-        print('qstat std output:', e.output)
+        warnings.warn('qstat returncode:', e.returncode)
+        warnings.warn('qstat std output:', e.output)
         raise
     except FileNotFoundError as e:
         e.message = ('Maybe "' + qstat_path + ' ' +
@@ -49,21 +58,21 @@ def qstat2xml(qstat_path='qstat', xml_option='-xml'):
 
 
 def xml2queue_and_job_info(qstatxml):
-    """
-    Parameters
-    ----------
-    qstatxml : string
+    """Convert xml output to job_info dict.
+
+    Args:
+    qstatxml(str) :
         The xml string of the 'qstat -xml' call.
 
-    Returns
-    -------
-    queue_info : list
+    Returns:
+    queue_info(list) :
         A list of jobs in 'queue_info'. Jobs are dictionaries with both string 
         keys and string names.
-    job_info : list
+    job_info(list) :
         A list of jobs in 'job_info'.
     """
     x = xmltodict.parse(qstatxml)
+
     queue_info = x["job_info"]["queue_info"]
     job_info = x["job_info"]["job_info"]
     queue_dicts = []

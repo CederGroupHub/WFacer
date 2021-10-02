@@ -1,6 +1,6 @@
-__author__ = 'Fengyu Xie'
-
 """Featurization module. Extracts feature vectors and scalar properties."""
+
+__author__ = 'Fengyu Xie'
 
 import pandas as pd
 import numpy as np
@@ -19,87 +19,66 @@ from smol.cofe.space.domain import get_allowed_species, Vacancy
 from smol.cofe import ClusterSubspace, ClusterExpansion
 from smol.cofe.extern.ewald import EwaldTerm
 
-from .specie_decorator import *
+from .specie_decorator import decorator_factory
 from .data_manager import DataManager
-from .calc_reader import *
 
 from .utils.serial_utils import decode_from_dict
-
-from .config_paths import *
-
 
 class Featurizer(MSONable):
     """Featurization of calculation results.
 
     Direct initialization is not recommended.
     """
-
-    def __init__(self, prim, data_manager, calc_reader,
-                 bits=None, sublat_list=None, is_charged=False,
-                 previous_ce=None, decorators=[], other_props=[]):
+    def __init__(self, data_manager, history_wrapper,
+                 decorators=None):
         """Initialize Featurizer.
-        Args:
-            prim(Structure):
-                primitive cell of the structure to do cluster expansion on.
-            data_manager(DataManager):
-                The database manager class to use for this instance.
-            calc_reader(BaseCalcReader):
-                Calculation reader, depends on your selected CalcWriter
-                and CalcManager type.
-            bits(List[List[Specie]]):
-                Occupying species on each sublattice. Vacancy() should be
-                included.
-            sublat_list(List of lists on ints):
-                Stores primitive cell indices of sites in the same sublattices.
-                If none, sublattices will be automatically generated.
-            is_charged(Boolean):
-                If true, will do charged cluster expansion.
-            previous_ce(smol.cofe.ClusterExpansion):
-                A previous cluster expansion. By default, is None. If this is
-                given, will featurize based on this cluster expansion indstead.
-            decorators(List of .specie_decorator.Decorator objects):
-                Decorators names called before mapping into feature vectors.
-                For example, if we do cluster expansion with charge, since vasp
-                calculated structures does not mark charges, we have to assign
-                charges to atoms before mapping.
-                All items in this list must be a class in .decorator. 
-                If multiple decorators are given, decorations will be
-                done in the order of this list.
-                If None given, will check with prim, and see whether
-                decorations are needed. If decorations are needed, but no
-                decorator is given, will return an error. If multiple
-                decorators are given on the same decoration type, for example,
-                charge decoration by magnetization or bader charge, only the
-                first one in list will be used.
-                This duplication is not checked before model training and
-                assignment, so you must check them on your own to avoid
-                additional training cost.
-                Currently, we only support optimized charge decoration from
-                site magnetic moments.
-            other_props(List of str):
-                Calculated properties to extract for expansion. Currently
-                none of other proerties than 'e_prim' is supported. You can
-                add your own properties extractors in calc_reader classes.
-                This class does not check whether a property name is allowed. 
-                If not, error messages will be given by calc_reader class.
-                Check calc_reader docs for detail.
-                Any physical quantity will always be normalized by supercell
-                size!
-        """
 
-        self.prim = prim
-        self.bits = bits
-        self.sublat_list = sublat_list
+        Args:
+            data_manager(DataManager):
+                The datamanager object to socket enumerated data.
+            history_wrapper(HistoryWrapper):
+                Wrapper containing previous CE fits.
+            decorators(List[SpecieDecorator]):
+                A list of specie decorators to use. If None, will
+                initialize from options.
+        """
+        self._dm = data_manager
+        self.prim = self.inputs_wrapper.prim
+        self.bits = self.inputs_wrapper.bits
+        self.sublat_list = self.inputs_wrapper.sublat_list
         self.sl_sizes = [len(sl) for sl in self.sublat_list]
 
-        self.ce = previous_ce
+        self.ce = history_wrapper.last_ce
 
         # Handling specie decoration types.
-        self._decorators = decorators           
+        if decorators is None:
+            d_types = (self.inputs_wrapper
+                       .featurizer_options['decorator_types'])
+            d_args = (self.inputs_wrapper
+                      .featurizer_options['decorator_args'])
+            decorators = [decorator_factory(d_type, **d_args)
+                          for d_type, d_arg in zip(d_types, d_args)]
+                
+        self._decorators = decorators
 
-        self.other_props = other_props
-        self._dm = data_manager
-        self._reader = calc_reader
+        self.other_props = (self.inputs_wrapper
+                            .featurizer_options['other_props'])
+        self._reader = self.inputs_wrapper.calc_reader
+
+    @property
+    def inputs_wrapper(self):
+        """InputsWrapper for project."""
+        return self._dm._iw
+
+    @property
+    def data_manager(self):
+        """DataManager for project."""
+        return self._dm
+
+    @property
+    def decorators(self):
+        """Species decorators to use."""
+        return self._decorators
 
     @property
     def sc_df(self):
@@ -125,42 +104,39 @@ class Featurizer(MSONable):
     def featurize(self):
         """Load and featurize the fact table with vasp data.
 
-        Will check previous CE flow status. If already featurized in this
-        iteration, will not featurize again.
+        Check your TimeKeeper and don't dupe run this module!
         """
-        if self._dm.schecker.after('feat'):
-            warnings.warn("**Featurization already done in iteration {}."
-                          .format(self._dm.schecker.cur_iter_id))
-            return
-
         sc_df = self.sc_df.copy()
         fact_table = self.fact_df.copy()
-        calc_reader = self.calc_reader        
+        calc_reader = self.calc_reader
 
         logging.log("**Running featurization.")
-        # Loading and decoration. If decorators not trained, train decorator.
-        eid_unassigned = fact_table[fact_table.calc_status == 'CL'].entry_id
-        # Check computation status, returns converged and failed indices.
-        success_ids, fail_ids = (calc_reader.
-                                 check_convergence_status(entry_ids =
-                                 eid_unassigned))
-        logging.log('**{}/{} converged computations in the last run.'
-                    .format(len(success_ids), len(fact_unassigned)))
 
-        fact_table.loc[fact_table.entry_id.isin(fail_ids),'calc_status'] = 'CF'
+        # Loading and decoration. If decorators not trained, train decorator.
+        eids_unassigned = fact_table[fact_table.calc_status == 'CL'].entry_id
+        # Check computation status, returns converged and failed indices.
+        status = calc_reader.check_convergence_status(entry_ids=
+                                                      eids_unassigned)
+        success_ids = eids_unassigned[np.array(status)]
+        fail_ids = eids_unassigned[~np.array(status)]
+        logging.log('**{}/{} converged computations in the last run.'
+                    .format(len(success_ids), len(eids_unassigned)))
+
+        fact_table.loc[fact_table.entry_id.isin(fail_ids),
+                       'calc_status'] = 'CF'
 
         fact_unassigned = (fact_table[fact_table.calc_status == 'CL']
-                           .merge(sc_table, how = 'left',on = 'sc_id'))
+                           .merge(sc_table, how='left', on='sc_id'))
 
         # Loading structures
         structures_unassign = (calc_reader.
                                load_structures(entry_ids =
                                                fact_unassigned.entry_id))
-       
+
         # Loading properties and doing decorations
-        if len(self._decorators) > 0:
+        if len(self.decorators) > 0:
             decorations = {}
-            for decorator in self._decorators:
+            for decorator in self.decorators:
                 decor_inputs = (calc_reader.
                                 load_properties(entry_ids=
                                                 fact_unassigned.entry_id,
@@ -174,7 +150,7 @@ class Featurizer(MSONable):
 
                 decoration = decorator.assign(structures_unassign,
                                               decor_inputs)
-                for prop_name,vals in decoration.items():
+                for prop_name, vals in decoration.items():
                     # Duplicacy removed here!
                     if prop_name not in decorations:
                         decorations[prop_name] = vals
@@ -202,17 +178,18 @@ class Featurizer(MSONable):
         fact_unmaped = (fact_table[fact_table.calc_status == 'CL']
                         .merge(sc_table, how='left', on='sc_id'))
 
-        warnings.warn('**{}/{} successful decorations.'
-                      .format(len(fact_unmaped), len(fact_unassigned)))
+        logging.log('**{}/{} successful decorations.'
+                    .format(len(fact_unmaped), len(fact_unassigned)))
 
         # Feature vectors.
         eid_map_fails = []
         occus_mapped = []
         corrs_mapped = []
-        for eid, s_unmap, mat in
-          zip(fact_unmaped.entry_id, structures_unmaped, fact_unmaped.matrix):
+        for eid, s_unmap, mat in zip(fact_unmaped.entry_id,
+                                     structures_unmaped,
+                                     fact_unmaped.matrix):
             try:
-                #occupancies must be encoded
+                # occupancies must be encoded
                 occu = (self.ce.cluster_subspace.
                         occupancy_from_structure(s_unmap, scmatrix=mat,
                                                  encode=True))
@@ -240,8 +217,7 @@ class Featurizer(MSONable):
 
         logging.log("**{}/{} successful mappings in the last run."
                     .format(len(occus_mapped), len(fact_unmaped)))
-        logging.log("**Featurization finished. Iter number: {}"
-                    .format(self._dm.schecker.cur_iter_id))
+        logging.log("**Featurization finished.")
 
         self._dm._fact_df = fact_table.copy()
 
@@ -288,64 +264,4 @@ class Featurizer(MSONable):
 
         self._dm._fact_df = fact_table.copy()
 
-    def auto_save(self, sc_file=SC_FILE, comp_file=COMP_FILE,
-                  fact_file=FACT_FILE, decor_file=DECOR_FILE):
-        """Save data in object.
-
-        All paths optional, but I don't recommend to change.
-        """
-        self._dm.auto_save(sc_file=sc_file, comp_file=comp_file,
-                           fact_file=fact_file)
-
-        with open(decor_file, 'w') as fout:
-            decorator_dicts = [decorator.as_dict()
-                               for decorator in self._decorators]
-            json.dump(decorator_dicts, fout)
-
-    @classmethod
-    def auto_load(cls, data_manager,
-                  options_file=OPTIONS_FILE,
-                  decor_file=DECOR_FILE,
-                  ce_history_file=CE_HISTORY_FILE):
-        """Load object. Recommended initialization.
-
-        Change of paths not recommended unless specifically needed.
-        Args:
-            data_manager(DataManager):
-                A DataManager object to read and write when featurizing.
-            options_file(str):
-                Path to options file. Options must be stored as yaml format.
-                Default: 'options.yaml'
-            decor_file(str):
-                Decorators data file. Optional, default: 'decors.json'.
-            ce_history_file(str):
-                Path to cluster expansion history file.
-                Default: 'ce_history.json'
-        Returns:
-             Featurizer object.
-        """
-        options = InputsWrapper.auto_load(options_file=options_file,
-                                          ce_history_file=ce_history_file)
-
-        if os.path.isfile(decor_file):
-            with open(decor_file) as fin:
-                decor_dicts = json.load(fin)
-                decorators = [decode_from_dict(d) for d in decor_dicts]
-        else:
-            decorators_types = options.featurizer_options['decorators_types']
-            decorators_args = options.featurizer_options['decorators_args']
-
-            decorators = [globals()[name](**args) for name, args in
-                          zip(decorators_types, decorators_args)]
-
-        reader = options.calc_reader
-
-        return cls(options.prim,
-                   bits=options.bits,
-                   sublat_list=options.sublat_list,
-                   is_charged=options.is_charged_ce,
-                   previous_ce=options.last_ce,
-                   other_props=options.featurizer_options['other_props'],
-                   decorators=decorators,
-                   data_manager=data_manager,
-                   calc_reader=reader)
+# Does not autosave or autoload.

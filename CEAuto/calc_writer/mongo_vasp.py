@@ -6,6 +6,7 @@ __author__ = "Fengyu Xie"
 
 import os
 import itertools
+import logging
 
 from pymatgen.io.vasp.sets import (MPRelaxSet, MPMetalRelaxSet,
                                    MPStaticSet)
@@ -31,7 +32,7 @@ def wf_ce_sample(structure, entry_id, root_name=None, is_metal=False,
             set to name of the current directory.
         is_metal(Boolean):
             If true, will use vasp parameters specific to metallic
-            computations.
+            computations. Default to False.
         relax_set_params(dict):
             A dictionary specifying other parameters to overwrite in
             optimization vasp input set.
@@ -40,13 +41,13 @@ def wf_ce_sample(structure, entry_id, root_name=None, is_metal=False,
             static vasp input set.
         kwargs contains other paramters you wish to pass into the returned
         workflow object.
-    Output:
-        A Workflow object, containing optimization-static calculation of
+    Return:
+        Workflow: containing optimization-static calculation of
         a single structure in cluster expansion pool.
     """
     # Current folder name will be used to mark calculation entree!
     root_name = root_name or os.path.split(os.getcwd())[-1]
-    entry_name = 'ce_{}_{}'.format(root_name,entry_id)
+    entry_name = 'ce_{}_{}'.format(root_name, entry_id)
     opt_setting = relax_set_params or {}
     sta_setting = static_set_params or {}
 
@@ -95,7 +96,8 @@ class MongovaspWriter(BaseWriter):
                  is_metal=False,
                  ab_setting={},
                  **kwargs):
-        """
+        """Initialize.
+
         Args:
             lp_file(str):
                 path to launchpad setting file. Default to None, then
@@ -133,7 +135,7 @@ class MongovaspWriter(BaseWriter):
 
         if strain.shape != (3,3):
             raise ValueError("Incorrect strain format.")
-           
+
         relax_set_params = self.ab_setting.get('relax', {})
         static_set_params = self.ab_setting.get('static', {})
 
@@ -143,7 +145,7 @@ class MongovaspWriter(BaseWriter):
                           is_metal=self.is_metal,
                           relax_set_params=relax_set_params,
                           static_set_params=static_set_params,
-                          **kwargs)      
+                          **kwargs)
 
         # Check duplicacy. If any duplicacy occurs, will OVERWRITE
         # and re-run!
@@ -162,5 +164,5 @@ class MongovaspWriter(BaseWriter):
             self._lpad.delete_wf(dupe_fw_ids[0])
 
         self._lpad.add_wf(wf)
-        print("****Calculation workflow loaded to launchpad for entry: {}."
-              .format(eid))
+        logging.log("****Calculation workflow loaded to launchpad for " +
+                    "entry: {}.".format(eid))
