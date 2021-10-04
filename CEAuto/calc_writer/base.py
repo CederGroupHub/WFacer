@@ -3,6 +3,9 @@ Base calculation writer class.
 """
 __author__ = "Fengyu Xie"
 
+import logging
+log = logging.getLogger(__name__)
+
 from ..config_paths import *
 from ..utils.class_utils import derived_class_factory
 
@@ -55,6 +58,7 @@ class BaseWriter(ABC):
                 Must be provided.       
         No return value.
         """
+        log.critical("**Writing {} DFT calculations.".format(len(entry_ids)))
         for eid,str_undef in zip(entry_ids, structures_undeformed):
             self._write_single(str_undef, eid, *args, **kwargs)
 

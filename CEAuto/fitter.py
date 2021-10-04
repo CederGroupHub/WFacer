@@ -4,23 +4,19 @@ THIS MODULE WILL NOT WRITE FACT TABLE!
 """
 __author__ = 'Fengyu Xie'
 
-import numpy as np
-import pandas as pd
-import json
-from monty.json import MSONable
-import warnings
-import matplotlib.pyplot as plt
+import logging
+log = logging.getLogger(__name__)
 
-from smol.cofe import ClusterExpansion
+import numpy as np
+
 from smol.cofe.wrangling.tools import (weights_energy_above_composition,
                                        weights_energy_above_hull)
 
 # Will have more regressions when they are published.
 from .regression import OLSEstimator, LassoEstimator
-from .data_manager import DataManager
 
 
-class CEFitter(MSONable):
+class CEFitter:
     """Cluster expansion fitting class."""
 
     supported_weights = ('unweighted', 'e_above_hull', 'e_above_comp')
@@ -99,6 +95,7 @@ class CEFitter(MSONable):
         No return value. Only fits and stores energy cluster expansion.
         Check your TimeKeeper, and don't dupe run modules in one cycle!
         """
+        log.critical("**Fitting new CE model.")
         fact_df = self.fact_df.copy()
 
         fact_avail = fact_df[fact_df.calc_status == 'SC']
@@ -143,4 +140,5 @@ class CEFitter(MSONable):
 
         self._hw.update({"coefs": _coefs, "cv": _cv, "rmse": _rmse})
 
+        log.critical("**CE model updated.")
 # Will not load and save these.

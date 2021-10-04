@@ -1,17 +1,23 @@
-__author__='Fengyu Xie'
+"""Generic propertie decorator class.
 
-"""
-This file defines a generic propertie assigner class to assign properties 
-to undecorated species, and returns their decorated forms.
+This assign properties to undecorated pymatgen.Element,to make them Species,
+with charge and other properties.
 
 Possible decorations includes charge (most commonly used), spin polarization.
 If the user wishes to define other properties assignment methods, just derive
 a new class Assignment class, and write assignment methods accordingly.
 """
-from abc import ABC, abstractmethod
+
+__author__='Fengyu Xie'
+
+import logging
+log = logging.getLogger(__name__)
+
+from abc import ABCMeta, abstractmethod
 from monty.json import MSONable
 
 from ..utils.class_utils import derived_class_factory
+
 
 def decorate_single_structure(s, decor_keys, decor_values):
     """
@@ -30,14 +36,14 @@ def decorate_single_structure(s, decor_keys, decor_values):
             Charges will be stored in each specie.oxidation_state, while
             other properties will be stoered in specie._properties, if
             allowed by Species class.
-            If any of the properties in the second dimension is None, will
-            return None. (Decoration failed.)
+            Can't be None.
     Returns:
         Pymatgen.Structure: Decorated structure.
     """
     for val in decor_values:
-        if val is None:
-            return None
+        for v in val:
+            assert v is not None
+    # No decoration value can be None.
     
     #transpose to N_sites*N_properties
     decors_by_sites = list(zip(*decor_values))
@@ -50,24 +56,28 @@ def decorate_single_structure(s, decor_keys, decor_values):
             sp_new = DummySpecie(sp.symbol)
         
         other_props = {}
-        for key,val in zip(decor_keys,decors_of_site):
+        for key, val in zip(decor_keys, decors_of_site):
             if key == 'charge':
                 sp_new._oxi_state = val
             else:  # Other properties
                 if key in Species.supported_properties:
                     other_props[key] = val
                 else:
-                    warnings.warn("{} is not a supported pymatgen property."
-                                  .format(key))
+                    log.warning("{} is not a supported pymatgen property."
+                                .format(key))
         sp_new._properties = other_props
         species_new.append(sp_new)
 
-    return Structure(s.lattice, species_new, s.frac_coords)
+    s_decor = Structure(s.lattice, species_new, s.frac_coords)
+    if abs(s_decor.charge) <= max_charge:
+        return s_decor
+    else:
+        return None
 
 
-class BaseDecorator(ABC,MSONable):
-    """
-    Abstract decorator class.
+class BaseDecorator(MSONable, metaclass=ABCMeta):
+    """Abstract decorator class.
+
     Attributes:
         labels_av(Dict{Element: List[int|float]...}):
             A dictionary, specifying the elements, and the labels
@@ -88,11 +98,18 @@ class BaseDecorator(ABC,MSONable):
     # Edit this as you implement new child classes.
     required_props = []
 
-    def __init__(self):
-        pass
+    def __init__(self, labels_table):
+        """Initialize.
 
-    @staticmethod
-    def _get_sites_info_by_element(str_pool, properties):
+        Args:
+           labels_table(dict{str:list}):
+               A table of labels to decorate each site's element.
+               keys are element symbol, values are decoration values,
+               such as oxidation states.
+        """
+        self.labels_table = labels_table
+
+    def _get_sites_info_by_element(self, str_pool, properties):
         """Build catalog of sites information."""
         #flatten all structures, and group by elements.
         sites_by_elements = {e: [] for e in self.labels_table.keys()}
@@ -109,17 +126,19 @@ class BaseDecorator(ABC,MSONable):
     @property
     @abstractmethod
     def trained(self):
-        """
-        Gives whether this decorator is trained or not. If trained, will not be trained
-        again.
+        """Gives whether this decorator is trained or not.
+
+        If trained, will not be trained again.
         """
         return
 
     @abstractmethod
-    def train(self,str_pool,properties,reset=False):
-        """
-        Train a properties assignment model. Model or model parameters
-        should be stored in a property of the object.
+    def train(self, str_pool, properties, reset=False):
+        """Train a properties assignment model.
+
+        Model or model parameters should be stored in a property of the
+        object.
+
         Args:
             str_pool(List[Structure]):
                 Unassigned structures, must contain only pymatgen.Element
@@ -135,9 +154,10 @@ class BaseDecorator(ABC,MSONable):
         return
 
     @abstractmethod
-    def assign(self,str_pool,properties):
-        """
-        Give assignment to structures. If an assigned structure is not valid,
+    def assign(self, str_pool, properties):
+        """Give assignment to structures.
+
+        If an assigned structure is not valid,
         for example, in charge assignment, if an assigned structure is not
         charge neutral, then this structure will be returned as None.
         Args:
@@ -145,12 +165,12 @@ class BaseDecorator(ABC,MSONable):
                 Unassigned structures, must contain only pymatgen.Element
             properties(3D ArrayLike):
                 Numerical properties used to classify sites.
-                Shape should be N_different_proerties*N_strs*N_sites        Returns:
+                Shape should be N_different_proerties*N_strs*N_sites
+        Returns:
             A dictionary, specifying name of assigned properties and their
-            values by structure and by site. If assignment failed for a
-            structure, will give None for it.
+            values by structure and by site.
             For example: 
-            {'charge':[[1,4,2,...],None,[...],...]}
+            {'charge':[[1,4,2,...], [...],...]}
             Currently, in pymatgen.Specie's
             other_properties, only 'spin' is allowed. If you want to add more, do
             your own study!
@@ -161,14 +181,13 @@ class BaseDecorator(ABC,MSONable):
 
     @abstractmethod
     def as_dict(self):
-        """
-        Serialization method. Please save the trained property partition or clustering here.
-        """
+        """Serialization method."""
         return
 
     @classmethod
     @abstractmethod
     def from_dict(cls,d):
+        """Deserialization."""
         return
 
 

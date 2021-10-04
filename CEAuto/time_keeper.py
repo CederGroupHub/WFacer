@@ -6,13 +6,15 @@ No save or load.
 
 __author__ = 'Fengyu Xie'
 
+import logging
+log = logging.getLogger(__name__)
+
 import json
 import pandas as pd
 import os
 from copy import deepcopy
-import warnings
 
-from monty.serialization import MSONable
+from monty.json import MSONable
 
 from .config_paths import *
 from .utils.frame_utils import load_dataframes
@@ -67,8 +69,7 @@ class TimeKeeper(MSONable):
         """Name of the next module to do."""
         return self.modules[self.cursor % len(self.modules)]
 
-    @staticmethod
-    def check_data_status(sc_df=None, comp_df=None, fact_df=None,
+    def check_data_status(self, sc_df=None, comp_df=None, fact_df=None,
                           history=[]):
         """Get the cursor state from dataframes and history.
 
@@ -160,12 +161,12 @@ class TimeKeeper(MSONable):
         if c != self.cursor:
             iter_id = c // len(self.modules)
             module = self.modules[c % len(self.modules)]
-            warnings.warn("Next indicated by dataframes: {}, {};"
-                          .format(iter_id, module) +
-                          " Next by this time keeper: {}, {};"
-                          .format(self.iter_id,
-                                  self.next_module_todo) +
-                          " Resetting time keeper.")
+            log.warning("Next indicated by dataframes: {}, {};"
+                        .format(iter_id, module) +
+                        " Next by this time keeper: {}, {};"
+                        .format(self.iter_id,
+                                self.next_module_todo) +
+                        " Resetting time keeper.")
 
         self.cursor = c
 
@@ -190,10 +191,12 @@ class TimeKeeper(MSONable):
         sc_df, comp_df, fact_df = load_dataframes(sc_file=sc_file,
                                                   comp_file=comp_file,
                                                   fact_file=fact_file)
-        with open(ce_history_file, 'r') as fin:
-            d = json.load(fin)
-
-        history = d['history']
+        if os.path.isfile(ce_history_file):
+            with open(ce_history_file, 'r') as fin:
+                d = json.load(fin)
+            history = d['history']
+        else:
+            history = []
 
         self.set_to_data_status(sc_df, comp_df, fact_df, history)
 
@@ -230,6 +233,10 @@ class TimeKeeper(MSONable):
               Number of modules to advance. Default is 1 module.
         """
         self.cursor = self.cursor + n_modules
+
+    def copy(self):
+        """Deepcopy of TimeKeeper."""
+        return TimeKeeper(self.cursor)
 
     def as_dict(self):
         """Serialize into dict.

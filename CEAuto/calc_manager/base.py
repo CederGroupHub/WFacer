@@ -3,11 +3,13 @@ Base calculation manager class.
 """
 __author__ = "Fengyu Xie"
 
+import logging
+log = logging.getLogger(__name__)
+
 from abc import ABC, abstractmethod
 import numpy as np
 import time
 from datetime import datetime
-import logging
 
 from ..config_paths import *
 from ..utils.class_utils import derived_class_factory
@@ -95,8 +97,8 @@ class BaseManager(ABC):
 
         #set timer
         t_quota = self.time_limit
-        logging.log("**Calculations started at: {}".format(datetime.now()))
-        logging.log("**Number of calculations {}".format(len(entry_ids)))
+        log.critical("**Calculations started at: {}.".format(datetime.now()))
+        log.critical("**Number of calculations {}.".format(len(entry_ids)))
 
         n_checks = 0
         while t_quota>0:
@@ -106,20 +108,20 @@ class BaseManager(ABC):
             status = self.entree_in_queue(entry_ids)
             if not np.any(status): 
                 break          
-            logging.log(">>Time: {}, Remaining(seconds): {}, " +
-                        "{}/{} calculations finished.".
-                        format(datetime.now(), t_quota,
-                               int(np.sum(status)), len(status)))
+            log.debug(">>Time: {}, Remaining(seconds): {}, " +
+                      "{}/{} calculations finished.".
+                      format(datetime.now(), t_quota,
+                             int(np.sum(status)), len(status)))
         
         if t_quota>0:            
-            logging.log("**Calculations finished at: {}."
-                        .format(datetime.now()))
+            log.critical("**Calculations finished at: {}."
+                         .format(datetime.now()))
         else:
             self.kill_tasks()
-            warnings.warn("**Warning: only {}/{} calculations finished "
-                          .format(int(np.sum(status)), len(status)) +
-                          "in time limit {}!".format(self.time_limit) +
-                          " You may want to use a LONGER time limit.")
+            log.warning("**Only {}/{} calculations finished "
+                        .format(int(np.sum(status)), len(status)) +
+                        "in time limit {}!".format(self.time_limit) +
+                        " You may want to use a LONGER time limit.")
 
         return t_quota
 

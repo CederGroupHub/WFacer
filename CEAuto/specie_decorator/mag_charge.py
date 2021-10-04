@@ -6,21 +6,16 @@ vectors.
 
 __author__='Julia Yang, Fengyu Xie'
 
-from pymatgen.core import Structure
-from pymatgen.core.periodic_table import Element, Specie, DummySpecies
-
-from smol.cofe.space.domain import get_species
+import logging
+log = logging.getLogger(__name__)
 
 from .base import BaseDecorator
 
 import numpy as np
 from sklearn.mixture import GaussianMixture
 from skopt import gp_minimize
-from copy import deepcopy
 from functools import partial
-
-import warnings
-import logging
+from copy import deepcopy
 
 def get_section_id(x, cuts):
     """Get index of a section from section cut values.
@@ -85,7 +80,7 @@ class MagchargeDecorator(BaseDecorator):
 
     @property
     def n_params(self):
-        return sum(len(labels)-1 for e, labels in
+        return sum(len(labels) - 1 for e, labels in
                    self.labels_table.items())
 
     def _evaluate_cut_params(self, str_pool, properties, cut_params):
@@ -100,10 +95,7 @@ class MagchargeDecorator(BaseDecorator):
             p_id += len(labels) - 1
 
         oxi_assign = self._assign(str_pool, properties, cuts_by_elements)
-        n_fails = 0
-        for assign in oxi_assign:
-            if assign is None:
-                n_fails += 1
+        n_fails = int(np.sum(np.sum(oxi_assign, axis=-1) != 0))
 
         return n_fails  # To minimize.
 
@@ -113,6 +105,7 @@ class MagchargeDecorator(BaseDecorator):
         cut_params_init = []
         for e, labels in sorted(self.labels_table.items()):
             cut_params_init.extend(cuts_by_elements_init[e])
+            assert len(cuts_by_elements_init[e]) == len(labels) - 1
 
         domains = [(c - search_range, c + search_range)
                    for c in cut_params_init]
@@ -132,9 +125,10 @@ class MagchargeDecorator(BaseDecorator):
         return cuts_by_elements
 
     def train(self, str_pool, properties, search_range=0.1, reset=False):
-        """
-        Train a properties assignment model. Model or model parameters
-        should be stored in a property of the object.
+        """Train a properties assignment model. 
+
+        Model or model parameters should be stored in a property of the
+        object.
         Args:
             str_pool(List[Structure]):
                 Unassigned structures, must contain only pymatgen.Element
@@ -145,17 +139,22 @@ class MagchargeDecorator(BaseDecorator):
                 In this case, only use magnetization.
             search_range(float):
                 Optimizing range for cutting bounds. Default to 0.1
-            reset(Boolean):
+            reset(bool):
                 If you want to re-train the decorator model, set this value
                 to true. Otherwise we will skip training if self.trained is 
                 true.
         No return value.
         """
-        if self.trained and (not reset):
-            print("Decorator model trained! Skip training.")
-            return
+        if self.trained:
+            if not reset:
+                log.info("Decorator model trained! Skip training.")
+                return
+            else:
+                log.warning("Decorator model trained but needs " +
+                            "overwritting!")
 
-        sites_by_elements = self._get_sites_info_by_element(str_pool, properties)
+        sites_by_elements = self._get_sites_info_by_element(str_pool,
+                                                            properties)
 
         _cuts_by_elements_gm = {}
         for e in sites_by_elements:
@@ -165,31 +164,36 @@ class MagchargeDecorator(BaseDecorator):
                                  len(self.labels_table[e])).fit(e_mags)
 
             test_e_mags = np.linspace(min(e_mags) - 0.2, max(e_mags) + 0.2,
-                                       1000).reshapce((-1, 1))
+                                       1000).reshape((-1, 1))
             test_labels = gm.predict(test_e_mags)
 
             cut_ids = []
             cut_id = 0
             labels_appeared = []
             for i in range(len(test_labels)):
-                if (test_labels[i] != test_labels[sep_id] and not
-                    (test_labels[i] in labels_appeared)):
+                if test_labels[i] != test_labels[cut_id]:
+                    # For MOG models, labels should not appear again
+                    # with increasing x.
+                    assert test_labels[i] not in labels_appeared
                     cut_ids.append(i)
                     cut_id = i
                     labels_appeared.append(test_labels[i])
 
-            _cuts_by_elements_gm[e] = [(test_e_mags[cut_id - 1] +
-                                         test_e_mags[cut_id]) / 2
-                                         for cut_id in cut_ids]
+            # shape is currently (... , 1) so add [0] index.
+            _cuts_by_elements_gm[e] = [(test_e_mags[cut_id - 1][0] +
+                                        test_e_mags[cut_id][0]) / 2
+                                       for cut_id in cut_ids]
 
+            # Usually you want to carefully choose training set to avoid
+            # this.
             if len(cut_ids) < len(self.labels_table[e]) - 1:
-                warnings.warn("Element {} need ".format(e) +
-                              "{} species instances, "
-                              .format(len(labels_table)) +
-                              "but only {} detected in training structures.\n"
-                              .format(len(cut_ids) + 1) +
-                              "Training magnetizations: {}"
-                              .format(sorted(e_mags)))
+                log.warning("Element {} need ".format(e) +
+                            "{} species instances, "
+                            .format(len(labels_table)) +
+                            "but only {} detected in training set.\n"
+                            .format(len(cut_ids) + 1) +
+                            "Training magnetizations: {}"
+                            .format(sorted(e_mags)))
                 n_deficit = len(self.labels_table[e]) - 1 - len(cut_ids)
                 _cuts_by_elements_gm[e] += [max(e_mags) + i * 0.2
                                             for i in range(n_deficit)]
@@ -198,14 +202,14 @@ class MagchargeDecorator(BaseDecorator):
             self._cuts_by_elements = _cuts_by_elements_gm
         else:
             self._cuts_by_elements = self._optimize_cuts(_cuts_by_elements_gm,
+                                                         str_pool, properties,
                                                          search_range=
                                                          search_range)
 
-        logging.log("Trained magnetization separators:\n {}."
-                    .format(self._cuts_by_elements))
+        log.info("Trained separator values:\n {}.".
+                 format(self._cuts_by_elements))
 
-    @staticmethod
-    def _assign(str_pool, properties, cuts_by_elements):
+    def _assign(self, str_pool, properties, cuts_by_elements):
         """Assign charges to all sites in a structure pool.
 
         Will check charge neutrality. If not, the specific structure will
@@ -214,24 +218,21 @@ class MagchargeDecorator(BaseDecorator):
         sites_by_elements = self._get_sites_info_by_element(str_pool,
                                                             properties)
 
-        #Assign for each site
-        sites_by_elements_assigned = {e:[] for e in self.labels_table.keys()}
+        # Assign for each site
+        sites_by_elements_assigned = {e: [] for e in
+                                      self.labels_table.keys()}
         assignments = [[None for st in s] for s in str_pool]
 
         for e in sites_by_elements:
             mags_e = np.array(sites_by_elements[e])[:, 0]
-            for m_id,m in enumerate(mags_e):
+            for m_id, m in enumerate(mags_e):
                 a = self.labels_table[e][get_section_id(m,
                                          cuts_by_elements[e])]
                 s_id, st_id = tuple(sites_by_elements[e][m_id][-2: ])
                 assignments[s_id][st_id] = a
 
-        oxi_assigned = []
-        for s_id,s in enumerate(str_pool):
-            if np.sum(assignments[s_id])==0:
-                oxi_assigned.append(assignments[s_id])
-            else:
-                oxi_assigned.append(None)
+        oxi_assigned = [assignments[s_id] for s_id, s in
+                        enumerate(str_pool)]
 
         return oxi_assigned
 
@@ -251,10 +252,9 @@ class MagchargeDecorator(BaseDecorator):
                 Non-neutral structures will be returned as None.
         Returns:
             A dictionary, specifying name of assigned properties and their
-            values by structure and by site. If assignment failed for a
-            structure, will give None for it.
+            values by structure and by site.
             For example: 
-            {'charge':[[1,4,2,...],None,[...],...]}
+            {'charge':[[1,4,2,...],[...],...]}
             Currently, in pymatgen.Specie's
             other_properties, only 'spin' is allowed. If you want to add more, do
             your own study!
@@ -266,27 +266,33 @@ class MagchargeDecorator(BaseDecorator):
                                     self._cuts_by_elements)
 
         n_all = len(oxi_assigned)
-        n_success = n_all-n_fails
+        n_fails = int(np.sum(np.sum(oxi_assigned, axis=-1) != 0))
+        n_success = n_all - n_fails
 
-        logging.log("****{}/{} Structures Assigned. ".format(n_success,n_all))
-                
-        return {'charge':oxi_assigned}    
+        log.info("****{}/{} Structures charge balanced. ".format(n_success,
+                                                                 n_all))
+
+        return {'charge': oxi_assigned}
+
+    def copy(self):
+        """Deepcopy of this object."""
+        sock = MagchargeDecorator(deepcopy(self.labels_table),
+                                  self.maximize_balance)
+        sock._cuts_by_elements = deepcopy(self._cuts_by_elements)
+        return sock
 
     def as_dict(self):
-        """
-        Serialize into dictionary.
-        """
+        """Serialize into dictionary."""
         return {'labels_table': self.labels_table,
-                'cuts_by_elements': self.cuts_by_elements,
+                'cuts_by_elements': self._cuts_by_elements,
+                'maximize_balance': self.maximize_balance,
                 "@module": self.__class__.__module__,
                 "@class": self.__class__.__name__
                }
     
     @classmethod
     def from_dict(cls,d):
-        """
-        Recover from dict.
-        """
-        socket = cls(d['labels_table'])
+        """Recover from dict."""
+        socket = cls(d['labels_table'], d['maximize_balance'])
         socket._cuts_by_elements = d.get('cuts_by_elements')
         return socket

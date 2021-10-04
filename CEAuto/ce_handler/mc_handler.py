@@ -2,6 +2,9 @@
 
 __author__="Fengyu Xie"
 
+import logging
+log = logging.getLogger(__name__)
+
 import numpy as np
 from copy import deepcopy
 from abc import ABC, abstractmethod
@@ -11,20 +14,16 @@ from smol.cofe.space.domain import get_allowed_species
 from smol.moca import (CanonicalEnsemble, MuSemiGrandEnsemble,
                        CompSpace)
 
-from .base import BaseHandler
 from ..utils.comp_utils import scale_compstat
-from ..utils.occu_utils import get_sc_sllist_from_prim
 from ..utils.calc_utils import get_ewald_from_occu
 from ..utils.class_utils import derived_class_factory
-
-import logging
-import warning
+from ..utils.math_utils import GCD
 
 
 class MCHandler(ABC):
-    """
-    Base monte-carlo handler class. Provides ground states, de-freeze
-    sampling.
+    """Base monte-carlo handler class.
+
+    Provides ground states, defreeze sampling.
 
     Note: In the future, will support auto-equilibration.
     """
@@ -62,40 +61,45 @@ class MCHandler(ABC):
         self.ce = ce
         self.sc_mat = np.array(sc_mat, dtype=int)
 
+        self._ensemble = None
+        self._sampler = None
+
         self.anneal_series = anneal_series
         self.unfreeze_series = unfreeze_series
         self.n_runs_sa = n_runs_sa
         self.n_runs_unfreeze = n_runs_unfreeze
 
         self.sc_size = int(round(abs(np.linalg.det(sc_mat))))
+        # Automatic sublattices, same rule as smol.moca.Sublattice:
+        # sites with the same composition are considered same sublattice.
+        self.sc_sublat_list = [s.sites for s in self.ensemble.all_sublattices]
+        self.sl_sizes = [len(s) // self.sc_size for s in self.sc_sublat_list]
+        self.bits = [s.species for s in self.ensemble.all_sublattices]
 
         self.is_indicator = (self.ce.cluster_subspace.orbits[0]
                              .basis_type == 'indicator')
 
         self.prim = self.ce.cluster_subspace.structure
-        prim_bits = get_allowed_species(self.prim)
 
-        # Automatic sublattices, same rule as smol.moca.Sublattice:
-        # sites with the same compositioon are considered same sublattice.
-        self.sublat_list = []
-        self.bits = []
-        for s_id,s_bits in enumerate(prim_bits):
-            if s_bits in self.bits:
-                sl_id = self.bits.index(s_bits)
-                self.sublat_list[sl_id].append(s_id)
-            else:
-                self.sublat_list.append([s_id])
-                self.bits.append(s_bits)                  
-
-        self.sc_sublat_list = get_sc_sllist_from_prim(self.sublat_list,
-                                                      sc_size=self.sc_size)
- 
         self._gs_occu = (np.array(gs_occu, dtype=int)
                          if gs_occu is not None else None)
- 
-        self._ensemble = None
-        self._sampler = None
-        self._processor = None
+
+    @property
+    @abstractmethod
+    def ensemble(self):
+        """Get ensemble to run."""
+        return
+
+    @property
+    @abstractmethod
+    def sampler(self):
+        """Get sampler to run."""
+        return
+
+    @property
+    def processor(self):
+        """Processor."""
+        return self.ensemble.processor
 
     def _get_min_occu_enthalpy(self):
         """Get minimum thermo function from the current ensemble's sampler.
@@ -105,8 +109,8 @@ class MCHandler(ABC):
         ensemble.
         In smol.moca, this quantity is called 'enthalpy'.
         """
-        gs_occu = self._sampler.samples.get_minimum_enthalpy_occupancy()
-        gs_enth = self._sampler.samples.get_minimum_enthalpy()
+        gs_occu = self.sampler.samples.get_minimum_enthalpy_occupancy()
+        gs_enth = self.sampler.samples.get_minimum_enthalpy()
         return gs_occu, gs_enth
 
     def _initialize_occu_from_int_comp(self, int_comp):
@@ -126,7 +130,7 @@ class MCHandler(ABC):
         for i in range(50):
             # Occupancy is coded
             occu = np.zeros(len(self.prim) * self.sc_size, dtype=int)
-            for sl_id, (sl_int_comp, sl_sites) in 
+            for sl_id, (sl_int_comp, sl_sites) in \
               enumerate(zip(int_comp, self.sc_sublat_list)):
                 if sum(sl_int_comp) != len(sl_sites):
                     raise ValueError("Num of sites can't match "+
@@ -157,19 +161,18 @@ class MCHandler(ABC):
         """
         n_steps_anneal = self.sc_size * len(self.prim) * self.n_runs_sa
 
-        logging.log("****Annealing to the ground state. T series: {}."
-                    .format(anneal_series))
+        log.debug("****Annealing to the ground state. T series: {}."
+                  .format(anneal_series))
 
-        self._sampler.anneal(self.anneal_series, n_steps_anneal,
+        self.sampler.anneal(self.anneal_series, n_steps_anneal,
                              initial_occupancies=np.array([self._gs_occu]))
 
-        logging.log("****GS annealing finished!")
+        log.info("****GS annealing finished!")
         gs_occu, gs_e = self._get_min_occu_enthalpy()
   
         # Updates
         self._gs_occu = gs_occu
         return gs_occu, gs_e
-
 
     def get_unfreeze_sample(self, progress=False):
         """
@@ -199,30 +202,30 @@ class MCHandler(ABC):
 
         # Sampling temperatures        
         for T in self.unfreeze_series:
-            logging.log('******Getting samples under {} K.'.format(T))
-            self._sampler.samples.clear()
-            self._sampler._kernel.temperature = T
+            log.debug('******Getting samples under {} K.'.format(T))
+            self.sampler.samples.clear()
+            self.sampler._kernel.temperature = T
 
             # Equilibriate
-            logging.log("******Equilibration run.")
-            self._sampler.run(n_steps_sample,
-                              initial_occupancies=np.array([sa_occu]),
-                              thin_by=thin_by,
-                              progress=progress)
-            sa_occu = np.array(self._sampler.samples.get_occupancies()[-1],
+            log.debug("******Equilibration run.")
+            self.sampler.run(n_steps_sample,
+                             initial_occupancies=np.array([sa_occu]),
+                             thin_by=thin_by,
+                             progress=progress)
+            sa_occu = np.array(self.sampler.samples.get_occupancies()[-1],
                                dtype=int)
-            self._sampler.samples.clear()
+            self.sampler.samples.clear()
 
             # Sampling
-            logging.log("******Generation run.")
-            self._sampler.run(n_steps_sample,
-                              initial_occupancies=np.array([sa_occu]),
-                              thin_by=thin,
-                              progress=progress)
-            rand_occus.extend(np.array(self._sampler.samples.get_occupancies(),
+            log.debug("******Generation run.")
+            self.sampler.run(n_steps_sample,
+                             initial_occupancies=np.array([sa_occu]),
+                             thin_by=thin,
+                             progress=progress)
+            rand_occus.extend(np.array(self.sampler.samples.get_occupancies(),
                               dtype=int).tolist())
 
-        rand_strs = [self._processor.structure_from_occupancy(occu)
+        rand_strs = [self.processor.structure_from_occupancy(occu)
                      for occu in rand_occus]
 
         # Internal deduplication
@@ -238,7 +241,7 @@ class MCHandler(ABC):
             if not duped:
                 rand_dedup.append(s1_id)
 
-        logging.log("****{} unique structures generated."
+        log.info("****{} unique structures generated."
                     .format(len(rand_dedup)))
 
         rand_occus_dedup = [rand_occus[s_id] for s_id in rand_dedup]
@@ -293,15 +296,25 @@ class CanonicalmcHandler(MCHandler):
         self.int_comp = scale_compstat(compstat, scale_by=self.sc_size)
 
         self._gs_occu = gs_occu or self._initialize_occu_from_int_comp(self.int_comp)
-        self._ensemble = (CanonicalEnsemble.
-                          from_cluster_expansion(self.ce, self.sc_mat,
-                                                 optimize_inidicator=
-                                                 self.is_indicator))
-        self._sampler = Sampler.from_ensemble(ensemble,
-                                              temperature=5000,
-                                              nwalkers=1)
-        self._processor = self._ensemble.processor
 
+    @property
+    def ensemble(self):
+        """CanonicalEnsemble."""
+        if self._ensemble is None:
+            self._ensemble = (CanonicalEnsemble.
+                              from_cluster_expansion(self.ce, self.sc_mat,
+                                                     optimize_inidicator=
+                                                     self.is_indicator))
+        return self._ensemble
+
+    @property
+    def sampler(self):
+        """Sampler to run."""
+        if self._sampler is None:
+            self._sampler = Sampler.from_ensemble(self.ensemble,
+                                                  temperature=5000,
+                                                  nwalkers=1)
+        return self._sampler
 
 # Not used in release version.
 class SemigrandmcHandler(MCHandler):
@@ -350,8 +363,6 @@ class SemigrandmcHandler(MCHandler):
                          n_runs_unfreeze=n_runs_unfreeze,
                          **kwargs)
 
-        self.sl_sizes = [len(sl) for sl in self.sublat_list]
-
         self.chemical_potentials = chemical_potentials
 
         compspace = CompSpace(self.bits, self.sl_sizes)
@@ -359,18 +370,29 @@ class SemigrandmcHandler(MCHandler):
                                                         form='compstat'))
         self._gs_occu = (gs_occu or
                          self._initialize_occu_from_int_comp(int_comp))
-        self._ensemble = (MuSemiGrandEnsemble.
-                          from_cluster_expansion(self.ce, self.sc_mat,
-                                                 optimize_inidicator=
-                                                 self.is_indicator,
-                                                 chemical_potentials=
-                                                 chemical_potentials))
-        self._sampler = Sampler.from_ensemble(ensemble,
-                                              step_type='table-flip',
-                                              swap_weight=0.4,
-                                              nwalkers=1,
-                                              temperature=1000)
-        self._processor = self._ensemble.processor
+
+    @property
+    def ensemble(self):
+        """MuSemiGrandEnsemble."""
+        if self._ensemble is None:
+            self._ensemble = (MuSemiGrandEnsemble.
+                              from_cluster_expansion(self.ce, self.sc_mat,
+                              optimize_inidicator=
+                              self.is_indicator,
+                              chemical_potentials=
+                              self.chemical_potentials))
+        return self._ensemble
+
+    @property
+    def sampler(self):
+        """Sampler to run."""
+        if self._sampler is None:
+            self._sampler = Sampler.from_ensemble(self.ensemble,
+                                                  step_type='table-flip',
+                                                  swap_weight=0.4,
+                                                  nwalkers=1,
+                                                  temperature=1000)
+        return self._sampler
 
 
 def mchandler_factory(mchandler_name, *args, **kwargs):

@@ -11,20 +11,37 @@ from .CEAuto import CEFitter
 from .CEAuto import GSChecker
 
 import logging
+import argparse
 
 def main():
     """Main program.
 
     TimeKeeper enables hot restart.
     """
+    parser = argparse.ArgumentParser(description="CEAuto main program.")
+    parser.add_argument('-v', '--verbose', type=int, choices=[0, 1, 2],
+                        help="Increase verbosity level.\n" +
+                        "  0 : Critical messages;\n" +
+                        "  1 : Running informations;\n" +
+                        "  2 : Debug outputs.")
+    args = parser.parse_args()
+
+    levels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
+    logging.basicConfig(stream=sys.stdout, level=levels[args.verbose])
+    log = logging.getLogger(__name__)
+
     while True:
 
         # Load and flush once for easier realoading later.
         iw = InputsWrapper.auto_load()
         tk = TimeKeeper.auto_load()
+        log.critical("Starting from iteration: {}.".format(tk.iter_id))
+        log.critical("Next module to to: {}.".format(tk.next_module_todo))
         if tk.iter_id < 1:
+            log.info("History wrapper initialized.")
             hw = HistoryWrapper(iw.subspace)
         else:
+            log.info("History wrapper reloaded.")
             hw = HistoryWrapper.auto_load()
 
         # Flush parsed options for easy reading next time.
@@ -33,6 +50,7 @@ def main():
         tk.auto_save()
 
         # Passed down, and changed on-the-fly.
+        log.info("Data manager loaded.")
         dm = DataManager.auto_load()
 
         # Enumeration.
@@ -63,10 +81,12 @@ def main():
         # Featurize.
         if tk.todo('feat'):
             feat = Featurizer(dm, hw)
+            feat.auto_load_decorators()
             feat.featurize()
             feat.get_properties()
             dm = feat.data_manager.copy()
             dm.auto_save()
+            feat.auto_save_decorators()
             tk.advance()
             tk.auto_save()
 
@@ -85,8 +105,8 @@ def main():
             if checker.check_convergence():
                 break
 
-    logging.log("Congradulations! Your CE has reached convergence!")
+    log.critical("Congradulations! Your CE has reached convergence!")
 
 
 if __name__=="__main__":
-    CEAuto_run()
+    main()

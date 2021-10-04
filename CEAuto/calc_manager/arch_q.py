@@ -4,12 +4,13 @@ queue directly.
 """
 __author__ = "Fengyu Xie"
 
+import logging
+log = logging.getLogger(__name__)
+
 import os
 import stat
 import re
 import numpy as np
-import logging
-
 from abc import ABCMeta, abstractmethod
 
 from .base import BaseManager
@@ -229,7 +230,6 @@ class ArchsgeManager(ArchqueueManager):
                 with the current job root name.
         No return value.
         """
-
         job_ids_to_kill = []
         entry_ids_to_kill = []
         
@@ -246,8 +246,9 @@ class ArchsgeManager(ArchqueueManager):
                     job_ids_to_kill.append(job['JB_job_number'])
                     entry_ids_to_kill.append(eid)
 
+        log.critical("**Killing {} tasks.".format(len(entry_ids_to_kill)))
         for jid, eid in zip(job_ids_to_kill, entry_ids_to_kill):
             os.system(kill_command+' {}'.format(jid))
-            logging.log("****Job killed: {}, Entry id: {}.".format(jid, eid))
+            log.info("****Job killed: {}, Entry id: {}.".format(jid, eid))
 
 # TODO: implement one for SLURM

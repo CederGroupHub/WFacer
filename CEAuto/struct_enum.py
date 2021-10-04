@@ -10,38 +10,23 @@ they are not added here. They will be added in the convergence checker
 module.
 """
 
-import warnings
+import logging
+log = logging.getLogger(__name__)
+
 import random
 import numpy as np
 import pandas as pd
-import os
-import json
 import multiprocessing as mp
-import logging
-
-from monty.json import MSONable
-
-from pymatgen.core import Structure
-from pymatgen.core.periodic_table import Element
-from pymatgen.analysis.structure_matcher import StructureMatcher
-
-from smol.cofe.extern.ewald import EwaldTerm
-from smol.cofe.space.clusterspace import ClusterSubspace
-from smol.cofe.space.domain import get_allowed_species, get_species, Vacancy
-from smol.cofe.expansion import ClusterExpansion
-from smol.moca import CanonicalEnsemble, Sampler, CompSpace
 
 from .utils.sc_utils import enumerate_matrices
-from .utils.math_utils import select_rows,combinatorial_number
-from .utils.serial_utils import serialize_comp,deser_comp
-from .utils.comp_utils import check_comp_restriction
+from .utils.math_utils import select_rows
+from .utils.comp_utils import (check_comp_restriction,
+                               get_Noccus_of_compstat)
 
-from .data_manager import DataManager 
-from .wrappers import InputsWrapper
-from .ce_handler import CanonicalMCHandler
+from .ce_handler import CanonicalmcHandler
 
 
-class StructureEnumerator(MSONable):
+class StructureEnumerator:
     """Structure enumeration class."""
     def __init__(self, data_manager, history_wrapper):
 
@@ -85,6 +70,9 @@ class StructureEnumerator(MSONable):
         self.n_strs_add = (self.inputs_wrapper.
                            enumerator_options['n_strs_add'])
 
+        # TODO: Write DataManager and Enumerator to allow enumerate
+        # without charge, because enumerating with charge can cause
+        # duplicacy in DFT input.
         self.handler_args = (self.inputs_wrapper.
                              enumerator_options['handler_args_enum'])
 
@@ -181,7 +169,7 @@ class StructureEnumerator(MSONable):
         Return:
             enumerated supercell matrices(3*3 List)
         """
-        print("**Start supercell enumeration.")
+        log.critical("**Supercells enumeration.")
         mats = enumerate_matrices(self.sc_size,self.prim.lattice,
                                   transmat=self.transmat,
                                   max_sc_cond=self.max_sc_cond,
@@ -189,7 +177,7 @@ class StructureEnumerator(MSONable):
         log_str = "**Enumerated Supercell matrices: \n"
         for m in mat:
             log_str += "  {}\n".format(m)
-        logging.log(log_str)
+        log.info(log_str)
 
         self.set_sc_matrices(matrices=mats)
         return mat
@@ -202,14 +190,14 @@ class StructureEnumerator(MSONable):
             List of enumerated compositions by sublattice.
         """
         if len(self.comp_df)>0:
-            warnings.warn("Attempt to set composition after 1st cycle. " +
-                          "Do this at your own risk!")
+            log.warning("Attempt to set composition after 1st cycle. " +
+                        "Do this at your own risk!")
             return
 
         if len(self.sc_df) == 0:
             self.enumerate_sc_matrices()
 
-        logging.log("**Compositions enumeration:")
+        log.critical("**Compositions enumeration.")
         for sc_id, m in zip(self.sc_df.sc_id, self.sc_df.matrix):
             scs = int(round(abs(np.linalg.det(m))))
             ucoords = self.compspace.frac_grids(sc_size=
@@ -218,8 +206,8 @@ class StructureEnumerator(MSONable):
                      sc_size=scs // self.comp_enumstep,
                      form='composition'))
 
-            logging.log("****Enumerated {} compositions under matrix {}."
-                        .format(len(ucoords), m))
+            log.critical("****Enumerated {} compositions under matrix {}."
+                         .format(len(ucoords), m))
 
             # TODO: in the future version, move restriction to CompSpace.
             for ucoord, comp in zip(ucoords, comps):
@@ -230,9 +218,9 @@ class StructureEnumerator(MSONable):
 
         return comps
 
-    def generate_structures(self, n_par=4, keep_gs = True,
-                            weight_by_comp=True
-                            iter_id = 0):
+    def generate_structures(self, n_par=4, keep_gs=True,
+                            weight_by_comp=True,
+                            iter_id=0):
         """Enumerate structures under all different (sc_matrix, composition).
 
         The eneumerated structures will be deduplicated and selected based on
@@ -268,11 +256,11 @@ class StructureEnumerator(MSONable):
             # Sample a single composition. Do selection later.
 
             sc_size = int(round(abs(np.linalg.det(sc_mat))))
-            logging.log("****Supercell size: {}, compositon stat: {}."
-                        .format(sc_size, compstat))
+            log.debug("****Supercell size: {}, compositon stat: {}."
+                      .format(sc_size, compstat))
             tot_noccus = get_Noccus_of_compstat(compstat, scale_by=sc_size)
             # Handler will automatically initialize an occupation
-            handler = CanonicalMCHandler(ce, sc_mat, compstat, **handler_args)
+            handler = CanonicalmcHandler(ce, sc_mat, compstat, **handler_args)
             # Handler will de-freeze from 0K, creating samples. for all runs.
             return handler.get_unfreeze_sample(), tot_noccus
 
@@ -283,10 +271,10 @@ class StructureEnumerator(MSONable):
         pool = mp.Pool(n_par)
 
         comp_df = self.comp_df.merge(self.sc_df, on='sc_id', how='left')
-        all_sc_comps = list(zip(comp_df.matrix, comp_df.compstat))
+        all_sc_comps = list(zip(comp_df.matrix, comp_df.cstat))
         all_sc_comp_ids = list(zip(comp_df.sc_id, comp_df.comp_id))
 
-        logging.log("**Generating structure samples under compositions.")
+        log.critical("**Generating structure samples under compositions.")
         all_occus_n = pool.map(lambda sc, comp:
                                raw_sample_under_sc_comp(self.ce, sc, comp,
                                                         **self.handler_args),
@@ -314,7 +302,7 @@ class StructureEnumerator(MSONable):
             all_occus_filt = all_occus
         
 
-        logging.log("**Deduplicating structures by pre_insertion.")
+        log.info("**Deduplicating structures by pre_insertion.")
         inserted_eids = []  # List of ints
         is_gs = []   # List of booleans
 
@@ -333,8 +321,8 @@ class StructureEnumerator(MSONable):
                     inserted_eids.append(new_eid)
                     is_gs.append((oid == 0))
 
-        print("**Generated {} new deduplicated structures."
-              .format(len(inserted_eids)))
+        log.info("**Generated {} new deduplicated structures."
+                 .format(len(inserted_eids)))
 
         # Compute indices to keep if keep_gs.
         keep = []
@@ -351,8 +339,8 @@ class StructureEnumerator(MSONable):
         else:  # Do addition
             n_enum = self.n_strs_add
         if n_enum > len(femat):
-            warnings.warn("**Number of deduplicated structures fewer than " +
-                          "the number you wish to enumerate!")
+            log.warning("**Number of deduplicated structures fewer than " +
+                        "the number you wish to enumerate!")
 
         selected_rids = select_rows(femat,
                                     n_select=min(n_enum, len(femat)),
@@ -361,6 +349,8 @@ class StructureEnumerator(MSONable):
                                     keep=keep)
         unselected_eids = [inserted_eids[i] for i in range(len(femat))
                            if i not in selected_rids]
+        log.critical("**Added {}/{} new structures."
+                     .format(len(selected_rids), len(femat)))
 
         # Remove unselected entree.
         dm_copy.remove_entree_by_id(unselected_eids) 

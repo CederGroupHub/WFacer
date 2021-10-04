@@ -162,7 +162,7 @@ class MongovaspReader(BaseReader):
                      .get('output', {})
                      .get('energy', None) or
                      rd.get('calcs_reversed', [{}])[0]
-                     .get('output', {}).
+                     .get('output', {})
                      .get('energy', None))
 
                 if e is None:
@@ -176,7 +176,7 @@ class MongovaspReader(BaseReader):
                          .get('outcar', None) or
                          rd.get('calcs_reversed', [{}])[0]
 			 .get('output', {})
-			 .get('outcar', None)
+			 .get('outcar', None))
 
                 if ocard is None:
                     raise ValueError("Specified entry {} missing OUTCAR!"

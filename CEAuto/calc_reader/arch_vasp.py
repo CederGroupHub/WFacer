@@ -4,12 +4,13 @@ fact table!
 """
 __author__ = "Fengyu Xie"
 
+import logging
+log = logging.getLogger(__name__)
+
 import numpy as np
 import os
-import logging
-import warnings
 
-from pymatgen.io.vasp.outputs import Vasprun,Outcar
+from pymatgen.io.vasp.outputs import Vasprun, Outcar
 from pymatgen.io.vasp.inputs import Poscar
 
 from .base import BaseReader
@@ -105,8 +106,8 @@ class ArchvaspReader(BaseReader):
                                  .format(eid))
             vrunpath = os.path.join(e_path, 'vasprun.xml')
             if not os.path.isfile(vrunpath):
-                warnings.warn("****Entry {} may not be optimal.".format(eid) +
-                              " Using un-optimized structure.")
+                log.warning("****Entry {} may not be optimal.".format(eid) +
+                            " Using un-optimized structure.")
                 pospath = os.path.join(e_path, 'POSCAR')
                 if not os.path.isfile(pospath):
                     raise ValueError("Specified entry {} does not exist!"
@@ -120,10 +121,10 @@ class ArchvaspReader(BaseReader):
                     vrun = Vasprun(vrunpath)
                     self._vruns[entry_id] = vrun
                 if not vrun.converged:
-                    warnings.warn("****Entry {} may not be optimal."
-                                  .format(eid) +
-                                  " Using un-optimized structure."
-                                  .format(eid))
+                    log.warning("****Entry {} may not be optimal."
+                                .format(eid) +
+                                " Using un-optimized structure."
+                                .format(eid))
                 structures.append(vrun.structures[-1])
 
         return structures

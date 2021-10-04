@@ -10,9 +10,11 @@ This file does not generate any data. It only manages data!
 
 __author__ = "Fengyu Xie"
 
+import logging
+log = logging.getLogger(__name__)
+
 import numpy as np
 import pandas as pd
-import warnings 
 from copy import deepcopy
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
@@ -599,8 +601,8 @@ class DataManager:
         oid = self.find_entry_id_from_occu(occu_std, sc_id=sc_id,
                                            comp_id=comp_id)
         if oid is not None:
-            warnings.warn("Occupancy {} found in previous table ".format(occu)
-                          + "with index: {}.".format(oid))
+            log.debug("Occupancy {} found in previous table ".format(occu)
+                      + "with index: {}.".format(oid))
             return sc_id, comp_id, oid
 
         eid = (self.fact_df.entry_id.max() + 1 if len(self.fact_df) > 0
@@ -738,8 +740,8 @@ class DataManager:
             This may affect the check point status of TimeKeeper. Be sure
             to reset TimeKeeper after this operation.
         """
-        filt = (self.fact_df.iter_id.isin(iter_ids)) &
-               (self.fact_df.module.isin(modules))
+        filt = ((self.fact_df.iter_id.isin(iter_ids)) &
+                (self.fact_df.module.isin(modules)))
         eids = self.fact_df[filt].entry_id.tolist()
         self.remove_entree_by_id(eids)
 
@@ -827,8 +829,8 @@ class DataManager:
 
         Use this at your own risk!
         """
-        warnings.warn("Clearing all previous records. " +
-                      "Do this at your own risk!")
+        log.warning("Clearing all previous records. " +
+                    "Do this at your own risk!")
         self.remove_supercells_by_id(sc_ids=
                                      self.fact_df.sc_id.tolist())
 

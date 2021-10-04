@@ -2,10 +2,12 @@
 
 __author__ = "Fengyu Xie"
 
+import logging
+log = logging.getLogger(__name__)
+
 import os
 import numpy as np
 from itertools import chain
-import logging
 
 from fireworks import LaunchPad, FWorker
 from fireworks.queue.queue_launcher import rapidfire
@@ -166,8 +168,8 @@ class MongofwManager(BaseManager):
         entry_ids = [eid for eid, e_in_q in zip(entry_ids, qstats)
                      if e_in_q]
 
-        logging.log("**Killing tasks associated with entree: {}."
-                    .format(entry_ids))
+        log.critical("**Killing tasks associated with {} entree."
+                     .format(len(entry_ids)))
 
         all_eids_2k = []
         all_qids_2k = []
@@ -185,7 +187,7 @@ class MongofwManager(BaseManager):
                     os.system(kill_command+' {}'.format(qid))
             # Defuse the workflow correspoding to eid
             self._lpad.defuse_wf(wids[0])
-            logging.log("****Tasks corresponding to entry: {} defused!"
-                        .format(eid))
+            log.info("****Tasks corresponding to eid: {} killed & defused!"
+                     .format(eid))
 
         return

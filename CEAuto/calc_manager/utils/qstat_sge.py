@@ -5,10 +5,11 @@ git@github.com:relleums/qstat.git
 """
 __author__ = "Sebastian Achim Mueller"
 
+import logging
+log = logging.getLogger(__name__)
 
 import subprocess as sp
 import xmltodict
-import warnings
 
 def qstat(qstat_path='qstat', xml_option='-xml'):
     """Parse qstat output of SunGridEngine.
@@ -47,8 +48,8 @@ def qstat2xml(qstat_path='qstat', xml_option='-xml'):
         qstatxml = sp.check_output([qstat_path, xml_option],
                                    stderr=sp.STDOUT)
     except sp.CalledProcessError as e:
-        warnings.warn('qstat returncode:', e.returncode)
-        warnings.warn('qstat std output:', e.output)
+        log.warning('qstat returncode:', e.returncode)
+        log.warning('qstat std output:', e.output)
         raise
     except FileNotFoundError as e:
         e.message = ('Maybe "' + qstat_path + ' ' +

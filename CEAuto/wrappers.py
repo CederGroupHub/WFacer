@@ -2,9 +2,11 @@
 
 __author__ = "Fengyu Xie"
 
+import logging
+log = logging.getLogger(__name__)
+
 import itertools
 import numpy as np
-import warnings
 import json
 import yaml
 from copy import deepcopy
@@ -90,7 +92,7 @@ class InputsWrapper(MSONable):
         self._prim_file = prim_file
 
         if (self._prim is None and self._prim_file is not None and
-            os.path.isfile(self._prim_file):
+            os.path.isfile(self._prim_file)):
             self._prim = Structure.from_file(self._prim_file)
 
         if self._prim is None:
@@ -292,18 +294,6 @@ class InputsWrapper(MSONable):
         return self._prim
 
     @property
-    def radius(self):
-        """Max cluster radii of different cluster types.
-
-        Returns:
-           Dict{size(int):radius(float)}
-        """
-        if self._radius is None or len(self._radius) == 0:
-
-
-        return self._radius
-
-    @property
     def subspace(self):
         """Cluster subspace of this system.
 
@@ -313,13 +303,14 @@ class InputsWrapper(MSONable):
         """
         if self._subspace is None:
             self._subspace = (ClusterSubspace.
-                              from_cutoffs(self.prim, self.radius,
+                              from_cutoffs(self.prim,
+                                           self.space_options['radius'],
                                            basis=
-                                           self.basis_type))
+                                           self.space_options['basis_type']))
 
             extern_types = self.space_options['extern_types']
             extern_args = self.space_options['extern_args']
-            for ex_name,args in zip(extern_types, extern_args):
+            for ex_name, args in zip(extern_types, extern_args):
                 self._subspace.add_external_term(globals()[ex_name](**args))
 
         return self._subspace
@@ -370,7 +361,7 @@ class InputsWrapper(MSONable):
 
         return {'radius': radius,
                 'basis_type': self._options.get('basis_type', 'indicator'),
-                'extern_types': extern_types
+                'extern_types': extern_types,
                 'extern_args': extern_args
                }
 
@@ -553,6 +544,10 @@ class InputsWrapper(MSONable):
 
         other_props(list[str]):
             Name of other properties to expand except energy.
+        max_charge(int > 0):
+            Maximum charge abs value allowed in decorated structure.
+            Structures having more charge than this will be considered
+            fail assignment. Default to 0, namely charge balanced.
         decorator_types(str):
             Name of decorator class to use before mapping structure.
             For example, expansion with charge needs MagChargeDecorator.
@@ -569,10 +564,11 @@ class InputsWrapper(MSONable):
         for b in itertools.chain(*self.bits):
             if (not isinstance(b, (Vacancy, Element))
                 and len(decorators_types)==0):
-                raise ValueError('Cluster expasion requires decoration, "+
-                                 "but no decorator to {} is given!'.format(b))
+                raise ValueError("Cluster expasion requires decoration, " +
+                                 "but no decorator to {} is given!".format(b))
 
         return {'other_props': self._options.get('other_props', []),
+                'max_charge': self._options.get('max_charge', 0),
                 'decorators_types': decorators_types,
                 'decorators_args': self._options.get('decorators_args',
                                                      [])}
@@ -863,9 +859,9 @@ class HistoryWrapper(MSONable):
             ClusterExpansion.
         """
         if len(self._history) < n_ago:
-            warnings.warn("Cluster expansion history can not be " +
-                          "dated back to {} iteration(s) ago. ".format(n_ago) +
-                          "Making dummy cluster expasnion")
+            log.warning("Cluster expansion history can not be " +
+                        "dated back to {} iteration(s) ago. ".format(n_ago) +
+                        "Making dummy cluster expasnion.")
 
             coefs = np.zeros(self.subspace.num_corr_functions +
                              len(self.subspace.external_terms))
@@ -932,7 +928,7 @@ class HistoryWrapper(MSONable):
         return cls(ClusterSubspace.from_dict(d['cluster_subspace']),
                    d['history'])
 
-    def auto_save(self, history_path=CE_HISTORY_PATH):
+    def auto_save(self, history_path=CE_HISTORY_FILE):
         """Automatically save object to file.
 
         Args:

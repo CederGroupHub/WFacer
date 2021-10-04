@@ -104,16 +104,16 @@ def load_dataframes(sc_file='sc_mats.csv', comp_file='comps.csv',
         comp_df.ucoord = comp_df.ucoord.map(list_conv)
         comp_df.ccoord = comp_df.ccoord.map(list_conv)
         comp_df.nondisc = comp_df.nondisc.map(list_conv)
-        comp_df.compstat = comp_df.compstat.map(list_conv)
+        comp_df.cstat = comp_df.cstat.map(list_conv)
         comp_df.comp = comp_df.comp.map(comp_conv)
         comp_df.eq_occu = comp_df.eq_occu.map(list_conv)
 
     else:
         comp_df = pd.DataFrame(columns=
-                               ['comp_id','sc_id',
-                                'ucoord','ccoord',
-                                'comp','cstat',
-                                'nondisc','eq_occu'])
+                               ['comp_id', 'sc_id',
+                                'ucoord', 'ccoord',
+                                'comp', 'cstat',
+                                'nondisc', 'eq_occu'])
 
     if os.path.isfile(fact_file):
         fact_df = pd.read_csv(fact_file)

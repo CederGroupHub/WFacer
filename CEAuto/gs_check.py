@@ -4,15 +4,12 @@ THIS CLASS DOES NOT CHANGE DATA TABLES!
 """
 __author__ = "Fengyu Xie"
 
+import logging
+log = logging.getLogger(__name__)
 
-import json
 import numpy as np
-import pandas as pd
-
-from smol.cofe import ClusterSubspace
 
 from .utils.hull_utils import hulls_match
-from .data_manager import DataManager
 
 
 class GSChecker:
@@ -159,8 +156,9 @@ class GSChecker:
         Returns:
             bool.
         """
-        if self.prev_ce_hull is None or self.curr_ce_hull is None or
-           self.prev_dft_hull is None or self.curr_dft_hull is None:
+        log.critical("**Checking CE convergence.")
+        if (self.prev_ce_hull is None or self.curr_ce_hull is None or
+            self.prev_dft_hull is None or self.curr_dft_hull is None):
             return False
 
         cv = self._hw.history[-1].get('cv',  0.001)

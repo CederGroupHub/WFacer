@@ -1,6 +1,6 @@
 from CEAuto.utils.frame_utils import load_dataframes, save_dataframes
-from CEAuto.status_checker import StatusChecker
-from smol.cofe import ClusterSubspace
+from CEAuto.time_keeper import TimeKeeper
+from CEAuto.wrappers import HistoryWrapper
 
 from monty.serialization import loadfn
 import pytest
@@ -8,18 +8,7 @@ import numpy as np
 from pymatgen.core import Composition
 import os
 
-DATADIR = os.path.join(os.path.dirname(__file__),'data')
-
-@pytest.fixture
-def structure():
-    return loadfn(os.path.join(DATADIR,'LiCaBr_prim.json'))
-
-@pytest.fixture
-def subspace(structure):
-    return ClusterSubspace.from_cutoffs(structure,
-                                        cutoffs={2:4.0,
-                                                 3:3.0,
-                                                 4:3.0})
+DATADIR = os.path.join(os.path.dirname(__file__), 'data')
 
 @pytest.fixture
 def history(subspace):
@@ -30,7 +19,7 @@ def history(subspace):
     rmse = 0.005
     return [{'coefs':coefs, 'cv':cv, 'rmse':rmse}]
 
-def test_load_dataframes():
+def test_dataframes():
     sc_file = os.path.join(DATADIR,'sc_df_test.csv')
     comp_file = os.path.join(DATADIR,'comp_df_test.csv')
     fact_file = os.path.join(DATADIR,'fact_df_test.csv')
@@ -41,7 +30,9 @@ def test_load_dataframes():
     assert isinstance(comp_df.ucoord.iloc[0],list)
     assert isinstance(comp_df.comp.iloc[0],list)
     assert isinstance(comp_df.comp.iloc[0][0],Composition)
-    assert isinstance(fact_df.other_props.iloc[0],dict)
+    assert isinstance(fact_df.other_props.iloc[0], dict)
+    assert isinstance(fact_df.ori_occu.iloc[0], list)
+    assert isinstance(fact_df.ori_corr.iloc[0], list)
 
     save_dataframes(sc_df=sc_df, comp_df=comp_df, fact_df=fact_df)
     sc_df_rel, comp_df_rel, fact_df_rel = load_dataframes()
@@ -55,26 +46,33 @@ def test_load_dataframes():
     os.remove('data.csv')
 
 @pytest.fixture
-def schecker(history):
+def timekeeper():
+    return TimeKeeper(0)
+
+def test_advance(timekeeper):
+    for i in range(50):
+        assert timekeeper._cursor == i
+        assert timekeeper.iter_id == i // len(timekeeper.modules)
+        assert timekeeper.next_module_todo == timekeeper.modules[i % len(timekeeper.modules)]
+        for j in range(len(timekeeper.modules)):
+            if j >= i % len(timekeeper.modules):
+                assert timekeeper.todo(timekeeper.modules[j])
+            else:
+                assert timekeeper.done(timekeeper.modules[j])
+        timekeeper.advance()
+
+def test_setter(timekeeper):
+    for i in range(100):
+        timekeeper.cursor = i
+        assert timekeeper.cursor == i
+
+def test_set_from_data(timekeeper,history):
     sc_file = os.path.join(DATADIR,'sc_df_test.csv')
     comp_file = os.path.join(DATADIR,'comp_df_test.csv')
     fact_file = os.path.join(DATADIR,'fact_df_test.csv')
     sc_df, comp_df, fact_df = load_dataframes(sc_file=sc_file,
                                               comp_file=comp_file,
                                               fact_file=fact_file)
-    return StatusChecker(sc_df, comp_df, fact_df, history=history)
-
-def test_iter_id(schecker):
-    assert schecker.cur_iter_id == 1
-
-def test_completed_module(schecker):
-    assert schecker.last_completed_module == 'calc'
-
-def test_before_after(schecker):
-    print(schecker.fact_df.loc[:,['entry_id','iter_id','module','calc_status']])
-    assert schecker.before('feat')
-    assert schecker.before('fit')
-    assert schecker.after('calc')
-    assert schecker.after('write')
-    assert schecker.after('enum')
-    assert schecker.after('gs')
+    timekeeper.set_to_data_status(sc_df, comp_df, fact_df, history)
+    assert timekeeper.iter_id == 1
+    assert timekeeper.next_module_todo == 'feat'

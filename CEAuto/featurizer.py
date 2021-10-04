@@ -2,29 +2,19 @@
 
 __author__ = 'Fengyu Xie'
 
-import pandas as pd
+import logging
+log = logging.getLogger(__name__)
+
 import numpy as np
 import os
-from collections import OrderedDict
-from monty.json import MSONable
-from copy import deepcopy
-import warnings
-import logging
 
-from pymatgen.core import Structure
-from pymatgen.core.periodic_table import (get_el_sp, Lattice, Element,
-                                          Specie, DummySpecie, Species)
+from monty.serialization import loadfn, dumpfn
 
-from smol.cofe.space.domain import get_allowed_species, Vacancy
-from smol.cofe import ClusterSubspace, ClusterExpansion
-from smol.cofe.extern.ewald import EwaldTerm
+from .specie_decorator import decorator_factory, decorate_single_structure
+from .config_paths import DECOR_FILE
 
-from .specie_decorator import decorator_factory
-from .data_manager import DataManager
 
-from .utils.serial_utils import decode_from_dict
-
-class Featurizer(MSONable):
+class Featurizer:
     """Featurization of calculation results.
 
     Direct initialization is not recommended.
@@ -63,6 +53,8 @@ class Featurizer(MSONable):
 
         self.other_props = (self.inputs_wrapper
                             .featurizer_options['other_props'])
+        self.max_charge = (self.inputs_wrapper
+                           .featurizer_options['max_charge'])
         self._reader = self.inputs_wrapper.calc_reader
 
     @property
@@ -110,7 +102,7 @@ class Featurizer(MSONable):
         fact_table = self.fact_df.copy()
         calc_reader = self.calc_reader
 
-        logging.log("**Running featurization.")
+        log.critical("**Running featurization.")
 
         # Loading and decoration. If decorators not trained, train decorator.
         eids_unassigned = fact_table[fact_table.calc_status == 'CL'].entry_id
@@ -119,8 +111,8 @@ class Featurizer(MSONable):
                                                       eids_unassigned)
         success_ids = eids_unassigned[np.array(status)]
         fail_ids = eids_unassigned[~np.array(status)]
-        logging.log('**{}/{} converged computations in the last run.'
-                    .format(len(success_ids), len(eids_unassigned)))
+        log.info('**{}/{} converged computations in the last run.'
+                 .format(len(success_ids), len(eids_unassigned)))
 
         fact_table.loc[fact_table.entry_id.isin(fail_ids),
                        'calc_status'] = 'CF'
@@ -142,10 +134,10 @@ class Featurizer(MSONable):
                                                 fact_unassigned.entry_id,
                                                 prop_names=
                                                 decorator.required_props,
-                                                include_pnames=True)
+                                                include_pnames=True))
                 if not decorator.trained:
-                    logging.log('**Training decorator {}.'
-                                .format(decorator.__class__.__name__))
+                    log.info('**Training decorator {}.'
+                             .format(decorator.__class__.__name__))
                     decorator.train(structures_unassign, decor_inputs)
 
                 decoration = decorator.assign(structures_unassign,
@@ -160,10 +152,13 @@ class Featurizer(MSONable):
 
             sid_assign_fails = []
             structures_unmaped = []
-            for sid, (s_unassign, decors_str) in
+            for sid, (s_unassign, decors_str) in \
               enumerate(zip(structures_unassign, decors_by_str)):
                 s_assign = decorate_single_structure(s_unassign,
-                                                     decor_keys, decors_str)
+                                                     decor_keys,
+                                                     decors_str,
+                                                     max_charge=
+                                                     self.max_charge)
                 if s_assign is not None:
                     structures_unmaped.append(s_assign)
                 else:
@@ -178,7 +173,7 @@ class Featurizer(MSONable):
         fact_unmaped = (fact_table[fact_table.calc_status == 'CL']
                         .merge(sc_table, how='left', on='sc_id'))
 
-        logging.log('**{}/{} successful decorations.'
+        log.info('**{}/{} successful decorations.'
                     .format(len(fact_unmaped), len(fact_unassigned)))
 
         # Feature vectors.
@@ -215,9 +210,9 @@ class Featurizer(MSONable):
         fact_table.loc[fact_table.calc_status == 'CL',
                        'calc_status'] = 'SC'
 
-        logging.log("**{}/{} successful mappings in the last run."
-                    .format(len(occus_mapped), len(fact_unmaped)))
-        logging.log("**Featurization finished.")
+        log.info("**{}/{} successful mappings in the last run."
+                 .format(len(occus_mapped), len(fact_unmaped)))
+        log.critical("**Featurization finished.")
 
         self._dm._fact_df = fact_table.copy()
 
@@ -264,4 +259,13 @@ class Featurizer(MSONable):
 
         self._dm._fact_df = fact_table.copy()
 
-# Does not autosave or autoload.
+    def auto_save_decorators(self, decor_file=DECOR_FILE):
+        """Serialize and save decorators to file."""
+        dumpfn(self.decorators, decor_file)
+
+    def auto_load_decorators(self, decor_file=DECOR_FILE):
+        """Serialize and save decorators to file."""
+        if os.path.isfile(decor_file):
+            self._decorators = loadfn(decor_file)
+        else:
+            log.warning("Previous decorator file not found. Using default.")

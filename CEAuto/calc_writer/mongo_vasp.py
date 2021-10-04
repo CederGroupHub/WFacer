@@ -4,9 +4,11 @@ These classes DO NOT MODIFY fact table!
 """
 __author__ = "Fengyu Xie"
 
+import logging
+log = logging.getLogger(__name__)
+
 import os
 import itertools
-import logging
 
 from pymatgen.io.vasp.sets import (MPRelaxSet, MPMetalRelaxSet,
                                    MPStaticSet)
@@ -164,5 +166,5 @@ class MongovaspWriter(BaseWriter):
             self._lpad.delete_wf(dupe_fw_ids[0])
 
         self._lpad.add_wf(wf)
-        logging.log("****Calculation workflow loaded to launchpad for " +
-                    "entry: {}.".format(eid))
+        log.debug("****Calculation workflow loaded to launchpad for " +
+                  "entry: {}.".format(eid))
