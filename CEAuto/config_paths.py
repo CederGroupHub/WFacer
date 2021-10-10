@@ -13,6 +13,7 @@ if os.path.isfile('paths.yaml'):
     with open('paths.yaml') as fin:
         d = yaml.load(fin, Loader=yaml.FullLoader)
 
+PRIM_FILE = d.get('prim_file', 'prim.cif')
 OPTIONS_FILE = d.get('options_file', 'options.yaml')
 SC_FILE = d.get('sc_file', 'sc_mats.csv')
 COMP_FILE = d.get('comp_file', 'comps.csv')

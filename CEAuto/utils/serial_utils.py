@@ -31,7 +31,7 @@ def serialize_comp(comp):
     if isinstance(comp,list):
         return [serialize_comp(sl_comp) for sl_comp in comp]
 
-    return [(sp.as_dict(),n) for sp,n in comp.items()]
+    return [(sp.as_dict(), n) for sp, n in comp.items()]
 
 
 def deser_comp(comp_ser):
@@ -48,12 +48,12 @@ def deser_comp(comp_ser):
         comp(Composition or List of Composition):
             the composition to serialize
     """
-    if (isinstance(comp_ser,list) and isinstance(comp_ser[0],list) and
-        not isinstance(comp_ser[0][0],dict)):
+    if (isinstance(comp_ser, list) and isinstance(comp_ser[0], list) and
+        not isinstance(comp_ser[0][0], dict)):
         return [deser_comp(sl_comp_ser) for sl_comp_ser in comp_ser]
 
-    return Composition({decode_from_dict(sp_d):n
-                       for sp_d,n in comp_ser})
+    return Composition({decode_from_dict(sp_d): n
+                       for sp_d, n in comp_ser})
 
 
 # Serialize anything

@@ -1,10 +1,12 @@
 from CEAuto import DataManager, InputsWrapper
-from CEAuto.utils.frame_utils import load_dataframes
-from CEAuto.utils.occu_utils import structure_from_occu
+from CEAuto.utils.frame_utils import load_dataframes, save_dataframes
+from CEAuto.utils.occu_utils import structure_from_occu, occu_from_structure
+from CEAuto.config_paths import *
 
 import pytest
 import numpy as np
 import pandas as pd
+from pandas._testing import assert_frame_equal
 
 import os
 from copy import deepcopy
@@ -15,118 +17,218 @@ from monty.serialization import loadfn
 
 DATADIR = os.path.join(os.path.dirname(__file__),'data')
 
+sc_file = os.path.join(DATADIR,'sc_df_test.csv')
+comp_file = os.path.join(DATADIR,'comp_df_test.csv')
+fact_file = os.path.join(DATADIR,'fact_df_test.csv')
+
+
+def assert_df_formats(sc_df, comp_df, fact_df):
+    # Assert the correct formats.
+    def assert_2d(ll, shape=None, name=float):
+        if shape is not None:
+            assert len(ll) == shape[0]
+        for l in ll:
+            assert isinstance(l, list)
+            if shape is not None:
+                assert len(l) == shape[1]
+            for i in l:
+                assert isinstance(i, name)
+
+    def assert_1d(l, name=float):
+        for i in l:
+            assert isinstance(i, name)
+
+    def assert_str(l):
+        for i in l:
+            assert isinstance(i, str)
+
+    def assert_type_series(series, name, more_assertion=None, allow_none=False):
+        for item in series:
+            if not pd.isna(item):
+                assert isinstance(item, name)
+            else:
+                assert allow_none
+
+            if more_assertions is not None and not pd.isna(item):
+                more_assertion(item)
+
+    assert_type_series(sc_df.matrix, list, lambda x: assert_2d(x, shape=(3, 3), name=int))
+    assert_type_series(comp_df.ucoord, list, assert_1d)
+    assert_type_series(comp_df.ccoord, list, assert_1d)
+    assert_type_series(comp_df.comp, list, lambda x: assert_1d(x, name=Composition))
+    assert_type_series(comp_df.cstat, list, assert_2d)
+    assert_type_series(comp_df.nondisc, list, assert_1d)
+    assert_type_series(fact_df.ori_occu, list, lambda x: assert_1d(x, name=int))
+    assert_type_series(fact_df.map_occu, list, lambda x: assert_1d(x, name=int), allow_none=True)
+    assert_type_series(fact_df.ori_corr, list, assert_1d)
+    assert_type_series(fact_df.map_corr, list, assert_1d, allow_none=True)
+    assert_type_series(fact_df.other_props, dict, assert_str, allow_none=True)
+
+
+def test_load_save_dfs():
+
+    sc_df, comp_df, fact_df = load_dataframes(sc_file=sc_file,
+                                              comp_file=comp_file,
+                                              fact_file=fact_file)
+    assert_df_formats(sc_df, comp_df, fact_df)
+
+    save_dataframes(sc_df, comp_df, fact_df,
+                    sc_file=SC_FILE,
+                    comp_file=COMP_FILE,
+                    fact_file=FACT_FILE)
+
+    assert os.path.isfile(SC_FILE)
+    assert os.path.isfile(COMP_FILE)
+    assert os.path.isfile(FACT_FILE)
+    assert os.path.getsize(SC_FILE) > 0
+    assert os.path.getsize(COMP_FILE) > 0
+    assert os.path.getsize(FACT_FILE) > 0
+
+    sc_df2, comp_df2, fact_df2 = load_dataframes(sc_file=SC_FILE,
+                                                 comp_file=COMP_FILE,
+                                                 fact_file=FACT_FILE)   
+
+    assert_df_formats(sc_df2, comp_df2, fact_df2)
+    assert_frame_equal(sc_df, sc_df2)
+    assert_frame_equal(comp_df, comp_df2)
+    assert_frame_euqal(fact_df, fact_df2)
+
+    os.remove(SC_FILE)
+    os.remove(COMP_FILE)
+    os.remove(FACT_FILE)
+
 
 @pytest.fixture
-def structure():
-    return loadfn(os.path.join(DATADIR,'LiCaBr_prim.json'))
-
-
-@pytest.fixture
-def inputs_wrapper(structure):
-    lat_data = {'prim':structure}
-    options = {'decorators_types':['MagChargeDecorator'],
-               'decorators_args':[{'labels_table':
-                                  {'Li':[1],
-                                   'Ca':[1],
-                                   'Br':[-1],
-                                   'Cr':[0],
-                                   'Fe':[0],
-                                   'W':[0]}}],
-               'radius':{2:4.0,3:3.0,4:3.0}}
-    return InputsWrapper(lat_data, options=options)
-
-
-@pytest.fixture
-def subspace(inputs_wrapper):
-    return inputs_wrapper.subspace
-
-
-@pytest.fixture
-def history(subspace):
-    coefs = np.random.random(subspace.num_corr_functions +
-                             len(subspace.external_terms))
-    coefs[0] = 1.0
-    coefs = coefs.tolist()
-    cv = 0.998
-    rmse = 0.005
-    return [{'coefs':coefs, 'cv':cv, 'rmse':rmse}]
-
-
-@pytest.fixture
-def data_manager(inputs_wrapper, history):
-    sock =  DataManager(inputs_wrapper.prim,
-                        inputs_wrapper.bits,
-                        inputs_wrapper.sublat_list,
-                        inputs_wrapper.subspace,
-                        history)
-
-    sc_file = os.path.join(DATADIR,'sc_df_test.csv')
-    comp_file = os.path.join(DATADIR,'comp_df_test.csv')
-    fact_file = os.path.join(DATADIR,'fact_df_test.csv')
+def data_manager(inputs_wrapper):
 
     sc_df, comp_df, fact_df = load_dataframes(sc_file=sc_file,
                                               comp_file=comp_file,
                                               fact_file=fact_file)
 
-    sock._sc_df = sc_df
-    sock._comp_df = comp_df
-    sock._fact_df = fact_df
-
-    return sock
+    return DataManager(inputs_wrapper, sc_df, comp_df, fact_df)
 
 
 def test_copy(data_manager):
     dm = data_manager.copy()
+    assert data_manager._iw.as_dict() == dm._iw.subspace.as_dict()
+    assert_frame_equal(data_manager.sc_df, dm.sc_df)
+    assert_frame_equal(data_manager.comp_df, dm.comp_df)
+    assert_frame_equal(data_manager.fact_df, dm.fact_df)
+
     dm.reset()
-    assert dm.cur_iter_id == 0 
+    assert len(dm.sc_df) == 0
+    assert len(dm.comp_df) == 0
     assert len(dm.fact_df) == 0
     assert len(data_manager.fact_df) == 8
 
 
-def test_save(data_manager):
-    data_manager.auto_save(sc_file='sc_mats.csv',
-                           comp_file='comps.csv',
-                           fact_file='data.csv')
+def test_empty_dm(inputs_wrapper):
+    dm = DataManager(inputs_wrapper)
+    assert len(dm.sc_df) == 0
+    assert len(dm.comp_df) == 0
+    assert len(dm.fact_df) == 0
 
-    assert os.path.isfile('sc_mats.csv')
-    assert os.path.isfile('comps.csv')
-    assert os.path.isfile('data.csv')
+    sckeys = ['sc_id', 'matrix']
+    compkeys = ['sc_id', 'comp_id', 'ucoord', 'ccoord', 'comp','cstat','nondisc']
+    factkeys = ['entry_id', 'sc_id', 
+                'comp_id',
+                'iter_id', 'module',
+                'ori_occu', 'ori_corr',
+                'calc_status',
+                'map_occu', 'map_corr',
+                'e_prim', 'other_props']
 
-    os.remove(sc_file)
-    os.remove(comp_file)
-    os.remove(data_file)
+    for k in sckeys:
+        assert k in dm.sc_df
+    for k in compkeys:
+        assert k in dm.comp_df
+    for k in factkeys:
+        assert k in dm.fact_df
+
+
+def test_save_load(data_manager):
+    data_manager.auto_save()
+
+    assert os.path.isfile(WRAPPER_FILE)
+    assert os.path.isfile(SC_FILE)
+    assert os.path.isfile(COMP_FILE)
+    assert os.path.isfile(FACT_FILE)
+    assert os.path.getsize(WRAPPER_FILE) > 0
+    assert os.path.getsize(SC_FILE) > 0
+    assert os.path.getsize(COMP_FILE) > 0
+    assert os.path.getsize(FACT_FILE) > 0
+
+    dm = DataManager.auto_load()
+    assert data_manager._iw.as_dict() == dm._iw.as_dict()
+    assert_frame_equal(data_manager.sc_df, dm.sc_df)
+    assert_frame_equal(data_manager.comp_df, dm.comp_df)
+    assert_frame_equal(data_manager.fact_df, dm.fact_df)
+
+    os.remove(WRAPPER_FILE)
+    os.remove(SC_FILE)
+    os.remove(COMP_FILE)
+    os.remove(FACT_FILE)
 
 
 def test_get_structures(data_manager):
     # print(data_manager.fact_df)
     df = data_manager.fact_df_with_structures
-    for m,s,corr in zip(df.matrix,df.ori_str,df.ori_corr):
+    for m, s, occu, corr in zip(df.matrix, df.ori_str, df.ori_occu, df.ori_corr):
         assert np.allclose(data_manager._subspace.
                            corr_from_structure(s,scmatrix=m)[:-1], corr)
+        assert np.allclose(data_manager._subspace.
+                           occupancy_from_structure(s,scmatrix=m), occu)
+        assert np.allclose(occu_from_structure(s, data_manager._iw.prim,
+                                               m),
+                           occu)
 
-    for m,s,corr in zip(df.matrix,df.map_str,df.map_corr):
+    for m, s, corr in zip(df.matrix, df.map_str, df.map_corr):
         assert ((pd.isna(s) and np.all(pd.isna(corr))) or
                 (not pd.isna(s) and not np.all(pd.isna(corr))))
 
 
 def test_find_sc_id(data_manager):
-    assert data_manager.find_sc_id(data_manager.sc_df.matrix.iloc[0]) == 0
+    sc_df = data_manager.sc_df
+    for i in sc_df.sc_id:
+        mats = sc_df.matrix[sc_df.sc_id == i].matrix.reset_index()
+        assert len(mats) == 1 # No duplicacy of supercell matrix in dataset.
+
+        mat = mats.iloc[0]
+        assert data_manager.find_sc_id(mat) == i
+        perm1 = [[0, 1, 0], [1, 0, 0], [0, 0, -1]]
+        perm2 = [[0, 0, 1], [0, -1, 0], [1, 0, 0]]
+        perm3 = [[-1, 0, 0], [0, 0, 1], [0, 1, 0]]
+        mat1 = np.array(np.dot(perm1, mat), dtype=int)
+        mat2 = np.array(np.dot(perm2, mat), dtype=int)
+        mat3 = np.array(np.dot(perm3, mat), dtype=int)
+        assert data_manager.find_sc_id(mat1) == i  # Symmetry equivalence also not duplicating.
+        assert data_manager.find_sc_id(mat2) == i
+        assert data_manager.find_sc_id(mat3) == i
+
 
 def test_insert_supercell(data_manager):
     dm = data_manager.copy()
     new_id = dm.insert_one_supercell([[-2,2,2],[1,-1,1],[1,1,-1]])
-    assert new_id == 1
+    assert new_id == 1  # Can find duplicacy.
     assert len(dm.sc_df) == 2
+    new_id2 = dm.insert_one_supercell([[-1, 5, 9], [2, 3, 4], [4, 1, -2]])
+    assert new_id == 2
+    assert len(dm.sc_df) == 3
+    assert len(data_manager.sc_df) == 1
 
 
 def test_find_comp_id(data_manager):
+    # sl_sizes = [3, 1]
+    # bits = [[Li+, Ca+, Vac], [Br-]]
     ucoord = [0.25, 0.75]
-    comp = [Composition({'Li+':1/12, 'Ca+':1/4}), Composition({'Br-':1.0})]
-    c_id = data_manager.find_comp_id(ucoord,sc_id=0)
+    comp = [Composition({'Li+': 1 / 12, 'Ca+': 1 / 4}), Composition({'Br-': 1.0})]
+    ccoord = [0.75]
+    c_id = data_manager.find_comp_id(ucoord, sc_id=0)
     assert c_id == 0
     c_id = data_manager.find_comp_id(comp, sc_id=0, comp_format='composition')
     assert c_id == 0
-
+    c_id = data_manager.find_comp_id(ccoord, sc_id=0, comp_format='constr')
+    assert c_id == 0
 
 def test_insert_comp(data_manager):
     dm = data_manager.copy()
@@ -153,18 +255,33 @@ def test_insert_occu(data_manager):
     sc_id, comp_id, new_id = dm.insert_one_occu(occu_2, sc_id=0)
     assert comp_id == 0 and new_id == 8
     assert len(dm.fact_df) == 9
+    assert len(data_manager.fact_df) == 8
 
+    # Can detect new composition.
     occu_3 = [2, 1, 2, 2, 0, 2, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0]
     sc_id, comp_id, new_id = dm.insert_one_occu(occu_3, sc_id=0)
     assert comp_id == 2 and new_id == 9
     assert len(dm.comp_df)==3 and len(dm.fact_df) == 10
+    assert len(data_manager.comp_df) == 2 and len(data_manager.fact_df) == 8
 
 
 def test_insert_structure(data_manager):
-    occu_3 = [2, 1, 2, 2, 0, 2, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0]   
+    occu_3 = [2, 1, 2, 2, 0, 2, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0]
+    mat = data_manager.sc_df.matrix.reset_index().iloc[0]
+    s = structure_from_occu(occu, data_manager._iw.prim, mat)
     dm = data_manager.copy()
-    sc_id, comp_id, new_id = dm.insert_one_occu(occu_3, sc_id=0)
+    sc_id, comp_id, new_id = dm.insert_one_structure(s, sc_id=0, iter_id=1)
     assert new_id == 8 and comp_id == 2
+    assert len(dm.comp_df) == 3 and len(dm.fact_df) == 9
+    assert len(data_manager.comp_df) == 2 and len(data_manager.fact_df) == 8
+
+    #Can detect new matrix.
+    mat = np.array([[2, 0, 0], [0, 2, 0], [0, 0, 1]], dtype=int)
+    s2 = structure_from_occu(occu, data_manager._iw.prim, mat)
+    sc_id, comp_id, new_id = dm.insert_one_structure(s2, scmat=mat, iter_id=1)
+    assert sc_id == 1 and comp_id == 3 and new_id == 9
+    assert len(dm.sc_df) == 3 and len(dm.comp_df) == 4 and len(dm.fact_df) == 10
+    assert len(data_manager.sc_df) == 1 and len(data_manager.comp_df) == 2 and len(data_manager.fact_df) == 8
 
 
 def test_remove_entree(data_manager):
@@ -172,14 +289,36 @@ def test_remove_entree(data_manager):
     dm.remove_entree_by_id(entry_ids = [0])
     assert np.allclose(dm.fact_df.entry_id, np.arange(7))
     assert np.allclose(dm.fact_df.comp_id, [0,1,1,0,0,1,1])
+    assert np.allclose(dm.fact_df.sc_id, [0,0,0,0,0,0,0])
 
+    occu_rm = dm.fact_df.loc[dm.fact_df.entry_id == 6, 'ori_occu'].reset_index().iloc[0]
+    sc_id_rm = dm.fact_df.loc[dm.fact_df.entry_id == 6, 'sc_id'].reset_index().iloc[0]
+    dm.remove_entree_by_id(entry_ids = [6])
+    assert np.allclose(dm.fact_df.entry_id, np.arange(6))
+    assert np.allclose(dm.fact_df.comp_id, [0,1,1,0,0,1])
+    assert np.allclose(dm.fact_df.sc_id, [0,0,0,0,0,0])
+    # Removed occu should not exist.
+    for i, o in zip(dm.fact_df.sc_id, dm.fact_df.ori_occu):
+        assert not (i == sc_id_rm and np.allclose(occu_rm, o))
+
+    assert len(data_manager.fact_df) == 8
 
 def test_remove_comps(data_manager):
     dm = data_manager.copy()
+    ucoord_rm = dm.comp_df.loc[dm.comp_df.comp_id == 0, 'ucoord'].reset_index().iloc[0]
+    sc_id_rm = dm.comp_df.loc[dm.comp_df.comp_id == 1, 'sc_id'].reset_index().iloc[0]
+
     dm.remove_comps_by_id(comp_ids = [0])
     assert np.allclose(dm.fact_df.entry_id, np.arange(4))
     assert np.allclose(dm.comp_df.comp_id, [0])
     assert np.allclose(dm.fact_df.comp_id, [0,0,0,0])
+    
+    # Removed ucoords should not exist anymore.
+    fact_merge = dm.fact_df.merge(dm.comp_df, on='comp_id', how='left')
+    for i, u in zip(fact_merge.sc_id, fact_merge.ucoord):
+        assert not (i == sc_id_rm and np.allclose(ucoord_rm, u))
+
+    assert len(data_manager.comp_df) == 2 and len(data_manager.fact_df) == 8
 
 
 def test_remove_supercells(data_manager):
@@ -188,8 +327,20 @@ def test_remove_supercells(data_manager):
     assert len(dm.sc_df) == 0
     assert len(dm.comp_df) == 0
     assert len(dm.fact_df) == 0
+    assert (len(data_manager.sc_df) == 1 and len(data_manager.comp_df) == 2
+            and len(data_manager.fact_df) == 8)
+
+
+def test_reset(data_manager):
+    dm = data_manager.copy()
+    dm.reset()
+    assert len(dm.sc_df) == 0
+    assert len(dm.comp_df) == 0
+    assert len(dm.fact_df) == 0
+    assert (len(data_manager.sc_df) == 1 and len(data_manager.comp_df) == 2
+            and len(data_manager.fact_df) == 8)
 
 
 def test_get_eid_status(data_manager):
-    assert set(data_manager.get_eid_w_status('SC')) == {0,1,2,3}
-    assert set(data_manager.get_eid_w_status('CL')) == {4,5,6,7}
+    assert sorted(data_manager.get_eid_w_status('SC')) == [0,1,2,3]
+    assert sorted(data_manager.get_eid_w_status('CL')) == [4,5,6,7]

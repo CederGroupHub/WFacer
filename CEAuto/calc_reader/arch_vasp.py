@@ -36,10 +36,6 @@ class ArchvaspReader(BaseReader):
                 path to the archieve. By difault, will be under ./vasp_run
         """
         self.path = path
-        if not os.path.isdir(path):
-            raise ValueError("Specified archieve {} does not exist!"
-                             .format(path))
-
         # Class cache for easy access to Vasprun and Outcar.
         self._vruns = {}
         self._ocars = {}

@@ -45,7 +45,7 @@ class MongofwManager(BaseManager):
         "MOAB": "canceljob"
     }
 
-    def __init__(self,data_manager,
+    def __init__(self,
                  time_limit=345600,
                  check_interval=300,
                  lp_file=None,

@@ -48,7 +48,7 @@ class ArchvaspWriter(BaseWriter):
         """Initialize.
 
         Args: 
-            path(str):
+            writer_path(str):
                 path to the calculation archieve.
             writer_strain(1*3 or 3*3 arraylike):
                 Strain matrix to apply to structure before writing as 

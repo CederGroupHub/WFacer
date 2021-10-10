@@ -12,7 +12,7 @@ import random
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
 DATADIR = os.path.join(os.path.dirname(__file__),'data')
-handlers = [CanoncialMCHandler, SemigrandDiscMCHandler, SemigrandMCHandler]
+handlers = [CanoncialMCHandler]
 
 def get_bits_sublats(prim):
     prim_bits = get_allowed_species(prim)

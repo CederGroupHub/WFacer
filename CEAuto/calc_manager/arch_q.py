@@ -12,6 +12,7 @@ import stat
 import re
 import numpy as np
 from abc import ABCMeta, abstractmethod
+from copy import deepcopy
 
 from .base import BaseManager
 from .utils.qstat_sge import qstat
@@ -44,7 +45,8 @@ class ArchqueueManager(BaseManager, metaclass=ABCMeta):
     submission_command = ""
     kill_command = ""
 
-    def __init__(self, path='vasp_run', ab_command='vasp', ncores = 16,
+    def __init__(self, path='vasp_run', ab_command='vasp',
+                 ncores = 16,
                  time_limit=345600, check_interval=300, **kwargs):
         """Initialize.
 
@@ -105,13 +107,13 @@ class ArchqueueManager(BaseManager, metaclass=ABCMeta):
             raise ValueError("Entry {} vasp inputs not fully written!"
                              .format(eid))
 
-        script = self.submission_template
+        script = deepcopy(self.submission_template)
         # Jobs will be named after root path (Current directory where you run
         # CEAuto main program).
         jobname = self._root_name+'_ce_{}'.format(eid)
-        script = re.sub('\*jobname\*', jobname, script)
-        script = re.sub('\*abcommand\*', self.ab_command, script)
-        script = re.sub('\*ncores\*', self.ncores, script)
+        script = re.sub(r"<jobname>", jobname, script)
+        script = re.sub(r"<abcommand>", self.ab_command, script)
+        script = re.sub(r"<ncores>", str(self.ncores), script)
 
         # Change to executable and submit.
         os.chdir(epath)
@@ -146,14 +148,15 @@ class ArchsgeManager(ArchqueueManager):
           Direct init not recommended!
     """
     submission_template = "#!/bin/bash\n#$ -cwd\n#$ -j y\n"+\
-                               "#$ -N *jobname*\n#$ -m es\n#$ -V\n"+\
-                               "#$ -pe impi *ncores*\n#$ -o ll_out\n"+\
+                               "#$ -N <jobname>\n#$ -m es\n#$ -V\n"+\
+                               "#$ -pe impi <ncores>\n#$ -o ll_out\n"+\
                                "#$ -e ll_er\n#$ -S /bin/bash\n"+\
-                               "\n*abcommand*"
+                               "\n<abcommand>"
     submission_command = "qsub"
     kill_command = "qdel"
 
-    def __init__(self, path='vasp_run', ab_command='vasp', ncores = 16,
+    def __init__(self, path='vasp_run', ab_command='vasp',
+                 ncores = 16,
                  time_limit=345600, check_interval=300, **kwargs):
         """Initialize.
 
@@ -182,7 +185,8 @@ class ArchsgeManager(ArchqueueManager):
                 Default is every 5 mins.
         """
 
-        super().__init__(path=path, ab_command=ab_command, ncores=ncores,
+        super().__init__(path=path, ab_command=ab_command,
+                         ncores=ncores,
                          time_limit=time_limit, check_interval=check_interval,
                          **kwargs)
 

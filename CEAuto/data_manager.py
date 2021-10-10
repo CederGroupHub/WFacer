@@ -133,14 +133,12 @@ class DataManager:
                 Non discriminative composition vector, sums same specie on
                 different sublattices up. This is the only physical
                 composition.
-            eq_occu(List[int]):
-                MC equilibrated occupation array in encoded form.
         """
         if self._comp_df is None:
             self._comp_df = pd.DataFrame(columns=['comp_id', 'sc_id',
                                                   'ucoord', 'ccoord',
                                                   'comp', 'cstat',
-                                                  'nondisc', 'eq_occu'])
+                                                  'nondisc'])
         return self._comp_df
 
     @property
@@ -403,8 +401,7 @@ class DataManager:
                                               'ccoord': ccoord,
                                               'cstat': cstat,
                                               'comp': comp,
-                                              'nondisc': nondisc,
-                                              'eq_occu': None},
+                                              'nondisc': nondisc},
                                              ignore_index=True)
         return sc_id, comp_id
 
@@ -717,7 +714,7 @@ class DataManager:
         """Removes entree from the fact table.
 
         Does not change the supercell and the composition table.
-        All indices will be re-assigned.
+        All indices will be RE-assigned.
         Args:
             entry_ids(List[int]):
                 The entry indices to remove. Default is empty list.
@@ -730,6 +727,7 @@ class DataManager:
     def remove_entree_by_iters_modules(self, iter_ids=[], modules=[]):
         """Remove entree of specified iteration indices and modules.
 
+        Entry indices will be RE-ASSIGNED!
         Args:
             iter_ids(List[int]):
                 Iteration numbers to remove.
@@ -752,6 +750,7 @@ class DataManager:
         composition. All indices will be reassigned.
         Does not change the supercell table.
 
+        Indices will be RE-assigned!
         Args:
             comp_id(int):
                 The composition index to remove. If not given, will remove
@@ -774,7 +773,8 @@ class DataManager:
 
         Will also remove all entree in the fact table that is this supercell,
         and all related compositions.
-        All indices will be re-assigned.
+
+        All indices will be Re-assigned!
         Args:
             sc_id(int):
                 The entry index to remove. If not given, will remove the last
@@ -832,7 +832,7 @@ class DataManager:
         log.warning("Clearing all previous records. " +
                     "Do this at your own risk!")
         self.remove_supercells_by_id(sc_ids=
-                                     self.fact_df.sc_id.tolist())
+                                     self.sc_df.sc_id.tolist())
 
     def copy(self):
         """Deepcopy of DataManager."""
@@ -876,26 +876,6 @@ class DataManager:
         self._comp_df.sc_id = self._comp_df.sc_id.map(lambda osid:
                                                       old_sid.index(osid))
 
-    def _save_dataframes(self, sc_file=SC_FILE, comp_file=COMP_FILE,
-                         fact_file=FACT_FILE):
-        """Saving data tables. 
-
-        File names can be changed, but not recommended!
-        """
-        save_dataframes(self.sc_df, self.comp_df, self.fact_df,
-                        sc_file=sc_file, comp_file=comp_file,
-                        fact_file=fact_file)
-
-    def _load_dataframes(self, sc_file=SC_FILE, comp_file=COMP_FILE,
-                         fact_file=FACT_FILE):
-        """Loading data tables.
-
-        File names can be changed, but not recommended!
-        """
-        self._sc_df, self._comp_df, self._fact_df = load_dataframes(sc_file,
-                                                                    comp_file,
-                                                                    fact_file)
-
     @classmethod
     def auto_load(cls,
                   wrapper_file=WRAPPER_FILE,
@@ -929,13 +909,11 @@ class DataManager:
         """        
         iw = InputsWrapper.auto_load(wrapper_file=wrapper_file,
                                      options_file=options_file)
+        sc_df, comp_df, fact_df = load_dataframes(sc_file=sc_file,
+                                                  comp_file=comp_file,
+                                                  fact_file=fact_file)
 
-        socket = cls(iw)
-
-        socket._load_dataframes(sc_file=sc_file, comp_file=comp_file,
-                                fact_file=fact_file)
-
-        return socket
+        return cls(iw, sc_df=sc_df, comp_df=comp_df, fact_df=fact_df)
 
     def auto_save(self, wrapper_file=WRAPPER_FILE,
                   sc_file=SC_FILE, comp_file=COMP_FILE, fact_file=FACT_FILE):
@@ -956,5 +934,6 @@ class DataManager:
                 Default: 'data.csv'.
         """
         self._iw.auto_save(wrapper_file=wrapper_file)
-        self._save_dataframes(sc_file=sc_file, comp_file=comp_file,
-                              fact_file=fact_file)
+        save_dataframes(self.sc_df, self.comp_df, self.fact_df,
+                        sc_file=sc_file, comp_file=comp_file,
+                        fact_file=fact_file)

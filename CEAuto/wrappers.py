@@ -10,6 +10,7 @@ import numpy as np
 import json
 import yaml
 from copy import deepcopy
+import os
 
 from monty.json import MSONable
 from pymatgen.core import Structure, Lattice, Composition
@@ -31,7 +32,8 @@ from .calc_manager import manager_factory
 
 from .config_paths import (CE_HISTORY_FILE,
                            WRAPPER_FILE,
-                           OPTIONS_FILE)
+                           OPTIONS_FILE,
+                           PRIM_FILE)
 
 
 class InputsWrapper(MSONable):
@@ -89,6 +91,10 @@ class InputsWrapper(MSONable):
         _frac_coords = frac_coords
         _sublat_list = sublat_list
         self._prim = prim
+
+        if prim_file is None:
+            prim_file = PRIM_FILE
+
         self._prim_file = prim_file
 
         if (self._prim is None and self._prim_file is not None and
@@ -101,10 +107,10 @@ class InputsWrapper(MSONable):
                 raise ValueError("Structure information not sufficient! "+
                                  "Can't start CE.")
             else:
-                self._prim = InputsWrapper.construct_prim(_bits,
-                                                          _sublat_list,
-                                                          _lattice,
-                                                          _frac_coords)
+                self._prim = self.construct_prim(_bits,
+                                                 _sublat_list,
+                                                 _lattice,
+                                                 _frac_coords)
 
         # These will always be reconstructed.
         self._bits = None
@@ -112,9 +118,13 @@ class InputsWrapper(MSONable):
         self._lattice = None
         self._frac_coords = None
 
-        if self.prim.charge != 0:
-            self._prim = construct_prim(self.bits, self.sublat_list,
-                                        self.lattice, self.frac_coords)
+        # Standardize prim cell to 0 charge. Concentration dependent
+        # not supported.
+        if abs(self._prim.charge) > 1E-8:
+            self._prim = self.construct_prim(self.bits,
+                                             self.sublat_list,
+                                             self.lattice,
+                                             self.frac_coords)
 
         # Compspace can be saved and re-used.
         self._compspace = None
@@ -122,7 +132,7 @@ class InputsWrapper(MSONable):
 
         self._subspace = None
 
-    @classmethod
+    @staticmethod
     def construct_prim(bits, sublat_list, lattice, frac_coords):
         """Construct a primitive cell based on lattice info.
 
@@ -144,6 +154,7 @@ class InputsWrapper(MSONable):
         # Modify prim to a charge neutral composition that includes
         # all species.
         sl_sizes = [len(s) for s in sublat_list]
+
         compspace = CompSpace(bits, sl_sizes)
         typical_comp = (compspace.
                         get_random_point_in_unit_space(form='composition'))
@@ -210,23 +221,6 @@ class InputsWrapper(MSONable):
             List[int]
         """
         return [len(s) for s in self.sublat_list]
-
-    def get_all_sublattices(self, scmatrix=np.identity(3, dtype=int)):
-        """Get all smol.moca.sublattices in a super-cell.
-
-        Args:
-            scmatrix(Arraylike of int):
-                Supercell matrix.
-        """
-        unique_site_spaces = tuple(set(get_site_spaces(self.prim)))
-        supercell = self.prim.copy()
-        supercell.make_supercell(scmatrix)
-        allowed_species = get_allowed_species(supercell)
-
-        return [Sublattice(site_space,
-                np.array([i for i, sp in enumerate(allowed_species)
-                         if sp == list(site_space.keys())]))
-                for site_space in unique_site_spaces]
 
     @property
     def lattice(self):
@@ -478,7 +472,7 @@ class InputsWrapper(MSONable):
         Returns:
             Dict.
 
-        path(str):
+        manager_path(str):
             Path to write VASP output files locally (only used by ArchQueue)
             Default to 'vasp_run/'
         lp_file(str):
@@ -522,7 +516,7 @@ class InputsWrapper(MSONable):
         Returns:
             Dict.
 
-        path(str):
+        reader_path(str):
             Path to write VASP output files locally (only used by ArchQueue)
             Default to 'vasp_run/'
         md_file(str):
@@ -716,6 +710,8 @@ class InputsWrapper(MSONable):
 
         attr_keys = ['_subspace','_compspace']
 
+        mson_keys = ["@module", "@class"]
+
         prim_file = d.get('prim_file')
         prim = d.get('prim')
         if isinstance(prim, dict):
@@ -742,7 +738,12 @@ class InputsWrapper(MSONable):
         sublat_list = d.get('sublat_list')
 
         options = {k: v for k, v in d.items()
-                   if k not in lat_keys + attr_keys}
+                   if k not in lat_keys + attr_keys + mson_keys}
+
+        # Radius keys may be loaded as strings rather than ints.
+        if options.get('radius') is not None:
+            options['radius'] = {int(k): float(v)
+                                 for k, v in options['radius'].items()}
 
         socket = cls(bits=bits, sublat_list=sublat_list,
                      lattice=lattice, frac_coords=frac_coords,

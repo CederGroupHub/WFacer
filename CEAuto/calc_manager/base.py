@@ -43,11 +43,11 @@ class BaseManager(ABC):
                 Interval to check status of all computations in queue. Unit is second.
                 Default is every 5 mins.
         """
-        self.time_limit=time_limit
-        self.check_interval=check_interval
+        self.time_limit = time_limit
+        self.check_interval = check_interval
 
     @abstractmethod
-    def entree_in_queue(self,entry_ids):
+    def entree_in_queue(self, entry_ids):
         """
         Check ab-initio task status for given entree indices.
         (same as in the doc of  CEAuto.featurizer.)        

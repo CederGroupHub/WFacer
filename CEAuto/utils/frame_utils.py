@@ -62,7 +62,7 @@ def save_dataframes(sc_df, comp_df, fact_df,
         fact_df_ser.map_occu = fact_df_ser.map_occu.map(json.dumps)
         fact_df_ser.map_corr = fact_df_ser.map_corr.map(json.dumps)
         fact_df_ser.other_props = fact_df_ser.other_props.map(json.dumps)
-        fact_df_ser.to_csv(fact_file,index=False)
+        fact_df_ser.to_csv(fact_file, index=False)
 
 
 def load_dataframes(sc_file='sc_mats.csv', comp_file='comps.csv',
@@ -106,14 +106,13 @@ def load_dataframes(sc_file='sc_mats.csv', comp_file='comps.csv',
         comp_df.nondisc = comp_df.nondisc.map(list_conv)
         comp_df.cstat = comp_df.cstat.map(list_conv)
         comp_df.comp = comp_df.comp.map(comp_conv)
-        comp_df.eq_occu = comp_df.eq_occu.map(list_conv)
 
     else:
         comp_df = pd.DataFrame(columns=
                                ['comp_id', 'sc_id',
                                 'ucoord', 'ccoord',
                                 'comp', 'cstat',
-                                'nondisc', 'eq_occu'])
+                                'nondisc'])
 
     if os.path.isfile(fact_file):
         fact_df = pd.read_csv(fact_file)

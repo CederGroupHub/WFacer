@@ -316,6 +316,7 @@ class CanonicalmcHandler(MCHandler):
                                                   nwalkers=1)
         return self._sampler
 
+
 # Not used in release version.
 class SemigrandmcHandler(MCHandler):
     """

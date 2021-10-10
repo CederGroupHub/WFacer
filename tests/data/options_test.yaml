@@ -1,0 +1,14 @@
+prim_file: ./LiCaBr_prim.json
+decorators_types:
+  - Magcharge
+decorators_args:
+  - labels_table:
+      Li: [1]
+      Ca: [1]
+      Br: [-1]
+radius:
+  2: 7.0
+  3: 5.0
+  4: 5.0
+extern_types:
+  - EwaldTerm

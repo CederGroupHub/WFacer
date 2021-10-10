@@ -9,7 +9,7 @@ def test_mag_charge_decorator():
     lat = Lattice.cubic(1)
     s = Structure(lat,['B','B','C','C'],
                   [[0,0,0],[0.5,0.5,0],[0,0.5,0.5],[0.5,0,0.5]])
-    s_pool = [s.copy() for sid in range(100)]
+    s_pool = [s.copy() for sid in range(300)]
 
     def get_random_neutral_labels():
         ca_labels = random.choice([[1,3], [3, 1], [2, 2]])
@@ -17,13 +17,13 @@ def test_mag_charge_decorator():
         return ca_labels + an_labels
 
     label_true = [get_random_neutral_labels()
-                  for j in range(100)]
+                  for j in range(300)]
     labels_table = {'B':[1,2,3],
                     'C':[-2]}
 
     mags = []
 
-    for i in range(100):
+    for i in range(300):
         mags_i = []
         for j in range(4):
             if label_true[i][j] == 1:
@@ -45,10 +45,32 @@ def test_mag_charge_decorator():
     decor = MagchargeDecorator(labels_table)
     decor.train(s_pool, properties)
     label_assign = decor.assign(s_pool, properties)['charge']
-    n_fails = int(np.sum(np.sum(label_assign, axis=-1) != 0))
+    fails = (np.sum(label_assign, axis=-1) != 0)
+    mismatches = ~np.all(np.array(label_assign) == np.array(label_true), axis=-1)
 
-    assert n_fails <= 20
-    
+    print("Unbalanced assignments:")
+    for l1, l2 in zip(np.array(label_true)[fails], np.array(label_assign)[fails]):
+        print("True label:", l1)
+        print("Assignment:", l2)
+
+    print("Mismatch assignments:")
+    for l1, l2 in zip(np.array(label_true)[mismatches], np.array(label_assign)[mismatches]):
+        print("True label:", l1)
+        print("Assignment:", l2)
+
+    assert np.average(fails) <= 0.2
+    assert np.average(mismatches) <= 0.2
+
+    label_true_ca = np.array(label_true)[:, :2].flatten()
+    label_assign_ca = np.array(label_assign)[:, :2].flatten()
+
+    # Success rates for each specie
+    assert np.average(label_assign_ca[label_true_ca==1] == 1) >= 0.8
+    assert np.average(label_assign_ca[label_true_ca==2] == 2) >= 0.8
+    assert np.average(label_assign_ca[label_true_ca==3] == 3) >= 0.8
+    assert np.average(label_assign_ca[label_true_ca==1] == 3) == 0 # Non-crossing.
+    assert np.average(label_assign_ca[label_true_ca==3] == 1) == 0
+
     decor2 = MagchargeDecorator.from_dict(decor.as_dict())
     label_assign2 = decor2.assign(s_pool, properties)['charge']
     assert label_assign2 == label_assign
