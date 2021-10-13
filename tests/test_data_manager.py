@@ -2,15 +2,18 @@ from CEAuto import DataManager, InputsWrapper
 from CEAuto.utils.frame_utils import load_dataframes, save_dataframes
 from CEAuto.utils.occu_utils import structure_from_occu, occu_from_structure
 from CEAuto.config_paths import *
+from CEAuto.utils.math_utils import get_diag_matrices
 
 import pytest
 import numpy as np
 import pandas as pd
 from pandas._testing import assert_frame_equal
+import random
 
 import os
 from copy import deepcopy
 from pymatgen.core import Structure, Composition
+from pymatgen.analysis.structure_matcher import StructureMatcher
 from smol.cofe.space.domain import Vacancy
 
 from monty.serialization import loadfn
@@ -24,7 +27,7 @@ fact_file = os.path.join(DATADIR,'fact_df_test.csv')
 
 def assert_df_formats(sc_df, comp_df, fact_df):
     # Assert the correct formats.
-    def assert_2d(ll, shape=None, name=float):
+    def assert_2d(ll, shape=None, name=(float, int)):
         if shape is not None:
             assert len(ll) == shape[0]
         for l in ll:
@@ -34,7 +37,7 @@ def assert_df_formats(sc_df, comp_df, fact_df):
             for i in l:
                 assert isinstance(i, name)
 
-    def assert_1d(l, name=float):
+    def assert_1d(l, name=(float, int)):
         for i in l:
             assert isinstance(i, name)
 
@@ -44,12 +47,12 @@ def assert_df_formats(sc_df, comp_df, fact_df):
 
     def assert_type_series(series, name, more_assertion=None, allow_none=False):
         for item in series:
-            if not pd.isna(item):
+            if not np.any(pd.isna(item)):
                 assert isinstance(item, name)
             else:
                 assert allow_none
 
-            if more_assertions is not None and not pd.isna(item):
+            if more_assertion is not None and not np.any(pd.isna(item)):
                 more_assertion(item)
 
     assert_type_series(sc_df.matrix, list, lambda x: assert_2d(x, shape=(3, 3), name=int))
@@ -91,7 +94,7 @@ def test_load_save_dfs():
     assert_df_formats(sc_df2, comp_df2, fact_df2)
     assert_frame_equal(sc_df, sc_df2)
     assert_frame_equal(comp_df, comp_df2)
-    assert_frame_euqal(fact_df, fact_df2)
+    assert_frame_equal(fact_df, fact_df2)
 
     os.remove(SC_FILE)
     os.remove(COMP_FILE)
@@ -110,7 +113,7 @@ def data_manager(inputs_wrapper):
 
 def test_copy(data_manager):
     dm = data_manager.copy()
-    assert data_manager._iw.as_dict() == dm._iw.subspace.as_dict()
+    assert data_manager._iw.as_dict() == dm._iw.as_dict()
     assert_frame_equal(data_manager.sc_df, dm.sc_df)
     assert_frame_equal(data_manager.comp_df, dm.comp_df)
     assert_frame_equal(data_manager.fact_df, dm.fact_df)
@@ -170,17 +173,47 @@ def test_save_load(data_manager):
     os.remove(FACT_FILE)
 
 
+def test_muitiple_rebuilds(inputs_wrapper):
+    for _ in range(3):
+        mat = random.choice(get_diag_matrices(4))
+        mat[0][1] = random.choice(list(range(-10, 10)))
+        mat[0][2] = random.choice(list(range(-10, 10)))
+        mat[1][2] = random.choice(list(range(-10, 10)))
+        for _ in range(5):
+            occu = [random.choice([0, 1, 2]) for _ in range(12)] + [0 for _ in range(4)]
+            s = structure_from_occu(occu, inputs_wrapper.prim, mat)
+            corr = inputs_wrapper.subspace.corr_from_structure(s, scmatrix=mat)
+            for _ in range(10):
+                occu_remap = occu_from_structure(s, inputs_wrapper.prim, mat)
+                s_remap = structure_from_occu(occu_remap, inputs_wrapper.prim, mat)
+                corr_remap = inputs_wrapper.subspace.corr_from_structure(s_remap, scmatrix=mat)
+                assert StructureMatcher().fit(s, s_remap)
+                assert np.allclose(corr_remap, corr)
+                occu = deepcopy(occu_remap)
+                s = s_remap.copy()
+                corr = deepcopy(corr_remap)
+
+
 def test_get_structures(data_manager):
     # print(data_manager.fact_df)
     df = data_manager.fact_df_with_structures
     for m, s, occu, corr in zip(df.matrix, df.ori_str, df.ori_occu, df.ori_corr):
-        assert np.allclose(data_manager._subspace.
-                           corr_from_structure(s,scmatrix=m)[:-1], corr)
-        assert np.allclose(data_manager._subspace.
-                           occupancy_from_structure(s,scmatrix=m), occu)
-        assert np.allclose(occu_from_structure(s, data_manager._iw.prim,
-                                               m),
-                           occu)
+        print("Length of corr:", len(corr))
+        print("Length of subspace:",data_manager.subspace.num_corr_functions)
+        assert np.allclose(data_manager.subspace.
+                           corr_from_structure(s,scmatrix=m), corr)
+
+        s_build = structure_from_occu(occu, data_manager._iw.prim, m)
+        cspace_occu = data_manager.subspace.occupancy_from_structure(s,scmatrix=m, encode=True)
+        util_occu = occu_from_structure(s, data_manager._iw.prim, m)
+        assert np.allclose(cspace_occu, util_occu)
+        assert StructureMatcher().fit(s, s_build)
+
+        # cspace_occu and ori_occu won't match exactly. This is an issue with
+        # StructureMatcher.get_mapping. So please only test symmetry matching of
+        # structures.
+        s_rebuild = structure_from_occu(util_occu, data_manager._iw.prim, m)
+        assert StructureMatcher().fit(s_build, s_rebuild)
 
     for m, s, corr in zip(df.matrix, df.map_str, df.map_corr):
         assert ((pd.isna(s) and np.all(pd.isna(corr))) or
@@ -190,10 +223,12 @@ def test_get_structures(data_manager):
 def test_find_sc_id(data_manager):
     sc_df = data_manager.sc_df
     for i in sc_df.sc_id:
-        mats = sc_df.matrix[sc_df.sc_id == i].matrix.reset_index()
+        mats = sc_df.matrix[sc_df.sc_id == i].reset_index(drop=True)
         assert len(mats) == 1 # No duplicacy of supercell matrix in dataset.
 
         mat = mats.iloc[0]
+        print("mat:", mat)
+        print("mat shape:", np.array(mat, dtype=int).shape)
         assert data_manager.find_sc_id(mat) == i
         perm1 = [[0, 1, 0], [1, 0, 0], [0, 0, -1]]
         perm2 = [[0, 0, 1], [0, -1, 0], [1, 0, 0]]
@@ -212,10 +247,11 @@ def test_insert_supercell(data_manager):
     assert new_id == 1  # Can find duplicacy.
     assert len(dm.sc_df) == 2
     new_id2 = dm.insert_one_supercell([[-1, 5, 9], [2, 3, 4], [4, 1, -2]])
-    assert new_id == 2
+    assert new_id2 == 2
     assert len(dm.sc_df) == 3
     assert len(data_manager.sc_df) == 1
 
+# TODO: fix comp_id issue; fix get_all_sublattices issue.
 
 def test_find_comp_id(data_manager):
     # sl_sizes = [3, 1]
@@ -266,8 +302,8 @@ def test_insert_occu(data_manager):
 
 
 def test_insert_structure(data_manager):
-    occu_3 = [2, 1, 2, 2, 0, 2, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0]
-    mat = data_manager.sc_df.matrix.reset_index().iloc[0]
+    occu = [2, 1, 2, 2, 0, 2, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0]
+    mat = data_manager.sc_df.matrix.reset_index(drop=True).iloc[0]
     s = structure_from_occu(occu, data_manager._iw.prim, mat)
     dm = data_manager.copy()
     sc_id, comp_id, new_id = dm.insert_one_structure(s, sc_id=0, iter_id=1)
@@ -291,8 +327,8 @@ def test_remove_entree(data_manager):
     assert np.allclose(dm.fact_df.comp_id, [0,1,1,0,0,1,1])
     assert np.allclose(dm.fact_df.sc_id, [0,0,0,0,0,0,0])
 
-    occu_rm = dm.fact_df.loc[dm.fact_df.entry_id == 6, 'ori_occu'].reset_index().iloc[0]
-    sc_id_rm = dm.fact_df.loc[dm.fact_df.entry_id == 6, 'sc_id'].reset_index().iloc[0]
+    occu_rm = dm.fact_df.loc[dm.fact_df.entry_id == 6, 'ori_occu'].reset_index(drop=True).iloc[0]
+    sc_id_rm = dm.fact_df.loc[dm.fact_df.entry_id == 6, 'sc_id'].reset_index(drop=True).iloc[0]
     dm.remove_entree_by_id(entry_ids = [6])
     assert np.allclose(dm.fact_df.entry_id, np.arange(6))
     assert np.allclose(dm.fact_df.comp_id, [0,1,1,0,0,1])
@@ -305,8 +341,8 @@ def test_remove_entree(data_manager):
 
 def test_remove_comps(data_manager):
     dm = data_manager.copy()
-    ucoord_rm = dm.comp_df.loc[dm.comp_df.comp_id == 0, 'ucoord'].reset_index().iloc[0]
-    sc_id_rm = dm.comp_df.loc[dm.comp_df.comp_id == 1, 'sc_id'].reset_index().iloc[0]
+    ucoord_rm = dm.comp_df.loc[dm.comp_df.comp_id == 0, 'ucoord'].reset_index(drop=True).iloc[0]
+    sc_id_rm = dm.comp_df.loc[dm.comp_df.comp_id == 1, 'sc_id'].reset_index(drop=True).iloc[0]
 
     dm.remove_comps_by_id(comp_ids = [0])
     assert np.allclose(dm.fact_df.entry_id, np.arange(4))
@@ -315,7 +351,8 @@ def test_remove_comps(data_manager):
     
     # Removed ucoords should not exist anymore.
     fact_merge = dm.fact_df.merge(dm.comp_df, on='comp_id', how='left')
-    for i, u in zip(fact_merge.sc_id, fact_merge.ucoord):
+    print("fact_merge:", fact_merge)
+    for i, u in zip(fact_merge.sc_id_x, fact_merge.ucoord):
         assert not (i == sc_id_rm and np.allclose(ucoord_rm, u))
 
     assert len(data_manager.comp_df) == 2 and len(data_manager.fact_df) == 8

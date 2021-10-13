@@ -132,26 +132,96 @@ def select_rows(femat,n_select=10,old_femat=[],method='CUR',keep=[]):
 
 
 #Number theory
-def get_diag_matrices(n,d=3):
+def get_integer_grid(subspc_normv, right_side=0, limiters=None):
+    """Enumerate all points on a diophantine lattice.
+
+    Gives all integer grid points in a subspace (on a hyperplane
+    defined by a normal vector). The normal vector's components
+    should all be positive, non-zero, and sorted (from low to high).
+    Also know as the standard integer enumeration problem.
+
+    Note:
+        Diophatine enumeration is NP-hard, so try not to enumerate
+        when dimensions of diophantine equation is too high!
+
+    Args:
+        subspc_normv(1D ArrayLike[float]):
+            Normal vector of the integer hyper plane.
+        right_side(int,default=0):
+            Right side intercept of the hyper plane equation.
+            Normal vector @ coordinate = intercept.
+        limiters(List[tuple(int,int)]|NoneType, default = None):
+             Lowerbounds and upperbounds of enumeration in
+             each dimension.
+
+    Return:
+        List[List[int]], enumerated integer coordinates.
     """
-    Get d dimensional positive integer diagonal matrices with
-    det(M)=n
+    d = len(subspc_normv)
+    if limiters is None:
+        limiters = [(-7, 8) for i in range(d)]
+
+    grids = []
+    if d < 1:
+        raise ValueError('Dimensionality too low, can not enumerate!')
+
+    elif d == 1:
+        k = subspc_normv[-1]
+        if k != 0:
+            if (right_side % k == 0 and right_side // k >= limiters[-1][0]
+               and right_side // k <= limiters[-1][1]):
+                grids.append([right_side // k])
+        else:
+            if right_side == 0:
+                for i in range(limiters[-1][0], limiters[-1][1] + 1):
+                    grids.append([i])
+
+    else:
+        new_limiters = limiters[:-1]
+        # Move the last variable to the right hand side of
+        # the hyperplane expression
+        grids = []
+        for val in range(limiters[-1][0], limiters[-1][1]+1):
+            partial_grids = get_integer_grid(
+                                            subspc_normv[:-1],
+                                            right_side -
+                                            val * subspc_normv[-1],
+                                            limiters=new_limiters
+                                            )
+            for p_grid in partial_grids:
+                grids.append(p_grid + [val])
+
+    return grids
+
+
+def get_diag_matrices(n, d=3):
+    """Get d dimensional integer diagonal matrices, det(M)=n.
+
+    Args:
+       n(int):
+          Determinant of output matrices.
+       d(int): optional
+          Dimension of output matrices. Default to 3.
+    Returns:
+       list[3*3 list]:
+          Enumerated positive integer matrices.
     """
     factors = factorint(n)
     normv = [1 for i in range(d)]
 
     prime_partitions = []
-    for factor,num in factors.items():
-        limiters = [(0,num) for i in range(d)]
-        partitions = get_integer_grid(normv,right_side=num,limiters=limiters)
+    for factor, num in factors.items():
+        limiters = [(0, num) for i in range(d)]
+        partitions = get_integer_grid(normv, right_side=num,
+                                      limiters=limiters)
         prime_partitions.append(partitions)
 
     factor_partitions = []
     for p_combo in product(*prime_partitions):
         factor_partition = [1 for i in range(d)]
-        for f_id,factor in enumerate(factors):
+        for f_id, factor in enumerate(factors):
             for p_id, power in enumerate(p_combo[f_id]):
-                factor_partition[p_id]*=(factor**p_combo[f_id][p_id])
+                factor_partition[p_id] *= (factor ** p_combo[f_id][p_id])
         factor_partitions.append(factor_partition)
 
     mats = [np.diag(f_part).tolist() for f_part in sorted(factor_partitions)]

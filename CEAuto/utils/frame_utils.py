@@ -5,6 +5,7 @@ __author__ = 'Fengyu Xie'
 import pandas as pd
 import json
 import os
+import numpy as np
 
 from .serial_utils import deser_comp, serialize_comp
 
@@ -84,8 +85,8 @@ def load_dataframes(sc_file='sc_mats.csv', comp_file='comps.csv',
     Returns:
         sc_df, comp_df, fact_df: pd.DataFrame.
     """
-    list_conv = lambda x: json.loads(x) if not pd.isna(x) else None
-    comp_conv = lambda x: (deser_comp(json.loads(x)) if not pd.isna(x)
+    list_conv = lambda x: json.loads(x) if not np.any(pd.isna(x)) else None
+    comp_conv = lambda x: (deser_comp(json.loads(x)) if not np.any(pd.isna(x))
                            else None)
 
     # Note: pd can't store int and None together. It's okay not to

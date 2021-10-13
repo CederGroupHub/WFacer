@@ -90,7 +90,7 @@ class GSChecker:
             # If multiple GSs have the same energy, only one will be taken.
             _prev_hull = (fact_prev.groupby('comp_id')
                           .agg(lambda df: df.loc[df['e_ce'].idxmin()])
-                          .reset_index())
+                          .reset_index(drop=True))
             _prev_hull = _prev_hull.loc[:, ['comp_id', 'e_ce']]
             _prev_hull = _prev_hull.merge(self._comp_table, how='left',
                                           on='comp_id')
@@ -101,7 +101,7 @@ class GSChecker:
         if mode == 'dft':
             _prev_hull = (fact_prev.groupby('comp_id')
                           .agg(lambda df: df.loc[df['e_prim'].idxmin()])
-                          .reset_index())
+                          .reset_index(drop=True))
             _prev_hull = _prev_hull.loc[:,['comp_id', 'e_prim']]
             _prev_hull = _prev_hull.merge(self._comp_table, how='left',
                                           on='comp_id')

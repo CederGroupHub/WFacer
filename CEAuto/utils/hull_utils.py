@@ -39,8 +39,8 @@ def hulls_match(old_hull, new_hull, e_tol, comp_tol=0.05):
     if len(comple_hull) == 0:
         return True  #No new GS compositions detected!
 
-    inner_hull = inner_hull.reset_index()
-    comple_hull = comple_hull.reset_index()
+    inner_hull = inner_hull.reset_index(drop=True)
+    comple_hull = comple_hull.reset_index(drop=True)
 
     for new_id in range(len(comple_hull)):
         new_ucoord = np.array(comple_hull.iloc[new_id]['ucoord_y'])

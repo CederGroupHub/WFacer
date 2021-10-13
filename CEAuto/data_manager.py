@@ -387,7 +387,7 @@ class DataManager:
         cstat = self.compspace.translate_format(new_comp,
                                                 from_format=comp_format,
                                                 to_format='compstat')
-        nondisc = (self._compspace.translate_format(new_comp,
+        nondisc = (self.compspace.translate_format(new_comp,
                                                     from_format=comp_format,
                                                     to_format='nondisc')
                    .tolist())
@@ -448,7 +448,7 @@ class DataManager:
 
         sc_id = sc_id if sc_id is not None else self.find_sc_id(sc_mat)
         sc_mat = (sc_mat or self.sc_df[self.sc_df.sc_id == sc_id]
-                  .reset_index().iloc[0]['matrix'])
+                  .reset_index(drop=True).iloc[0]['matrix'])
         sc_size = int(round(abs(np.linalg.det(sc_mat))))
 
         if sc_id is None:
@@ -460,7 +460,7 @@ class DataManager:
         # one standard supercell matrix.
         s = structure_from_occu(occu, self.prim, sc_mat)
         sc_mat_std = (self.sc_df[self.sc_df.sc_id == sc_id]
-                      .reset_index().iloc[0]['matrix'])
+                      .reset_index(drop=True).iloc[0]['matrix'])
         occu_std = occu_from_structure(s, self.prim, sc_mat_std)
 
         if comp_id is None and comp is None:
@@ -490,7 +490,7 @@ class DataManager:
                  (self.fact_df.comp_id == comp_id))
         fact = self.fact_df[filt_].merge(self.sc_df,
                                          on='sc_id',
-                                         how='left').reset_index()
+                                         how='left').reset_index(drop=True)
 
         sm = StructureMatcher()
         s_new = structure_from_occu(occu_std, self.prim, sc_mat_std)
@@ -563,7 +563,7 @@ class DataManager:
         sc_id = (sc_id if sc_id is not None
                  else self.insert_one_supercell(sc_mat))
         sc_mat = (sc_mat or self.sc_df[self.sc_df.sc_id == sc_id]
-                  .reset_index().iloc[0]['matrix'])
+                  .reset_index(drop=True).iloc[0]['matrix'])
         sc_size = int(round(abs(np.linalg.det(sc_mat))))
 
         # When you supercell matrices are only symmetrically equivalent,
@@ -572,7 +572,7 @@ class DataManager:
         # one standard supercell matrix.
         s = structure_from_occu(occu, self.prim, sc_mat)
         sc_mat_std = (self.sc_df[self.sc_df.sc_id == sc_id]
-                      .reset_index().iloc[0]['matrix'])
+                      .reset_index(drop=True).iloc[0]['matrix'])
         occu_std = occu_from_structure(s, self.prim, sc_mat_std)
 
         if comp_id is None and comp is None:
@@ -697,7 +697,7 @@ class DataManager:
 
         sc_id = sc_id if sc_id is not None else self.insert_one_supercell(sc_mat)
         sc_mat_std = (self.sc_df[self.sc_df.sc_id == sc_id].
-                      reset_index().iloc[0]['matrix'])
+                      reset_index(drop=True).iloc[0]['matrix'])
 
         occu = self.subspace.occupancy_from_structure(s, scmatrix=sc_mat_std,
                                                       encode=True)
@@ -721,7 +721,7 @@ class DataManager:
         """
         drop_ids = (self.fact_df.index[self.fact_df.entry_id.isin(entry_ids)]
                     .tolist())
-        self._fact_df = self._fact_df.drop(drop_ids)
+        self._fact_df = self._fact_df.drop(drop_ids).reset_index(drop=True)
         self._reassign_entry_ids()
 
     def remove_entree_by_iters_modules(self, iter_ids=[], modules=[]):
@@ -763,8 +763,10 @@ class DataManager:
                            index[self.fact_df.comp_id.isin(comp_ids)]
                            .tolist())
 
-        self._fact_df = self._fact_df.drop(drop_ids_in_fdf)
-        self._comp_df = self._comp_df.drop(drop_ids_in_cdf)
+        self._fact_df = (self._fact_df.drop(drop_ids_in_fdf)
+                         .reset_index(drop=True))
+        self._comp_df = (self._comp_df.drop(drop_ids_in_cdf)
+                         .reset_index(drop=True))
         self._reassign_entry_ids()
         self._reassign_comp_ids()
 
@@ -790,9 +792,12 @@ class DataManager:
                            index[self.fact_df.sc_id.isin(sc_ids)]
                            .tolist())
 
-        self._fact_df = self._fact_df.drop(drop_ids_in_fdf)
-        self._comp_df = self._comp_df.drop(drop_ids_in_cdf)
-        self._sc_df = self._sc_df.drop(drop_ids_in_sdf)
+        self._fact_df = (self._fact_df.drop(drop_ids_in_fdf)
+                         .reset_index(drop=True))
+        self._comp_df = (self._comp_df.drop(drop_ids_in_cdf)
+                         .reset_index(drop=True))
+        self._sc_df = (self._sc_df.drop(drop_ids_in_sdf)
+                       .reset_index(drop=True))
         self._reassign_entry_ids()
         self._reassign_comp_ids()
         self._reassign_sc_ids()
