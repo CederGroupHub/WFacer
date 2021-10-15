@@ -251,16 +251,20 @@ def test_insert_supercell(data_manager):
     assert len(dm.sc_df) == 3
     assert len(data_manager.sc_df) == 1
 
-# TODO: fix comp_id issue; fix get_all_sublattices issue.
 
 def test_find_comp_id(data_manager):
     # sl_sizes = [3, 1]
     # bits = [[Li+, Ca+, Vac], [Br-]]
     ucoord = [0.25, 0.75]
-    comp = [Composition({'Li+': 1 / 12, 'Ca+': 1 / 4}), Composition({'Br-': 1.0})]
+    comp = [Composition({'Br-': 1.0}), Composition({'Li+': 1 / 12, 'Ca+': 1 / 4})]
     ccoord = [0.75]
     c_id = data_manager.find_comp_id(ucoord, sc_id=0)
     assert c_id == 0
+    ucoord_trans = data_manager.compspace.translate_format(comp, from_format='composition')
+    print("ucoord:", ucoord)
+    print("ucoord_trans:", ucoord_trans)
+    print("compspace bits:", data_manager.compspace.bits)
+    print("compspace slsizes:", data_manager.compspace.sl_sizes)
     c_id = data_manager.find_comp_id(comp, sc_id=0, comp_format='composition')
     assert c_id == 0
     c_id = data_manager.find_comp_id(ccoord, sc_id=0, comp_format='constr')
@@ -314,9 +318,9 @@ def test_insert_structure(data_manager):
     #Can detect new matrix.
     mat = np.array([[2, 0, 0], [0, 2, 0], [0, 0, 1]], dtype=int)
     s2 = structure_from_occu(occu, data_manager._iw.prim, mat)
-    sc_id, comp_id, new_id = dm.insert_one_structure(s2, scmat=mat, iter_id=1)
+    sc_id, comp_id, new_id = dm.insert_one_structure(s2, sc_mat=mat, iter_id=1)
     assert sc_id == 1 and comp_id == 3 and new_id == 9
-    assert len(dm.sc_df) == 3 and len(dm.comp_df) == 4 and len(dm.fact_df) == 10
+    assert len(dm.sc_df) == 2 and len(dm.comp_df) == 4 and len(dm.fact_df) == 10
     assert len(data_manager.sc_df) == 1 and len(data_manager.comp_df) == 2 and len(data_manager.fact_df) == 8
 
 

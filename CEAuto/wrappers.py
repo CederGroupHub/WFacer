@@ -176,8 +176,8 @@ class InputsWrapper(MSONable):
 
     @property
     def bits(self):
-        """
-        List of species on each sublattice.
+        """List of species on each sublattice.
+
         Returns:
             List[List[Specie]]
         """
@@ -186,7 +186,6 @@ class InputsWrapper(MSONable):
             # Different sites with same species but different numbers
             # are considered the same sublattice!
             unique_spaces = tuple(set(get_site_spaces(self.prim)))
-            allowed_species = get_allowed_species(self.prim)
 
             # Automatic sublattices, same rule as smol.moca.Sublattice
             self._bits = [list(space.keys()) for space in unique_spaces]
@@ -196,8 +195,8 @@ class InputsWrapper(MSONable):
 
     @property
     def sublat_list(self):
-        """
-        List of site indices in sublattices.
+        """List of site indices in sublattices.
+
         Returns:
             List[List[int]]
         """

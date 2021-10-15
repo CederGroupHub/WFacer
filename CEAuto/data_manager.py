@@ -28,7 +28,9 @@ from .wrappers import InputsWrapper
 from .config_paths import (WRAPPER_FILE, OPTIONS_FILE,
                            SC_FILE, COMP_FILE, FACT_FILE)
 
+from smol.cofe.space.domain import get_allowed_species, get_site_spaces
 from smol.moca import CompSpace
+from smol.moca.ensemble.sublattice import Sublattice
 from smol.moca.utils.occu_utils import occu_to_species_stat
 
 
@@ -208,9 +210,9 @@ class DataManager:
 
     @property
     def fact_df_with_structures(self):
-        """
-        Returns a fact table with column 'ori_str' and 'map_str',
-        storing the original, and the mapped structure object,
+        """Returns a fact table with column 'ori_str' and 'map_str'.
+
+        Storing the original, and the mapped structure object,
         respectively.
         This table will not be saved for the sake of disk space.
         """
@@ -229,8 +231,29 @@ class DataManager:
                                                          self.prim,
                                                          r['matrix'])
                                      if not np.any(pd.isna(r['map_occu']))
-                                     else None, axis=1)
+                                   else None, axis=1)
         return fact
+
+    def get_all_sublattices(self, sc_mat):
+        """Get all sublattices from supercell matrix.
+
+        Args:
+            sc_mat(3*3 Arraylike[int]):
+                Supercell matrix.
+
+        Return:
+            List[smol.moca.Sublattice]. All sublattices including inactive.
+            Same ordering as smol.moca.Sublattice.
+        """
+        unique_spaces = tuple(set(get_site_spaces(self.prim)))
+
+        sc = self.prim.copy()
+        sc.make_supercell(sc_mat)
+        allowed_species = get_allowed_species(sc)
+        return [Sublattice(site_space,
+                np.array([i for i, sp in enumerate(allowed_species)
+                         if sp == list(site_space.keys())]))
+                for site_space in unique_spaces]
 
     def find_sc_id(self, sc_mat):
         """Find a supercell index from supercell dataframe by its matrix.
@@ -274,7 +297,7 @@ class DataManager:
 
         new_sc_mat = np.array(np.round(new_sc_mat), dtype=int).tolist()
         oid = self.find_sc_id(new_sc_mat)
-        if oid is not None:
+        if not pd.isna(oid):
             return oid
 
         sc_id = self.sc_df.sc_id.max() + 1 if len(self.sc_df) > 0 else 0
@@ -305,13 +328,13 @@ class DataManager:
         Returns:
             int: comp_id or None
         """
-        if sc_id is None and sc_mat is None:
+        if pd.isna(sc_id) and np.any(pd.isna(sc_mat)):
             raise ValueError("Arguments sc_id and sc_mat can not be "+
                              "both None.")
 
-        sc_id = sc_id if sc_id is not None else self.find_sc_id(sc_mat)
+        sc_id = sc_id if not pd.isna(sc_id) else self.find_sc_id(sc_mat)
 
-        if sc_id is None:
+        if pd.isna(sc_id):
             return None
 
         ucoord = (self.compspace.translate_format(comp,
@@ -359,18 +382,18 @@ class DataManager:
             int, int:
               Indices of the inserted supercell and composition.
         """
-        if sc_id is None and sc_mat is None:
+        if pd.isna(sc_id) and np.any(pd.isna(sc_mat)):
             raise ValueError("Arguments sc_id and sc_mat can not be both none.")
 
-        if sc_id is not None and sc_id not in self.sc_df.sc_id:
+        if not pd.isna(sc_id) and sc_id not in self.sc_df.sc_id:
             raise ValueError("Supercell index {} given, but not in table!"
                              .format(sc_id))
 
-        sc_id = (sc_id if sc_id is not None
+        sc_id = (sc_id if not pd.isna(sc_id)
                  else self.insert_one_supercell(sc_mat))
         o_cid = self.find_comp_id(new_comp, sc_id=sc_id,
                                   comp_format=comp_format)
-        if o_cid is not None:
+        if not pd.isna(o_cid):
             # If found previous match, no insertion.
             return sc_id, o_cid
 
@@ -443,15 +466,16 @@ class DataManager:
             entry_id(int):
                 index in fact_df of this new entry. If not found, will return None.
         """
-        if sc_id is None and sc_mat is None:
+        if pd.isna(sc_id) and np.any(pd.isna(sc_mat)):
             raise ValueError("Arguments sc_id and sc_mat can not be both none.")
 
-        sc_id = sc_id if sc_id is not None else self.find_sc_id(sc_mat)
-        sc_mat = (sc_mat or self.sc_df[self.sc_df.sc_id == sc_id]
+        sc_id = sc_id if not pd.isna(sc_id) else self.find_sc_id(sc_mat)
+        sc_mat = (sc_mat if not np.any(pd.isna(sc_mat)) else
+                  self.sc_df[self.sc_df.sc_id == sc_id]
                   .reset_index(drop=True).iloc[0]['matrix'])
         sc_size = int(round(abs(np.linalg.det(sc_mat))))
 
-        if sc_id is None:
+        if pd.isna(sc_id):
             return None
 
         # When you supercell matrices are only symmetrically equivalent,
@@ -463,8 +487,8 @@ class DataManager:
                       .reset_index(drop=True).iloc[0]['matrix'])
         occu_std = occu_from_structure(s, self.prim, sc_mat_std)
 
-        if comp_id is None and comp is None:
-            all_sublattices_std = self._iw.get_all_sublattices(sc_mat_std)
+        if pd.isna(comp_id) and comp is None:
+            all_sublattices_std = self.get_all_sublattices(sc_mat_std)
             cstat = occu_to_species_stat(occu_std, all_sublattices_std)
             cstat = normalize_compstat(cstat, sc_size=sc_size)
 
@@ -475,7 +499,7 @@ class DataManager:
 
             comp_id = self.find_comp_id(ucoords, sc_id=sc_id)
 
-        elif comp_id is None:
+        elif pd.isna(comp_id):
             ucoords = (self.compspace.translate_format(comp,
                                                        from_format=comp_format,
                                                        to_format='unconstr')
@@ -483,7 +507,7 @@ class DataManager:
 
             comp_id = self.find_comp_id(ucoords, sc_id=sc_id)      
 
-        if comp_id is None:
+        if pd.isna(comp_id):
             return None
 
         filt_ = ((self.fact_df.sc_id == sc_id) &
@@ -499,7 +523,7 @@ class DataManager:
             # Check duplicacy with structure matcher
             sc_mat_old = fact.iloc[i]['matrix']
             occu_old = fact.iloc[i]['ori_occu']
-            s_old = structure_from_occu(occu_old, self._prim, sc_mat_old)
+            s_old = structure_from_occu(occu_old, self.prim, sc_mat_old)
 
             if sm.fit(s_old, s_new):
                 return fact.iloc[i]['entry_id']
@@ -549,20 +573,21 @@ class DataManager:
             sc_id(int), comp_id(int), entry_id(int):
                 indices in sc_df, comp_df, fact_df of this new entry.
         """
-        if sc_id is None and sc_mat is None:
+        if pd.isna(sc_id) and np.any(pd.isna(sc_mat)):
             raise ValueError("Arguments sc_id and sc_mat can not be both none.")
 
-        if sc_id is not None and sc_id not in self.sc_df.sc_id:
+        if not pd.isna(sc_id) and sc_id not in self.sc_df.sc_id:
             raise ValueError("Supercell index {} given, ".format(sc_id) +
                              "but not in supercell table.")
 
-        if comp_id is not None and comp_id not in self.comp_df.comp_id:
+        if not pd.isna(comp_id) and comp_id not in self.comp_df.comp_id:
             raise ValueError("Composition index {} given, ".format(comp_id) +
                              "but not in composition table.")
 
-        sc_id = (sc_id if sc_id is not None
+        sc_id = (sc_id if not pd.isna(sc_id)
                  else self.insert_one_supercell(sc_mat))
-        sc_mat = (sc_mat or self.sc_df[self.sc_df.sc_id == sc_id]
+        sc_mat = (sc_mat if not np.any(pd.isna(sc_mat)) else
+                  self.sc_df[self.sc_df.sc_id == sc_id]
                   .reset_index(drop=True).iloc[0]['matrix'])
         sc_size = int(round(abs(np.linalg.det(sc_mat))))
 
@@ -575,8 +600,8 @@ class DataManager:
                       .reset_index(drop=True).iloc[0]['matrix'])
         occu_std = occu_from_structure(s, self.prim, sc_mat_std)
 
-        if comp_id is None and comp is None:
-            all_sublattices_std = self._iw.get_all_sublattices(sc_mat_std)
+        if pd.isna(comp_id) and comp is None:
+            all_sublattices_std = self.get_all_sublattices(sc_mat_std)
             cstat = occu_to_species_stat(occu_std, all_sublattices_std)
             cstat = normalize_compstat(cstat, sc_size=sc_size)
 
@@ -587,7 +612,7 @@ class DataManager:
 
             _, comp_id = self.insert_one_comp(ucoords, sc_id=sc_id)
 
-        elif comp_id is None:
+        elif pd.isna(comp_id):
             ucoords = (self.compspace.translate_format(comp,
                                                        from_format=comp_format,
                                                        to_format='unconstr')
@@ -597,15 +622,13 @@ class DataManager:
 
         oid = self.find_entry_id_from_occu(occu_std, sc_id=sc_id,
                                            comp_id=comp_id)
-        if oid is not None:
+        if not pd.isna(oid):
             log.debug("Occupancy {} found in previous table ".format(occu)
                       + "with index: {}.".format(oid))
             return sc_id, comp_id, oid
 
         eid = (self.fact_df.entry_id.max() + 1 if len(self.fact_df) > 0
                else 0)
-
-        iter_id = self.cur_iter_id
 
         s = structure_from_occu(occu_std, self.prim, sc_mat_std)
         corr = self.subspace.corr_from_structure(s, scmatrix=sc_mat_std)
@@ -684,18 +707,18 @@ class DataManager:
             sc_id(int), comp_id(int), entry_id(int):
                 indices in sc_df,comp_df,fact_df of this new entry
         """
-        if sc_id is None and sc_mat is None:
+        if pd.isna(sc_id) and np.any(pd.isna(sc_mat)):
             try:
                 sc_mat = self.subspace.scmatrix_from_structure(s)
             except:
                 raise ValueError("Arguments sc_id and sc_mat are both none, " +
                                  "but sc_mat can't be found.")
 
-        if sc_id is not None and sc_id not in self.sc_df.sc_id:
+        if not(pd.isna(sc_id)) and sc_id not in self.sc_df.sc_id:
             raise ValueError("Supercell index {} given, but not in table."
                              .format(sc_id))
 
-        sc_id = sc_id if sc_id is not None else self.insert_one_supercell(sc_mat)
+        sc_id = sc_id if not pd.isna(sc_id) else self.insert_one_supercell(sc_mat)
         sc_mat_std = (self.sc_df[self.sc_df.sc_id == sc_id].
                       reset_index(drop=True).iloc[0]['matrix'])
 
