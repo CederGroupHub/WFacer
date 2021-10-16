@@ -253,8 +253,8 @@ def test_insert_supercell(data_manager):
 
 
 def test_find_comp_id(data_manager):
-    # sl_sizes = [3, 1]
-    # bits = [[Li+, Ca+, Vac], [Br-]]
+    # sl_sizes = [1, 3]
+    # bits = [[Br-], [Li+, Ca+, Vac]]
     ucoord = [0.25, 0.75]
     comp = [Composition({'Br-': 1.0}), Composition({'Li+': 1 / 12, 'Ca+': 1 / 4})]
     ccoord = [0.75]

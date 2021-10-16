@@ -10,9 +10,11 @@ from copy import deepcopy
 from abc import ABC, abstractmethod
 import random
 
+from pymatgen.analysis.structure_matcher import StructureMatcher
+
 from smol.cofe.space.domain import get_allowed_species
 from smol.moca import (CanonicalEnsemble, MuSemiGrandEnsemble,
-                       CompSpace)
+                       CompSpace, Sampler)
 
 from ..utils.comp_utils import scale_compstat
 from ..utils.calc_utils import get_ewald_from_occu
@@ -33,6 +35,7 @@ class MCHandler(ABC):
                  unfreeze_series=[500, 1500, 5000],
                  n_runs_sa=300,
                  n_runs_unfreeze=600,
+                 n_samples=300,
                  **kwargs):
         """Initialize.
 
@@ -53,6 +56,9 @@ class MCHandler(ABC):
             n_runs_unfreeze(int):
                 Number of runs per unfreezing step. 1 run = 
                 # of sites in a supercell.
+            n_samples(int):
+                Number of random occupancies to slice each sampling run.
+                Deduplicated sample will be smaller.
             gs_occu(List[int]):
                 Encoded occupation array of previous ground states.
                  Optional, but if you have it, you can save the 
@@ -68,21 +74,40 @@ class MCHandler(ABC):
         self.unfreeze_series = unfreeze_series
         self.n_runs_sa = n_runs_sa
         self.n_runs_unfreeze = n_runs_unfreeze
-
-        self.sc_size = int(round(abs(np.linalg.det(sc_mat))))
-        # Automatic sublattices, same rule as smol.moca.Sublattice:
-        # sites with the same composition are considered same sublattice.
-        self.sc_sublat_list = [s.sites for s in self.ensemble.all_sublattices]
-        self.sl_sizes = [len(s) // self.sc_size for s in self.sc_sublat_list]
-        self.bits = [s.species for s in self.ensemble.all_sublattices]
+        self.n_samples = n_samples
 
         self.is_indicator = (self.ce.cluster_subspace.orbits[0]
                              .basis_type == 'indicator')
+
+        self.sc_size = int(round(abs(np.linalg.det(sc_mat))))
 
         self.prim = self.ce.cluster_subspace.structure
 
         self._gs_occu = (np.array(gs_occu, dtype=int)
                          if gs_occu is not None else None)
+
+    @property
+    def sc_sublat_list(self):
+        """List of sublattice sites in a supercell.
+
+        Same ordering as smol.moca.ensemble.sublattice
+        get_all_sublattices.
+        """
+        return [s.sites for s in self.ensemble.all_sublattices]
+
+    @property
+    def sl_sizes(self):
+        """Sublattice sizes in prim cell."""
+        return [len(s) // self.sc_size for s in self.sc_sublat_list]
+
+    @property
+    def bits(self):
+        """List of sublattice species in a supercell.
+
+        Same ordering as smol.moca.ensemble.sublattice
+        get_all_sublattices.
+        """
+        return [s.species for s in self.ensemble.all_sublattices]
 
     @property
     @abstractmethod
@@ -140,10 +165,12 @@ class MCHandler(ABC):
                 sl_sites_shuffled = deepcopy(sl_sites)
                 random.shuffle(sl_sites_shuffled)
 
+                n_assigned = 0
                 for sp_id, n_sp in enumerate(sl_int_comp):
                     sp_sites = sl_sites_shuffled[n_assigned : n_assigned + n_sp]
                     occu[sp_sites] = sp_id
                     n_assigned += n_sp
+                assert n_assigned == len(sl_sites)
 
             rand_occus.append(occu)
             rand_ewalds.append(get_ewald_from_occu(occu, self.prim,
@@ -162,16 +189,18 @@ class MCHandler(ABC):
         n_steps_anneal = self.sc_size * len(self.prim) * self.n_runs_sa
 
         log.debug("****Annealing to the ground state. T series: {}."
-                  .format(anneal_series))
+                  .format(self.anneal_series))
 
         self.sampler.anneal(self.anneal_series, n_steps_anneal,
-                             initial_occupancies=np.array([self._gs_occu]))
+                            initial_occupancies=np.array([self._gs_occu],
+                                                         dtype=int))
 
         log.info("****GS annealing finished!")
         gs_occu, gs_e = self._get_min_occu_enthalpy()
   
         # Updates
         self._gs_occu = gs_occu
+        self.sampler.samples.clear()
         return gs_occu, gs_e
 
     def get_unfreeze_sample(self, progress=False):
@@ -192,8 +221,8 @@ class MCHandler(ABC):
 
         # Anneal n_atoms*100 per temp, Sample n_atoms*500, give 300 samples
         # for practical computation
-        n_steps_sample = self.sc_sizes * len(self.prim) * self.n_runs_unfreeze
-        thin_by = max(1, n_steps_sample // 300)
+        n_steps_sample = self.sc_size * len(self.prim) * self.n_runs_unfreeze
+        thin_by = max(1, n_steps_sample // self.n_samples)
  
         sa_occu, sa_e = self.get_ground_state()
  
@@ -209,7 +238,8 @@ class MCHandler(ABC):
             # Equilibriate
             log.debug("******Equilibration run.")
             self.sampler.run(n_steps_sample,
-                             initial_occupancies=np.array([sa_occu]),
+                             initial_occupancies=np.array([sa_occu],
+                                                          dtype=int),
                              thin_by=thin_by,
                              progress=progress)
             sa_occu = np.array(self.sampler.samples.get_occupancies()[-1],
@@ -219,12 +249,14 @@ class MCHandler(ABC):
             # Sampling
             log.debug("******Generation run.")
             self.sampler.run(n_steps_sample,
-                             initial_occupancies=np.array([sa_occu]),
-                             thin_by=thin,
+                             initial_occupancies=np.array([sa_occu],
+                                                           dtype=int),
+                             thin_by=thin_by,
                              progress=progress)
             rand_occus.extend(np.array(self.sampler.samples.get_occupancies(),
                               dtype=int).tolist())
 
+        self.sampler.samples.clear()
         rand_strs = [self.processor.structure_from_occupancy(occu)
                      for occu in rand_occus]
 
@@ -255,8 +287,9 @@ class CanonicalmcHandler(MCHandler):
                  gs_occu=None,
                  anneal_series=[5000, 3200, 1600, 800, 400, 100],
                  unfreeze_series=[500, 1500, 5000],
-                 n_runs_sa = 300,
-                 n_runs_unfreeze = 600,
+                 n_runs_sa=300,
+                 n_runs_unfreeze=600,
+                 n_samples=300,
                  **kwargs):
         """Initialize.
 
@@ -266,7 +299,7 @@ class CanonicalmcHandler(MCHandler):
             sc_mat(3*3 ArrayLike):
                 Supercell matrix to solve on.
             compstat(2D List):
-                Compositional statistics table, normalized to primitive cell.
+                Compositional statistics table, normalized by supercell size.
             anneal_series(List[float]):
                 A series of temperatures to use in simulated annealing.
                 Must be strictly decreasing.
@@ -279,6 +312,9 @@ class CanonicalmcHandler(MCHandler):
             n_runs_unfreeze(int):
                 Number of runs per unfreezing step. 1 run = 
                 # of sites in a supercell.
+            n_samples(int):
+                Number of random occupancies to slice each sampling run.
+                Deduplicated sample will be smaller.
             gs_occu(List[int]):
                 Encoded occupation array of previous ground states.
                 Optional, but if provided, must have the same composition
@@ -290,10 +326,11 @@ class CanonicalmcHandler(MCHandler):
                          unfreeze_series=unfreeze_series,
                          n_runs_sa=n_runs_sa,
                          n_runs_unfreeze=n_runs_unfreeze,
+                         n_samples=n_samples,
                          **kwargs)
 
         self.compstat = compstat
-        self.int_comp = scale_compstat(compstat, scale_by=self.sc_size)
+        self.int_comp = scale_compstat(compstat, by=self.sc_size)
 
         self._gs_occu = gs_occu or self._initialize_occu_from_int_comp(self.int_comp)
 
@@ -303,7 +340,7 @@ class CanonicalmcHandler(MCHandler):
         if self._ensemble is None:
             self._ensemble = (CanonicalEnsemble.
                               from_cluster_expansion(self.ce, self.sc_mat,
-                                                     optimize_inidicator=
+                                                     optimize_indicator=
                                                      self.is_indicator))
         return self._ensemble
 
@@ -328,6 +365,7 @@ class SemigrandmcHandler(MCHandler):
                  unfreeze_series=[500, 1500, 5000],
                  n_runs_sa=300,
                  n_runs_unfreeze=600,
+                 n_samples=300,
                  **kwargs):
         """
         Args:
@@ -350,6 +388,9 @@ class SemigrandmcHandler(MCHandler):
             n_runs_unfreeze(int):
                 Number of runs per unfreezing step. 1 run = 
                 # of sites in a supercell.
+            n_samples(int):
+                Number of random occupancies to slice each sampling run.
+                Deduplicated sample will be smaller.
             gs_occu(List[int]):
                 Encoded occupation array of previous ground states.
                  Optional, but if you have it, you can save the 
@@ -362,11 +403,13 @@ class SemigrandmcHandler(MCHandler):
                          unfreeze_series=unfreeze_series,
                          n_runs_sa=n_runs_sa,
                          n_runs_unfreeze=n_runs_unfreeze,
+                         n_samples=n_samples,
                          **kwargs)
 
         self.chemical_potentials = chemical_potentials
 
         compspace = CompSpace(self.bits, self.sl_sizes)
+        # Will start from vertices.
         int_comp = random.choice(compspace.int_vertices(sc_size=self.sc_size,
                                                         form='compstat'))
         self._gs_occu = (gs_occu or
@@ -378,7 +421,7 @@ class SemigrandmcHandler(MCHandler):
         if self._ensemble is None:
             self._ensemble = (MuSemiGrandEnsemble.
                               from_cluster_expansion(self.ce, self.sc_mat,
-                              optimize_inidicator=
+                              optimize_indicator=
                               self.is_indicator,
                               chemical_potentials=
                               self.chemical_potentials))
@@ -390,7 +433,7 @@ class SemigrandmcHandler(MCHandler):
         if self._sampler is None:
             self._sampler = Sampler.from_ensemble(self.ensemble,
                                                   step_type='table-flip',
-                                                  swap_weight=0.4,
+                                                  swap_weight=0.2,
                                                   nwalkers=1,
                                                   temperature=1000)
         return self._sampler

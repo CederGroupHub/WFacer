@@ -2,7 +2,7 @@ import os
 import pytest
 import numpy as np
 from monty.serialization import loadfn
-from smol.cofe import ClusterSubspace
+from smol.cofe import ClusterSubspace, ClusterExpansion
 from smol.cofe.extern import EwaldTerm
 
 from CEAuto import *
@@ -26,6 +26,16 @@ def subspace(request):
                                          supercell_size='volume')
     space.add_external_term(EwaldTerm())
     return space
+
+@pytest.fixture
+def cluster_expansion(subspace):
+    coefs_ = (np.random.
+              random(subspace.num_corr_functions +
+                     len(subspace.external_terms)))
+    coefs_ = coefs_ - 0.5
+    coefs_[0] = 1.0
+    coefs_[-len(subspace.external_terms):] = 0.3
+    return ClusterExpansion(subspace, coefs_)
 
 @pytest.fixture
 def inputs_wrapper(structure):
