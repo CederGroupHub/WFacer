@@ -18,6 +18,7 @@ import pandas as pd
 from copy import deepcopy
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.core import Structure
 
 from .utils.serial_utils import serialize_comp, deser_comp
 from .utils.occu_utils import structure_from_occu, occu_from_structure
@@ -461,6 +462,7 @@ class DataManager:
             id with an additional iter_id argument.
 
         If you have the sc_id and the comp_id, you should provide them.
+        Note: Will remove decorations before deduplicating.
 
         Returns:
             entry_id(int):
@@ -518,6 +520,9 @@ class DataManager:
 
         sm = StructureMatcher()
         s_new = structure_from_occu(occu_std, self.prim, sc_mat_std)
+        s_new_clean = Structure(s_new.lattice,
+                                [site.specie.symbol for site in s_new],
+                                s_new.frac_coords)
 
         for i in range(len(fact)):
             # Check duplicacy with structure matcher
@@ -525,7 +530,11 @@ class DataManager:
             occu_old = fact.iloc[i]['ori_occu']
             s_old = structure_from_occu(occu_old, self.prim, sc_mat_old)
 
-            if sm.fit(s_old, s_new):
+            s_old_clean = Structure(s_old.lattice,
+                                    [site.specie.symbol for site in s_old],
+                                    s_old.frac_coords)
+
+            if sm.fit(s_old_clean, s_new_clean):
                 return fact.iloc[i]['entry_id']
 
         return None
