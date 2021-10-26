@@ -8,6 +8,7 @@ from CEAuto.utils.frame_utils import load_dataframes
 import os
 import pandas as pd
 import numpy as np
+import pytest
 
 from monty.serialization import loadfn
 

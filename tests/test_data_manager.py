@@ -24,7 +24,6 @@ sc_file = os.path.join(DATADIR,'sc_df_test.csv')
 comp_file = os.path.join(DATADIR,'comp_df_test.csv')
 fact_file = os.path.join(DATADIR,'fact_df_test.csv')
 
-
 def assert_df_formats(sc_df, comp_df, fact_df):
     # Assert the correct formats.
     def assert_2d(ll, shape=None, name=(float, int)):
@@ -132,7 +131,7 @@ def test_empty_dm(inputs_wrapper):
     assert len(dm.fact_df) == 0
 
     sckeys = ['sc_id', 'matrix']
-    compkeys = ['sc_id', 'comp_id', 'ucoord', 'ccoord', 'comp','cstat','nondisc']
+    compkeys = ['comp_id', 'ucoord', 'ccoord', 'comp','cstat','nondisc']
     factkeys = ['entry_id', 'sc_id', 
                 'comp_id',
                 'iter_id', 'module',
@@ -187,6 +186,9 @@ def test_muitiple_rebuilds(inputs_wrapper):
                 occu_remap = occu_from_structure(s, inputs_wrapper.prim, mat)
                 s_remap = structure_from_occu(occu_remap, inputs_wrapper.prim, mat)
                 corr_remap = inputs_wrapper.subspace.corr_from_structure(s_remap, scmatrix=mat)
+                # Because of some problem in StructureMatcher.get_mapping, a remap can not get
+                # the same occupancy array as original. But the remapped structure is still the
+                # same.
                 assert StructureMatcher().fit(s, s_remap)
                 assert np.allclose(corr_remap, corr)
                 occu = deepcopy(occu_remap)
@@ -258,25 +260,25 @@ def test_find_comp_id(data_manager):
     ucoord = [0.25, 0.75]
     comp = [Composition({'Br-': 1.0}), Composition({'Li+': 1 / 12, 'Ca+': 1 / 4})]
     ccoord = [0.75]
-    c_id = data_manager.find_comp_id(ucoord, sc_id=0)
+    c_id = data_manager.find_comp_id(ucoord)
     assert c_id == 0
     ucoord_trans = data_manager.compspace.translate_format(comp, from_format='composition')
     print("ucoord:", ucoord)
     print("ucoord_trans:", ucoord_trans)
     print("compspace bits:", data_manager.compspace.bits)
     print("compspace slsizes:", data_manager.compspace.sl_sizes)
-    c_id = data_manager.find_comp_id(comp, sc_id=0, comp_format='composition')
+    c_id = data_manager.find_comp_id(comp, comp_format='composition')
     assert c_id == 0
-    c_id = data_manager.find_comp_id(ccoord, sc_id=0, comp_format='constr')
+    c_id = data_manager.find_comp_id(ccoord, comp_format='constr')
     assert c_id == 0
 
 def test_insert_comp(data_manager):
     dm = data_manager.copy()
-    sc_id, new_id = dm.insert_one_comp([0.25, 0.75], sc_mat=[[-1,1,1],[1,-1,1],[1,1,-1]])
-    assert (sc_id == 0) and (new_id == 0)
-    sc_id, new_id = dm.insert_one_comp([0.125,0.875], sc_mat=[[-2,2,2],[1,-1,1],[1,1,-1]])
-    assert (sc_id == 1) and (new_id == 2)
-    assert len(dm.sc_df) == 2
+    new_id = dm.insert_one_comp([0.25, 0.75])
+    assert new_id == 0
+    new_id = dm.insert_one_comp([0.125,0.875])
+    assert new_id == 2
+    assert len(dm.sc_df) == 1
     assert len(dm.comp_df) == 3
 
 
@@ -319,8 +321,8 @@ def test_insert_structure(data_manager):
     mat = np.array([[2, 0, 0], [0, 2, 0], [0, 0, 1]], dtype=int)
     s2 = structure_from_occu(occu, data_manager._iw.prim, mat)
     sc_id, comp_id, new_id = dm.insert_one_structure(s2, sc_mat=mat, iter_id=1)
-    assert sc_id == 1 and comp_id == 3 and new_id == 9
-    assert len(dm.sc_df) == 2 and len(dm.comp_df) == 4 and len(dm.fact_df) == 10
+    assert sc_id == 1 and comp_id == 2 and new_id == 9
+    assert len(dm.sc_df) == 2 and len(dm.comp_df) == 3 and len(dm.fact_df) == 10
     assert len(data_manager.sc_df) == 1 and len(data_manager.comp_df) == 2 and len(data_manager.fact_df) == 8
 
 
@@ -346,7 +348,6 @@ def test_remove_entree(data_manager):
 def test_remove_comps(data_manager):
     dm = data_manager.copy()
     ucoord_rm = dm.comp_df.loc[dm.comp_df.comp_id == 0, 'ucoord'].reset_index(drop=True).iloc[0]
-    sc_id_rm = dm.comp_df.loc[dm.comp_df.comp_id == 1, 'sc_id'].reset_index(drop=True).iloc[0]
 
     dm.remove_comps_by_id(comp_ids = [0])
     assert np.allclose(dm.fact_df.entry_id, np.arange(4))
@@ -356,8 +357,8 @@ def test_remove_comps(data_manager):
     # Removed ucoords should not exist anymore.
     fact_merge = dm.fact_df.merge(dm.comp_df, on='comp_id', how='left')
     print("fact_merge:", fact_merge)
-    for i, u in zip(fact_merge.sc_id_x, fact_merge.ucoord):
-        assert not (i == sc_id_rm and np.allclose(ucoord_rm, u))
+    for i, u in zip(fact_merge.sc_id, fact_merge.ucoord):
+        assert not np.allclose(ucoord_rm, u)
 
     assert len(data_manager.comp_df) == 2 and len(data_manager.fact_df) == 8
 
@@ -366,7 +367,7 @@ def test_remove_supercells(data_manager):
     dm = data_manager.copy()
     dm.remove_supercells_by_id(sc_ids= [0])
     assert len(dm.sc_df) == 0
-    assert len(dm.comp_df) == 0
+    assert len(dm.comp_df) == 2  # comp_df will not be touched because its no-longer attached to sc_df.
     assert len(dm.fact_df) == 0
     assert (len(data_manager.sc_df) == 1 and len(data_manager.comp_df) == 2
             and len(data_manager.fact_df) == 8)

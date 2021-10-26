@@ -371,9 +371,9 @@ class InputsWrapper(MSONable):
             For example when handling FCC primitive cell,
             you may want to multiply by [[-1, 1, 1], ...] first.
             Default to identity.
-        sc_size(int):
-            Supercel size (by determinant) to enumerate with.
-            Default to 32.
+        sc_size(int | List[int]):
+            Supercel sizes (by determinant) to enumerate with.
+            Default to a single value, 32.
         max_sc_cond(float):
             Maximum conditional number of the supercell lattice vectors.
             Default to 8, prevent overly slender supercell matrix.
@@ -412,7 +412,7 @@ class InputsWrapper(MSONable):
                 'comp_restrictions': self._options.get('comp_restrictions'),
                 'comp_enumstep': self._options.get('comp_enumstep', 1),
                 'n_strs_init': self._options.get('n_strs_init', 100),
-                'n_strs_add': self._options.get('n_strs_add', 100),
+                'n_strs_add': self._options.get('n_strs_add', 50),
                 'handler_args_enum': self._options.get('handler_args_enum',
                                                        {}),
                 'select_method': self._options.get('select_method','CUR')

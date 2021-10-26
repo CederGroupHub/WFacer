@@ -17,6 +17,7 @@ import random
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
+from itertools import product, chain
 
 from .utils.sc_utils import enumerate_matrices
 from .utils.math_utils import select_rows
@@ -51,7 +52,9 @@ class StructureEnumerator:
                             enumerator_options['n_strs_enum'])
             
         self.transmat = self.inputs_wrapper.enumerator_options['transmat']
-        self.sc_size = self.inputs_wrapper.enumerator_options['sc_size']
+        sc_size = self.inputs_wrapper.enumerator_options['sc_size']
+        if isinstance(sc_sizes, int):
+            self.sc_sizes = [sc_size]
         self.max_sc_cond = (self.inputs_wrapper.
                             enumerator_options['max_sc_cond'])
         self.min_sc_angle = (self.inputs_wrapper.
@@ -70,9 +73,6 @@ class StructureEnumerator:
         self.n_strs_add = (self.inputs_wrapper.
                            enumerator_options['n_strs_add'])
 
-        # TODO: Write DataManager and Enumerator to allow enumerate
-        # without charge, because enumerating with charge can cause
-        # duplicacy in DFT input.
         self.handler_args = (self.inputs_wrapper.
                              enumerator_options['handler_args_enum'])
 
@@ -170,17 +170,17 @@ class StructureEnumerator:
             enumerated supercell matrices(3*3 List)
         """
         log.critical("**Supercells enumeration.")
-        mats = enumerate_matrices(self.sc_size,self.prim.lattice,
+        mats = enumerate_matrices(self.sc_size, self.prim.lattice,
                                   transmat=self.transmat,
                                   max_sc_cond=self.max_sc_cond,
                                   min_sc_angle=self.min_sc_angle)
         log_str = "**Enumerated Supercell matrices: \n"
-        for m in mat:
+        for m in mats:
             log_str += "  {}\n".format(m)
         log.info(log_str)
 
         self.set_sc_matrices(matrices=mats)
-        return mat
+        return mats
 
     def enumerate_comps(self):
         """Enumerate Compositions under supercells.
@@ -198,23 +198,27 @@ class StructureEnumerator:
             self.enumerate_sc_matrices()
 
         log.critical("**Compositions enumeration.")
-        for sc_id, m in zip(self.sc_df.sc_id, self.sc_df.matrix):
-            scs = int(round(abs(np.linalg.det(m))))
+        all_scs = []
+        for m in self.sc_df.matrix:
+            all_scs.append(int(round(abs(np.linalg.det(m)))))
+        all_scs = sorted(list(set(all_scs)))
+
+        for scs in all_scs:
             ucoords = self.compspace.frac_grids(sc_size=
                                                 scs // self.comp_enumstep)
             comps = (self.compspace.frac_grids(
                      sc_size=scs // self.comp_enumstep,
                      form='composition'))
 
-            log.critical("****Enumerated {} compositions under matrix {}."
-                         .format(len(ucoords), m))
+            log.critical("****Enumerated {} compositions under matrix size {}."
+                         .format(len(ucoords), scs))
 
             # TODO: in the future version, move restriction to CompSpace.
             for ucoord, comp in zip(ucoords, comps):
                 if check_comp_restriction(comp,
                                           self.sl_sizes,
                                           self.comp_restrictions):
-                    _, _ = self._dm.insert_one_comp(ucoord, sc_id=sc_id)
+                    _ = self._dm.insert_one_comp(ucoord)
 
         return comps
 
@@ -270,9 +274,20 @@ class StructureEnumerator:
         # Parallelize generation.
         pool = mp.Pool(n_par)
 
-        comp_df = self.comp_df.merge(self.sc_df, on='sc_id', how='left')
-        all_sc_comps = list(zip(comp_df.matrix, comp_df.cstat))
-        all_sc_comp_ids = list(zip(comp_df.sc_id, comp_df.comp_id))
+        comp_df = self.comp_df
+        sc_df = self.sc_df
+        # Some product of sc and comp may not allow integer composition.
+        # Filter these out.
+        all_sc_comps = []
+        all_sc_comp_ids = []
+        for (sc_id, mat), (comp_id, cstat) in \
+            product(zip(sc_df.sc_id, sc_df.matrix),
+                    zip(comp_df.comp_id, comp_df.cstat)):
+            scs = int(round(abs(np.linalg.det(mat))))
+            ucoords = np.array(list(chain(*[sl[: -1] for sl in cstat])))
+            if np.allclose(ucoords, np.round(ucoords * scs) / scs, atol=1E-4):
+                all_sc_comps.append((mat, cstat))
+                all_sc_comp_ids.append((sc_id, comp_id))
 
         log.critical("**Generating structure samples under compositions.")
         all_occus_n = pool.map(lambda sc, comp:

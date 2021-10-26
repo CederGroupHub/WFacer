@@ -99,7 +99,7 @@ def get_Noccus_of_compstat(compstat,scale_by=1):
     Returns:
         int, number of all possible occupancy arrays.
     """
-    int_comp = scale_compstat(compstat,by=scale_by)
+    int_comp = scale_compstat(compstat, by=scale_by)
 
     noccus = 1
     for sl_int_comp in int_comp:

@@ -110,7 +110,7 @@ def load_dataframes(sc_file='sc_mats.csv', comp_file='comps.csv',
 
     else:
         comp_df = pd.DataFrame(columns=
-                               ['comp_id', 'sc_id',
+                               ['comp_id',
                                 'ucoord', 'ccoord',
                                 'comp', 'cstat',
                                 'nondisc'])
