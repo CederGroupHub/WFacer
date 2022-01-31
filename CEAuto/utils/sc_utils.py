@@ -6,6 +6,7 @@ Utility functions to enumerate supercell matrices.
 import numpy as np
 from .math_utils import get_diag_matrices
 from copy import deepcopy
+import random
 
 from pymatgen.core import Lattice
 
@@ -53,7 +54,7 @@ def enumerate_matrices(det, lat,
     Args:
         det(int):
             Required determinant size of enumerated supercell
-            matrices
+            matrices. Must be multiple of det(transmat).
         lat(pymatgen.Lattice):
             Lattice vectors of a primitive cell
         transmat(2D arraylike):
@@ -95,12 +96,11 @@ def enumerate_matrices(det, lat,
     # n1>n2>n3, already sorted in get_diag_matrices.
     sc_sk1 = deepcopy(sc_unsk)
     sc_sk2 = deepcopy(sc_unsk)
-    sc_sk3 = deepcopy(sc_unsk)
-    
-    sc_sk1[0][1] = np.random.choice(np.arange(1, n1 + 1))
-    sc_sk2[0][2] = np.random.choice(np.arange(1, n1 + 1))
-    sc_sk3[1][2] = np.random.choice(np.arange(1, n2 + 1))
 
-    selected_scs = [sc_unsk, sc_sk1, sc_sk2, sc_sk3]
+    sc_sk1[0][1] = random.choice(np.arange(1, n1 + 1, dtype=int))
+    #sc_sk2[0][2] = random.choice(np.arange(1, n1 + 1, dtype=int))
+
+    # Select 1 diagonal, 1 skewed.
+    selected_scs = [sc_unsk, sc_sk1]
 
     return selected_scs

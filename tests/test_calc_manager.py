@@ -144,5 +144,3 @@ def test_mon_run(mon_manager):
         wf = list(mon_manager._lpad.find({'name':ename}))
         assert len(wf) > 0
     mon_clear(mon_manager)
-    
-

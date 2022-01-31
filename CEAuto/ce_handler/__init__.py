@@ -1,4 +1,4 @@
-from .mc_handler import (CanonicalmcHandler, SemigrandmcHandler,
+from .mc_handler import (CanonicalmcHandler,
                          mchandler_factory)
 
-__all__ = ['CanonicalmcHandler','SemigrandmcHandler', 'mchandler_factory']
+__all__ = ['CanonicalmcHandler', 'mchandler_factory']

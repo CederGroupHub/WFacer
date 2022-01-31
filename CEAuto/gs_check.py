@@ -91,7 +91,7 @@ class GSChecker:
             _prev_hull = (fact_prev.groupby('comp_id')
                           .agg(lambda df: df.loc[df['e_ce'].idxmin()])
                           .reset_index(drop=True))
-            _prev_hull = _prev_hull.loc[:, ['comp_id', 'e_ce']]
+            _prev_hull = _prev_hull.loc[:, ['comp_id', 'e_ce', 'map_occu']]
             _prev_hull = _prev_hull.merge(self._comp_table, how='left',
                                           on='comp_id')
             _prev_hull = _prev_hull.rename(columns={'e_ce': 'e_prim'})
@@ -102,7 +102,7 @@ class GSChecker:
             _prev_hull = (fact_prev.groupby('comp_id')
                           .agg(lambda df: df.loc[df['e_prim'].idxmin()])
                           .reset_index(drop=True))
-            _prev_hull = _prev_hull.loc[:,['comp_id', 'e_prim']]
+            _prev_hull = _prev_hull.loc[:,['comp_id', 'e_prim', 'map_occu']]
             _prev_hull = _prev_hull.merge(self._comp_table, how='left',
                                           on='comp_id')
             self._dft_hulls_ahead[n_it_ahead] = _prev_hull.copy()
@@ -170,3 +170,4 @@ class GSChecker:
                             e_tol=self.e_tol_in_cv * cv) and
                 abs(cv_1 - cv) / cv_1 < self.cv_change_tol)
         # change of cv < 20 % in last 2 iterations.
+        # TODO: should we also check difference in gs structures?

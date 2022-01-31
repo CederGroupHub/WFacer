@@ -8,12 +8,16 @@ from .math_utils import combinatorial_number
 from smol.cofe.space.domain import get_species
 
 # Check compositional restrictions
-def check_comp_restriction(comp,sl_sizes,comp_restrictions=None):
+def check_comp_restriction(comp, bits, sl_sizes,comp_restrictions=None):
     """
     Check whether a composition satisfies compositional limits.
     Args:
         comp(List[Composition]):
             Normalized composition on each sublattice. Same as in compspace.py.
+        bits(List[Species/Vacancy]):
+            A list of species on each sublattice.
+        sl_sizes(List[int]):
+            Number of sites in each sublattice in a primitive cell.
         comp_restrictions(List[dict]|Dict):
 
             Restriction on certain species.
@@ -47,22 +51,23 @@ def check_comp_restriction(comp,sl_sizes,comp_restrictions=None):
     if comp_restrictions is None:
         return True
 
-    if isinstance(comp_restrictions,dict):
-        for sp,(lb,ub) in comp_restrictions.items():
+    if isinstance(comp_restrictions, dict):
+        for sp, (lb, ub) in comp_restrictions.items():
             sp_name = get_species(sp)
             sp_num = 0
             all_sl_size = 0
-            for sl_comp,sl_size in zip(comp,sl_sizes):
-                if sp_name in sl_comp:
-                    sp_num += sl_comp[sp_name]*sl_size   
+            for sl_bits, sl_comp, sl_size in zip(bits, comp, sl_sizes):
+                if sp_name in sl_bits:
+                    sp_num += sl_comp[sp_name] * sl_size
                     all_sl_size += sl_size
-            sp_frac = float(sp_num)/all_sl_size
-            if not (sp_frac<=ub and sp_frac >=lb):
+            sp_frac = float(sp_num) / all_sl_size
+            if not (sp_frac <= ub and sp_frac >= lb):
                 return False
 
     #Sublattice-specific restriction.
-    elif isinstance(comp_restrictions,list) and len(comp_restrictions)>=1 \
-        and isinstance(comp_restrictions[0],dict):
+    elif (isinstance(comp_restrictions, list)
+          and len(comp_restrictions)>=1
+          and isinstance(comp_restrictions[0],dict)):
         for sl_restriction, sl_comp in zip(comp_restrictions,comp):
             for sp,(lb,ub) in sl_restriction.items():
                 sp_name = get_species(sp)

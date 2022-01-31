@@ -373,7 +373,8 @@ class InputsWrapper(MSONable):
             Default to identity.
         sc_size(int | List[int]):
             Supercel sizes (by determinant) to enumerate with.
-            Default to a single value, 32.
+             This must be multiple of det(transmat).
+            Default to an int, 32.
         max_sc_cond(float):
             Maximum conditional number of the supercell lattice vectors.
             Default to 8, prevent overly slender supercell matrix.
@@ -386,15 +387,19 @@ class InputsWrapper(MSONable):
         comp_restrictions(List[dict]|dict):
             Restriction to species concentrations. See utils.comp_utils.
             check_comp_restrictions.
+            Note: currently does not distiguish specie labels other than
+            oxidation states.
         comp_enumstep(int):
             Enumeration step of composition. Compositions will be generated
             by multiplying this factor to the composition space integer
             basis, and walking with them. Default to 1 but not always
             recommended!
-        n_strs_init(int):
-            Number of structures to initialize CE. Default to 100.
-        n_strs_add(int):
-            Number of structures to add at each cycle. Default to 100.
+        n_strs_per_comp_init(int):
+            Minimum number of structures per composition to include
+            when initializing CE. Default to 3.
+        n_strs_per_comp_add(int):
+            Minimum number of structures per composition to add at each
+            cycle. Default to 2.
         handler_args_enum(Dict): optional
             Arguments to pass into CanonicalmcHander. See
             ce_handlers.CanonicalmcHandler.
@@ -411,8 +416,12 @@ class InputsWrapper(MSONable):
                 # If sc_mats is given, will overwrite enumerated sc matrices.
                 'comp_restrictions': self._options.get('comp_restrictions'),
                 'comp_enumstep': self._options.get('comp_enumstep', 1),
-                'n_strs_init': self._options.get('n_strs_init', 100),
-                'n_strs_add': self._options.get('n_strs_add', 50),
+                'n_strs_per_comp_init': (self._options
+                                         .get('n_strs_per_comp_init',
+                                              3)),
+                'n_strs_per_comp_add': (self._options
+                                        .get('n_strs_per_comp_add',
+                                             2)),
                 'handler_args_enum': self._options.get('handler_args_enum',
                                                        {}),
                 'select_method': self._options.get('select_method','CUR')
@@ -868,9 +877,6 @@ class HistoryWrapper(MSONable):
             if len(self.subspace.external_terms) > 0:
                 coefs[-len(self.subspace.external_terms): ] = 1.0
         else:
-            if pname not in self._history[-n_ago]:
-                raise ValueError("History does not include CE on {}!"
-                                 .format(pname))
             coefs = np.array(self._history[-n_ago]['coefs'])
 
         return ClusterExpansion(self.subspace, coefs, None)

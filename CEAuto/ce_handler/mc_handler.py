@@ -35,7 +35,7 @@ class MCHandler(ABC):
                  unfreeze_series=[500, 1500, 5000],
                  n_runs_sa=300,
                  n_runs_unfreeze=600,
-                 n_samples=300,
+                 n_samples=100,
                  **kwargs):
         """Initialize.
 
@@ -158,9 +158,13 @@ class MCHandler(ABC):
             for sl_id, (sl_int_comp, sl_sites) in \
               enumerate(zip(int_comp, self.sc_sublat_list)):
                 if sum(sl_int_comp) != len(sl_sites):
-                    raise ValueError("Num of sites can't match "+
+                    raise ValueError("Num of sites can't match " +
                                      "composition on sublattice {}."
-                                     .format(sl_id))
+                                     .format(sl_id) +
+                                     "Composition: {}, "
+                                     .format(sl_int_comp) +
+                                     "Number of sites: {}."
+                                     .format(len(sl_sites)))
 
                 sl_sites_shuffled = deepcopy(sl_sites)
                 random.shuffle(sl_sites_shuffled)
@@ -223,11 +227,11 @@ class MCHandler(ABC):
         # for practical computation
         n_steps_sample = self.sc_size * len(self.prim) * self.n_runs_unfreeze
         thin_by = max(1, n_steps_sample // self.n_samples)
- 
+
         sa_occu, sa_e = self.get_ground_state()
  
         # Will always contain GS structure at the first position in list
-        rand_occus = [deepcopy(sa_occu)]
+        rand_occus = [list(deepcopy(sa_occu))]
 
         # Sampling temperatures        
         for T in self.unfreeze_series:
@@ -250,7 +254,7 @@ class MCHandler(ABC):
             log.debug("******Generation run.")
             self.sampler.run(n_steps_sample,
                              initial_occupancies=np.array([sa_occu],
-                                                           dtype=int),
+                                                          dtype=int),
                              thin_by=thin_by,
                              progress=progress)
             rand_occus.extend(np.array(self.sampler.samples.get_occupancies(),
@@ -274,11 +278,13 @@ class MCHandler(ABC):
                 rand_dedup.append(s1_id)
 
         log.info("****{} unique structures generated."
-                    .format(len(rand_dedup)))
+                     .format(len(rand_dedup)))
 
         rand_occus_dedup = [rand_occus[s_id] for s_id in rand_dedup]
 
-        return rand_occus_dedup
+        return random.sample(rand_occus_dedup,
+                             min(len(rand_occus_dedup),
+                                 self.n_samples))
 
 
 class CanonicalmcHandler(MCHandler):
@@ -353,90 +359,6 @@ class CanonicalmcHandler(MCHandler):
                                                   nwalkers=1)
         return self._sampler
 
-
-# Not used in release version.
-class SemigrandmcHandler(MCHandler):
-    """
-    Charge neutral semigrand canonical ensemble.
-    """
-    def __init__(self, ce, sc_mat, chemical_potentials,
-                 gs_occu=None,
-                 anneal_series=[5000, 3200, 1600, 800, 400, 100],
-                 unfreeze_series=[500, 1500, 5000],
-                 n_runs_sa=300,
-                 n_runs_unfreeze=600,
-                 n_samples=300,
-                 **kwargs):
-        """
-        Args:
-            ce(ClusterExpansion):
-                A cluster expansion object to solve on.
-            sc_mat(3*3 ArrayLike):
-                Supercell matrix to solve on.
-            chemical_potentials(Dict{Specie|Vacancy|DummySpecie:float}):
-                Chemical potentials of all species, regardless of their
-                sublattices.
-            anneal_series(List[float]):
-                A series of temperatures to use in simulated annealing.
-                Must be strictly decreasing.
-            unfreeze_series(List[float]):
-                A series of increasing temperatures to sample on.
-                By default, will sample under 500, 1500 and 5000 K.
-            n_runs_sa(int):
-                Number of runs per simulated annealing step. 1 run = 
-                # of sites in a supercell.
-            n_runs_unfreeze(int):
-                Number of runs per unfreezing step. 1 run = 
-                # of sites in a supercell.
-            n_samples(int):
-                Number of random occupancies to slice each sampling run.
-                Deduplicated sample will be smaller.
-            gs_occu(List[int]):
-                Encoded occupation array of previous ground states.
-                 Optional, but if you have it, you can save the 
-                 ground state solution time when sampling.
-
-        """
-        super().__init__(ce, sc_mat,
-                         gs_occu=gs_occu,
-                         anneal_series=anneal_series,
-                         unfreeze_series=unfreeze_series,
-                         n_runs_sa=n_runs_sa,
-                         n_runs_unfreeze=n_runs_unfreeze,
-                         n_samples=n_samples,
-                         **kwargs)
-
-        self.chemical_potentials = chemical_potentials
-
-        compspace = CompSpace(self.bits, self.sl_sizes)
-        # Will start from vertices.
-        int_comp = random.choice(compspace.int_vertices(sc_size=self.sc_size,
-                                                        form='compstat'))
-        self._gs_occu = (gs_occu or
-                         self._initialize_occu_from_int_comp(int_comp))
-
-    @property
-    def ensemble(self):
-        """MuSemiGrandEnsemble."""
-        if self._ensemble is None:
-            self._ensemble = (MuSemiGrandEnsemble.
-                              from_cluster_expansion(self.ce, self.sc_mat,
-                              optimize_indicator=
-                              self.is_indicator,
-                              chemical_potentials=
-                              self.chemical_potentials))
-        return self._ensemble
-
-    @property
-    def sampler(self):
-        """Sampler to run."""
-        if self._sampler is None:
-            self._sampler = Sampler.from_ensemble(self.ensemble,
-                                                  step_type='table-flip',
-                                                  swap_weight=0.2,
-                                                  nwalkers=1,
-                                                  temperature=1000)
-        return self._sampler
 
 
 def mchandler_factory(mchandler_name, *args, **kwargs):

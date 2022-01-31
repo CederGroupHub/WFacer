@@ -12,3 +12,7 @@ radius:
   4: 5.0
 extern_types:
   - EwaldTerm
+handler_args_enum:
+  n_runs_sa: 50
+  n_runs_unfreeze: 100
+  n_samples: 100

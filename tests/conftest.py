@@ -47,7 +47,12 @@ def inputs_wrapper(structure):
                                    'Br':[-1]
                                   }}],
                'radius':{2:7.0, 3:5.0, 4:5.0},
-               'extern_types': ['EwaldTerm']}
+               'extern_types': ['EwaldTerm'],
+               'handler_args_enum':
+                        {"n_runs_sa": 50,
+                         "n_runs_unfreeze": 100,
+                         "n_samples": 100}
+              }
     # options are to be passed as kwargs, not dict.
     return InputsWrapper(prim=prim, **options)
 

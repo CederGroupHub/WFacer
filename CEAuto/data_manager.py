@@ -324,7 +324,7 @@ class DataManager:
 
         for cid, x in zip(self.comp_df.comp_id,
                           self.comp_df.ucoord):
-            if np.allclose(x, ucoord):
+            if np.allclose(x, ucoord, atol=1E-6):
                 return cid
 
         return None
