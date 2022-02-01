@@ -1,9 +1,36 @@
-from CEAuto.specie_decorator import MagchargeDecorator
+from CEAuto.specie_decorator import MagchargeDecorator, decorate_single_structure, decorator_factory
 from pymatgen.core import Lattice, Structure
 import numpy as np
 import random
+from pymatgen.core import Species, DummySpecies
 
 from .utils import assert_msonable
+
+def test_decorator_factory():
+    decorator_names = ["Magcharge"]
+    labels_table = {"Li":[1],"Ca":1,"Br":[-1]}
+    decorator_args = [{}]
+    classes = [MagchargeDecorator]
+    for name, args, cls in zip(decorator_names, decorator_args, classes):
+        assert isinstance(decorator_factory(name, labels_table, **args),
+                          cls)
+
+def test_decorate_single():
+    lat = Lattice.cubic(1)
+    s = Structure(lat,['B','B','C','C'],
+                  [[0,0,0],[0.5,0.5,0],[0,0.5,0.5],[0.5,0,0.5]])
+    decor_keys = ["charge", "spin"]
+    decor_values = [[1, 1, -1, -1], [0, 1, 0, 1]]
+    s_dec = decorate_single_structure(s, decor_keys, decor_values)
+    assert s_dec.charge == 0
+    for site in s_dec:
+        assert isinstance(site.specie, (Species, DummySpecies))
+
+    decor_values = [[-1,-3,1,1],[1,1,1,1]]
+    s_dec = decorate_single_structure(s, decor_keys, decor_values)
+    assert s_dec is None
+    s_dec = decorate_single_structure(s, decor_keys, decor_values, max_charge=2)
+    assert isinstance(s_dec, Structure)
 
 def test_mag_charge_decorator():
     lat = Lattice.cubic(1)

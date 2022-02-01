@@ -1,4 +1,4 @@
-from CEAuto.calc_writer import *
+from CEAuto.calc_writer import ArchVaspWriter, MongoVaspWriter
 
 import pytest
 import os
@@ -11,47 +11,10 @@ from pymatgen.core.periodic_table import Specie
 from pymatgen.io.vasp import *
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
-@pytest.fixture
-def structure():
-    return loadfn(os.path.join(DATADIR,'LiCaBr_prim.json'))
-
 
 @pytest.fixture
-def inputs_wrapper(structure):
-    lat_data = {'prim':structure}
-    options = {'decorators_types':['MagChargeDecorator'],
-               'decorators_args':[{'labels_table':
-                                  {'Li':[1],
-                                   'Ca':[1],
-                                   'Br':[-1],
-                                   'Cr':[0],
-                                   'Fe':[0],
-                                   'W':[0]}}],
-               'radius':{2:4.0,3:3.0,4:3.0}}
-    return InputsWrapper(lat_data, options=options)
-
-@pytest.fixture
-def subspace(inputs_wrapper):
-    return inputs_wrapper.subspace
-
-
-@pytest.fixture
-def history(subspace):
-    coefs = np.random.random(subspace.num_corr_functions +
-                             len(subspace.external_terms))
-    coefs[0] = 1.0
-    coefs = coefs.tolist()
-    cv = 0.998
-    rmse = 0.005
-    return [{'coefs':coefs, 'cv':cv, 'rmse':rmse}]
-
-@pytest.fixture
-def data_manager(inputs_wrapper, history):
-    sock =  DataManager(inputs_wrapper.prim,
-                        inputs_wrapper.bits,
-                        inputs_wrapper.sublat_list,
-                        inputs_wrapper.subspace,
-                        history)
+def data_manager(inputs_wrapper):
+    sock =  DataManager(inputs_wrapper)
     sc_file = os.path.join(DATADIR,'sc_df_test.csv')
     comp_file = os.path.join(DATADIR,'comp_df_test.csv')
     fact_file = os.path.join(DATADIR,'fact_df_test.csv')
@@ -73,7 +36,6 @@ def arch_vasp_writer(data_manager):
 @pytest.fixture
 def mongo_vasp_writer(data_manager):
     return MongoVaspWriter(data_manager)
-
 
 def decorate(s, decors):
     species = []

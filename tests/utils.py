@@ -13,4 +13,13 @@ def assert_msonable(obj, test_if_subclass=True):
     assert obj.as_dict() == obj.__class__.from_dict(obj.as_dict()).as_dict()
     _ = json.loads(obj.to_json(), cls=MontyDecoder)
 
-
+def assert_dict_equal(d1, d2):
+    assert sorted(list(d1.keys())) == sorted(list(d2.keys()))
+    for k in d1.keys():
+        if isinstance(d1[k], dict) and isinstance(d2[k], dict):
+            assert_dict_equal(d1[k], d2[k])
+        else:
+            if d1[k] != d2[k]:
+                print("Difference in key: {}, d1: {}, d2: {}"
+                      .format(k, d1[k], d2[k]))
+            assert d1[k] == d2[k]

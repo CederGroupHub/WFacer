@@ -13,13 +13,13 @@ import random
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
 from smol.cofe.space.domain import get_allowed_species
-from smol.moca import (CanonicalEnsemble, MuSemiGrandEnsemble,
-                       CompSpace, Sampler)
+from smol.moca import CanonicalEnsemble, Sampler
 
 from ..utils.comp_utils import scale_compstat
 from ..utils.calc_utils import get_ewald_from_occu
 from ..utils.class_utils import derived_class_factory
 from ..utils.math_utils import GCD
+from ..utils.occu_utils import get_all_sublattices
 
 
 class MCHandler(ABC):
@@ -86,6 +86,21 @@ class MCHandler(ABC):
         self._gs_occu = (np.array(gs_occu, dtype=int)
                          if gs_occu is not None else None)
 
+        self._all_sublattices = None
+
+    @property
+    def all_sublattices(self):
+        """List of all active and inactive sublattices.
+
+        Order determined as in smol.moca.get_sublattices.
+        Returns:
+            List[Sublattice]
+        """
+        if self._all_sublattices is None:
+            self._all_sublattices = get_all_sublattices(self.
+                                                        processor)
+        return self._all_sublattices
+
     @property
     def sc_sublat_list(self):
         """List of sublattice sites in a supercell.
@@ -93,7 +108,7 @@ class MCHandler(ABC):
         Same ordering as smol.moca.ensemble.sublattice
         get_all_sublattices.
         """
-        return [s.sites for s in self.ensemble.all_sublattices]
+        return [s.sites for s in self.all_sublattices]
 
     @property
     def sl_sizes(self):
@@ -107,7 +122,7 @@ class MCHandler(ABC):
         Same ordering as smol.moca.ensemble.sublattice
         get_all_sublattices.
         """
-        return [s.species for s in self.ensemble.all_sublattices]
+        return [s.species for s in self.all_sublattices]
 
     @property
     @abstractmethod

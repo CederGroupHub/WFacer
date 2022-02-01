@@ -21,18 +21,19 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
 
 from .utils.serial_utils import serialize_comp, deser_comp
-from .utils.occu_utils import structure_from_occu, occu_from_structure
+from .utils.occu_utils import (structure_from_occu,
+                               occu_from_structure,
+                               occu_to_species_stat)
 from .utils.comp_utils import normalize_compstat
 from .utils.frame_utils import load_dataframes, save_dataframes
 
 from .wrappers import InputsWrapper
 from .config_paths import (WRAPPER_FILE, OPTIONS_FILE,
                            SC_FILE, COMP_FILE, FACT_FILE)
+from .comp_space import CompSpace
 
 from smol.cofe.space.domain import get_allowed_species, get_site_spaces
-from smol.moca import CompSpace
 from smol.moca.ensemble.sublattice import Sublattice
-from smol.moca.utils.occu_utils import occu_to_species_stat
 
 
 class DataManager:

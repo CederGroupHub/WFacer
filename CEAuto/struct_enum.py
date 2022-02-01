@@ -27,8 +27,7 @@ from .utils.comp_utils import (check_comp_restriction,
                                get_Noccus_of_compstat)
 
 from .ce_handler import CanonicalmcHandler
-
-from smol.moca import CompSpace
+from .comp_space import CompSpace
 
 
 def raw_sample_under_sc_comp(ce, handler_args, sc_mat_and_compstat):

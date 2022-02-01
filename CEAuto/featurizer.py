@@ -43,10 +43,10 @@ class Featurizer:
         # Handling specie decoration types.
         if decorators is None:
             d_types = (self.inputs_wrapper
-                       .featurizer_options['decorator_types'])
+                       .featurizer_options['decorators_types'])
             d_args = (self.inputs_wrapper
-                      .featurizer_options['decorator_args'])
-            decorators = [decorator_factory(d_type, **d_args)
+                      .featurizer_options['decorators_args'])
+            decorators = [decorator_factory(d_type, **d_arg)
                           for d_type, d_arg in zip(d_types, d_args)]
                 
         self._decorators = decorators
@@ -55,12 +55,16 @@ class Featurizer:
                             .featurizer_options['other_props'])
         self.max_charge = (self.inputs_wrapper
                            .featurizer_options['max_charge'])
-        self._reader = self.inputs_wrapper.calc_reader
 
     @property
     def inputs_wrapper(self):
         """InputsWrapper for project."""
         return self._dm._iw
+
+    @property
+    def calc_reader(self):
+        """CalcReader for project."""
+        return self.inputs_wrapper.calc_reader
 
     @property
     def data_manager(self):

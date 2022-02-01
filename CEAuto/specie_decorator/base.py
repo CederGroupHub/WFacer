@@ -15,14 +15,16 @@ log = logging.getLogger(__name__)
 
 from abc import ABCMeta, abstractmethod
 from monty.json import MSONable
+from pymatgen.core import Species, DummySpecies, Structure
 
 from ..utils.class_utils import derived_class_factory
 
 
-def decorate_single_structure(s, decor_keys, decor_values):
-    """
-    This function decorates a single, undecorated structure
-    composed of pymatgen.Element into structure of pymatgen.Species.
+def decorate_single_structure(s, decor_keys, decor_values, max_charge=0):
+    """Decorates a single, undecorated structure.
+
+    Undecorated structures are composed of pymatgen.Element,
+    and we turn them into structures of pymatgen.Species.
     Vacancies not considered.
 
     Args:
@@ -31,12 +33,16 @@ def decorate_single_structure(s, decor_keys, decor_values):
         decor_keys(list of str):
             Names of properties to be decorated onto the structure.
         decor_values(2D list, second dimension can be None):
-            Values of properties to be assigned to each site. Shaped in:
-            N_properties* N_sites.
+            Values of properties to be assigned to each site. Shaped
+            as (N_properties, N_sites).
             Charges will be stored in each specie.oxidation_state, while
             other properties will be stoered in specie._properties, if
             allowed by Species class.
             Can't be None.
+        max_charge(int):
+            Maximum absolute value of charge in a single structure.
+            If charge goes over this limit, structure assignment will
+            return a failure.
     Returns:
         Pymatgen.Structure: Decorated structure.
     """
@@ -49,11 +55,11 @@ def decorate_single_structure(s, decor_keys, decor_values):
     decors_by_sites = list(zip(*decor_values))
     species_new = []
 
-    for sp, decors_of_site in zip(s.species, decor_by_sites):
+    for sp, decors_of_site in zip(s.species, decors_by_sites):
         try:
-            sp_new = Specie(sp.symbol)
+            sp_new = Species(sp.symbol)
         except:
-            sp_new = DummySpecie(sp.symbol)
+            sp_new = DummySpecies(sp.symbol)
         
         other_props = {}
         for key, val in zip(decor_keys, decors_of_site):

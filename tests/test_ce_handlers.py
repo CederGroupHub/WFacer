@@ -1,8 +1,8 @@
 from CEAuto.ce_handler import *
 from CEAuto.utils.comp_utils import normalize_compstat
-from smol.moca.utils.occu_utils import occu_to_species_stat
+from CEAuto.comp_space import CompSpace
+from CEAuto.utils.occu_utils import occu_to_species_stat
 
-from smol.moca.comp_space import CompSpace
 from smol.cofe.space.domain import get_allowed_species
 from smol.cofe import ClusterExpansion
 
@@ -16,7 +16,7 @@ import itertools
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
 DATADIR = os.path.join(os.path.dirname(__file__),'data')
-handlers = [CanonicalmcHandler, SemigrandmcHandler]
+handlers = [CanonicalmcHandler]
 
 def get_compspace(handler):
     return CompSpace(handler.bits, handler.sl_sizes)
@@ -62,7 +62,7 @@ def test_init_occu(handler):
     int_comp = random.choice(cspace.int_grids(sc_size=4, form='compstat'))
     init_occu = handler._initialize_occu_from_int_comp(int_comp)
 
-    int_comp_rel = occu_to_species_stat(init_occu, handler.ensemble.all_sublattices)
+    int_comp_rel = occu_to_species_stat(init_occu, handler.all_sublattices)
 
     assert int_comp == int_comp_rel
 
@@ -98,7 +98,7 @@ def test_get_sample(handler):
     # Can get deduplicated samples under requirements.
     dedup_structures = []
     for occu in samples:
-        compstat = occu_to_species_stat(occu, handler.ensemble.all_sublattices)
+        compstat = occu_to_species_stat(occu, handler.all_sublattices)
         ucoord = cspace.translate_format(compstat,
                                          from_format='compstat',
                                          to_format='unconstr')

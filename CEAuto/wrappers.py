@@ -20,12 +20,12 @@ from smol.cofe import ClusterSubspace, ClusterExpansion
 from smol.cofe.space.domain import (get_site_spaces, Vacancy,
                                     get_allowed_species)
 from smol.cofe.extern import *
-from smol.moca import CompSpace
 from smol.moca.ensemble.sublattice import Sublattice
 
 from .utils.serial_utils import decode_from_dict, serialize_any
 from .utils.format_utils import merge_dicts
 
+from .comp_space import CompSpace
 from .calc_reader import reader_factory
 from .calc_writer import writer_factory
 from .calc_manager import manager_factory

@@ -18,6 +18,8 @@ from smol.cofe.space.domain import Vacancy
 
 from monty.serialization import loadfn
 
+from .utils import assert_dict_equal
+
 DATADIR = os.path.join(os.path.dirname(__file__),'data')
 
 sc_file = os.path.join(DATADIR,'sc_df_test.csv')
@@ -112,7 +114,7 @@ def data_manager(inputs_wrapper):
 
 def test_copy(data_manager):
     dm = data_manager.copy()
-    assert data_manager._iw.as_dict() == dm._iw.as_dict()
+    assert_dict_equal(dm._iw.as_dict(), data_manager._iw.as_dict())
     assert_frame_equal(data_manager.sc_df, dm.sc_df)
     assert_frame_equal(data_manager.comp_df, dm.comp_df)
     assert_frame_equal(data_manager.fact_df, dm.fact_df)
