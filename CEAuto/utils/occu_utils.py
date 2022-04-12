@@ -1,109 +1,152 @@
+"""Utility functions to handle encoded occupation arrays."""
+
 __author__ = "Fengyu Xie"
 
-"""
-Utility functions to handle encoded occupation arrays.
-"""
 import numpy as np
 
-from smol.cofe import ClusterSubspace
-from smol.moca import CEProcessor
-from smol.moca.ensemble.sublattice import Sublattice
-from smol.cofe.space.domain import get_site_spaces
 
-
-def get_all_sublattices(processor):
-    """Get a list of all sublattices from a processor.
-
-    Will include all sublattices, active or not.
-
-    This is only to be used by the charge neutral ensembles.
-
+def get_dim_ids_by_sublattice(bits):
+    """Get the component index of each species in vector n.
     Args:
-        processor (Processor):
-            A processor object to extract sublattices from.
+        bits(List[List[Specie|Vacancy|Element]]):
+           Species on each sub-lattice.
     Returns:
-        list of Sublattice, containing all sites, even
-        if only occupied by one specie.
+        Component index of each species on each sublattice in vector n:
+           List[List[int]]
     """
-    # Must keep the same order as processor.unique_site_spaces.
-    unique_site_spaces = tuple(set(get_site_spaces(
-                               processor.cluster_subspace.structure)))
-
-    return [Sublattice(site_space,
-            np.array([i for i, sp in enumerate(processor.allowed_species)
-                     if sp == list(site_space.keys())]))
-            for site_space in unique_site_spaces]
+    dim_ids = []
+    dim_id = 0
+    for species in bits:
+        dim_ids.append(list(range(dim_id, dim_id + len(species))))
+        dim_id += len(species)
+    return dim_ids
 
 
-# Wrap up structure_from_occu method from processor module
-def structure_from_occu(occu, prim, sc_matrix):
-    """Decodes structure from encoded occupation array.
-
+# Parsing will be faster based on table.
+def get_dim_ids_table(sublattices, active_only=False):
+    """Get the dimension indices of all (site, code) in n-representation.
+    This will be used to efficiently map occupancy to n-representation.
     Args:
-        occu(1D arraylike):
-            encoded occupation string
-        prim(pymatgen.Structure):
-            primitive cell containing all occupying species information.
-            It is your responisibility to ensure that it is exactly the
-            one you used to initialize cluster expansion.
-        sc_matrix(3*3 arraylike):
-            Supercell matrix. It is your responsibility to check size
-            matches the length of occu
-    Returns:
-        Decoded pymatgen.Structure object.
+        sublattices(smol.moca.Sublattice):
+            All sub-lattices, active or not. The union
+            of all sub-lattices' sites must be
+            range(number of sites).
+        active_only(bool): optional
+            If true, will count un-restricted sites on all
+            sub-lattices only. Default to false, will count
+            all sites and sub-lattices.
     """
-    dummy_cspace = ClusterSubspace.from_cutoffs(prim, cutoffs={2: 0.01})
-    dummy_coefs = np.zeros(dummy_cspace.num_corr_functions)
-    dummy_proc = CEProcessor(dummy_cspace, sc_matrix, dummy_coefs)
-    return dummy_proc.structure_from_occupancy(occu)
+    n_row = sum(len(sublatt.sites) for sublatt in sublattices)
+    n_col = max(max(sublatt.encoding) for sublatt in sublattices) + 1
+
+    table = np.zeros((n_row, n_col), dtype=int) - 1
+    dim_id = 0
+    for sl_id, sublatt in enumerate(sublattices):
+        for code in sublatt.encoding:
+            if active_only:
+                sites = sublatt.active_sites
+            else:
+                sites = sublatt.sites
+            sites = sites.astype(int)  # in case sites are void.
+            table[sites, code] = dim_id
+            dim_id += 1
+    return table
 
 
-def occu_from_structure(s, prim, sc_matrix):
-    """Encodes structure to occupation array.
-
+# Utilities for parsing occupation to composition.
+def occu_to_species_list(occupancy, d, dim_ids_table):
+    """Get occupancy status of each sub-lattice.
+    Get table of the indices of sites that are occupied by each specie on
+    sub-lattices, from an encoded occupancy array.
     Args:
-        s(pymatgen.Structure):
-            Supercell structure.
-        prim(pymatgen.Structure):
-            primitive cell containing all occupying species information.
-            It is your responisibility to ensure that it is exactly the
-            one you used to initialize cluster expansion.
-        sc_matrix(3*3 arraylike):
-            Supercell matrix. It is your responsibility to check size
-            matches the length of occu
-    Returns:
-        Decoded pymatgen.Structure object.
-    """
-    dummy_cspace = ClusterSubspace.from_cutoffs(prim, cutoffs={2: 0.01})
-    dummy_coefs = np.zeros(dummy_cspace.num_corr_functions)
-    dummy_proc = CEProcessor(dummy_cspace, sc_matrix, dummy_coefs)
-    return np.array(dummy_proc.occupancy_from_structure(s), dtype=int).tolist()
-
-
-def occu_to_species_stat(occupancy, all_sublattices, active_only=False):
-    """Make compstat format from occupation array.
-
-    Get a statistics table of each specie on sublattices from an encoded
-    occupancy array.
-    Args:
-        occupancy(np.ndarray like):
+        occupancy(1d Arraylike[int]):
             An array representing encoded occupancy, can be list.
-        all_sublattices(smol.moca.Sublattice):
-            All sublattices in the super cell, regardless of activeness.
-        active_only(Boolean):
-            If true, will count un-restricted sites only. Default to false.
-
+        d (int):
+            Number of components in the "n"-representation. This must
+            be provided because the maximum component index is not always
+            in the table.
+        dim_ids_table(2D arrayLike[int]):
+            Dimension indices of each site and code in n-representation.
+            Rows correspond to site index, while columns correspond to
+            species code. if a site is not active, all codes (columns)
+            will give -1.
     Return:
-        species_stat(2D list of ints/floats)
-            Is a statistics of number of species on each sublattice.
-            1st dimension: sublattices
-            2nd dimension: number of each specie on that specific sublattice.
-            Dimensions same as moca.sampler.mcushers.CorrelatedUsher.bits.
+        Index of sites occupied by each species, sublattices concatenated:
+            List[List[int]]
     """
     occu = np.array(occupancy, dtype=int)
+    if len(occu) != len(dim_ids_table):
+        raise ValueError(f"Occupancy size {len(occu)} does not match "
+                         f"table size {len(dim_ids_table)}!")
+    dim_ids = dim_ids_table[np.arange(len(occu), dtype=int), occu]
+    all_sites = np.arange(len(occu), dtype=int)
+    return [all_sites[dim_ids == i].tolist() for i in range(d)]
 
-    return [[int(round((occu[s.active_sites if active_only else s.sites]
-                        == sp_id).sum()))
-            for sp_id in range(len(s.species))]
-            for s in all_sublattices]
 
+def occu_to_species_n(occupancy, d, dim_ids_table):
+    """Count number of species from occupation array.
+    Get the count of each species on sub-lattices from an encoded
+    occupancy array.
+    Args:
+        occupancy(1d Arraylike[int]):
+            An array representing encoded occupancy, can be list.
+        d (int):
+            Number of components in the "n"-representation. This must
+            be provided because the maximum component index is not always
+            in the table.
+        dim_ids_table(2D arrayLike[int]):
+            Dimension indices of each site and code in n-representation.
+            Rows correspond to site index, while columns correspond to
+            species code. if a site is not active, all codes (columns)
+            will give -1.
+    Return:
+        Amount of each species, sublattices concatenated:
+            1D np.ndarray[int]
+    """
+    occu = np.array(occupancy, dtype=int)
+    if len(occu) != len(dim_ids_table):
+        raise ValueError(f"Occupancy size {len(occu)} does not match "
+                         f"table size {len(dim_ids_table)}!")
+    dim_ids = dim_ids_table[np.arange(len(occu), dtype=int), occu]
+    n = np.zeros(d, dtype=int)
+    dims, counts = np.unique(dim_ids, return_counts=True)
+    n[dims[dims >= 0]] = counts[dims >= 0]
+    return n
+
+
+def delta_n_from_step(occu, step, d, dim_ids_table):
+    """Get the change of species amounts from MC step.
+    Args:
+        occu(1D arrayLike[int]):
+            Encoded occupation array.
+        step(List[tuple(int,int)]):
+            List of tuples recording (site_id, code_of_species_to
+            _replace_with).
+        d (int):
+            Number of components in the "n"-representation. This must
+            be provided because the maximum component index is not always
+            in the table.
+        dim_ids_table(2D arrayLike[int]):
+            Dimension indices of each site and code in n-representation.
+            Rows correspond to site index, while columns correspond to
+            species code.
+    Return:
+        Change of species amounts (delta_n):
+            1D np.ndarray[int]
+    """
+    occu_now = np.array(occu, dtype=int)
+    dim_ids_table = np.array(dim_ids_table, dtype=int)
+    delta_n = np.zeros(d, dtype=int)
+    # A step may involve a site multiple times.
+    for site, code in step:
+        code_ori = occu_now[site]
+        dim_ori = dim_ids_table[site, code_ori]
+        dim_nex = dim_ids_table[site, code]
+        if dim_ori < 0 or dim_nex < 0:
+            raise ValueError(f"Inactive sites or impossible codes "
+                             f"involved in step {step}!")
+        delta_n[dim_ori] -= 1
+        delta_n[dim_nex] += 1
+        occu_now[site] = code
+
+    return delta_n
