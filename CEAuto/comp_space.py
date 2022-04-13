@@ -424,6 +424,7 @@ class CompSpace(MSONable):
 
     def get_centroid_composition(self, sc_size=None):
         """Get a composition close to the centroid of polytope.
+
         Args:
             sc_size(int): optional
                Super-cell size to get the composition with.

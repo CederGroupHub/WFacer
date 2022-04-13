@@ -6,3 +6,4 @@ cvxpy
 scipy
 numpy
 smol
+pyyaml

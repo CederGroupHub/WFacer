@@ -247,9 +247,6 @@ class MagchargeDecorator(BaseDecorator):
                 names.
                 Each property array has shape N_strs*N_sites.
                 In this classifier, only uses magnetization.
-            check_neutral(Bool):
-                Check whether the assigned structures are charge neutral.
-                Non-neutral structures will be returned as None.
         Returns:
             A dictionary, specifying name of assigned properties and their
             values by structure and by site.
