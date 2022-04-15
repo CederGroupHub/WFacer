@@ -1,86 +1,81 @@
-"""Generic propertie decorator class.
+"""Decorate properties to a structure composed of Element.
 
-This assign properties to undecorated pymatgen.Element,to make them Species,
-with charge and other properties.
-
-Possible decorations includes charge (most commonly used), spin polarization.
-If the user wishes to define other properties assignment methods, just derive
-a new class Assignment class, and write assignment methods accordingly.
+Currently, we can only decorate charge. Plan to allow decorating
+spin in the future updates.
 """
 
-__author__='Fengyu Xie'
-
-import logging
-log = logging.getLogger(__name__)
+__author__ = 'Fengyu Xie'
 
 from abc import ABCMeta, abstractmethod
 from monty.json import MSONable
 from pymatgen.core import Species, DummySpecies, Structure
+from pymatgen.entries.computed_entries import ComputedStructureEntry
 
-from ..utils.class_utils import derived_class_factory
+from smol.utils import derived_class_factory
 
 
-def decorate_single_structure(s, decor_keys, decor_values, max_charge=0):
-    """Decorates a single, undecorated structure.
+def decorate_single_entry(entry,
+                          decorated_prop_names,
+                          decorated_prop_values,
+                          max_charge=0):
+    """Decorates a single, undecorated entry before insertion.
 
     Undecorated structures are composed of pymatgen.Element,
     and we turn them into structures of pymatgen.Species.
     Vacancies not considered.
 
     Args:
-        s(pymatgen.Structure):
-            Structure to be decorated.
-        decor_keys(list of str):
+        entry(ComputedStructureEntry):
+            A ComputedStructureEntry, not decorated yet.
+        decorated_prop_names(list of str):
             Names of properties to be decorated onto the structure.
-        decor_values(2D list, second dimension can be None):
+        decorated_prop_values(List[list[float]]):
             Values of properties to be assigned to each site. Shaped
             as (N_properties, N_sites).
             Charges will be stored in each specie.oxidation_state, while
             other properties will be stoered in specie._properties, if
             allowed by Species class.
-            Can't be None.
         max_charge(int):
             Maximum absolute value of charge in a single structure.
             If charge goes over this limit, structure assignment will
             return a failure.
     Returns:
-        Pymatgen.Structure: Decorated structure.
+        ComputedStructureEntry with decorated structure:
+            ComputedStructureEntry.
     """
-    for val in decor_values:
-        for v in val:
-            assert v is not None
-    # No decoration value can be None.
-    
-    #transpose to N_sites*N_properties
-    decors_by_sites = list(zip(*decor_values))
+    # transpose to (N_sites, N_props)
+    decors_by_sites = list(zip(*decorated_prop_values))
     species_new = []
+    s_undecor = entry.structure
 
-    for sp, decors_of_site in zip(s.species, decors_by_sites):
+    for site, decors in zip(s_undecor, decors_by_sites):
+        element = site.specie
         try:
-            sp_new = Species(sp.symbol)
-        except:
-            sp_new = DummySpecies(sp.symbol)
-        
+            sp_new = Species(element.symbol)
+        except ValueError:  # Not a valid element.
+            sp_new = DummySpecies(element.symbol)
+
         other_props = {}
-        for key, val in zip(decor_keys, decors_of_site):
-            if key == 'charge':
+        for prop, val in zip(decorated_prop_names, decors):
+            if prop == 'charge':
                 sp_new._oxi_state = val
             else:  # Other properties
-                if key in Species.supported_properties:
-                    other_props[key] = val
+                if prop in Species.supported_properties:
+                    other_props[prop] = val
                 else:
-                    log.warning("{} is not a supported pymatgen property."
-                                .format(key))
+                    raise ValueError(f"{prop} is not supported by "
+                                     "pymatgen Species!")
         sp_new._properties = other_props
         species_new.append(sp_new)
 
     s_decor = Structure(s.lattice, species_new, s.frac_coords)
-    if abs(s_decor.charge) <= max_charge:
+    if abs(s_decor.charge) <= max_charg
         return s_decor
     else:
         return None
 
 
+# TODO: let this class use ComputedStructureEntry.
 class BaseDecorator(MSONable, metaclass=ABCMeta):
     """Abstract decorator class.
 

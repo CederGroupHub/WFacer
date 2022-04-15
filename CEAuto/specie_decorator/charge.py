@@ -6,9 +6,6 @@ vectors.
 
 __author__='Julia Yang, Fengyu Xie'
 
-import logging
-log = logging.getLogger(__name__)
-
 from .base import BaseDecorator
 
 import numpy as np
@@ -16,6 +13,7 @@ from sklearn.mixture import GaussianMixture
 from skopt import gp_minimize
 from functools import partial
 from copy import deepcopy
+
 
 def get_section_id(x, cuts):
     """Get index of a section from section cut values.
@@ -34,14 +32,24 @@ def get_section_id(x, cuts):
     return sorted(cuts.copy() + [x]).index(x)
 
 
-class MagchargeDecorator(BaseDecorator):
-    """
-    Assign charges from magnitudes of magentic moments. Partition dividers
-    will be initialized by a mixture of gaussians model, then optimized with
-    maximum neutral structures number by gp_maximize.
-    Takes in a pool of structures, gives assigned strutures.
+class GuessChargeDecorator(BaseDecorator):
 
-    Args:
+
+class MagneticChargeDecorator(BaseDecorator):
+    """Assign charges from magnitudes of magentic moments.
+
+    Partition dividers will be initialized by a mixture of gaussians model,
+    then optimized with maximum neutral structures number by gp_maximize.
+    Takes in a pool of structures, gives assigned strutures.
+    """
+    required_props = ['magnetization']
+
+    def __init__(self, labels_table,
+                 maximum_abs_charge=0,
+                 maximize_valid_assignments=True):
+        """ Initialize.
+
+        Args:
         labels_table(Dict{STRING of element: List[int|float]...}):
             A dictionary, specifying the elements, and the labels
             that we should assign to this specific element.
@@ -65,12 +73,10 @@ class MagchargeDecorator(BaseDecorator):
          maximize_balance:
             Whether to optimiz cut values with gp_maximize(n_balanced_strs).
             Default to True.
-    """
-    required_props = ['magnetization']
-
-    def __init__(self, labels_table, maximize_balance=True):
-        self.labels_table = labels_table
-        self.maximize_balance = maximize_balance
+        """
+        super(MagneticChargeDecorator, self).__init__(labels_table)
+        self.maximum_abs_charge = maximum_abs_charge
+        self.maximize = maximize_valid_assignments
         self._cuts_by_elements = None
 
     @property

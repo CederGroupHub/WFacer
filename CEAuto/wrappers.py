@@ -5,39 +5,32 @@ __author__ = "Fengyu Xie"
 import itertools
 import numpy as np
 import json
-import yaml
-from copy import deepcopy
 import os
+import uuid
 
-from monty.json import MSONable
-from pymatgen.core import Structure, Lattice, Composition
+from monty.json import MSONable, MontyDecoder, MontyEncoder
+from pymatgen.core import Structure, Lattice, Composition, DummySpecies
 from pymatgen.core.periodic_table import Element
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-from smol.cofe import ClusterSubspace, ClusterExpansion
+from smol.cofe import ClusterSubspace
 from smol.cofe.space.domain import (get_site_spaces, Vacancy,
-                                    get_allowed_species)
+                                    get_allowed_species,
+                                    get_species)
 
-from smol.cofe.extern import EwaldTerm  # Currently only allow EwaldTerm
+from smol.cofe.extern import EwaldTerm  # Currently, only allow EwaldTerm.
 
-from .utils.serial_utils import decode_from_dict, serialize_any
 from .utils.format_utils import merge_dicts
+from .config_paths import (WRAPPER_FILE, OPTIONS_FILE, PRIM_FILE,
+                           HISTORY_FILE)
 
-from .config_paths import (CE_HISTORY_FILE,
-                           WRAPPER_FILE,
-                           OPTIONS_FILE,
-                           PRIM_FILE)
-
-import logging
-
-log = logging.getLogger(__name__)
-
-
-def parse_comp_restrictions(comp_restrictions):
+import warnings
 
 
 def construct_prim(bits, sublattice_sites, lattice, frac_coords):
     """Construct a primitive cell based on lattice info.
 
+    Provides a toolkit method to initialize a primitive cell.
     Args:
         bits(List[List[Specie]]):
             Allowed species on each sublattice. No sorting
@@ -78,6 +71,9 @@ class InputsWrapper(MSONable):
     Direct initialization is not recommended. You are supposed to 
     initialize it with auto_load().
     """
+    # Add here if you implement more decorators.
+    valid_decorator_types = {"charge": ("guess-charge-decorator",
+                                        "magnetic-charge-decorator",)}
 
     def __init__(self, prim, **kwargs):
         """Initialize.
@@ -92,21 +88,73 @@ class InputsWrapper(MSONable):
                 Additional settings to CEAuto fittings and calculations.
         """
         self._options = kwargs
+        self._options = self._process_options()
 
         self._prim = prim
+        self._process_prim()
 
         # These will always be reconstructed.
         self._bits = None
         self._sublattice_sites = None
 
+    def _process_prim(self):
+        """Make primitive cell the real primitive."""
+        sa = SpacegroupAnalyzer(self._prim, **self.space_group_options)
+        # TODO: maybe we can re-define site_properties transformation
+        # in the future.
+        self._prim = sa.find_primitive(keep_site_properties=True)
+
     @property
     def prim(self):
-        """Primitive cell for expansion.
+        """Primitive cell (pre-processed).
 
         Returns:
             Structure
         """
         return self._prim
+
+    @property
+    def transmat(self):
+        """Transformation matrix.
+
+        If "supercell_from_conventional" set to True, will use the transformation
+        matrix from processed primitive cell to the conventional cell. Otherwise,
+        returns identity.
+        The enumerator will enumerate super-cell matrices in the form of:
+        M = M'T, where M' is another transformation matrix.
+        Returns:
+            np.ndarray[int]
+        """
+        if self.enumerator_options["supercell_from_conventional"]:
+            sa = SpacegroupAnalyzer(self.prim, **self.space_group_options)
+            t_inv = sa.get_conventional_to_primitive_transformation_matrix()
+            return np.array(np.round(np.linalg.inv(t_inv)), dtype=int)
+        return np.eye(3, dtype=int)
+
+    @property
+    def sc_size_enum(self):
+        """Supercell size (in num of prim unit) to enumerate.
+
+        Computed as self.enumerator_options["objective_sc_size"]
+        // (det(transmat)) * det(transmat).
+        Return:
+            int
+        """
+        det = int(round(abs(np.linalg.det(self.transmat))))
+        return self.enumerator_options["objective_sc_size"] // det * det
+
+    @property
+    def space_group_options(self):
+        """Options to pre-process the primitive cell.
+
+        Refer to kwargs of pymatgen's SpaceGroupAnalyzer.
+        Returns:
+            dict
+
+        prim_symmetry_precision(float):
+            precision to pass
+        """
+        return self._options.get("space_group_kwargs", {})
 
     @property
     def bits(self):
@@ -179,18 +227,30 @@ class InputsWrapper(MSONable):
         """
         subspace = (ClusterSubspace.
                     from_cutoffs(self.prim,
-                                 self.space_options['cutoffs'],
-                                 basis=self.space_options['basis_type'],
-                                 **self.space_options['matcher_kwargs'])
+                                 self.cluster_space_options['cutoffs'],
+                                 basis=self.cluster_space_options['basis_type'],
+                                 **self.cluster_space_options['matcher_kwargs'])
                     )
 
         if self.is_charged_ce:
-            subspace.add_external_term(EwaldTerm(**self.space_options["ewald_kwargs"]))
+            subspace.add_external_term(EwaldTerm(**self.cluster_space_options["ewald_kwargs"]))
 
         return subspace
 
     @property
-    def space_options(self):
+    def project_name(self):
+        """Name of CE project.
+
+        Can be specified in options. If not specified, will
+        generate an unique random UUID.
+        Return:
+            str
+        """
+        return self._options.get('project_name',
+                                 str(uuid.uuid4()))
+
+    @property
+    def cluster_space_options(self):
         """ClusterSubspace options.
 
         Returns:
@@ -209,8 +269,9 @@ class InputsWrapper(MSONable):
                 Keyword arguments to pass into cluster subspace's
                 EwaldTerm, if it has one. Default to empty.
         """
-        # Auto-generate cutoffs.
-        if self._options.get('cutoffs') is None:
+        # Auto-generate cutoffs from neighbor distances.
+        cutoffs = self._options.get('cutoffs')
+        if cutoffs is None:
             d_nns = []
             for i, site1 in enumerate(self.prim):
                 d_ij = []
@@ -225,13 +286,49 @@ class InputsWrapper(MSONable):
 
             # Empirical values from DRX, not necessarily true.
             cutoffs = {2: d_nn * 4.0, 3: d_nn * 2.0, 4: d_nn * 2.0}
-            self._options['cutoffs'] = cutoffs
 
-        return {'cutoffs': self._options.get('cutoffs'),
+        return {'cutoffs': cutoffs,
                 'basis_type': self._options.get('basis_type', 'indicator'),
                 'matcher_kwargs': self._options.get('matcher_kwargs', {}),
                 'ewald_kwargs': self._options.get('ewald_kwargs', {})
                 }
+
+    @staticmethod
+    def parse_comp_restriction(d):
+        """Parse a restriction of composition.
+
+        Arg:
+            d(dict|list/tuple of dict):
+                Dictionary of restrictions. Each key is a representation of a
+                species, and each value can either be a tuple of lower and
+                upper-limits, or a single float of upper-limit of the species
+                atomic fraction. Number must be in [0, 1].
+                If a list of dict provided, each dict in the list constrains
+                on a sub-lattice composition.
+        """
+        comp_restriction = {}
+        if isinstance(d, (list, tuple)):
+            return [InputsWrapper.parse_comp_restriction(o) for o in d]
+
+        for key, val in d.items():
+            if isinstance(val, (list, tuple)):
+                if len(val) != 2:
+                    raise ValueError("Species concentration constraints provided "
+                                     "as tuple, but length of tuple is not 2.")
+                if val[1] < val[0]:
+                    raise ValueError("Species concentration constraints provided "
+                                     "as tuple, but lower-bound > upper_bound.")
+                if val[1] < 0 or val[1] > 1 or val[0] < 0 or val[0] > 1:
+                    raise ValueError("Provided species concentration limit must "
+                                     "be in [0, 1]!")
+                comp_restriction[get_species(key)] = tuple(val)
+            else:
+                if val < 0 or val > 1:
+                    raise ValueError("Provided species concentration limit must "
+                                     "be in [0, 1]!")
+                comp_restriction[get_species(key)] = (0, val)
+
+        return comp_restriction
 
     # TODO: More generic comp_restriction?
     @property
@@ -242,489 +339,348 @@ class InputsWrapper(MSONable):
             Dict.
 
         Included keys:
-            pre_transmat(3*3 List of int):
-                Transformation matrix T applied to primitive cell before
-                enumerating supercell matrix, so that each enumerated
-                super-cell matrix M = M0 @ T. For example, when doing
-                CE on FCC, we recommend using:
-                 T = [[-1, 1, 1], [1, -1, 1], [1, 1, -1]]
-                Default to np.eye(3).
-            sc_size(int | List[int]):
-                Supercel sizes (by number of prims) to enumerate.
-                 This must be a multiple of abs(det(transmat)).
-                Default to 32 // abs(det(transmat)) * abs(det(transmat)).
-                to make the super-cell size close to 32.
-            max_sc_cond(float):
-                Maximum conditional number of the supercell lattice matrix.
-                Default to 8, prevent overly slender super-cells.
-            max_sc_angle(float):
-                Minimum allowed angle of the supercell lattice.
-                Default to 30, prevent overly skewed super-cells.
-            sc_mats(List of 3*3 int list):
-                Supercell matrices. Will not enumerate super-cells if this
-                is given.
-            comp_restrictions(List[dict]|dict):
-                Restriction to enumerated concentrations of species.
-                Given in the form of a single dict
-                    {Species: (min atomic percentage in structure,
-                               max atomic percentage in structure)}
-                or in list of dicts, each constrains a sub-lattice:
-                   [{Species: (min atomic percentage in sub-lattice,
-                               max atomic percentage in sub-lattice)},
-                    ...]
-            comp_enumeration_step (int):
-                Spacing of enumerated compositions under sc_size, such
-                that compositions will be enumerated as:
-                    comp_space.get_comp_grid(sc_size=
-                    sc_size // comp_enumeration_step).
-            struct_to_comp_ratio (int|Dict):
-                This gives the ratio between number of structures
-                enumerated per iteration, and number of compositions
-                enumerated. If an int given, will use the same value
-                at iteration 0 ("init") and following iterations ("add").
-                If in dict form, please give:
-                    {"init": ..., "add": ...}
-                Default to: {"init": 4, "add": 2}
-                It is not guaranteed that in an iteration, number of added
-                structures equals to ratio * number of compositions, because
-                selected structures may duplicate with existing ones thus
-                not inserted.
-            handler_args(Dict):
-                kwargs to pass into CanonicalHander.
-                See ce_handlers.CanonicalHandler.
-            select_method(str):
-                Structure selection method. Default is 'leverage'.
-                Allowed options are: 'leverage' and 'random'.
+        supercell_from_conventional(bool):
+            Whether to find out primitive cell to conventional
+            standard structure transformation matrix T, and enumerate
+            super-cell matrices in the form of: M = M'T.
+            Default to true. If not, will set T to eye(3).
+        objective_sc_size(int):
+            The Supercel sizes (in number of prims) to approach.
+            Default to 32. Enumerated super-cell size will be
+            a multiple of det(T) but the most close to this objective
+            size.
+        max_sc_cond(float):
+            Maximum conditional number of the supercell lattice matrix.
+            Default to 8, prevent overly slender super-cells.
+        max_sc_angle(float):
+            Minimum allowed angle of the supercell lattice.
+            Default to 30, prevent overly skewed super-cells.
+        sc_mats(List[3*3 ArrayLike[int]]):
+            Supercell matrices. Will not enumerate super-cells if this
+            is given. Default to None.
+        comp_restrictions(List[dict]|dict):
+            Restriction to enumerated concentrations of species.
+            Given in the form of a single dict
+                {Species: (min atomic percentage in structure,
+                           max atomic percentage in structure)}
+            or in list of dicts, each constrains a sub-lattice:
+               [{Species: (min atomic percentage in sub-lattice,
+                           max atomic percentage in sub-lattice)},
+                ...]
+        comp_enumeration_step (int):
+            Spacing of enumerated compositions under sc_size, such
+            that compositions will be enumerated as:
+                comp_space.get_comp_grid(sc_size=
+                sc_size // comp_enumeration_step).
+            Default to det(transmat), but not always recommended.
+        struct_to_comp_ratio (int|Dict):
+            This gives the ratio between number of structures
+            enumerated per iteration, and number of compositions
+            enumerated. If an int given, will use the same value
+            at iteration 0 ("init") and following iterations ("add").
+            If in dict form, please give:
+                {"init": ..., "add": ...}
+            Default to: {"init": 4, "add": 2}
+            It is not guaranteed that in an iteration, number of added
+            structures equals to ratio * number of compositions, because
+            selected structures may duplicate with existing ones thus
+            not inserted.
+        handler_args(Dict):
+            kwargs to pass into CanonicalHander.
+            See ce_handlers.CanonicalHandler.
+        select_method(str):
+            Structure selection method. Default is 'leverage'.
+            Allowed options are: 'leverage' and 'random'.
         """
-        transmat = self._options.get('transmat',
-                                     np.eye(3, dtype=int))
-        transmat = np.array(np.round(transmat), dtype=int).tolist()
-        det = int(round(abs(np.linalg.det(transmat))))
-        return {'pre_transmat': transmat,
-                'sc_size': self._options.get('sc_size', 32 // det * det),
+        det = int(round(abs(np.linalg.det(self.transmat))))
+        comp_restriction = \
+            self.parse_comp_restriction(self._options.get('comp_restriction', {}))
+        return {'supercell_from_conventional':
+                self._options.get('supercell_from_conventional', True),
+                'objective_sc_size': self._options.get('objective_sc_size', 32),
                 'max_sc_cond': self._options.get('max_sc_cond', 8),
                 'min_sc_angle': self._options.get('min_sc_angle', 30),
                 'sc_mats': self._options.get('sc_mats'),
                 # If sc_mats is given, will overwrite matrices enumeration.
-                'comp_restrictions': self._options.get('comp_restrictions'),
-                'comp_enumeration_step': self._options.get('comp_enumstep', 1),
+                'comp_restriction': comp_restriction,
+                'comp_enumeration_step': self._options.get('comp_enumeration', det),
                 'structs_to_comp_ratio': self._options.get('structs_to_comp_ratio',
                                                            {"init": 4, "add": 2}),
                 'handler_args': self._options.get('handler_args', {}),
                 'select_method': self._options.get('select_method', 'leverage')
                 }
 
+    # TODO: Maybe provide smart lattice parameters guessing when writing WF?
     @property
-    def io_preset_name(self):
-        """Name of interface preset.
-
-        Default is arch_sge, if not specified.
-        Return:
-            str.
-        """
-        return self._options.get("io_preset_name", 'arch_sge')
-
-    @property
-    def calc_writer_options(self):
-        """Get calculation writer options.
+    def vasp_options(self):
+        """Get structural relaxation job options.
 
         Returns:
-            Dict.
+            dict.
 
-        path(str):
-            Path to write VASP output files locally (only used by ArchQueue)
-            Default to 'vasp_run/'
-        lp_file(str):
-            Fireworks launchpad file path.
-        writer_strain(3*3 ArrayLike or length 3 ArrayLike of float):
-            Strain to apply in vasp POSCAR. Default is [1.05, 1.03, 1.01],
-            meaning 5%, 3% and 1% strain in a, b, and c axis. This is to
-            break symmetry and help more accurate relaxation.
+        Included keys:
+        writer_strain(3*3 ArrayLike or 1D ArrayLike[float] of 3):
+            Strain to apply in before relaxation.
+            Default is [1.05, 1.03, 1.01], meaning 5%, 3% and 1% stretch
+            along a, b, and c axis. This is set to
+            break enforced symmetry before relaxation.
+            You can turn it off by specifying [1, 1, 1].
         is_metal(bool):
             Whether this system is a metal or not. Default to False.
-            Determines what set of INCAR settings will be used.
-        ab_setting(dict): optional
-            Settings to pass into calc writer. Can have 2 keys:
-            'relax', 'static', each is a MITSet setting dictionary.
-            Refer to documentation of calc_writer and
-            pymatgen.io.sets.
-        writer_type(str):
-            Name of CalcWriter to be used.
+            Determines whether to use MPRelaxSet or MPMetalRelaxSet.
+        pmg_set_setting(dict): optional
+            Additional arguments to pass into a pymatgen set.
+            Refer to documentation of pymatgen.io.sets.
         """
-        return {'path': self._options.get('path', 'vasp_run'),
-                'lp_file': self._options.get('lp_file'),
-                'writer_strain': self._options.get('writer_strain',
-                                                   [1.05, 1.03, 1.01]),
+        writer_strain = \
+            self._options.get('writer_strain',
+                              [1.05, 1.03, 1.01])
+        writer_strain = np.array(writer_strain)
+        if len(writer_strain.shape) == 1:
+            assert writer_strain.shape == (3,)
+            writer_strain = np.diag(writer_strain)
+        elif len(writer_strain.shape) == 2:
+            assert writer_strain.shape == (3, 3)
+        else:
+            raise ValueError("Provided strain format is wrong. "
+                             "Must be either 3*3 arraylike or "
+                             "length 3 arraylike!")
+
+        return {'writer_strain': writer_strain,
                 'is_metal': self._options.get('is_metal', False),
-                'ab_setting': self._options.get('ab_setting', {}),
-                'writer_type': self.io_presets[self.io_preset_name][0]
+                'pmg_set_setting': self._options.get('pmg_set_setting', {})
                 }
 
     @property
-    def calc_manager_options(self):
-        """Get calculation manager options.
+    def decorating_options(self):
+        """Get decorating options.
 
         Returns:
-            Dict.
+            dict.
 
-        manager_path(str):
-            Path to write VASP output files locally (only used by ArchQueue)
-            Default to 'vasp_run/'
-        lp_file(str):
-            Fireworks launchpad file path.
-        fw_file(str):
-            Fireworks fireworker file path.
-        qa_file(str):
-            Fireworks queue adapter file.
-        I would recommend you to set up your Fireworks properly before using,
-        rather than specifying here.
-        kill_command(str):
-            queued job kill command of the current Queue system.
-        ab_command(str):
-            Command to run ab initio package, such as vasp.
-        ncores(int):
-            Number of cores to use for each DFT calculation. Default to 16.
-        time_limit(float):
-            Time limit to run a single DFT (in seconds). Defualt to 72 hours.
-        check_interval(float):
-            Time interval to check queue status (in seconds).
-            Default to 300 seconds.
-        manager_type(str):
-            Name of the CalcManager class to use.
+        Included keys:
+        decorated_properties(list(str)): optional
+            Name of properties to decorate on vasp output structures.
+            For example, "charge" is typically used for
+        decorator_types(list(str)): optional
+            Name of decorators to use for each property. If None, will
+            choose the first one in valid_decorators.
+        decorator_args(List[dict]): optional
+            Arguments to pass into each decorator. See documentation of
+            each decorator in species_decorator module.
         """
-        return {'path': self._options.get('path', 'vasp_run'),
-                'lp_file': self._options.get('lp_file'),
-                'fw_file': self._options.get('fw_file'),
-                'qa_file': self._options.get('qa_file'),
-                'kill_command': self._options.get('kill_command'),
-                'ab_command': self._options.get('ab_command', 'vasp'),
-                'ncores': self._options.get('ncores', 16),
-                'time_limit': self._options.get('time_limit', 259200),
-                'check_interval': self._options.get('check_interval', 300),
-                'manager_type': self.io_presets[self.io_preset_name][1]
+
+        # Update these pre-processing rules when necessary,
+        # if you have new decorators implemented.
+        def contains_transition_metal(s):
+            for species in s.composition.keys():
+                if (not isinstance(species, (DummySpecies, Vacancy))
+                        and species.is_trainsition_metal):
+                    return True
+            return False
+
+        decorated_properties = self._options.get('decorated_properties', [])
+        decorator_types = self._options.get('decorator_types', [])
+        decorator_args = self._options.get('decorator_args', [])
+        if self.is_charged_ce and len(decorated_properties) == 0:
+            decorated_properties.append("charge")
+            if contains_transition_metal(self.prim):
+                warnings.warn(f"Primitive cell: {self.prim}\n contains "
+                              "transition metal, but we will apply the default "
+                              "charge decorator based on pymatgen charge "
+                              "guesses. Be sure you know what you are doing!")
+            decorated_properties = ["charge"]
+        assert (len(decorator_types) == 0 or
+                len(decorator_types) == len(decorated_properties))
+        assert (len(decorator_types) == 0 or
+                len(decorator_types) == len(decorated_properties))
+        if len(decorator_types) == 0:
+            decorator_types = [self.valid_decorator_types[prop]
+                               for prop in decorated_properties]
+        elif len(decorator_types) != len(decorated_properties):
+            raise ValueError("Provided decorator types, but length does not "
+                             "match decorated properties.")
+        if len(decorator_args) == 0:
+            decorator_args = [{} for _ in decorated_properties]
+        elif len(decorator_args) != len(decorated_properties):
+            raise ValueError("Provided decorator args, but length does not "
+                             "match decorated properties.")
+
+        return {'decorated_properties': decorated_properties,
+                'decorator_types': decorator_types,
+                'decorator_args': decorator_args
                 }
 
     @property
-    def calc_reader_options(self):
-        """Get calculation reader options.
+    def fitting_options(self):
+        """Get fitting options.
 
         Returns:
             Dict.
 
-        reader_path(str):
-            Path to write VASP output files locally (only used by ArchQueue)
-            Default to 'vasp_run/'
-        md_file(str):
-            Path to mongodb setting file. Only used by MongoFWReader.
-        reader_type(str):
-            Name of the CalcReader to use.
-        """
-        return {'path': self._options.get('path', 'vasp_run'),
-                'md_file': self._options.get('md_file'),
-                'reader_type': self.io_presets[self.io_preset_name][2]
-                }
-
-    @property
-    def featurizer_options(self):
-        """Get featurizer options.
-
-        Returns:
-            Dict.
-
-        other_props(list[str]):
-            Name of other properties to expand except energy.
-        max_charge(int > 0):
-            Maximum charge abs value allowed in decorated structure.
-            Structures having more charge than this will be considered
-            fail assignment. Default to 0, namely charge balanced.
-        decorator_types(str):
-            Name of decorator class to use before mapping structure.
-            For example, expansion with charge needs MagChargeDecorator.
-        decorator_args(str):
-            Arguments to pass into decorator. See documentation of 
-            each in species_decorator.
-        """
-        # Since we can not automatically generate labels_table, currently
-        # we don't have automatically specify species decorator. If your
-        # species need decoration, you have to provide the decorator types
-        # and arguments in your options file.
-        decorators_types = self._options.get('decorators_types', [])
-
-        for b in itertools.chain(*self.bits):
-            if (not isinstance(b, (Vacancy, Element))
-                    and len(decorators_types) == 0):
-                raise ValueError("Cluster expasion requires decoration, " +
-                                 "but no decorator to {} is given!".format(b))
-
-        return {'other_props': self._options.get('other_props', []),
-                'max_charge': self._options.get('max_charge', 0),
-                'decorators_types': decorators_types,
-                'decorators_args': self._options.get('decorators_args',
-                                                     [])}
-
-    @property
-    def fitter_options(self):
-        """Get fitter options.
-
-        Returns:
-            Dict.
-
+        Included keys:
         regression_flavor(str):
-            Choosen theorytoolkit regularization method. Default to
+            Choose regularization method from theorytoolkits. Default to
             'lasso'.
         weights_flavor(str):
-            Weights to use in theorytoolkit estimators. Default to
-            'unweighted'.
+            Weighting scheme to use. All available weighting schemes include
+            "e_above_composition", "e_above_hull" and "unweighted" (default).
+            See documentation for smol.cofe.wrangling.tool.
         use_hierarchy(str):
-            Whether or not to use hierarchy in regularization fitting.
+            Whether to use hierarchy in regularization fitting, when
+            regression flavor is one of mixedL0.
             Default to True.
-        regression_params(dict):
-            Argument to pass into estimator.
-            See theorytoolkit.regression documentations.
-        weighter_params(dict):
-            Argument to pass into weights generator.
-            See smol.cofe.wangling.tool.
+        fit_optimizer_kwargs(dict):
+            Keyword arguments to pass into FitOptimizer class. See documentation
+            of FitOptimizer.
         """
         return {'regression_flavor': self._options.get('regression_flavor',
                                                        'lasso'),
                 'weights_flavor': self._options.get('weights_flavor',
                                                     'unweighted'),
                 'use_hierarchy': self._options.get('use_hierarchy', True),
-                'regression_params': self._options.get('regression_params',
-                                                       {}),
-                'weighter_params': self._options.get('weighter_params', {})
+                'fit_optimizer_kwargs': self._options.get('fit_optimizer_kwargs',
+                                                          {})
                 }
 
     @property
-    def gs_checker_options(self):
-        """Get ground state checker options.
+    def convergence_options(self):
+        """Get convergence criteria settings.
 
-        Note: currently only checks canonical GS convergence!
         Returns:
-            Dict.
+            dict.
 
-        e_tol_in_cv(float):
-            Energy tolerance in the unit of CV value. Default is 3*CV.
-            When new GS is within 3*CV of the previous one under each
-            composition, we will see CE as converged.
-        cv_change_tol(float):
-            Relative tolerance to decrease in CV. Default is 20%(0.2).
-            If decrease of CE is smaller than this precentage, we see
-            CE as converged.
+        Included keys:
+        cv_atol(float): optional
+            Maximum allowed value of the CV. Unit in meV per site.
+            (not eV per atom because some CE may contain Vacancies.)
+            Default to 5 meV/site.
+        cv_var_rtol(float): optional
+            Maximum allowed square root variance of CV from 3
+            parallel random validations, divided by CV value.
+            This is another measure of model variance.
+            Dimensionless, default to 1/3.
+        delta_cv_rtol(float): optional
+            Maximum CV difference between the latest 2 iterations,
+            divided by the variance of CV value in the last iteration.
+            Dimensionless, default to 1.
+        delta_min_e_rtol(float): optional
+            Tolerance of change to minimum energy under every composition
+            between the last 2 iterations, divided by the value of CV.
+            Dimensionless, default set to 1.
         """
-        return {'e_tol_in_cv': self._options.get('e_tol_in_cv', 3),
-                'cv_change_tol': self._options.get('cv_change_tol', 0.2)
+        return {'cv_atol': self._options.get('cv_atol', 5),
+                'cv_var_rtol': self._options.get('cv_var_rtol', 1 / 3),
+                'delta_cv_rtol': self._options.get('delta_cv_rtol', 1),
+                'delta_min_e_rtol': self._options.get('delta_min_e_rtol',
+                                                      1)
                 }
 
-    @property
-    def calc_writer(self):
-        """Calculation writer object initialized from the options.
-
-        Return:
-            BaseCalcWriter
-        """
-        kwargs = self.calc_writer_options.copy()
-        name = kwargs.pop('writer_type')
-        return writer_factory(name, **kwargs)
-
-    @property
-    def calc_manager(self):
-        """Calculation manager object initialized from the options.
-
-        Return:
-            BaseCalcManager
-        """
-        kwargs = self.calc_manager_options.copy()
-        name = kwargs.pop('manager_type')
-        return manager_factory(name, **kwargs)
-
-    # Used in featurizer. Calc reader usually will not be explicitly called.
-    @property
-    def calc_reader(self):
-        """Calculation reader object initialized from the options.
-
-        This class does not directly interact with the datamanager.
-        It is only an attachment to Featurizer.
-        Return:
-            BaseCalcReader
-        """
-        kwargs = self.calc_reader_options.copy()
-        name = kwargs.pop('reader_type')
-        return reader_factory(name, **kwargs)
+    def _process_options(self):
+        """Pre-process options at initialization."""
+        all_options = [{"project_name": self.project_name},
+                       self.space_group_options,
+                       self.cluster_space_options,
+                       self.enumerator_options,
+                       self.decorating_options,
+                       self.fitting_options,
+                       self.convergence_options]
+        return merge_dicts(all_options, keep_all=False)
 
     @property
     def options(self):
         """Returns completed options dictionary for the user's reference.
 
         Returns:
-            Dict.
+            dict.
         """
-        all_options = [self.enumerator_options,
-                       self.calc_writer_options,
-                       self.calc_reader_options,
-                       self.calc_manager_options,
-                       self.featurizer_options,
-                       self.fitter_options,
-                       self.gs_checker_options,
-                       self.space_options]
-
-        # If conflicting keys appear, will only take the first value.
-        # It is your responsibility to avoid conflicting keys!
-        self._options = merge_dicts(all_options, keep_all=False)
         return self._options
 
     def copy(self):
         """Deepcopy InputsWrapper object."""
-        socket = InputsWrapper(bits=deepcopy(self.bits),
-                               sublat_list=deepcopy(self.sublat_list),
-                               lattice=self.lattice.copy(),
-                               frac_coords=self.frac_coords.copy(),
-                               prim=self.prim.copy(),
-                               prim_file=deepcopy(self.prim_file),
+        socket = InputsWrapper(prim=self.prim.copy(),
                                **self.options)
-        socket._subspace = self.subspace.copy()
-        socket._compspace = deepcopy(self.compspace)
 
         return socket
 
     @classmethod
     def from_dict(cls, d):
-        """
-        Deserialize from a dictionary.
+        """Deserialize from a dictionary.
+
+        Better serialize and de-serialize with monty.
         Args:
             d(dict):
-                Dictionary containing all lattice information, options.
-                Notice: History information can not be loaded by this method!
-                        It must be loaded separately!
+                Dictionary containing prim information and options.
         Returns:
             InputsWrapper object.
         """
-        lat_keys = ['prim_file', 'prim',
-                    'lattice', 'frac_coords',
-                    'bits', 'sublat_list']
-
-        attr_keys = ['_subspace', '_compspace']
-
-        mson_keys = ["@module", "@class"]
-
-        prim_file = d.get('prim_file')
-        prim = d.get('prim')
-        if isinstance(prim, dict):
-            prim = Structure.from_dict(prim)
-
-        lattice = d.get('lattice')
-        if isinstance(lattice, dict):
-            lattice = Lattice.from_dict(lattice)
-
-        frac_coords = d.get('frac_coords')
-
-        bits = d.get('bits')
-        bits_deser = []
-        if bits is not None:
-            sl_bits_deser = []
-            for sl_bits in bits:
-                for b in sl_bits:
-                    if isinstance(b, dict):
-                        sl_bits_deser.append(decode_from_dict(b))
-                    else:
-                        sl_bits_deser.append(b)
-                bits_deser.append(sl_bits_deser)
-
-        sublat_list = d.get('sublat_list')
-
-        options = {k: v for k, v in d.items()
-                   if k not in lat_keys + attr_keys + mson_keys}
-
-        # Radius keys may be loaded as strings rather than ints.
-        if options.get('radius') is not None:
-            options['radius'] = {int(k): float(v)
-                                 for k, v in options['radius'].items()}
-
-        socket = cls(bits=bits, sublat_list=sublat_list,
-                     lattice=lattice, frac_coords=frac_coords,
-                     prim=prim, prim_file=prim_file,
-                     **options)
-        # Deserialize attributes. Must all be MSONable.
-        for attr_k in attr_keys:
-            attr = d.get(attr_k)
-            if isinstance(attr, dict):
-                attr = decode_from_dict(attr)
-            setattr(socket, attr_k, attr)
-
-        return socket
+        return cls(Structure.from_dict(d['prim']),
+                   **d['options'])
 
     def as_dict(self):
         """Serialize all class data into a dictionary.
 
-        This dictionary will be saved into json by auto_save.
-        History data will not be saved. It is handled separately!
-
+        Better serialize and de-serialize with monty.
         Returns:
             dict. Containing all serialized lattice data, options,
             and important attributes 
         """
-        lat_keys = ['prim_file', 'prim', 'lattice', 'frac_coords',
-                    'bits', 'sublat_list']
-
-        attr_keys = ['_subspace', '_compspace']
-
-        ds = [{k: serialize_any(getattr(self, k)) for k in lat_keys},
-              self.options,
-              {k: serialize_any(getattr(self, k[1:])) for k in attr_keys},
-              {'@module': self.__class__.__module__,
-               '@class': self.__class__.__name__}
-              ]
-
-        return merge_dicts(ds)
+        return {
+            "prim": self.prim.as_dict(),
+            "options": self.options,
+            "@module": self.__class__.__module__,
+            "@class": self.__class__.__name__,
+        }
 
     @classmethod
-    def auto_load(cls,
-                  wrapper_file=WRAPPER_FILE,
-                  options_file=OPTIONS_FILE):
-        """Automatically load object from files.
+    def from_file(cls):
+        """Automatically load object from json files.
 
-        If the wrapper_file is already present, will load from the wrapper
-        file first.
-
-        All paths can be changed, but I don't recommend you to do so.
-
+        Recommended way to load.
         Returns:
             InputsWrapper.
         """
-        if os.path.isfile(wrapper_file):
-            with open(wrapper_file) as ops:
-                d = json.load(ops)
-        elif os.path.isfile(options_file):
-            with open(options_file) as ops:
-                d = yaml.load(ops, Loader=yaml.FullLoader)
+        if os.path.isfile(WRAPPER_FILE):
+            with open(WRAPPER_FILE, encoding="utf-8") as fin:
+                d = json.load(fin, cls=MontyDecoder)
+                return cls.from_dict(d)
+        elif os.path.isfile(PRIM_FILE) and os.path.isfile(OPTIONS_FILE):
+            prim = Structure.from_file(PRIM_FILE)
+            with open(OPTIONS_FILE) as fin:
+                options = json.load(fin, cls=MontyDecoder)
+            return cls(prim, **options)
         else:
-            raise ValueError("No calculation setting specified!")
+            raise ValueError("No initial setting file provided! "
+                             "Please provide at least one of: "
+                             f"{WRAPPER_FILE} or {OPTIONS_FILE}.")
 
-        socket = cls.from_dict(d)
-
-        return socket
-
-    def auto_save(self, wrapper_file=WRAPPER_FILE):
-        """Automatically save this object data into a json file.
-
-        Default save path can be changed, but I won't recommend.
-        """
-        with open(wrapper_file, 'w') as fout:
-            json.dump(self.as_dict(), fout)
+    def to_file(self):
+        """Automatically save data into a json file."""
+        with open(WRAPPER_FILE, 'w') as fout:
+            json.dump(self.as_dict(), fout, cls=MontyEncoder)
 
 
-class HistoryWrapper(MSONable):
-    """History reader class."""
+class CEHistoryWrapper(MSONable):
+    """History management.
 
-    def __init__(self, cluster_subspace, history=[]):
+    This class stores multiple all the past fitting results.
+    Does not store past feature matrices. Matrices are stored in
+    DataWrangler.
+    """
+
+    def __init__(self, cluster_subspace, history=None):
         """Initialize HistoryWrapper.
 
         Args:
-            cluster_subspace(smol.cofe.ClusterSubspace):
-              Cluster subspace of CE.
+            cluster_subspace(ClusterSubspace):
+              Cluster subspace used in CE.
             history(List[dict]): optional
-              A list storing all past history CE models.
+              A list of dict storing all past history info for CE models
+              each iteration. Dict must contain a key "coefs".
+              Currently, only supports expansion on energy.
         """
+        if history is None:
+            history = []
         self._history = history
         self._subspace = cluster_subspace
 
@@ -734,117 +690,113 @@ class HistoryWrapper(MSONable):
         return self._history
 
     @property
-    def subspace(self):
+    def cluster_subspace(self):
         """Cluster subspace."""
         return self._subspace
 
-    def get_ce_n_iters_ago(self, n_ago=1):
-        """Get the cluster expansion object n iterations ago.
+    @property
+    def existing_attributes(self):
+        """All available attributes in history (besides coefs)."""
+        all_attrs = set(key for record in self.history for key in record)
+        all_attrs = all_attrs - {"coefs"}
+        return all_attrs
 
-        Does not store past feature matrices, and only handles
-        energy cluster expansion.
+    def get_coefs(self, iter_id=-1):
+        """Get the cluster expansion coefficients n iterations ago.
 
         If none exist, will initialize a dummy CE, with all
         external terms with coef 1, and cluster terms with coef 0.
-
         Args:
-            n_ago(int):
-                Specifies which history ce step to read. Default is 1,
-                will read the latest ce available.
+            iter_id(int):
+                Iteration index to get CE with. Default to -1.
         Returns:
-            ClusterExpansion.
+            CE coefficients as described in smol.expansion:
+                np.ndarray
         """
-        if len(self._history) < n_ago:
-            log.warning("Cluster expansion history can not be " +
-                        "dated back to {} iteration(s) ago. ".format(n_ago) +
-                        "Making dummy cluster expasnion.")
+        if len(self.history) == 0:
+            warnings.warn("No cluster expansion generated before, "
+                          "returning a dummy CE instead.")
 
-            coefs = np.zeros(self.subspace.num_corr_functions +
-                             len(self.subspace.external_terms))
-            if len(self.subspace.external_terms) > 0:
-                coefs[-len(self.subspace.external_terms):] = 1.0
+            coefs = np.zeros(self.cluster_subspace.num_corr_functions +
+                             len(self.cluster_subspace.external_terms))
+            if len(self.cluster_subspace.external_terms) > 0:
+                coefs[-len(self.cluster_subspace.external_terms):] = 1.0
         else:
-            coefs = np.array(self._history[-n_ago]['coefs'])
+            coefs = np.array(self.history[iter_id]['coefs'])
 
-        return ClusterExpansion(self.subspace, coefs, None)
+        return coefs
 
-    @property
-    def last_ce(self):
-        """Get the last energy CE in history.
+    def get_attribute(self, name="cv", iter_id=-1):
+        """Get any other historical attributes.
 
-        If none exist, will initialize a cluster expansion with
-        external ECIs=1, and cluster ECIs=0.
-
+        If none exist, will return np.inf to block convergence.
+        Args:
+            name(str):
+                Name of attribute to get. Can be "cv"
+            iter_id(int):
+                Iteration index to get CE with. Default to -1.
         Returns:
-            ClusterExpansion
+            float.
         """
-        return self.get_ce_n_iters_ago(n_ago=1)
+        if len(self.history):
+            return np.inf
+        return self.history[iter_id][name]
 
-    def update(self, new_entry):
-        """Insert the last fitted ce record into history.
+    def add_record(self, record):
+        """Add a record to history.
 
         Args:
-           new_entry(dict):
-               Dict containing past energy CE fit information.
-               must have the following keys:
-                 "cv", "rmse", "coefs".
+             record(dict):
+                 Dictionary containing CE fit infos. Must at least
+                 include key "coefs".
         """
-        self._history.append(new_entry)
-
-    def copy(self):
-        """Copy HistoryWrapper."""
-        return HistoryWrapper(self.subspace.copy(),
-                              deepcopy(self.history))
+        if "coefs" not in record:
+            raise ValueError("CE coefficients are required for a record!")
+        record["coefs"] = np.array(record["coefs"])
+        for attr in record:
+            if attr not in self.existing_attributes and len(self.history) > 0:
+                warnings.warn(f"Record contains a new key: {attr} "
+                              f"not found in previous records!")
 
     def as_dict(self):
-        """Serialize HistoryWrapper into dict.
+        """Serialize into dict.
 
         Returns:
-           Dict.
+           dict.
         """
-        return {'cluster_subspace': self.subspace.as_dict(),
+        return {'cluster_subspace': self.cluster_subspace.as_dict(),
                 'history': self.history,
                 '@module': self.__class__.__module__,
                 '@class': self.__class__.__name__}
 
     @classmethod
     def from_dict(cls, d):
-        """Initialize HistoryWrapper from dict.
+        """Initialize from dict.
 
         Args:
            d(Dict):
-               Dict containing serialized HistoryWrapper.
+               Dict containing serialized object.
 
         Returns:
-           HistoryWrapper.
+           CEHistoryWrapper.
         """
         return cls(ClusterSubspace.from_dict(d['cluster_subspace']),
-                   d['history'])
+                   d.get('history'))
 
-    def auto_save(self, history_path=CE_HISTORY_FILE):
-        """Automatically save object to file.
-
-        Args:
-            history_path(str):
-              Path to history file. Default set in config_paths.py.
-              Not recommend to change.
-        """
-        with open(history_path, 'w') as fout:
-            json.dump(self.as_dict(), fout)
+    def to_file(self):
+        """Automatically save object to json file."""
+        with open(HISTORY_FILE, 'w') as fout:
+            json.dump(self.as_dict(), fout, cls=MontyEncoder)
 
     @classmethod
-    def auto_load(cls, history_file=CE_HISTORY_FILE):
-        """Automatically load object from file.
+    def from_file(cls):
+        """Automatically load object from json file.
 
-        Args:
-            history_file(str):
-              Path to history file. Default set in config_paths.py.
-              Not recommend to change.
-
+        Recommended way to load.
         Returns:
             HistoryWrapper.
         """
-        with open(history_file, 'r') as fin:
-            d = json.load(fin)
+        with open(HISTORY_FILE, 'r') as fin:
+            d = json.load(fin, cls=MontyDecoder)
 
         return cls.from_dict(d)

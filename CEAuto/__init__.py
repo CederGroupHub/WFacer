@@ -1,12 +1,10 @@
-from .wrappers import InputsWrapper, HistoryWrapper
+from .wrappers import InputsWrapper, CEHistoryWrapper
 from .data_wrangler import DataWrangler
-from .struct_enum import StructureEnumerator
-from .featurizer import Featurizer
-from .fitter import CEFitter
+from .enumerator import StructureEnumerator
+from .fit_optimizer import FitOptimizer
 
 
-__all__ = ['InputsWrapper', 'HistoryWrapper',
+__all__ = ['InputsWrapper', 'CEHistoryWrapper',
            'DataWrangler',
            'StructureEnumerator',
-           'Featurizer',
-           'CEFitter']
+           'FitOptimizer']

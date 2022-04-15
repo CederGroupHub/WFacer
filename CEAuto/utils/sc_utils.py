@@ -4,11 +4,54 @@ __author__ = "Fengyu Xie"
 Utility functions to enumerate supercell matrices.
 """
 import numpy as np
-from .math_utils import get_diag_matrices
 from copy import deepcopy
 import random
+from sympy import factorint
+from itertools import permutations, product
 
 from pymatgen.core import Lattice
+
+
+def get_three_factors(n):
+    """Enumerate all 3 factor decompositions of an integer.
+
+    Note:
+        Do not use this to factorize an integer with many
+        possible factors.
+    Args:
+        n(int):
+            The integer to factorize.
+
+    Returns:
+        All 3 factor decompositions:
+            List[tuple(int)]
+    """
+    def enumerate_three_summations(c):
+        three_nums = []
+        for x in range(c + 1):
+            for y in range(c + 1 - x):
+                z = c - x - y
+                three_nums.extend(set(permutations([x, y, z])))
+        return three_nums
+
+    if n == 0:
+        return []
+    if n == 1:
+        return [(1, 1, 1)]
+    prime_factor_counts = factorint(n)
+    prime_factors = sorted(prime_factor_counts.keys(), reverse=True)
+    prime_factors = np.array(prime_factors, dtype=int)
+    all_three_nums = [enumerate_three_summations(prime_factor_counts[p])
+                      for p in prime_factors]
+    all_factors = []
+    for sol in product(*all_three_nums):
+        ns = np.array(sol, dtype=int)
+        pows = np.sum(ns, axis=0)
+        factors = sorted((prime_factors ** pows).tolist(), reverse=True)
+        if factors in all_factors:
+            all_factors.append(factors)
+    return sorted(all_factors)
+
 
 def is_proper_sc(sc_matrix, lat, max_cond=8, min_angle=30):
     """Assess the skewness of a given supercell matrix.
@@ -36,14 +79,12 @@ def is_proper_sc(sc_matrix, lat, max_cond=8, min_angle=30):
               180 - newlat.gamma]
 
     return (abs(np.linalg.cond(newmat)) <= max_cond and
-            min(angles) > min_angle)
+            min(angles) >= min_angle)
 
 
-def enumerate_matrices(det, lat,
-                       transmat=
-                       [[1, 0, 0],
-                        [0, 1, 0],
-                        [0, 0, 1]],
+# TODO: maybe find a rule to enumerate super-cells based on cluster cut-offs
+#  and write these rules in is_proper_sc?
+def enumerate_matrices(det, lat, transmat=np.eye(3, dtype=int),
                        max_sc_cond=8,
                        min_sc_angle=30):
     """Enumerate proper matrices with det size.
@@ -58,16 +99,13 @@ def enumerate_matrices(det, lat,
         lat(pymatgen.Lattice):
             Lattice vectors of a primitive cell
         transmat(2D arraylike):
-            Symmetrizaiton matrix to apply on the primitive cell, in 
-            order to pre-define an 'unskewed supercell'.
-            For example, in FCC rhombohydral primitive cell, apply
-            [[-1,1,1],[1,-1,1],[1,1,-1]] to convert into conventional 
-            FCC cubic cell.
-        max_cond(float):
+            pre-transformation matrix before returning result,
+            such that we return MT instead of enumerated M.
+        max_sc_cond(float):
             Maximum conditional number allowed of the skewed supercell
             matrices. By default set to 8, to prevent overstretching in one
             direction
-        min_angle(float):
+        min_sc_angle(float):
             Minmum allowed angle of the supercell lattice. By default set
             to 30, to prevent over-skewing.
     Returns:
@@ -77,30 +115,25 @@ def enumerate_matrices(det, lat,
     if det % trans_size != 0:
         raise ValueError("Supercell size must be divisible by " +
                          "transformation matrix determinant!")
-    scs_unsk = get_diag_matrices(det // trans_size)
+    scs_diagonal = [np.diag(m) for m in get_three_factors(det // trans_size)]
 
-    scs_unsk_new = []
-    for sc in scs_unsk:
-        proper = is_proper_sc(np.dot(sc, transmat), lat,
-                              max_cond=max_sc_cond,
-                              min_angle=min_sc_angle)
-        if proper:
-            scs_unsk_new.append(sc)
+    scs_diagonal = [sc for sc in scs_diagonal
+                    if is_proper_sc(np.dot(sc, transmat),
+                                    lat,
+                                    max_cond=max_sc_cond,
+                                    min_angle=min_sc_angle)]
 
-    # Take the unskewed matrix with minimal conditional number.
-    sc_unsk = sorted(scs_unsk_new,
-                     key=lambda x: np.linalg.cond(x))[0]
-    n1 = sc_unsk[0][0]
-    n2 = sc_unsk[1][1]
-    n3 = sc_unsk[2][2]
-    # n1>n2>n3, already sorted in get_diag_matrices.
-    sc_sk1 = deepcopy(sc_unsk)
-    sc_sk2 = deepcopy(sc_unsk)
+    # Take the diagonal matrix with minimal conditional number.
+    sc_diagonal = sorted(scs_diagonal, key=lambda x: np.linalg.cond(x))[0]
+    n1 = sc_diagonal[0][0]
+    n2 = sc_diagonal[1][1]
+    n3 = sc_diagonal[2][2]
+    # n1 > n2 > n3, already sorted in get_diag_matrices.
+    sc_off = sc_diagonal.copy()
 
-    sc_sk1[0][1] = random.choice(np.arange(1, n1 + 1, dtype=int))
-    #sc_sk2[0][2] = random.choice(np.arange(1, n1 + 1, dtype=int))
+    # TODO: change this to check number of aliased clusters in
+    #  ClusterSubspace and sort to find the one with least aliases.
+    sc_off[0][1] = random.choice(np.arange(1, n1 + 1, dtype=int))
 
-    # Select 1 diagonal, 1 skewed.
-    selected_scs = [sc_unsk, sc_sk1]
-
-    return selected_scs
+    # Select 1 diagonal, 1 off diagonal.
+    return [sc_diagonal @ transmat, sc_off @ transmat]
