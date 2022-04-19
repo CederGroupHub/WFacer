@@ -60,7 +60,7 @@ class DataWrangler(StructureWrangler):
         site_mapping=None,
         verbose=False,
         raise_failed=False,
-        iter_id=0
+        iter_id=0,
     ):
         """Process a ComputedStructureEntry to be added to StructureWrangler.
 

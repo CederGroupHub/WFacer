@@ -7,3 +7,4 @@ scipy
 numpy
 smol
 sympy
+scikit-learn
