@@ -1,4 +1,4 @@
-from CEAuto.ce_handler import *
+from CEAuto.sample_geneators import *
 from CEAuto.utils.comp_utils import normalize_compstat
 from CEAuto.comp_space import CompSpace
 from CEAuto.utils.occu_utils import occu_to_species_stat

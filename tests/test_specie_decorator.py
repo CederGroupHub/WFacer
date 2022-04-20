@@ -1,4 +1,4 @@
-from CEAuto.specie_decorator import MagchargeDecorator, decorate_single_structure, decorator_factory
+from CEAuto.specie_decorators import MagchargeDecorator, decorate_single_structure, decorator_factory
 from pymatgen.core import Lattice, Structure
 import numpy as np
 import random

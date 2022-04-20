@@ -1,5 +1,5 @@
 polytope
-pymatgen
+pymatgen>=2022.4.19
 monty
 cvxopt
 cvxpy
@@ -8,3 +8,4 @@ numpy
 smol
 sympy
 scikit-learn
+scikit-optimize

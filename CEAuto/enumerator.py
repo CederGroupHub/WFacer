@@ -26,7 +26,7 @@ from .utils.math_utils import select_rows
 from .utils.comp_utils import (check_comp_restriction,
                                get_Noccus_of_compstat)
 
-from .ce_handler import CanonicalmcHandler
+from .sample_geneators import CanonicalmcHandler
 from .comp_space import CompSpace
 
 

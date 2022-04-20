@@ -239,7 +239,7 @@ class DataWrangler(StructureWrangler):
                 iter_id1 should be from a previous iteration, iter_id2 should be
                 from a newer iteration.
         Return:
-            float: maximum energy difference in eV/atom.
+            float: maximum energy difference in eV/site.
         """
         if iter_id2 <= iter_id1:
             raise ValueError("The 2nd arg must be larger than 1st arg!")

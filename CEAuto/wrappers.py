@@ -72,8 +72,8 @@ class InputsWrapper(MSONable):
     initialize it with auto_load().
     """
     # Add here if you implement more decorators.
-    valid_decorator_types = {"charge": ("guess-charge-decorator",
-                                        "magnetic-charge-decorator",)}
+    valid_decorator_types = {"oxi_state": ("pmg-guess-charge-decorator",
+                                           "magnetic-charge-decorator",)}
 
     def __init__(self, prim, **kwargs):
         """Initialize.
@@ -247,7 +247,7 @@ class InputsWrapper(MSONable):
             str
         """
         return self._options.get('project_name',
-                                 str(uuid.uuid4()))
+                                 "ce-project-" + str(uuid.uuid4()))
 
     @property
     def cluster_space_options(self):
@@ -385,9 +385,8 @@ class InputsWrapper(MSONable):
             structures equals to ratio * number of compositions, because
             selected structures may duplicate with existing ones thus
             not inserted.
-        handler_args(Dict):
-            kwargs to pass into CanonicalHander.
-            See ce_handlers.CanonicalHandler.
+        sample_generator_args(Dict):
+            kwargs to pass into CanonicalSampleGenerator.
         select_method(str):
             Structure selection method. Default is 'leverage'.
             Allowed options are: 'leverage' and 'random'.
@@ -406,7 +405,8 @@ class InputsWrapper(MSONable):
                 'comp_enumeration_step': self._options.get('comp_enumeration', det),
                 'structs_to_comp_ratio': self._options.get('structs_to_comp_ratio',
                                                            {"init": 4, "add": 2}),
-                'handler_args': self._options.get('handler_args', {}),
+                'sample_generator_args':
+                    self._options.get('sample_generator_args', {}),
                 'select_method': self._options.get('select_method', 'leverage')
                 }
 
@@ -483,19 +483,18 @@ class InputsWrapper(MSONable):
         decorator_types = self._options.get('decorator_types', [])
         decorator_args = self._options.get('decorator_args', [])
         if self.is_charged_ce and len(decorated_properties) == 0:
-            decorated_properties.append("charge")
+            decorated_properties.append("oxi_state")
             if contains_transition_metal(self.prim):
                 warnings.warn(f"Primitive cell: {self.prim}\n contains "
                               "transition metal, but we will apply the default "
                               "charge decorator based on pymatgen charge "
                               "guesses. Be sure you know what you are doing!")
-            decorated_properties = ["charge"]
         assert (len(decorator_types) == 0 or
                 len(decorator_types) == len(decorated_properties))
-        assert (len(decorator_types) == 0 or
-                len(decorator_types) == len(decorated_properties))
+        assert (len(decorator_args) == 0 or
+                len(decorator_args) == len(decorated_properties))
         if len(decorator_types) == 0:
-            decorator_types = [self.valid_decorator_types[prop]
+            decorator_types = [self.valid_decorator_types[prop][0]
                                for prop in decorated_properties]
         elif len(decorator_types) != len(decorated_properties):
             raise ValueError("Provided decorator types, but length does not "
