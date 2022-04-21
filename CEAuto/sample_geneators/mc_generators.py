@@ -29,7 +29,7 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
                  n_steps_unfreeze=100000,
                  max_n_samples_per_iter=100,
                  past_occus=None,
-                 **kwargs):
+                 past_corrs=None):
         """Initialize.
 
         Args:
@@ -56,8 +56,9 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
             past_occus(2D ArrayLike):
                 Occupancies enumerated in the past. For the purpose of
                 de-duplication.
-            kwargs:
-                Not used. Just to mute excessive keywords.
+            past_corrs(2D ArrayLike):
+                Correlations enumerated in the past. For the purpose of
+                de-duplication.
         """
         self.ce = ce
         self.sc_mat = sc_mat
@@ -75,6 +76,7 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
         self._sampler = None
 
         self._past_occus = past_occus or []
+        self._past_corrs = past_corrs or []
 
     @property
     @abstractmethod

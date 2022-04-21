@@ -37,10 +37,12 @@ class DataWrangler(StructureWrangler):
     """
     def _check_duplicacy(self, entry, sm=StructureMatcher()):
         """Whether an entry symmetrically duplicates with existing ones"""
-        for eid, entry_old in self.entries:
-            if sm.fit(entry_old.data["refined_structure"],
-                      entry.data["refined_structure"]):
-                return eid
+        for entry_old in self.entries:
+            if (np.allclose(entry_old.data["correlations"],
+                            entry.data["correlations"]) or
+                sm.fit(entry_old.data["refined_structure"],
+                       entry.data["refined_structure"])):
+                return entry_old
         return None
 
     @property
@@ -186,16 +188,16 @@ class DataWrangler(StructureWrangler):
             iter_id
         )
         if processed_entry is not None:
-            dupe_eid = self._check_duplicacy(entry,
-                                             sm=self._subspace._site_matcher)
-            if dupe_eid is None:
+            dupe = self._check_duplicacy(entry,
+                                         sm=self._subspace._site_matcher)
+            if dupe is None:
                 self._entries.append(processed_entry)
                 if verbose:
                     self._corr_duplicate_warning(self.num_structures - 1)
             else:
                 if verbose:
-                    warnings.warn("Provided entry duplicates with existing entry"
-                                  f" number {dupe_eid}. Skipped.")
+                    warnings.warn("Provided entry duplicates with existing entry:\n"
+                                  f"{dupe}. Skipped.")
 
     def get_min_energy_by_composition(self, max_iter_id=None):
         """Get minimum energy by composition.

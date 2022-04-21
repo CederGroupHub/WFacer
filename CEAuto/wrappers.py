@@ -306,7 +306,7 @@ class InputsWrapper(MSONable):
                 If a list of dict provided, each dict in the list constrains
                 on a sub-lattice composition.
         """
-        comp_restriction = {}
+        comp_restriction = {}  # Saved keys must not be objects.
         if isinstance(d, (list, tuple)):
             return [InputsWrapper.parse_comp_restriction(o) for o in d]
 
@@ -321,12 +321,15 @@ class InputsWrapper(MSONable):
                 if val[1] < 0 or val[1] > 1 or val[0] < 0 or val[0] > 1:
                     raise ValueError("Provided species concentration limit must "
                                      "be in [0, 1]!")
-                comp_restriction[get_species(key)] = tuple(val)
+                comp_restriction[str(get_species(key))] = tuple(val)
             else:
                 if val < 0 or val > 1:
                     raise ValueError("Provided species concentration limit must "
                                      "be in [0, 1]!")
-                comp_restriction[get_species(key)] = (0, val)
+                comp_restriction[str(get_species(key))] = (0, val)
+                # Note that pymatgen.Species.__str__ is still not good as per
+                # 2022.4.19, because it does not support multiple species property.
+                # We have to bear with it for now.
 
         return comp_restriction
 
@@ -367,6 +370,7 @@ class InputsWrapper(MSONable):
                [{Species: (min atomic percentage in sub-lattice,
                            max atomic percentage in sub-lattice)},
                 ...]
+            Note: Species are saved as their __str__().
         comp_enumeration_step (int):
             Spacing of enumerated compositions under sc_size, such
             that compositions will be enumerated as:
@@ -402,7 +406,7 @@ class InputsWrapper(MSONable):
                 'sc_mats': self._options.get('sc_mats'),
                 # If sc_mats is given, will overwrite matrices enumeration.
                 'comp_restriction': comp_restriction,
-                'comp_enumeration_step': self._options.get('comp_enumeration', det),
+                'comp_enumeration_step': self._options.get('comp_enumeration_step', det),
                 'structs_to_comp_ratio': self._options.get('structs_to_comp_ratio',
                                                            {"init": 4, "add": 2}),
                 'sample_generator_args':
@@ -410,7 +414,6 @@ class InputsWrapper(MSONable):
                 'select_method': self._options.get('select_method', 'leverage')
                 }
 
-    # TODO: Maybe provide smart lattice parameters guessing when writing WF?
     @property
     def vasp_options(self):
         """Get structural relaxation job options.
@@ -446,7 +449,7 @@ class InputsWrapper(MSONable):
                              "Must be either 3*3 arraylike or "
                              "length 3 arraylike!")
 
-        return {'writer_strain': writer_strain,
+        return {'writer_strain': writer_strain.tolist(),
                 'is_metal': self._options.get('is_metal', False),
                 'pmg_set_setting': self._options.get('pmg_set_setting', {})
                 }
@@ -475,7 +478,7 @@ class InputsWrapper(MSONable):
         def contains_transition_metal(s):
             for species in s.composition.keys():
                 if (not isinstance(species, (DummySpecies, Vacancy))
-                        and species.is_trainsition_metal):
+                        and species.is_transition_metal):
                     return True
             return False
 
@@ -490,20 +493,18 @@ class InputsWrapper(MSONable):
                               "charge decorator based on pymatgen charge "
                               "guesses. Be sure you know what you are doing!")
         assert (len(decorator_types) == 0 or
-                len(decorator_types) == len(decorated_properties))
+                (len(decorator_types) == len(decorated_properties)
+                 and all(tp in self.valid_decorator_types[prop]
+                         for tp, prop in zip(decorator_types,
+                                             decorated_properties))))
         assert (len(decorator_args) == 0 or
                 len(decorator_args) == len(decorated_properties))
         if len(decorator_types) == 0:
             decorator_types = [self.valid_decorator_types[prop][0]
                                for prop in decorated_properties]
-        elif len(decorator_types) != len(decorated_properties):
-            raise ValueError("Provided decorator types, but length does not "
-                             "match decorated properties.")
+
         if len(decorator_args) == 0:
             decorator_args = [{} for _ in decorated_properties]
-        elif len(decorator_args) != len(decorated_properties):
-            raise ValueError("Provided decorator args, but length does not "
-                             "match decorated properties.")
 
         return {'decorated_properties': decorated_properties,
                 'decorator_types': decorator_types,
@@ -640,18 +641,21 @@ class InputsWrapper(MSONable):
             InputsWrapper.
         """
         if os.path.isfile(WRAPPER_FILE):
-            with open(WRAPPER_FILE, encoding="utf-8") as fin:
+            with open(WRAPPER_FILE) as fin:
                 d = json.load(fin, cls=MontyDecoder)
                 return cls.from_dict(d)
-        elif os.path.isfile(PRIM_FILE) and os.path.isfile(OPTIONS_FILE):
+        elif os.path.isfile(PRIM_FILE):
             prim = Structure.from_file(PRIM_FILE)
-            with open(OPTIONS_FILE) as fin:
-                options = json.load(fin, cls=MontyDecoder)
+            if os.path.isfile(OPTIONS_FILE):
+                with open(OPTIONS_FILE) as fin:
+                    options = json.load(fin, cls=MontyDecoder)
+            else:
+                options = {}
             return cls(prim, **options)
         else:
             raise ValueError("No initial setting file provided! "
                              "Please provide at least one of: "
-                             f"{WRAPPER_FILE} or {OPTIONS_FILE}.")
+                             f"{WRAPPER_FILE} or {PRIM_FILE}.")
 
     def to_file(self):
         """Automatically save data into a json file."""
@@ -696,9 +700,7 @@ class CEHistoryWrapper(MSONable):
     @property
     def existing_attributes(self):
         """All available attributes in history (besides coefs)."""
-        all_attrs = set(key for record in self.history for key in record)
-        all_attrs = all_attrs - {"coefs"}
-        return all_attrs
+        return set(key for record in self.history for key in record)
 
     def get_coefs(self, iter_id=-1):
         """Get the cluster expansion coefficients n iterations ago.
@@ -737,8 +739,10 @@ class CEHistoryWrapper(MSONable):
         Returns:
             float.
         """
-        if len(self.history):
+        if len(self.history) == 0:
             return np.inf
+        elif name not in self.existing_attributes:
+            raise ValueError(f"Attribute {name} not inserted yet!")
         return self.history[iter_id][name]
 
     def add_record(self, record):
@@ -751,11 +755,12 @@ class CEHistoryWrapper(MSONable):
         """
         if "coefs" not in record:
             raise ValueError("CE coefficients are required for a record!")
-        record["coefs"] = np.array(record["coefs"])
         for attr in record:
             if attr not in self.existing_attributes and len(self.history) > 0:
                 warnings.warn(f"Record contains a new key: {attr} "
                               f"not found in previous records!")
+            record[attr] = np.array(record[attr]).tolist()  # Must store list.
+        self._history.append(record)
 
     def as_dict(self):
         """Serialize into dict.

@@ -39,7 +39,7 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         """Initialize.
 
         Args:
-           labels(dict{str:list}): optional
+           labels(dict{str|Species:list}): optional
                A table of labels to decorate each element with.
                keys are species symbol, values are possible decorated property
                values, such as oxidation states, magnetic spin directions.
@@ -193,9 +193,10 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
     # Should save and load dicts with Monty.
     def as_dict(self):
         """Serialization method."""
+        labels = {str(key): val for key, val in self.labels.items()}
         return {"@module": self.__class__.__module__,
                 "@class": self.__class__.__name__,
-                "labels": self.labels}
+                "labels": labels}
 
     @classmethod
     @abstractmethod
@@ -240,6 +241,8 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
         super(MixtureGaussianDecorator, self).__init__(labels)
         if gaussian_models is None:
             gaussian_models = {}
+        gaussian_models = {get_species(key): val
+                           for key, val in gaussian_models.items()}
         for key in self.labels:
             if key not in gaussian_models:
                 warnings.warn(f"Gaussian model for {key} is missing! "
@@ -361,7 +364,7 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
     def as_dict(self):
         """Serialize to dict."""
         d = super(MixtureGaussianDecorator, self).as_dict()
-        d["models"] = {species: self.serialize_gaussian_model(model)
+        d["models"] = {str(species): self.serialize_gaussian_model(model)
                        for species, model in self._gms.items()}
         return d
 
@@ -369,9 +372,7 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
     def from_dict(cls, d):
         """Load from dict."""
         # Please load dict with monty.
-        models = {species: cls.deserialize_gaussian_model(data)
-                  for species, data in d["models"].items()}
-        return cls(d["labels"], models)
+        return cls(d["labels"], d.get("models"))
 
 
 class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
@@ -404,7 +405,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
                GuessChargeDecorator.
                Be sure to provide labels for all the species you wish to assign
                a property to, otherwise, you are the cause of your own error!
-            cuts(dict{str: list}): optional
+            cuts(dict{str|Species: list}): optional
                Cuts to divide required property value into sectors, so as
                to decide the label they belong to. Keys are the same
                as argument "labels".
@@ -419,6 +420,9 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
                2, Must be len(labels[key]) = len(cuts[key]) + 1 for any key.
         """
         super(GpOptimizedDecorator, self).__init__(labels)
+        if cuts is not None:
+            cuts = {get_species(key): val
+                    for key, val in cuts.items()}
         if cuts is not None:
             for species in self.labels:
                 if species not in cuts:
@@ -585,7 +589,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
     def as_dict(self):
         """Serialization method."""
         d = super(GpOptimizedDecorator, self).as_dict()
-        d["cuts"] = self._cuts
+        d["cuts"] = {str(key): val for key, val in self._cuts.items()}
         return d
 
     @classmethod
