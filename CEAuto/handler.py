@@ -23,7 +23,7 @@ from smol.moca.comp_space import CompSpace  # Treat comp constraints.
 from smol.moca.utils.occu_utils import get_dim_ids_by_sublattice
 
 from .utils.format_utils import merge_dicts
-from .config_paths import (WRAPPER_FILE, OPTIONS_FILE, PRIM_FILE,
+from .config_paths import (INPUTS_FILE, OPTIONS_FILE, PRIM_FILE,
                            HISTORY_FILE)
 
 import warnings
@@ -85,8 +85,8 @@ def parse_species_constraints(d, bits, sl_sizes):
             fraction of the particular species in all the sub-lattices that
             allows it! (number_of_species/sum(sl_size_of_allowed_sublatt)).
         bits(list[list[Species|Vacancy|Element]]):
-            Species on each sublattice. Must be exactly the same as CompSpace
-            initializer.
+            Species on each sublattice. Must be exactly the same as used in
+            CompSpace initializer.
         sl_sizes(list[int]):
             size of sub-lattices in a primitive cell. Must be given in the
             same ordering as bits.
@@ -95,7 +95,7 @@ def parse_species_constraints(d, bits, sl_sizes):
     """
     def recursive_parse(inp):
         p = {}  # Saved keys must not be objects.
-        if isinstance(d, (list, tuple)):
+        if isinstance(inp, (list, tuple)):
             return [recursive_parse(o) for o in inp]
         else:
             for key, val in inp.items():
@@ -148,13 +148,67 @@ def parse_species_constraints(d, bits, sl_sizes):
     return constraints_leq, constraints_geq
 
 
-def parse_generic_equality_constraints(d):
-    """Pase more generic equality constaints.
+def parse_generic_equality_constraint(d_left, right, bits):
+    """Pase more generic equality constraint.
 
+    Can only parse one constraint at a time.
     Args:
-        d(dict| list(dict)):
-
+        d_left(dict| list(dict)):
+            Dictionary that records the left-hand side of the
+            constraint equation. Each key is a species or species
+            string, while each value is the pre-factor of the
+            corresponding species number in the constraint equation.
+            Currently, only supports integer values.
+            If given in list of dictionary, each dictionary in the
+            list will constrain a corresponding sub-lattice.
+        right(int):
+            Right-hand side of the equation. Must be given as per
+            primitive cell.
+        For example: 1 n_Li + 2 n_Ag = 1 can be specified as:
+            d_left = {"Li": 1, "Ag": 2}
+            right = 1
+        bits(list[Species|Element|Vacancy]):
+            Species on each sublattice. Must be exactly the same as used
+            in CompSpace initializer.
+    Returns:
+        tuple(list, int):
+           The parsed constraint in CompSpace readable format.
     """
+    def recursive_parse(inp):
+        p = {}  # Saved keys must not be objects.
+        if isinstance(inp, (list, tuple)):
+            return [recursive_parse(o) for o in inp]
+        else:
+            for key, val in inp.items():
+                if not np.isclose(val, np.round(val)):
+                    raise ValueError(f"Constraint factor for species {key} "
+                                     f"is not integer!")
+                p[get_species(key)] = int(np.round(val))
+
+        return p
+
+    if not np.isclose(right, np.round(right)):
+        raise ValueError("Right-hand side of equation is not an integer!")
+    right = int(np.round(right))
+    parsed = recursive_parse(d_left)
+    dim_ids = get_dim_ids_by_sublattice(bits)
+    n_dims = sum([len(sub_bits) for sub_bits in bits])
+    con = [0 for _ in range(n_dims)]
+    if isinstance(parsed, list):
+        for sub_parsed, sub_bits, sub_dim_ids\
+                in zip(parsed, bits, dim_ids):
+            for sp in sub_parsed:
+                dim_id = sub_dim_ids[sub_bits.index(sp)]
+                con[dim_id] = sub_parsed[sp]
+    else:
+        for sp in parsed:
+            for sub_bits, sub_dim_ids in zip(bits, dim_ids):
+                if sp in sub_bits:
+                    dim_id = sub_dim_ids[sub_bits.index(sp)]
+                    con[dim_id] = parsed[sp]
+
+    return con, right
+
 # TODO: 1, write geq and leq constraints into enumeration in smol/cn-sgmc;
 #  2, finish composition constraints parsing;
 #  3, write supercell and composition enumeration into InputsProcessor; (3 sc shapes.)
@@ -164,7 +218,7 @@ def parse_generic_equality_constraints(d):
 #  7, after all these stuff, finish featurizer, then think about writing firetasks, dynamic WFs.
 
 
-class InputsProcessor(MSONable):
+class InputsHandler(MSONable):
     """Wraps options into formats required to init other modules.
 
     Can be saved and reloaded.
@@ -662,7 +716,7 @@ class InputsProcessor(MSONable):
 
     def copy(self):
         """Deepcopy InputsWrapper object."""
-        socket = InputsProcessor(prim=self.prim.copy(),
+        socket = InputsHandler(prim=self.prim.copy(),
                                **self.options)
 
         return socket
@@ -704,8 +758,8 @@ class InputsProcessor(MSONable):
         Returns:
             InputsWrapper.
         """
-        if os.path.isfile(WRAPPER_FILE):
-            with open(WRAPPER_FILE) as fin:
+        if os.path.isfile(INPUTS_FILE):
+            with open(INPUTS_FILE) as fin:
                 d = json.load(fin, cls=MontyDecoder)
                 return cls.from_dict(d)
         elif os.path.isfile(PRIM_FILE):
@@ -719,15 +773,15 @@ class InputsProcessor(MSONable):
         else:
             raise ValueError("No initial setting file provided! "
                              "Please provide at least one of: "
-                             f"{WRAPPER_FILE} or {PRIM_FILE}.")
+                             f"{INPUTS_FILE} or {PRIM_FILE}.")
 
     def to_file(self):
         """Automatically save data into a json file."""
-        with open(WRAPPER_FILE, 'w') as fout:
+        with open(INPUTS_FILE, 'w') as fout:
             json.dump(self.as_dict(), fout, cls=MontyEncoder)
 
 
-class CeHistoryProcessor(MSONable):
+class CeHistoryHandler(MSONable):
     """History management.
 
     This class stores multiple all the past fitting results.

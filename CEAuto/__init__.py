@@ -1,4 +1,4 @@
-from .processors import InputsWrapper, CEHistoryWrapper
+from .handler import InputsWrapper, CEHistoryWrapper
 from .data_wrangler import CeDataWrangler
 from .enumerator import StructureEnumerator
 

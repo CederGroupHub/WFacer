@@ -1,6 +1,6 @@
 from CEAuto.utils.frame_utils import load_dataframes, save_dataframes
 from CEAuto.time_keeper import TimeKeeper
-from CEAuto.processors import HistoryWrapper
+from CEAuto.handler import HistoryWrapper
 
 from monty.serialization import loadfn
 import pytest
