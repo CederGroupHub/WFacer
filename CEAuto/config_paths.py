@@ -9,12 +9,12 @@ import json
 
 # Now everything is provided as json.
 d = {}
-if os.path.isfile('paths_setting.json'):
-    with open('paths_setting.json') as fin:
+if os.path.isfile('paths.json'):
+    with open('paths.json') as fin:
         d = json.load(fin)
 
-PRIM_FILE = d.get('prim_file', 'prim.cif')
+PRIM_FILE = d.get('prim_file', 'prim.cif')  # Must be present.
 OPTIONS_FILE = d.get('options_file', 'options.json')
 HISTORY_FILE = d.get('history_file', 'history.json')
-WRAPPER_FILE = d.get('wrapper_file', 'inputs_wrapper.json')
-DECOR_FILE = d.get('decor_file', 'trained_decorators.json')
+WRAPPER_FILE = d.get('wrapper_file', 'inputs.json')
+DECOR_FILE = d.get('decor_file', 'decorators.json')

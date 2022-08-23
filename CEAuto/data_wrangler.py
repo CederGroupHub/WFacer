@@ -1,6 +1,7 @@
-"""DataWrangler.
+"""CeDataWrangler.
 
-This file includes a modified version of StructureWrangler.
+This file includes a modified version of StructureWrangler, which stores
+more information that CE might use.
 """
 
 __author__ = "Fengyu Xie"
@@ -13,10 +14,11 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Composition
 
 from smol.cofe.wrangling.wrangler import StructureWrangler
+from smol.cofe.wrangling.tools import _energies_above_hull
 
 
 def collinear(a1, a2):
-    """Check if 2 arraylikes are collinear.
+    """Check if 2 vectors are collinear.
 
     Args:
         a1, a2 (1D arraylike[float]):
@@ -26,22 +28,26 @@ def collinear(a1, a2):
                       np.linalg.norm(a1) * np.linalg.norm(a2))
 
 
-class DataWrangler(StructureWrangler):
-    """DataWrangler class.
+class CeDataWrangler(StructureWrangler):
+    """CeDataWrangler class.
 
     Interfaces CEAuto generated data, does insertion and deletion,
     but will not generate any data.
-    It cannot do charge assignment, etc, as well.
 
     Note: This DataWrangler is not serializable with legacy versions of smol.
     """
-    def _check_duplicacy(self, entry, sm=StructureMatcher()):
+    def _check_duplicacy(self, entry, sm=None):
         """Whether an entry symmetrically duplicates with existing ones"""
+        if sm is None:
+            sm = StructureMatcher()
         for entry_old in self.entries:
             if (np.allclose(entry_old.data["correlations"],
-                            entry.data["correlations"]) or
+                            entry.data["correlations"]) and
                 sm.fit(entry_old.data["refined_structure"],
                        entry.data["refined_structure"])):
+                # Allows inserting multiple in-equivalent structures
+                # with the same correlation functions.
+                # Returns the first duplicating entry in self.entries.
                 return entry_old
         return None
 
@@ -110,7 +116,7 @@ class DataWrangler(StructureWrangler):
         Returns:
             ComputedStructureEntry: entry with CE pertinent properties
         """
-        processed_entry = super(DataWrangler, self)\
+        processed_entry = super(CEDataWrangler, self)\
             .process_entry(entry, properties, weights,
                            supercell_matrix, site_mapping,
                            verbose, raise_failed)
@@ -189,7 +195,8 @@ class DataWrangler(StructureWrangler):
         )
         if processed_entry is not None:
             dupe = self._check_duplicacy(entry,
-                                         sm=self._subspace._site_matcher)
+                                         sm=self.cluster_subspace
+                                         ._site_matcher)
             if dupe is None:
                 self._entries.append(processed_entry)
                 if verbose:
@@ -203,24 +210,29 @@ class DataWrangler(StructureWrangler):
         """Get minimum energy by composition.
 
         This function provides quick tools to compare minimum DFT energies.
-        Remember this is NOT energy above hull!
+        Remember this is NOT hull!
+        Sublattice and oxidation state degrees of freedom in compositions
+        are not distinguished in generating hull.
 
         Args:
             max_iter_id(int): optional
-                Maximum iteration index included in the energy comparison. If none
-                given, will read existing maximum iteration number.
+                Maximum iteration index included in the energy comparison.
+                If none given, will read existing maximum iteration number.
         Returns:
-            defaultdict.
+            defaultdict: element compositions and energy per site.
         """
         min_e = defaultdict(lambda: np.inf)
+        prim_size = len(self.cluster_subspace.structure)
         if max_iter_id is None:
             max_iter_id = self.max_iter_id
         for entry in self.entries:
             if entry.iter_id <= max_iter_id:
-                # Normalize composition and energy to per prim.
-                comp = Composition({k: v / entry.data["size"] for k, v
-                                   in entry.structure.composition.items()})
-                e = entry.energy / entry.data["size"]
+                # Normalize composition and energy to eV per site.
+                comp = Composition({k: v / entry.data["size"] / prim_size
+                                    for k, v
+                                    in entry.structure.composition
+                                   .element_composition.items()})
+                e = entry.energy / entry.data["size"] / prim_size
                 if e < min_e[comp]:
                     min_e[comp] = e
         return min_e
@@ -251,9 +263,41 @@ class DataWrangler(StructureWrangler):
         for comp in min_e2:
             if comp not in min_e1:
                 return np.inf  # New composition appears.
-            if not min_e2[comp] == np.inf and min_e1[comp] == np.inf:
+            if not (min_e2[comp] == np.inf and min_e1[comp] == np.inf):
                 diffs.append(np.abs(min_e2[comp] - min_e1[comp]))
         if len(diffs) == 0:
             return np.inf
-        return np.max(diffs) / len(self.cluster_subspace.structure)
+        return np.max(diffs)  # eV/site
 
+    def get_hull(self, max_iter_id=None):
+        """Get the energies and compositions on the convex hull.
+
+        Sublattice and oxidation state degrees of freedom in compositions
+        are not distinguished in generating hull.
+        max_iter_id(int): optional
+            Maximum iteration index included in the energy comparison.
+            If none given, will read existing maximum iteration number.
+
+        Return:
+            dict: element composition and energies in eV/site.
+        """
+        if max_iter_id is None:
+            max_iter_id = self.max_iter_id
+        data = [(entry.structure, entry.energy) for entry in self.entries
+                if entry.iter_id <= max_iter_id]
+        structures, energies = list(zip(*data))
+        e_above_hull = _energies_above_hull(structures, energies,
+                                            self.cluster_subspace.structure)
+
+        hull = {}
+        prim_size = len(self.cluster_subspace.structure)
+        for entry, energy, on_hull in zip(self.entries, energies,
+                                          np.isclose(e_above_hull, 0)):
+            if on_hull:
+                comp = Composition({k: v / entry.data["size"] / prim_size
+                                    for k, v
+                                    in entry.structure.composition
+                                   .element_composition.items()})
+                e = energy / entry.data["size"] / prim_size  # eV/site
+                hull[comp] = e
+        return hull

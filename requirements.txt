@@ -6,6 +6,7 @@ cvxpy
 scipy
 numpy
 smol
+sparse-lm
 sympy
 scikit-learn
 scikit-optimize

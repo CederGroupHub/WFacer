@@ -1,14 +1,13 @@
 """Monte-carlo handlers to estimate ground states and sample structures."""
 
 import numpy as np
-from copy import deepcopy
 from abc import ABCMeta, abstractmethod
-import random
 from monty.json import MSONable
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
 from smol.moca import CanonicalEnsemble, Sampler
+from smol.utils import derived_class_factory, class_name_from_str
 
 __author__ = "Fengyu Xie"
 
@@ -77,6 +76,8 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
 
         self._past_occus = past_occus or []
         self._past_corrs = past_corrs or []
+        self._past_occus = [np.array(o, dtype=int) for o in self._past_occus]
+        self._past_corrs = [np.array(c) for c in self._past_corrs]
 
     @property
     @abstractmethod
@@ -85,10 +86,14 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
         return
 
     @property
-    @abstractmethod
     def sampler(self):
-        """Get sampler to run."""
-        return
+        """Sampler to run."""
+        if self._sampler is None:
+            self._sampler = Sampler.from_ensemble(self.ensemble,
+                                                  temperature
+                                                  =self.anneal_series[0],
+                                                  nwalkers=1)
+        return self._sampler
 
     @property
     def processor(self):
@@ -134,7 +139,7 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
 
     @abstractmethod
     def _get_init_occu(self):
-        return []
+        return np.array([], dtype=int)
 
     def get_ground_state(self, thin_by=1):
         """Use simulated anneal to solve for ground state.
@@ -160,161 +165,175 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
             self._gs_occu = (self.sample.samples
                              .get_minimum_enthalpy_occupancy().copy())
             self.sampler.samples.clear()
-  
+
         return self._gs_occu
 
-    # TODO: continue to refactor this.
     def get_unfreeze_sample(self):
         """Generate a sample of structures by unfreezing the ground state.
 
+        Note: this function should not be called multiple times per iteration!
         Return:
-            Samples in occupancy string:
-                2D np.ndarray[int]
+            New samples in occupancy string and correlation vectors, and whether
+            a new ground-state has been detected as the first inserted value:
+                list np.ndarray[int], list np.ndarray, bool
         """
-        thin_by = max(1, self.n_steps_unfreeze // (self.max_n_samples_per_iter * 5))
+        thin_by = max(1, self.n_steps_unfreeze
+                      // (self.max_n_samples_per_iter * 5))
         # Thin so we don't have to compare too many structures.
 
-        sa_occu, sa_e = self.get_ground_state()
- 
-        # Will always contain GS structure at the first position in list
-        rand_occus = [list(deepcopy(sa_occu))]
+        gs_occu = self.get_ground_state()
 
-        # Sampling temperatures        
+        # Will always contain GS at the first position in list.
+        rand_occus = [gs_occu.copy()]
+        rand_corrs = [self.ensemble.compute_feature_vector(gs_occu)
+                      / self.sc_size]  # Should add normalized feature vectors.
+
+        # Sampling temperatures
         for T in self.unfreeze_series:
-            log.debug('******Getting samples under {} K.'.format(T))
             self.sampler.samples.clear()
-            self.sampler._kernel.temperature = T
+            self.sampler.mckernel.temperature = T
 
-            # Equilibriate
-            log.debug("******Equilibration run.")
-            self.sampler.run(n_steps_sample,
-                             initial_occupancies=np.array([sa_occu],
+            # Equilibrate and sampling.
+            self.sampler.run(2 * self.n_steps_unfreeze,
+                             initial_occupancies=np.array([gs_occu],
                                                           dtype=int),
-                             thin_by=thin_by,
-                             progress=progress)
-            sa_occu = np.array(self.sampler.samples.get_occupancies()[-1],
-                               dtype=int)
+                             thin_by=thin_by)
+            n_samples = self.sampler.samples.num_samples
+            rand_occus.extend(np.array(self.sampler.samples.get_occupancies()
+                                       [n_samples // 2:],
+                                       dtype=int))  # Take the last half.
+            rand_corrs.extend(self.sampler.samples.get_feature_vectors()
+                              [n_samples // 2:] / self.sc_size)
             self.sampler.samples.clear()
 
-            # Sampling
-            log.debug("******Generation run.")
-            self.sampler.run(n_steps_sample,
-                             initial_occupancies=np.array([sa_occu],
-                                                          dtype=int),
-                             thin_by=thin_by,
-                             progress=progress)
-            rand_occus.extend(np.array(self.sampler.samples.get_occupancies(),
-                              dtype=int).tolist())
-
-        self.sampler.samples.clear()
-        rand_strs = [self.processor.structure_from_occupancy(occu)
-                     for occu in rand_occus]
-
-        # Internal deduplication
+        # Symmetry deduplication
         sm = StructureMatcher()
 
-        rand_dedup = []
-        for s1_id, s1 in enumerate(rand_strs):
-            duped = False
-            for s2_id in rand_dedup:
-                if sm.fit(s1, rand_strs[s2_id]):
-                    duped = True
+        n_occus_past = len(self._past_occus)
+        assert n_occus_past == len(self._past_corrs)
+        new_gs_detected = False
+        for new_id, (new_occu, new_corr) \
+                in enumerate(zip(rand_occus, rand_corrs)):
+            for old_id, (old_occu, old_corr) \
+                    in enumerate(zip(self._past_occus, self._past_corrs)):
+                dupe = False
+                if np.allclose(new_corr, old_corr):
+                    s_new = self.processor.structure_from_occupancy(new_occu)
+                    s_old = self.processor.structure_from_occupancy(old_occu)
+                    if sm.fit(s_new, s_old):
+                        dupe = True
+                        break
+                if not dupe:
+                    self._past_occus.append(new_occu)
+                    self._past_corrs.append(new_corr)
+                    if new_id == 1:
+                        new_gs_detected = True
+                if len(self._past_occus) == (n_occus_past
+                                             + self.max_n_samples_per_iter):
                     break
-            if not duped:
-                rand_dedup.append(s1_id)
 
-        log.info("****{} unique structures generated."
-                     .format(len(rand_dedup)))
+        return (self._past_occus[n_occus_past:],
+                self._past_corrs[n_occus_past:],
+                new_gs_detected)
 
-        rand_occus_dedup = [rand_occus[s_id] for s_id in rand_dedup]
+    def as_dict(self):
+        """Serialize into dict."""
+        d = {"@module": self.__class__.__module__,
+             "@class": self.__class__.__name__,
+             "ce": self.ce.as_dict(),
+             "sc_mat": self.sc_mat,
+             "anneal_series": self.anneal_series,
+             "unfreeze_series": self.unfreeze_series,
+             "n_steps_sa": self.n_steps_sa,
+             "n_steps_unfreeze": self.n_steps_unfreeze,
+             "max_n_samples_per_iter": self.max_n_samples_per_iter,
+             "past_occus": [o.tolist() for o in self._past_occus],
+             "past_corrs": [c.tolist() for c in self._past_corrs]
+             }
+        return d
 
-        return random.sample(rand_occus_dedup,
-                             min(len(rand_occus_dedup),
-                                 self.n_samples))
 
+class CanonicalSampleGenerator(McSampleGenerator):
+    """Sample generator in canonical ensemble."""
 
-class CanonicalmcHandler(MCHandler):
-    """MC handler in canonical ensemble."""
-    def __init__(self, ce, sc_mat, compstat,
-                 gs_occu=None,
-                 anneal_series=[5000, 3200, 1600, 800, 400, 100],
-                 unfreeze_series=[500, 1500, 5000],
-                 n_runs_sa=300,
-                 n_runs_unfreeze=600,
-                 n_samples=300,
-                 **kwargs):
+    def __init__(self, ce, sc_mat, n,
+                 anneal_series=None,
+                 unfreeze_series=None,
+                 n_steps_sa=50000,
+                 n_steps_unfreeze=100000,
+                 max_n_samples_per_iter=100,
+                 past_occus=None,
+                 past_corrs=None):
         """Initialize.
 
         Args:
             ce(ClusterExpansion):
-                A cluster expansion object to solve on.
+                A cluster expansion object to enumerate with.
             sc_mat(3*3 ArrayLike):
                 Supercell matrix to solve on.
-            compstat(2D List):
-                Compositional statistics table, normalized by supercell size.
-            anneal_series(List[float]):
+            n(1D ArrayLike[int]):
+                Composition in the n-format. (not normalized by
+                super-cell size!!)
+            anneal_series(List[float]): optional
                 A series of temperatures to use in simulated annealing.
-                Must be strictly decreasing.
-            unfreeze_series(List[float]):
+                Must be mono-decreasing.
+            unfreeze_series(List[float]): optional
                 A series of increasing temperatures to sample on.
-                By default, will sample under 500, 1500 and 5000 K.
-            n_runs_sa(int):
-                Number of runs per simulated annealing step. 1 run = 
-                # of sites in a supercell.
-            n_runs_unfreeze(int):
-                Number of runs per unfreezing step. 1 run = 
-                # of sites in a supercell.
-            n_samples(int):
-                Number of random occupancies to slice each sampling run.
-                Deduplicated sample will be smaller.
-            gs_occu(List[int]):
-                Encoded occupation array of previous ground states.
-                Optional, but if provided, must have the same composition
-                as compstat.
+                Must be mono-increasing
+            n_steps_sa(int): optional
+                Number of steps to run per simulated annealing temperature.
+            n_steps_unfreeze(int): optional
+                Number of steps to run per unfreeze temperature.
+            max_n_samples_per_iter(int): optional
+                Maximum number of samples to draw per unfreezing
+                run. Will generate as many structure candidates as possible,
+                as long as they are not symmetrically equivalent with any
+                past entries, but for each iteration will generate this
+                many new structures at most.
+            past_occus(2D ArrayLike):
+                Occupancies enumerated in the past. For the purpose of
+                de-duplication.
+            past_corrs(2D ArrayLike):
+                Correlations enumerated in the past. For the purpose of
+                de-duplication.
         """
-        super().__init__(ce, sc_mat,
-                         gs_occu=gs_occu,
-                         anneal_series=anneal_series,
-                         unfreeze_series=unfreeze_series,
-                         n_runs_sa=n_runs_sa,
-                         n_runs_unfreeze=n_runs_unfreeze,
-                         n_samples=n_samples,
-                         **kwargs)
+        super(CanonicalSampleGenerator, self)\
+            .__init__(ce, sc_mat,
+                      anneal_series=anneal_series,
+                      unfreeze_series=unfreeze_series,
+                      n_steps_sa=n_steps_sa,
+                      n_steps_unfreeze=n_steps_unfreeze,
+                      max_n_samples_per_iter=max_n_samples_per_iter,
+                      past_occus=past_occus,
+                      past_corrs=past_corrs)
 
-        self.compstat = compstat
-        self.int_comp = scale_compstat(compstat, by=self.sc_size)
-
-        self._gs_occu = gs_occu or self._initialize_occu_from_int_comp(self.int_comp)
+        self.n = n
 
     @property
     def ensemble(self):
         """CanonicalEnsemble."""
         if self._ensemble is None:
             self._ensemble = (CanonicalEnsemble.
-                              from_cluster_expansion(self.ce, self.sc_mat,
-                                                     optimize_indicator=
-                                                     self.is_indicator))
+                              from_cluster_expansion(self.ce, self.sc_mat))
         return self._ensemble
 
-    @property
-    def sampler(self):
-        """Sampler to run."""
-        if self._sampler is None:
-            self._sampler = Sampler.from_ensemble(self.ensemble,
-                                                  temperature=5000,
-                                                  nwalkers=1)
-        return self._sampler
+    def _get_init_occu(self):
+        """Get an initial occupancy for MC run."""
+        return self._initialize_occu_from_n(self.n)
+
+# TODO: add semi-grand generator in the future?
+#  But not urgent. Do this only after smol cn-sgmc has been
+#  merged with main.
 
 
-
-def mchandler_factory(mchandler_name, *args, **kwargs):
+def mcgenerator_factory(mcgenerator_name, *args, **kwargs):
     """Create a MCHandler with given name.
 
     Args:
-        mchandler_name(str):
-            Name of a MCHandler class.
+        mcgenerator_name(str):
+            Name of a McSampleGenerator sub-class.
         *args, **kwargs:
             Arguments used to intialize the class.
     """
-    name = mchandler_name.capitalize() + 'Handler'
-    return derived_class_factory(name, MCHandler, *args, **kwargs)
+    name = class_name_from_str(mcgenerator_name)
+    return derived_class_factory(name, McSampleGenerator, *args, **kwargs)

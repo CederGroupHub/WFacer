@@ -19,6 +19,8 @@ from smol.cofe.space.domain import (get_site_spaces, Vacancy,
                                     get_species)
 
 from smol.cofe.extern import EwaldTerm  # Currently, only allow EwaldTerm.
+from smol.moca.comp_space import CompSpace  # Treat comp constraints.
+from smol.moca.utils.occu_utils import get_dim_ids_by_sublattice
 
 from .utils.format_utils import merge_dicts
 from .config_paths import (WRAPPER_FILE, OPTIONS_FILE, PRIM_FILE,
@@ -30,7 +32,7 @@ import warnings
 def construct_prim(bits, sublattice_sites, lattice, frac_coords):
     """Construct a primitive cell based on lattice info.
 
-    Provides a toolkit method to initialize a primitive cell.
+    Provides a helper method to initialize a primitive cell.
     Args:
         bits(List[List[Specie]]):
             Allowed species on each sublattice. No sorting
@@ -49,13 +51,13 @@ def construct_prim(bits, sublattice_sites, lattice, frac_coords):
     """
     n_sites = len(frac_coords)
     if not np.allclose(np.arange(n_sites),
-                       list(itertools.chain(*sublattice_sites))):
+                       sorted(list(itertools.chain(*sublattice_sites)))):
         raise ValueError(f"Provided site indices: {sublattice_sites} "
-                         f"does not match range of site count: {n_sites}")
+                         f"does not include all {n_sites} sites!")
 
     site_comps = [{} for _ in range(n_sites)]
     for sublatt_id, sublatt in enumerate(sublattice_sites):
-        comp = Composition({sp: 1 / len(bits)
+        comp = Composition({sp: 1 / len(bits[sublatt_id])
                             for sp in bits[sublatt_id]
                             if not isinstance(sp, Vacancy)})
         for i in sublatt:
@@ -64,7 +66,105 @@ def construct_prim(bits, sublattice_sites, lattice, frac_coords):
     return Structure(lattice, site_comps, frac_coords)
 
 
-class InputsWrapper(MSONable):
+# TODO: these functions had better go into utils.
+def parse_species_constraints(d, bits, sl_sizes):
+    """Parse the constraint to species concentrations.
+
+    Args:
+        d(dict|list/tuple of dict):
+            Dictionary of restrictions. Each key is a representation of a
+            species, and each value can either be a tuple of lower and
+            upper-limits, or a single float of upper-limit of the species
+            atomic fraction. Number must be between 0 and 1, which means
+            If a list of dict provided, each dict in the list constrains
+            on a sub-lattice composition. This is sometimes necessary when
+            you wish to constrain vacancy concentrations on some specific
+            sub-lattices. d must be given in the same ordering or "bits",
+            if d is given by each sub-lattice.
+            If only one dict is provided, the bounds number will be atomic
+            fraction of the particular species in all the sub-lattices that
+            allows it! (number_of_species/sum(sl_size_of_allowed_sublatt)).
+        bits(list[list[Species|Vacancy|Element]]):
+            Species on each sublattice. Must be exactly the same as CompSpace
+            initializer.
+        sl_sizes(list[int]):
+            size of sub-lattices in a primitive cell. Must be given in the
+            same ordering as bits.
+    Return:
+        list, list: constraints in CompSpace readable format.
+    """
+    def recursive_parse(inp):
+        p = {}  # Saved keys must not be objects.
+        if isinstance(d, (list, tuple)):
+            return [recursive_parse(o) for o in inp]
+        else:
+            for key, val in inp.items():
+                if isinstance(val, (list, tuple)):
+                    if len(val) != 2:
+                        raise ValueError("Species concentration constraints provided "
+                                         "as tuple, but length of tuple is not 2.")
+                    if val[1] < val[0]:
+                        raise ValueError("Species concentration constraints provided "
+                                         "as tuple, but lower bound > upper bound.")
+                    if val[1] < 0 or val[1] > 1 or val[0] < 0 or val[0] > 1:
+                        raise ValueError("Provided species concentration limit must "
+                                         "be in [0, 1]!")
+                    p[get_species(key)] = tuple(val)
+                else:
+                    if val < 0 or val > 1:
+                        raise ValueError("Provided species concentration limit must "
+                                         "be in [0, 1]!")
+                    p[get_species(key)] = (0, val)
+        return p
+
+    parsed = recursive_parse(d)
+    dim_ids = get_dim_ids_by_sublattice(bits)
+    n_dims = sum([len(sub_bits) for sub_bits in bits])
+    constraints_leq = []
+    constraints_geq = []
+    if isinstance(parsed, list):
+        for sub_parsed, sub_bits, sub_dim_ids, sl_size\
+                in zip(parsed, bits, dim_ids, sl_sizes):
+            for sp in sub_parsed:
+                dim_id = sub_dim_ids[sub_bits.index(sp)]
+                con = [0 for _ in range(n_dims)]
+                con[dim_id] = 1
+                constraints_geq.append((con, sub_parsed[sp][0] * sl_size))  # per-prim.
+                constraints_leq.append((con, sub_parsed[sp][1] * sl_size))
+    else:
+        for sp in parsed:
+            con = [0 for _ in range(n_dims)]
+            r_leq = 0
+            r_geq = 0
+            for sub_bits, sub_dim_ids, sl_size in zip(bits, dim_ids, sl_sizes):
+                if sp in sub_bits:
+                    dim_id = sub_dim_ids[sub_bits.index(sp)]
+                    con[dim_id] = 1
+                    r_geq += parsed[sp][0] * sl_size
+                    r_leq += parsed[sp][1] * sl_size
+            constraints_geq.append((con, r_geq))
+            constraints_leq.append((con, r_leq))
+
+    return constraints_leq, constraints_geq
+
+
+def parse_generic_equality_constraints(d):
+    """Pase more generic equality constaints.
+
+    Args:
+        d(dict| list(dict)):
+
+    """
+# TODO: 1, write geq and leq constraints into enumeration in smol/cn-sgmc;
+#  2, finish composition constraints parsing;
+#  3, write supercell and composition enumeration into InputsProcessor; (3 sc shapes.)
+#  4, integrate cluster-subspace trimming into here.
+#  5, don't forget to add an "add_composition" or "add_supercell" here.
+#  6, after all these, finish enumerator as it only calls MCenumeration;
+#  7, after all these stuff, finish featurizer, then think about writing firetasks, dynamic WFs.
+
+
+class InputsProcessor(MSONable):
     """Wraps options into formats required to init other modules.
 
     Can be saved and reloaded.
@@ -86,6 +186,7 @@ class InputsWrapper(MSONable):
                 arguments as they'll be generated from prim. Vice versa.
             **kwargs:
                 Additional settings to CEAuto fittings and calculations.
+                see docs of each property for details.
         """
         self._options = kwargs
         self._options = self._process_options()
@@ -101,7 +202,7 @@ class InputsWrapper(MSONable):
         """Make primitive cell the real primitive."""
         sa = SpacegroupAnalyzer(self._prim, **self.space_group_options)
         # TODO: maybe we can re-define site_properties transformation
-        # in the future.
+        #  in the future.
         self._prim = sa.find_primitive(keep_site_properties=True)
 
     @property
@@ -115,7 +216,7 @@ class InputsWrapper(MSONable):
 
     @property
     def transmat(self):
-        """Transformation matrix.
+        """Transformation matrix applied to prim before enum.
 
         If "supercell_from_conventional" set to True, will use the transformation
         matrix from processed primitive cell to the conventional cell. Otherwise,
@@ -133,10 +234,11 @@ class InputsWrapper(MSONable):
 
     @property
     def sc_size_enum(self):
-        """Supercell size (in num of prim unit) to enumerate.
+        """Supercell size (in num of prims) to enumerate.
 
         Computed as self.enumerator_options["objective_sc_size"]
-        // (det(transmat)) * det(transmat).
+        // (det(transmat)) * det(transmat), to ensure it is always
+        divisible by transmat size.
         Return:
             int
         """
@@ -152,7 +254,7 @@ class InputsWrapper(MSONable):
             dict
 
         prim_symmetry_precision(float):
-            precision to pass
+            precision to pass.
         """
         return self._options.get("space_group_kwargs", {})
 
@@ -204,9 +306,10 @@ class InputsWrapper(MSONable):
 
     @property
     def is_charged_ce(self):
-        """Check whether the expansion is charge decorated.
+        """Check whether the expansion needs charge decoration.
 
-        Will add EwaldTerm, and apply charge assignment.
+        If yes, will include EwaldTerm, and add charge assignment.
+
         Returns:
             bool.
         """
@@ -234,6 +337,7 @@ class InputsWrapper(MSONable):
 
         if self.is_charged_ce:
             subspace.add_external_term(EwaldTerm(**self.cluster_space_options["ewald_kwargs"]))
+        # TODO: move supercell and comps enumeration into inputs processor, and trim the subspace accordingly.
 
         return subspace
 
@@ -284,7 +388,7 @@ class InputsWrapper(MSONable):
                                     self.prim.lattice.c]))
             d_nn = min(d_nns)
 
-            # Empirical values from DRX, not necessarily true.
+            # Empirical values from DRX, not necessarily good for all.
             cutoffs = {2: d_nn * 4.0, 3: d_nn * 2.0, 4: d_nn * 2.0}
 
         return {'cutoffs': cutoffs,
@@ -292,46 +396,6 @@ class InputsWrapper(MSONable):
                 'matcher_kwargs': self._options.get('matcher_kwargs', {}),
                 'ewald_kwargs': self._options.get('ewald_kwargs', {})
                 }
-
-    @staticmethod
-    def parse_comp_restriction(d):
-        """Parse a restriction of composition.
-
-        Arg:
-            d(dict|list/tuple of dict):
-                Dictionary of restrictions. Each key is a representation of a
-                species, and each value can either be a tuple of lower and
-                upper-limits, or a single float of upper-limit of the species
-                atomic fraction. Number must be in [0, 1].
-                If a list of dict provided, each dict in the list constrains
-                on a sub-lattice composition.
-        """
-        comp_restriction = {}  # Saved keys must not be objects.
-        if isinstance(d, (list, tuple)):
-            return [InputsWrapper.parse_comp_restriction(o) for o in d]
-
-        for key, val in d.items():
-            if isinstance(val, (list, tuple)):
-                if len(val) != 2:
-                    raise ValueError("Species concentration constraints provided "
-                                     "as tuple, but length of tuple is not 2.")
-                if val[1] < val[0]:
-                    raise ValueError("Species concentration constraints provided "
-                                     "as tuple, but lower-bound > upper_bound.")
-                if val[1] < 0 or val[1] > 1 or val[0] < 0 or val[0] > 1:
-                    raise ValueError("Provided species concentration limit must "
-                                     "be in [0, 1]!")
-                comp_restriction[str(get_species(key))] = tuple(val)
-            else:
-                if val < 0 or val > 1:
-                    raise ValueError("Provided species concentration limit must "
-                                     "be in [0, 1]!")
-                comp_restriction[str(get_species(key))] = (0, val)
-                # Note that pymatgen.Species.__str__ is still not good as per
-                # 2022.4.19, because it does not support multiple species property.
-                # We have to bear with it for now.
-
-        return comp_restriction
 
     # TODO: More generic comp_restriction?
     @property
@@ -598,7 +662,7 @@ class InputsWrapper(MSONable):
 
     def copy(self):
         """Deepcopy InputsWrapper object."""
-        socket = InputsWrapper(prim=self.prim.copy(),
+        socket = InputsProcessor(prim=self.prim.copy(),
                                **self.options)
 
         return socket
@@ -663,7 +727,7 @@ class InputsWrapper(MSONable):
             json.dump(self.as_dict(), fout, cls=MontyEncoder)
 
 
-class CEHistoryWrapper(MSONable):
+class CeHistoryProcessor(MSONable):
     """History management.
 
     This class stores multiple all the past fitting results.
