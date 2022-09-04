@@ -148,10 +148,10 @@ def parse_species_constraints(d, bits, sl_sizes):
     return constraints_leq, constraints_geq
 
 
-def parse_generic_equality_constraint(d_left, right, bits):
-    """Pase more generic equality constraint.
+def parse_generic_constraint(d_left, right, bits):
+    """Pase more generic constraint.
 
-    Can only parse one constraint at a time.
+    Parse one constraint at a time.
     Args:
         d_left(dict| list(dict)):
             Dictionary that records the left-hand side of the
@@ -161,15 +161,19 @@ def parse_generic_equality_constraint(d_left, right, bits):
             Currently, only supports integer values.
             If given in list of dictionary, each dictionary in the
             list will constrain a corresponding sub-lattice.
-        right(int):
+        right(float):
             Right-hand side of the equation. Must be given as per
-            primitive cell.
+            primitive cell. When parsing an equality constraint, must
+            be integer.
         For example: 1 n_Li + 2 n_Ag = 1 can be specified as:
             d_left = {"Li": 1, "Ag": 2}
             right = 1
         bits(list[Species|Element|Vacancy]):
             Species on each sublattice. Must be exactly the same as used
             in CompSpace initializer.
+    Note:
+        Currently when parsing an equality constraint, only integers are allowed
+        on both left and right side.
     Returns:
         tuple(list, int):
            The parsed constraint in CompSpace readable format.
@@ -209,7 +213,7 @@ def parse_generic_equality_constraint(d_left, right, bits):
 
     return con, right
 
-# TODO: 1, write geq and leq constraints into enumeration in smol/cn-sgmc;
+# TODO:
 #  2, finish composition constraints parsing;
 #  3, write supercell and composition enumeration into InputsProcessor; (3 sc shapes.)
 #  4, integrate cluster-subspace trimming into here.
