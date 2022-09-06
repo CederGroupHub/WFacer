@@ -4,7 +4,6 @@ __author__ = "Fengyu Xie"
 Utility functions to enumerate supercell matrices.
 """
 import numpy as np
-from copy import deepcopy
 import random
 from sympy import factorint
 from itertools import permutations, product
@@ -27,12 +26,14 @@ def get_three_factors(n):
             List[tuple(int)]
     """
     def enumerate_three_summations(c):
-        three_nums = []
+        # Yield all (x, y, z) that x + y + z = c.
+        three_nums = set([])
         for x in range(c + 1):
             for y in range(c + 1 - x):
                 z = c - x - y
-                three_nums.extend(set(permutations([x, y, z])))
-        return three_nums
+                for perm in set(permutations([x, y, z])):
+                    three_nums.add(perm)
+        return sorted(list(three_nums), reverse=True)
 
     if n == 0:
         return []
@@ -46,45 +47,70 @@ def get_three_factors(n):
     all_factors = []
     for sol in product(*all_three_nums):
         ns = np.array(sol, dtype=int)
-        pows = np.sum(ns, axis=0)
-        factors = sorted((prime_factors ** pows).tolist(), reverse=True)
-        if factors in all_factors:
+        factors = sorted(np.product(prime_factors[:, None] ** ns, axis=0).tolist(),
+                         reverse=True)
+        if factors not in all_factors:
             all_factors.append(factors)
     return sorted(all_factors)
 
 
 def is_proper_sc(sc_matrix, lat, max_cond=8, min_angle=30):
-    """Assess the skewness of a given supercell matrix.
+    """Assess the quality of a given supercell matrix.
 
-    If the skewness is too high, then this matrix will be dropped.
+    If too skewed or too slender, this matrix will be dropped
+    because it does not fit for DFT calculation.
     Args:
-        sc_matrix(Arraylike):
+        sc_matrix(3 * 3 ArrayLike):
             Supercell matrix
         lat(pymatgen.Lattice):
-            Lattice vectors of a primitive cell
-        max_cond(float):
-            Maximum conditional number allowed of the supercell lattice
-            matrix. By default set to 8, to prevent overstretching in one
-            direction
-        min_angle(float):
-            Minmum allowed angle of the supercell lattice. By default set
+            Lattice of the primitive cell
+        max_cond(float): optional
+            Maximum conditional number allowed in the supercell lattice
+            matrix. This is to avoid overly imbalance in the lengths of
+            three lattice vectors. By default, set to 8.
+        min_angle(float): optional
+            Minimum allowed angle of the supercell lattice. By default, set
             to 30, to prevent over-skewing.
     Returns:
        Boolean.
     """
-    newmat = np.dot(sc_matrix, lat.matrix)
-    newlat = Lattice(newmat)
-    angles = [newlat.alpha, newlat.beta, newlat.gamma,
-              180 - newlat.alpha, 180 - newlat.beta,
-              180 - newlat.gamma]
+    new_mat = np.dot(sc_matrix, lat.matrix)
+    new_lat = Lattice(new_mat)
+    angles = [new_lat.alpha, new_lat.beta, new_lat.gamma,
+              180 - new_lat.alpha, 180 - new_lat.beta,
+              180 - new_lat.gamma]
 
-    return (abs(np.linalg.cond(newmat)) <= max_cond and
+    return (abs(np.linalg.cond(new_mat)) <= max_cond and
             min(angles) >= min_angle)
 
 
-# TODO: maybe find a rule to enumerate super-cells based on cluster cut-offs
-#  and write these rules in is_proper_sc?
-def enumerate_matrices(det, lat, transmat=np.eye(3, dtype=int),
+def get_aliases(sc_matrix, cluster_subspace):
+    """Aliased correlation functions in a super-cell.
+
+    Given a cluster space, the more alias a super-cell produce, the less
+    favorable the super-cell matrix is. In real cases, since we can only
+    compute limited size super-cell, we can not always guarantee that
+    a super-cell matrix does not create any alias, but we would always
+    like to minimize the number of aliases.
+    This along with the proper-ness check, are two criterion of choosing
+    the optimal super-cell matrices.
+    Note: alias check requires smol >= 0.0.5.
+
+    Args:
+        sc_matrix(3 * 3 ArrayLike):
+            The super-cell matrix.
+        cluster_subspace(smol.cofe.ClusterSubSpace):
+            The cluster subspace object, containing all clusters to expand.
+    Returns:
+        list[(int, int)]:
+            Indices of aliased correlation function pairs. The first key is
+            always given as smaller than the second.
+    """
+    # TODO: write get_aliases.
+
+
+def enumerate_matrices(det, cluster_subspace,
+                       conv_mat=np.eye(3, dtype=int),
                        max_sc_cond=8,
                        min_sc_angle=30):
     """Enumerate proper matrices with det size.
