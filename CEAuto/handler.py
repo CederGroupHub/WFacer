@@ -15,16 +15,16 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from smol.cofe import ClusterSubspace
 from smol.cofe.space.domain import (get_site_spaces, Vacancy,
-                                    get_allowed_species,
-                                    get_species)
+                                    get_allowed_species)
 
 from smol.cofe.extern import EwaldTerm  # Currently, only allow EwaldTerm.
-from smol.moca.comp_space import CompSpace  # Treat comp constraints.
-from smol.moca.utils.occu_utils import get_dim_ids_by_sublattice
 
 from .utils.format_utils import merge_dicts
+from .utils.comp_constraint_utils import (parse_species_constraints,
+                                          parse_generic_constraint)
 from .config_paths import (INPUTS_FILE, OPTIONS_FILE, PRIM_FILE,
                            HISTORY_FILE)
+from .specie_decorators import allowed_decorators
 
 import warnings
 
@@ -65,160 +65,11 @@ def construct_prim(bits, sublattice_sites, lattice, frac_coords):
 
     return Structure(lattice, site_comps, frac_coords)
 
-
-# TODO: these functions had better go into utils.
-def parse_species_constraints(d, bits, sl_sizes):
-    """Parse the constraint to species concentrations.
-
-    Args:
-        d(dict|list/tuple of dict):
-            Dictionary of restrictions. Each key is a representation of a
-            species, and each value can either be a tuple of lower and
-            upper-limits, or a single float of upper-limit of the species
-            atomic fraction. Number must be between 0 and 1, which means
-            If a list of dict provided, each dict in the list constrains
-            on a sub-lattice composition. This is sometimes necessary when
-            you wish to constrain vacancy concentrations on some specific
-            sub-lattices. d must be given in the same ordering or "bits",
-            if d is given by each sub-lattice.
-            If only one dict is provided, the bounds number will be atomic
-            fraction of the particular species in all the sub-lattices that
-            allows it! (number_of_species/sum(sl_size_of_allowed_sublatt)).
-        bits(list[list[Species|Vacancy|Element]]):
-            Species on each sublattice. Must be exactly the same as used in
-            CompSpace initializer.
-        sl_sizes(list[int]):
-            size of sub-lattices in a primitive cell. Must be given in the
-            same ordering as bits.
-    Return:
-        list, list: constraints in CompSpace readable format.
-    """
-    def recursive_parse(inp):
-        p = {}  # Saved keys must not be objects.
-        if isinstance(inp, (list, tuple)):
-            return [recursive_parse(o) for o in inp]
-        else:
-            for key, val in inp.items():
-                if isinstance(val, (list, tuple)):
-                    if len(val) != 2:
-                        raise ValueError("Species concentration constraints provided "
-                                         "as tuple, but length of tuple is not 2.")
-                    if val[1] < val[0]:
-                        raise ValueError("Species concentration constraints provided "
-                                         "as tuple, but lower bound > upper bound.")
-                    if val[1] < 0 or val[1] > 1 or val[0] < 0 or val[0] > 1:
-                        raise ValueError("Provided species concentration limit must "
-                                         "be in [0, 1]!")
-                    p[get_species(key)] = tuple(val)
-                else:
-                    if val < 0 or val > 1:
-                        raise ValueError("Provided species concentration limit must "
-                                         "be in [0, 1]!")
-                    p[get_species(key)] = (0, val)
-        return p
-
-    parsed = recursive_parse(d)
-    dim_ids = get_dim_ids_by_sublattice(bits)
-    n_dims = sum([len(sub_bits) for sub_bits in bits])
-    constraints_leq = []
-    constraints_geq = []
-    if isinstance(parsed, list):
-        for sub_parsed, sub_bits, sub_dim_ids, sl_size\
-                in zip(parsed, bits, dim_ids, sl_sizes):
-            for sp in sub_parsed:
-                dim_id = sub_dim_ids[sub_bits.index(sp)]
-                con = [0 for _ in range(n_dims)]
-                con[dim_id] = 1
-                constraints_geq.append((con, sub_parsed[sp][0] * sl_size))  # per-prim.
-                constraints_leq.append((con, sub_parsed[sp][1] * sl_size))
-    else:
-        for sp in parsed:
-            con = [0 for _ in range(n_dims)]
-            r_leq = 0
-            r_geq = 0
-            for sub_bits, sub_dim_ids, sl_size in zip(bits, dim_ids, sl_sizes):
-                if sp in sub_bits:
-                    dim_id = sub_dim_ids[sub_bits.index(sp)]
-                    con[dim_id] = 1
-                    r_geq += parsed[sp][0] * sl_size
-                    r_leq += parsed[sp][1] * sl_size
-            constraints_geq.append((con, r_geq))
-            constraints_leq.append((con, r_leq))
-
-    return constraints_leq, constraints_geq
-
-
-def parse_generic_constraint(d_left, right, bits):
-    """Pase more generic constraint.
-
-    Parse one constraint at a time.
-    Args:
-        d_left(dict| list(dict)):
-            Dictionary that records the left-hand side of the
-            constraint equation. Each key is a species or species
-            string, while each value is the pre-factor of the
-            corresponding species number in the constraint equation.
-            Currently, only supports integer values.
-            If given in list of dictionary, each dictionary in the
-            list will constrain a corresponding sub-lattice.
-        right(float):
-            Right-hand side of the equation. Must be given as per
-            primitive cell. When parsing an equality constraint, must
-            be integer.
-        For example: 1 n_Li + 2 n_Ag = 1 can be specified as:
-            d_left = {"Li": 1, "Ag": 2}
-            right = 1
-        bits(list[Species|Element|Vacancy]):
-            Species on each sublattice. Must be exactly the same as used
-            in CompSpace initializer.
-    Note:
-        Currently when parsing an equality constraint, only integers are allowed
-        on both left and right side.
-    Returns:
-        tuple(list, int):
-           The parsed constraint in CompSpace readable format.
-    """
-    def recursive_parse(inp):
-        p = {}  # Saved keys must not be objects.
-        if isinstance(inp, (list, tuple)):
-            return [recursive_parse(o) for o in inp]
-        else:
-            for key, val in inp.items():
-                if not np.isclose(val, np.round(val)):
-                    raise ValueError(f"Constraint factor for species {key} "
-                                     f"is not integer!")
-                p[get_species(key)] = int(np.round(val))
-
-        return p
-
-    if not np.isclose(right, np.round(right)):
-        raise ValueError("Right-hand side of equation is not an integer!")
-    right = int(np.round(right))
-    parsed = recursive_parse(d_left)
-    dim_ids = get_dim_ids_by_sublattice(bits)
-    n_dims = sum([len(sub_bits) for sub_bits in bits])
-    con = [0 for _ in range(n_dims)]
-    if isinstance(parsed, list):
-        for sub_parsed, sub_bits, sub_dim_ids\
-                in zip(parsed, bits, dim_ids):
-            for sp in sub_parsed:
-                dim_id = sub_dim_ids[sub_bits.index(sp)]
-                con[dim_id] = sub_parsed[sp]
-    else:
-        for sp in parsed:
-            for sub_bits, sub_dim_ids in zip(bits, dim_ids):
-                if sp in sub_bits:
-                    dim_id = sub_dim_ids[sub_bits.index(sp)]
-                    con[dim_id] = parsed[sp]
-
-    return con, right
-
 # TODO:
-#  2, finish composition constraints parsing;
-#  3, write supercell and composition enumeration into InputsProcessor; (3 sc shapes.)
-#  4, integrate cluster-subspace trimming into here.
-#  5, don't forget to add an "add_composition" or "add_supercell" here.
-#  6, after all these, finish enumerator as it only calls MCenumeration;
+#  3, write supercell and composition enumeration into Enumerator; (2 sc matrices.)
+#  4, integrate cluster-subspace trimming into Enumerator.
+#  5, don't forget to include an "add_composition" or "add_supercell" there.
+#  6, after all these, finish enumerator as it that calls MCenumeration procedure;
 #  7, after all these stuff, finish featurizer, then think about writing firetasks, dynamic WFs.
 
 
@@ -229,9 +80,6 @@ class InputsHandler(MSONable):
     Direct initialization is not recommended. You are supposed to 
     initialize it with auto_load().
     """
-    # Add here if you implement more decorators.
-    valid_decorator_types = {"oxi_state": ("pmg-guess-charge-decorator",
-                                           "magnetic-charge-decorator",)}
 
     def __init__(self, prim, **kwargs):
         """Initialize.
@@ -273,35 +121,18 @@ class InputsHandler(MSONable):
         return self._prim
 
     @property
-    def transmat(self):
-        """Transformation matrix applied to prim before enum.
+    def prim_to_conv_transmat(self):
+        """Matrix to transform primitive cell to a conventional cell.
 
-        If "supercell_from_conventional" set to True, will use the transformation
-        matrix from processed primitive cell to the conventional cell. Otherwise,
-        returns identity.
-        The enumerator will enumerate super-cell matrices in the form of:
-        M = M'T, where M' is another transformation matrix.
+        If "supercell_from_conventional" set to True, will enumerate super-cell
+        matrices in the form of transmat @ enumerated_integer_matrix to preserve
+        some conventional cell symmetry.
         Returns:
             np.ndarray[int]
         """
-        if self.enumerator_options["supercell_from_conventional"]:
-            sa = SpacegroupAnalyzer(self.prim, **self.space_group_options)
-            t_inv = sa.get_conventional_to_primitive_transformation_matrix()
-            return np.array(np.round(np.linalg.inv(t_inv)), dtype=int)
-        return np.eye(3, dtype=int)
-
-    @property
-    def sc_size_enum(self):
-        """Supercell size (in num of prims) to enumerate.
-
-        Computed as self.enumerator_options["objective_sc_size"]
-        // (det(transmat)) * det(transmat), to ensure it is always
-        divisible by transmat size.
-        Return:
-            int
-        """
-        det = int(round(abs(np.linalg.det(self.transmat))))
-        return self.enumerator_options["objective_sc_size"] // det * det
+        sa = SpacegroupAnalyzer(self.prim, **self.space_group_options)
+        t_inv = sa.get_conventional_to_primitive_transformation_matrix()
+        return np.round(np.linalg.inv(t_inv)).astype(int)
 
     @property
     def space_group_options(self):
@@ -311,8 +142,9 @@ class InputsHandler(MSONable):
         Returns:
             dict
 
-        prim_symmetry_precision(float):
-            precision to pass.
+        Included keys:
+            prim_symmetry_precision(float):
+                precision to pass.
         """
         return self._options.get("space_group_kwargs", {})
 
@@ -324,10 +156,9 @@ class InputsHandler(MSONable):
             List[List[Specie]]
         """
         if self._bits is None:
-            # By default, does NOT include measure!
-            # Different sites with same species but different numbers
-            # are considered the same sub-lattice!
-            unique_spaces = tuple(set(get_site_spaces(self.prim)))
+            # The sub-lattice orderings here might be different
+            # from smol.processor.
+            unique_spaces = sorted(set(get_site_spaces(self.prim)))
 
             # Same order as smol.moca.Sublattice
             self._bits = [list(space.keys()) for space in unique_spaces]
@@ -342,20 +173,22 @@ class InputsHandler(MSONable):
             List[List[int]]
         """
         if self._sublattice_sites is None:
-            unique_spaces = tuple(set(get_site_spaces(self.prim)))
+            # The sub-lattice orderings here might be different
+            # from smol.processor.
+            unique_spaces = sorted(set(get_site_spaces(self.prim)))
             allowed_species = get_allowed_species(self.prim)
+            # Ordering between species in a sub-lattice is fixed.
 
             # Automatic sublattices, same rule as smol.moca.Sublattice
             self._sublattice_sites = [[i for i, sp in enumerate(allowed_species)
                                        if sp == list(space.keys())]
                                       for space in unique_spaces]
 
-        # No sort of bits on sublattices! Order based on dict keys.
         return self._sublattice_sites
 
     @property
     def sublattice_sizes(self):
-        """Sizes of each sub-lattice.
+        """Num of sites in each sub-lattice per prim.
 
         Returns:
             List[int]
@@ -364,10 +197,9 @@ class InputsHandler(MSONable):
 
     @property
     def is_charged_ce(self):
-        """Check whether the expansion needs charge decoration.
+        """Check whether the charge decoration is needed.
 
-        If yes, will include EwaldTerm, and add charge assignment.
-
+        If yes, will include EwaldTerm, and add charge decorators.
         Returns:
             bool.
         """
@@ -380,9 +212,10 @@ class InputsHandler(MSONable):
         return is_charged_ce
 
     def get_cluster_subspace(self):
-        """Cluster subspace of this system.
+        """Cluster subspace.
 
         If none provided, will be intialized from cutoffs.
+        This cluster subspace is not yet trimmed for aliasing!
         Returns:
             ClusterSubspace.
         """
@@ -394,17 +227,17 @@ class InputsHandler(MSONable):
                     )
 
         if self.is_charged_ce:
-            subspace.add_external_term(EwaldTerm(**self.cluster_space_options["ewald_kwargs"]))
-        # TODO: move supercell and comps enumeration into inputs processor, and trim the subspace accordingly.
+            subspace.add_external_term(EwaldTerm(**self.cluster_space_options
+                                       ["ewald_kwargs"]))
 
         return subspace
 
     @property
     def project_name(self):
-        """Name of CE project.
+        """Name of the CE project.
 
         Can be specified in options. If not specified, will
-        generate an unique random UUID.
+        be named with a random UUID.
         Return:
             str
         """
@@ -419,17 +252,17 @@ class InputsHandler(MSONable):
             Dict.
 
         Included keys:
-            cutoffs(dict):
-                Cutoffs used to initialize cluster subspace.
-            basis_type(str):
-                Basis to use for this cluster expansion project.
-                Default to indicator.
-            matcher_kwargs(dict):
-                Keyword arguments to pass into cluster subspace's
-                structure matchers. Default to empty.
-            ewald_kwargs(dict):
-                Keyword arguments to pass into cluster subspace's
-                EwaldTerm, if it has one. Default to empty.
+        cutoffs(dict):
+            Cutoffs used to initialize cluster subspace.
+        basis_type(str):
+            Basis to use for this cluster expansion project.
+            Default to indicator.
+        matcher_kwargs(dict):
+            Keyword arguments to pass into cluster subspace's
+            structure matchers. Default to empty.
+        ewald_kwargs(dict):
+            Keyword arguments to pass into cluster subspace's
+            EwaldTerm, if it has one. Default to empty.
         """
         # Auto-generate cutoffs from neighbor distances.
         cutoffs = self._options.get('cutoffs')
@@ -446,8 +279,9 @@ class InputsHandler(MSONable):
                                     self.prim.lattice.c]))
             d_nn = min(d_nns)
 
-            # Empirical values from DRX, not necessarily good for all.
-            cutoffs = {2: d_nn * 4.0, 3: d_nn * 2.0, 4: d_nn * 2.0}
+            # Empirical values from DRX (744), not necessarily good for all.
+            # It is highly recommended setting your own.
+            cutoffs = {2: d_nn * 3.5, 3: d_nn * 2.0, 4: d_nn * 2.0}
 
         return {'cutoffs': cutoffs,
                 'basis_type': self._options.get('basis_type', 'indicator'),
@@ -455,10 +289,9 @@ class InputsHandler(MSONable):
                 'ewald_kwargs': self._options.get('ewald_kwargs', {})
                 }
 
-    # TODO: More generic comp_restriction?
     @property
-    def enumerator_options(self):
-        """Get enumerator options.
+    def supercell_enumerator_options(self):
+        """Get supercell enumerator options.
 
         Return:
             Dict.
@@ -472,7 +305,7 @@ class InputsHandler(MSONable):
         objective_sc_size(int):
             The Supercel sizes (in number of prims) to approach.
             Default to 32. Enumerated super-cell size will be
-            a multiple of det(T) but the most close to this objective
+            a multiple of det(T) but the closest one to this objective
             size.
         max_sc_cond(float):
             Maximum conditional number of the supercell lattice matrix.
@@ -483,43 +316,7 @@ class InputsHandler(MSONable):
         sc_mats(List[3*3 ArrayLike[int]]):
             Supercell matrices. Will not enumerate super-cells if this
             is given. Default to None.
-        comp_restrictions(List[dict]|dict):
-            Restriction to enumerated concentrations of species.
-            Given in the form of a single dict
-                {Species: (min atomic percentage in structure,
-                           max atomic percentage in structure)}
-            or in list of dicts, each constrains a sub-lattice:
-               [{Species: (min atomic percentage in sub-lattice,
-                           max atomic percentage in sub-lattice)},
-                ...]
-            Note: Species are saved as their __str__().
-        comp_enumeration_step (int):
-            Spacing of enumerated compositions under sc_size, such
-            that compositions will be enumerated as:
-                comp_space.get_comp_grid(sc_size=
-                sc_size // comp_enumeration_step).
-            Default to det(transmat), but not always recommended.
-        struct_to_comp_ratio (int|Dict):
-            This gives the ratio between number of structures
-            enumerated per iteration, and number of compositions
-            enumerated. If an int given, will use the same value
-            at iteration 0 ("init") and following iterations ("add").
-            If in dict form, please give:
-                {"init": ..., "add": ...}
-            Default to: {"init": 4, "add": 2}
-            It is not guaranteed that in an iteration, number of added
-            structures equals to ratio * number of compositions, because
-            selected structures may duplicate with existing ones thus
-            not inserted.
-        sample_generator_args(Dict):
-            kwargs to pass into CanonicalSampleGenerator.
-        select_method(str):
-            Structure selection method. Default is 'leverage'.
-            Allowed options are: 'leverage' and 'random'.
         """
-        det = int(round(abs(np.linalg.det(self.transmat))))
-        comp_restriction = \
-            self.parse_comp_restriction(self._options.get('comp_restriction', {}))
         return {'supercell_from_conventional':
                 self._options.get('supercell_from_conventional', True),
                 'objective_sc_size': self._options.get('objective_sc_size', 32),
@@ -527,8 +324,6 @@ class InputsHandler(MSONable):
                 'min_sc_angle': self._options.get('min_sc_angle', 30),
                 'sc_mats': self._options.get('sc_mats'),
                 # If sc_mats is given, will overwrite matrices enumeration.
-                'comp_restriction': comp_restriction,
-                'comp_enumeration_step': self._options.get('comp_enumeration_step', det),
                 'structs_to_comp_ratio': self._options.get('structs_to_comp_ratio',
                                                            {"init": 4, "add": 2}),
                 'sample_generator_args':
@@ -537,43 +332,208 @@ class InputsHandler(MSONable):
                 }
 
     @property
-    def vasp_options(self):
-        """Get structural relaxation job options.
+    def composition_enumerator_options(self):
+        """Get composition enumerator options.
+
+        Return:
+            Dict.
+
+        Included keys:
+        species_concentration_constraints(List[dict]|dict):
+            Restriction to concentrations of species in enumerated
+            structures.
+            Given in the form of a single dict
+                {Species: (min atomic percentage in structure,
+                           max atomic percentage in structure)}
+            or in list of dicts, each constrains a sub-lattice:
+               [{Species: (min atomic percentage in sub-lattice,
+                           max atomic percentage in sub-lattice)},
+                ...]
+            If values in dict are provided as a single float,
+            Note: Species are saved as their __str__ method output.
+            This will have some restriction on the allowed properties,
+            but we have to bear with it until pymatgen is updated.
+        eq_constraints(List[tuple(list[dict]|dict, float)]):
+            Composition constraints with the form as: 1 N_A + 2 N_B = 3,
+            etc. The number of species and the right side of the equation
+            are normalized per primitive cell.
+            Each constraint equation is given as a tupe.
+            The dict (or list[dict]) encodes the left side of the equation.
+            each key is a species or species string, while each value is
+            the factor of the corresponding species in the constraint
+            equation. If given as a list of dictionaries, each dictionary in the
+            list specifically constrains the number of species on its corresponding
+            sub-lattice. The float in the tuple encodes the right side of
+            the equation. Refer to documentation of utils.comp_constraint_utils.
+            For example, if a system contains A and B on sub-lattice 1, B and
+            C on sub-lattice 2. If a constraint is given as:
+            ({"A": 1, "B": 1, "C": 1}, 3), then the corresponding constraint
+            equation should be:
+                1 * N_A_sub1 + 1 * (N_B_sub1 + N_B_sub2) + 1 * N_C_sub2 == 3
+            If the constraints is given as:
+            ([{"A": 1, "B": 1}, {"B": 2, "C": 1}], 3), then the equation should be:
+               1 * N_A_sub1 + 1 * N_B_sub1 + 2 *N_B_sub2 + 1 * N_C_sub2 == 3.
+        leq_constraints(List[tuple(list[dict]|dict, float)]):
+            Composition constraints with the form as: 1 N_A + 2 N_B <= 3.
+            Dict format same as eq_constraints.
+        geq_constraints(List[tuple(list[dict]|dict, float)]):
+            Composition constraints with the form as: 1 N_A + 2 N_B >= 3.
+            Dict format same as eq_constraints.
+        All constraints will be parsed into a CompSpace readable format.
+        comp_enumeration_step (int): optional
+            Skip step in returning the enumerated compositions.
+            If step > 1, on each dimension of the composition space,
+            we will only yield one composition in every N compositions.
+            Default to 1.
+        """
+        return {"comp_enumeration_step":
+                self._options.get("comp_enumeration_step", 1),
+                "species_concentration_constraints":
+                self._options.get("species_concentration_constraints", []),
+                "eq_constraints":
+                self._options.get("eq_constraints", []),
+                "leq_constraints":
+                self._options.get("leq_constraints", []),
+                "geq_constraints":
+                self._options.get("geq_constraints", []),
+                }
+
+    @property
+    def parsed_constraints(self):
+        """Parsed constraints from enumerator options.
+
+        Return:
+            list(tuple(arrayLike, float)):
+               Equality constraints, then leq and geq constraints,
+               in the smol readable format.
+        """
+        leqs_species, geqs_species\
+            = parse_species_constraints(self.composition_enumerator_options
+                                        ["species_concentration_constraints"],
+                                        self.bits, self.sublattice_sizes)
+        eqs = [parse_generic_constraint(d, r, self.bits)
+               for d, r in
+               self.composition_enumerator_options["eq_constraints"]]
+        leqs = [parse_generic_constraint(d, r, self.bits)
+                for d, r in
+                self.composition_enumerator_options["leq_constraints"]]
+        geqs = [parse_generic_constraint(d, r, self.bits)
+                for d, r in
+                self.composition_enumerator_options["geq_constraints"]]
+
+        return eqs, leqs + leqs_species, geqs + geqs_species
+
+    @property
+    def structure_enumerator_options(self):
+        """Get structures enumerator options.
+
+        Returns:
+            dict.
+        Included keys:
+        num_structs_per_iter (int|tuple(int)):
+            Number of new structures to enumerate per iteration.
+            If given in a single int, will add the same amount of
+            structures in any iteration.
+            If given in a tuple of two ints, will add the amount of
+            the first int in the first iteration (pool initialization),
+            then the amount of the second int in the following
+            iterations.
+            It is recommended that, in each iteration, at least 2~3
+            structures are added for each composition.
+            Default is (50, 30).
+        sample_generator_kwargs(Dict):
+            kwargs of CanonicalSampleGenerator.
+        init_method(str):
+            Structure selection method in the first iteration.
+            Default is "CUR". Allowed options include: "CUR" and
+            "random".
+        add_method(str):
+            Structure selection method in subsequent iterations.
+            Default is 'leverage'. Allowed options are: 'leverage'
+            and 'random'.
+        """
+        return {"num_structs_per_iter":
+                self._options.get("num_structs_per_iter", (50, 30)),
+                "sample_generator_kwargs":
+                self._options.get("sample_generator_kwargs", {}),
+                "init_method":
+                self._options.get("init_method", "CUR"),
+                "add_method":
+                self._options.get("add_method", "CUR")}
+
+    @property
+    def calculation_options(self):
+        """Get the vasp calculation options.
 
         Returns:
             dict.
 
         Included keys:
-        writer_strain(3*3 ArrayLike or 1D ArrayLike[float] of 3):
-            Strain to apply in before relaxation.
-            Default is [1.05, 1.03, 1.01], meaning 5%, 3% and 1% stretch
-            along a, b, and c axis. This is set to
-            break enforced symmetry before relaxation.
-            You can turn it off by specifying [1, 1, 1].
-        is_metal(bool):
-            Whether this system is a metal or not. Default to False.
-            Determines whether to use MPRelaxSet or MPMetalRelaxSet.
-        pmg_set_setting(dict): optional
-            Additional arguments to pass into a pymatgen set.
-            Refer to documentation of pymatgen.io.sets.
+        apply_strain(3*3 ArrayLike or 1D ArrayLike[float] of 3):
+            Strain matrix to apply to the structure before relaxation,
+            in order to break structural symmetry of forces.
+            Default is [1.03, 1.02, 1.01], which means to
+            stretch the structure by 3%, 2% and 1% along a, b, and c
+            directions, respectively.
+        relax_generator_kwargs(dict):
+            Additional arguments to pass into an atomate2
+            VaspInputGenerator
+            that is used to initialize RelaxMaker.
+        relax_maker_kwargs(dict):
+            Additional arguments to pass into an atomate2
+            RelaxMaker.
+        add_tight_relax(bool):
+            Whether to add a tight relaxation job after a coarse
+            relaxation. Default to True.
+            You may want to disable this if your system has
+            difficulty converging forces or energies.
+        tight_generator_kwargs(dict):
+            Additional arguments to pass into an atomate2
+            VaspInputGenerator
+            that is used to initialize TightRelaxMaker.
+        tight_maker_kwargs(dict):
+            Additional arguments to pass into an atomate2
+            TightRelaxMaker. A tight relax is performed after
+            relaxation, if add_tight_relax is True.
+       static_generator_kwargs(dict):
+            Additional arguments to pass into an atomate2
+            VaspInputGenerator
+            that is used to initialize StaticMaker.
+        static_maker_kwargs(dict):
+            Additional arguments to pass into an atomate2
+            StaticMaker.
+        Refer to the atomate2 documentation for more information.
+        Note: the default vasp sets in atomate 2 are not specifically
+        chosen for specific systems. Using your own vasp set input
+        settings is highly recommended!
         """
         writer_strain = \
-            self._options.get('writer_strain',
-                              [1.05, 1.03, 1.01])
+            self._options.get('apply_strain',
+                              [1.03, 1.02, 1.01])
         writer_strain = np.array(writer_strain)
         if len(writer_strain.shape) == 1:
-            assert writer_strain.shape == (3,)
             writer_strain = np.diag(writer_strain)
-        elif len(writer_strain.shape) == 2:
-            assert writer_strain.shape == (3, 3)
-        else:
+
+        if writer_strain.shape != (3, 3):
             raise ValueError("Provided strain format is wrong. "
                              "Must be either 3*3 arraylike or "
-                             "length 3 arraylike!")
+                             "an 1d arraylike of length 3!")
 
-        return {'writer_strain': writer_strain.tolist(),
-                'is_metal': self._options.get('is_metal', False),
-                'pmg_set_setting': self._options.get('pmg_set_setting', {})
+        return {"apply_strain": writer_strain.tolist(),
+                "relax_generator_kwargs":
+                self._options.get("relax_generator_kwargs", {}),
+                "relax_maker_kwargs":
+                self._options.get("relax_maker_kwargs", {}),
+                "add_tight_relax":
+                self._options.get("add_tight_relax", True),
+                "tight_generator_kwargs":
+                self._options.get("tight_generator_kwargs", {}),
+                "tight_maker_kwargs":
+                self._options.get("tight_maker_kwargs", {}),
+                "static_generator_kwargs":
+                self._options.get("static_generator_kwargs", {}),
+                "static_maker_kwargs":
+                self._options.get("static_maker_kwargs", {}),
                 }
 
     @property
@@ -590,49 +550,55 @@ class InputsHandler(MSONable):
         decorator_types(list(str)): optional
             Name of decorators to use for each property. If None, will
             choose the first one in valid_decorators.
-        decorator_args(List[dict]): optional
+        decorator_kwargs(List[dict]): optional
             Arguments to pass into each decorator. See documentation of
             each decorator in species_decorator module.
         """
-
         # Update these pre-processing rules when necessary,
         # if you have new decorators implemented.
-        def contains_transition_metal(s):
-            for species in s.composition.keys():
-                if (not isinstance(species, (DummySpecies, Vacancy))
-                        and species.is_transition_metal):
-                    return True
-            return False
 
         decorated_properties = self._options.get('decorated_properties', [])
         decorator_types = self._options.get('decorator_types', [])
-        decorator_args = self._options.get('decorator_args', [])
+        decorator_args = self._options.get('decorator_kwargs', [])
         if self.is_charged_ce and len(decorated_properties) == 0:
             decorated_properties.append("oxi_state")
-            if contains_transition_metal(self.prim):
-                warnings.warn(f"Primitive cell: {self.prim}\n contains "
-                              "transition metal, but we will apply the default "
-                              "charge decorator based on pymatgen charge "
-                              "guesses. Be sure you know what you are doing!")
-        assert (len(decorator_types) == 0 or
-                (len(decorator_types) == len(decorated_properties)
-                 and all(tp in self.valid_decorator_types[prop]
-                         for tp, prop in zip(decorator_types,
-                                             decorated_properties))))
-        assert (len(decorator_args) == 0 or
-                len(decorator_args) == len(decorated_properties))
-        if len(decorator_types) == 0:
-            decorator_types = [self.valid_decorator_types[prop][0]
-                               for prop in decorated_properties]
-
+        if not len(decorator_types) == len(decorated_properties):
+            raise ValueError("Number of properties to decorate does not"
+                             " match the number of decorators. Be sure to use"
+                             " only 1 decorator per property!")
+        for tp, prop in zip(decorator_types, decorated_properties):
+            if prop not in allowed_decorators:
+                raise ValueError(f"Property {prop} does not have any implemented"
+                                 f" decorator!")
+            if tp not in allowed_decorators[prop]:
+                raise ValueError(f"Decorator {tp} is not implemented for"
+                                 f" property {prop}!")
+        if (len(decorator_args) > 0 and
+                len(decorator_args) != len(decorated_properties)):
+            raise ValueError("Number of provided kwargs must be the same as"
+                             " the number of decorated properties!")
         if len(decorator_args) == 0:
             decorator_args = [{} for _ in decorated_properties]
 
+        if (len(decorator_types) > 0 and
+                len(decorator_types) != len(decorated_properties)):
+            raise ValueError("Number of provided decorators must be the same as"
+                             " the number of decorated properties!")
+        if len(decorator_types) == 0:
+            warnings.warn(f"No decorator specified for properties"
+                          f" {decorated_properties}. The first allowed"
+                          f" decorator for each property will be selected"
+                          f" based on dictionary order. Use this at your"
+                          f" own risk!")
+            decorator_types = [sorted(allowed_decorators[prop])[0]
+                               for prop in decorated_properties]
+
         return {'decorated_properties': decorated_properties,
                 'decorator_types': decorator_types,
-                'decorator_args': decorator_args
+                'decorator_kwargs': decorator_args
                 }
 
+# TODO: communicate with sparse-lm team to make estimators easier to import.
     @property
     def fitting_options(self):
         """Get fitting options.
@@ -641,61 +607,95 @@ class InputsHandler(MSONable):
             Dict.
 
         Included keys:
-        regression_flavor(str):
-            Choose regularization method from theorytoolkits. Default to
-            'lasso'.
-        weights_flavor(str):
+        estimator_type(str):
+            The name of an estimator class from sparce-lm. Default to
+            'L2L0'.
+        weighting_scheme(str):
             Weighting scheme to use. All available weighting schemes include
             "e_above_composition", "e_above_hull" and "unweighted" (default).
             See documentation for smol.cofe.wrangling.tool.
         use_hierarchy(str):
             Whether to use hierarchy in regularization fitting, when
-            regression flavor is one of mixedL0.
-            Default to True.
-        fit_optimizer_kwargs(dict):
-            Keyword arguments to pass into FitOptimizer class. See documentation
-            of FitOptimizer.
+            regression type is mixedL0. Default to True.
+        estimator_kwargs(dict):
+            Other keyword arguments to pass in when constructing an
+            estimator. See sparselm.models
+        optimizer_type(str):
+            The name of optimizer class used to optimize model hyper parameters
+            over cross validation. Default is None. Supports "grid-search" and
+            "line-search" optimizers. See sparselm.optimizer.
+        optimizer_kwargs(dict):
+            Keyword arguments when constructing GridSearch or LineSearch class.
+            See sparselm.optimizer.
+        fit_kwargs(dict):
+            Keyword arguments when calling GridSearch/LineSearch/Estimator.fit.
+            See sparselm.
         """
-        return {'regression_flavor': self._options.get('regression_flavor',
-                                                       'lasso'),
-                'weights_flavor': self._options.get('weights_flavor',
-                                                    'unweighted'),
+        return {'estimator_type':
+                self._options.get('estimator_type', 'L2L0'),
+                'weighting_scheme':
+                self._options.get('weighting_scheme', 'unweighted'),
                 'use_hierarchy': self._options.get('use_hierarchy', True),
-                'fit_optimizer_kwargs': self._options.get('fit_optimizer_kwargs',
-                                                          {})
+                "estimator_kwargs":
+                self._options.get("estimator_kwargs", {}),
+                'optimizer_type':
+                self._options.get('optimizer_type', None),
+                'optimizer_kwargs':
+                self._options.get('optimizer_kwargs', {}),
+                'fit_kwargs':
+                self._options.get('fit_kwargs', {}),
                 }
 
     @property
     def convergence_options(self):
-        """Get convergence criteria settings.
+        """Get convergence criterion.
 
         Returns:
             dict.
 
         Included keys:
         cv_atol(float): optional
-            Maximum allowed value of the CV. Unit in meV per site.
+            Maximum allowed CV value. Unit in meV per site.
             (not eV per atom because some CE may contain Vacancies.)
-            Default to 5 meV/site.
-        cv_var_rtol(float): optional
-            Maximum allowed square root variance of CV from 3
-            parallel random validations, divided by CV value.
+            Default to 5 meV/site, but setting it manually is highly
+            recommended!
+        cv_std_rtol(float): optional
+            Maximum allowed standard deviation of CV from parallel validations,
+            divided by mean CV value.
             This is another measure of model variance.
-            Dimensionless, default to 1/3.
+            Dimensionless, default to 1/2.
         delta_cv_rtol(float): optional
-            Maximum CV difference between the latest 2 iterations,
-            divided by the variance of CV value in the last iteration.
-            Dimensionless, default to 1.
+            Maximum allowed  absolute difference of CV between the latest
+            2 iterations, divided by the standard deviation of CV.
+            Dimensionless, default to 1. (CV can not change more than 1
+            standard deviation).
+        delta_eci_rtol(float): optional
+            Maximum allowed mangnitude of change in ECIs, measured by:
+                ||J_1 - J_0||_1 | / || J_1 ||_1. (L1-norms)
+            Dimensionless, default to 0.3.
         delta_min_e_rtol(float): optional
-            Tolerance of change to minimum energy under every composition
-            between the last 2 iterations, divided by the value of CV.
-            Dimensionless, default set to 1.
+            Maximum allowed change to the predicted minimum CE and DFT energy
+            under every composition between the last 2 iterations, divided by
+            the value of CV. Dimensionless, default set to 1.
+        continue_on_new_gs_structure(bool): optional
+            If true, whenever a new ground-state structure is detected (
+            can not be matched by StructureMatcher), the CE iteration will
+            continue even if all other criterion are satisfied.
+            Default to False because this may significantly increase the
+            number of required iterations.
         """
-        return {'cv_atol': self._options.get('cv_atol', 5),
-                'cv_var_rtol': self._options.get('cv_var_rtol', 1 / 3),
-                'delta_cv_rtol': self._options.get('delta_cv_rtol', 1),
-                'delta_min_e_rtol': self._options.get('delta_min_e_rtol',
-                                                      1)
+        return {'cv_atol':
+                self._options.get('cv_atol', 5),
+                'cv_std_rtol':
+                self._options.get('cv_var_rtol', 1 / 2),
+                'delta_cv_rtol':
+                self._options.get('delta_cv_rtol', 1),
+                'delta_min_e_rtol':
+                self._options.get('delta_min_e_rtol', 1),
+                "delta_eci_rtol":
+                self._options.get('delta_eci_rtol', 1),
+                "continue_on_new_gs_structure":
+                    self._options.get('continue_on_new_gs_structure', False)
                 }
 
     def _process_options(self):
@@ -703,7 +703,10 @@ class InputsHandler(MSONable):
         all_options = [{"project_name": self.project_name},
                        self.space_group_options,
                        self.cluster_space_options,
-                       self.enumerator_options,
+                       self.supercell_enumerator_options,
+                       self.composition_enumerator_options,
+                       self.structure_enumerator_options,
+                       self.calculation_options,
                        self.decorating_options,
                        self.fitting_options,
                        self.convergence_options]
@@ -801,8 +804,8 @@ class CeHistoryHandler(MSONable):
               Cluster subspace used in CE.
             history(List[dict]): optional
               A list of dict storing all past history info for CE models
-              each iteration. Dict must contain a key "coefs".
-              Currently, only supports expansion on energy.
+              each iteration. Dict must contain at least the key "coefs".
+              Currently, only stores the expansion on energy.
         """
         if history is None:
             history = []
@@ -849,13 +852,13 @@ class CeHistoryHandler(MSONable):
 
         return coefs
 
-    def get_attribute(self, name="cv", iter_id=-1):
+    def get_attribute(self, name, iter_id=-1):
         """Get any other historical attributes.
 
         If none exist, will return np.inf to block convergence.
         Args:
             name(str):
-                Name of attribute to get. Can be "cv"
+                Name of attribute to get. For example, can be "cv".
             iter_id(int):
                 Iteration index to get CE with. Default to -1.
         Returns:

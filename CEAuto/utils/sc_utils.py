@@ -4,11 +4,13 @@ __author__ = "Fengyu Xie"
 Utility functions to enumerate supercell matrices.
 """
 import numpy as np
-import random
 from sympy import factorint
-from itertools import permutations, product
+from itertools import permutations, product, chain
+import warnings
 
 from pymatgen.core import Lattice
+from pymatgen.analysis.structure_matcher import StructureMatcher, \
+    OrderDisorderElementComparator
 
 
 def get_three_factors(n):
@@ -25,6 +27,7 @@ def get_three_factors(n):
         All 3 factor decompositions:
             List[tuple(int)]
     """
+
     def enumerate_three_summations(c):
         # Yield all (x, y, z) that x + y + z = c.
         three_nums = set([])
@@ -84,49 +87,59 @@ def is_proper_sc(sc_matrix, lat, max_cond=8, min_angle=30):
             min(angles) >= min_angle)
 
 
-def get_aliases(sc_matrix, cluster_subspace):
-    """Aliased correlation functions in a super-cell.
-
-    Given a cluster space, the more alias a super-cell produce, the less
-    favorable the super-cell matrix is. In real cases, since we can only
-    compute limited size super-cell, we can not always guarantee that
-    a super-cell matrix does not create any alias, but we would always
-    like to minimize the number of aliases.
-    This along with the proper-ness check, are two criterion of choosing
-    the optimal super-cell matrices.
-    Note: alias check requires smol >= 0.0.5.
+def is_duplicate_sc(m1, m2, prim, matcher=None):
+    """Gives whether two super-cell matrices give identical super-cell.
 
     Args:
-        sc_matrix(3 * 3 ArrayLike):
-            The super-cell matrix.
-        cluster_subspace(smol.cofe.ClusterSubSpace):
-            The cluster subspace object, containing all clusters to expand.
+        m1(3*3 ArrayLike[int]):
+            Supercell matrices to compare.
+        m2(3*3 ArrayLike[int]):
+            Supercell matrices to compare.
+        prim(pymatgen.Structure):
+            Primitive cell object.
+        matcher(pymatgen.StructureMatcher): optional
+            A StructureMatcher.
     Returns:
-        list[(int, int)]:
-            Indices of aliased correlation function pairs. The first key is
-            always given as smaller than the second.
+        bool.
     """
-    # TODO: write get_aliases.
+    m1 = np.round(m1).astype(int)
+    m2 = np.round(m2).astype(int)
+    matcher = matcher or StructureMatcher(
+        primitive_cell=False,
+        attempt_supercell=True,
+        allow_subset=True,
+        comparator=OrderDisorderElementComparator(),
+        scale=True
+    )
+    s1 = prim.copy()
+    s2 = prim.copy()
+    s1.make_supercell(m1)
+    s2.make_supercell(m2)
+    return matcher.fit(s1, s2)
 
 
-def enumerate_matrices(det, cluster_subspace,
-                       conv_mat=np.eye(3, dtype=int),
+# TODO: in the future, may generate with mcsqs type algos.
+def enumerate_matrices(sc_size, cluster_subspace,
+                       conv_mat=None,
                        max_sc_cond=8,
                        min_sc_angle=30):
     """Enumerate proper matrices with det size.
 
-    Will give 1 unskewed matrix and up to 3 skewed matrices.
-    We add skewed matrices to avoid symmtric duplicacy of clusters.
+    Will give 1 unskewed matrix and 1 skewed matrix.
+    Skewed matrix usually helps to avoid aliasing of clusters.
 
     Args:
-        det(int):
-            Required determinant size of enumerated supercell
-            matrices. Must be multiple of det(transmat).
-        lat(pymatgen.Lattice):
-            Lattice vectors of a primitive cell
-        transmat(2D arraylike):
-            pre-transformation matrix before returning result,
-            such that we return MT instead of enumerated M.
+        sc_size(int):
+            Required supercell size in number of primitive cells.
+            Better be a multiple of det(conv_mat).
+        cluster_subspace(smol.ClusterSubspace):
+            The cluster subspace. cluster_subspace.structure must
+            be pre-processed such that it is the true primitive cell
+            in under its space group symmetry.
+        conv_mat(2D arraylike):
+            pre-transformation matrix to convert the primitive cell to
+            the conventional. The returned results will always be divisible
+            by conv_mat. (conv_mat @ some_integer_matrix = result.)
         max_sc_cond(float):
             Maximum conditional number allowed of the skewed supercell
             matrices. By default set to 8, to prevent overstretching in one
@@ -137,29 +150,82 @@ def enumerate_matrices(det, cluster_subspace,
     Returns:
         List of 2D lists.
     """
-    trans_size = int(round(abs(np.linalg.det(transmat))))
-    if det % trans_size != 0:
-        raise ValueError("Supercell size must be divisible by " +
-                         "transformation matrix determinant!")
-    scs_diagonal = [np.diag(m) for m in get_three_factors(det // trans_size)]
+    if conv_mat is None:
+        conv_mat = np.eye(3, dtype=int)
+    conv_mat = np.round(conv_mat).astype(int)
+    conv_size = cluster_subspace.num_prims_from_matrix(conv_mat)
+    if sc_size % conv_size != 0:
+        warnings.warn(f"Supercell size: {sc_size} to enumerate is not "
+                      "divisible by primitive to conventional matrix"
+                      f" size {conv_size}."
+                      f" Will be rounded to {sc_size // conv_size * conv_size}!")
+        sc_size = sc_size // conv_size * conv_size
 
-    scs_diagonal = [sc for sc in scs_diagonal
-                    if is_proper_sc(np.dot(sc, transmat),
-                                    lat,
-                                    max_cond=max_sc_cond,
-                                    min_angle=min_sc_angle)]
+    scs_diagonal = [np.diag(sorted(m, reverse=True))
+                    for m in get_three_factors(sc_size // conv_size)]
 
-    # Take the diagonal matrix with minimal conditional number.
-    sc_diagonal = sorted(scs_diagonal, key=lambda x: np.linalg.cond(x))[0]
-    n1 = sc_diagonal[0][0]
-    n2 = sc_diagonal[1][1]
-    n3 = sc_diagonal[2][2]
-    # n1 > n2 > n3, already sorted in get_diag_matrices.
-    sc_off = sc_diagonal.copy()
+    def get_skews(m, conv, space):
+        # Get skews of a matrix. only upper-triangular used.
+        skews = []
+        margin = m[0, 0]
+        n_range = sorted({0, 1, margin // 2, margin})
+        for i in n_range:
+            for j in n_range:
+                for k in n_range:
+                    if i * j * k == 0:
+                        continue
+                    skewed = m.copy()
+                    skewed[0, 1] = i
+                    skewed[0, 2] = k
+                    skewed[1, 2] = j
+                    dupe = False
+                    for m_old in skews:
+                        if is_duplicate_sc(m_old @ conv,
+                                           skewed @ conv,
+                                           space.structure,
+                                           space._sc_matcher):
+                            dupe = True
+                            break
+                    if not dupe:
+                        skews.append(skewed)
+        return skews
 
-    # TODO: change this to check number of aliased clusters in
-    #  ClusterSubspace and sort to find the one with least aliases.
-    sc_off[0][1] = random.choice(np.arange(1, n1 + 1, dtype=int))
+    scs_skew = list(chain(*[get_skews(sc, conv_mat, cluster_subspace)
+                            for sc in scs_diagonal]))
+
+    # filter out bad matrices.
+    lat = cluster_subspace.structure.lattice
+
+    def cond_and_angle(sc):
+        new_mat = np.dot(sc, lat.matrix)
+        new_lat = Lattice(new_mat)
+        return (np.linalg.cond(sc),
+                min([new_lat.alpha, new_lat.beta, new_lat.gamma,
+                     180 - new_lat.alpha, 180 - new_lat.beta,
+                     180 - new_lat.gamma]))
+
+    def filt_func_(sc):
+        cond, angle = cond_and_angle(sc @ conv_mat)
+        return cond <= max_sc_cond and angle >= min_sc_angle
+
+    scs_diagonal = list(filter(filt_func_, scs_diagonal))
+    scs_skew = list(filter(filt_func_, scs_skew))
+
+    def alias_level(sc):
+        return len(list(chain(*cluster_subspace.get_aliasd_orbits(sc))))
+
+    # Sort diagonal by low stretch, then low alias level.
+    def diagonal_sort_key(sc):
+        cond, angle = cond_and_angle(sc)
+        return cond, alias_level(sc)
+
+    # Sort diagonal by low stretch, then low alias level.
+    def skew_sort_key(sc):
+        cond, angle = cond_and_angle(sc)
+        return alias_level(sc), -angle, cond
+
+    scs_diagonal = sorted(scs_diagonal, key=diagonal_sort_key)
+    scs_skew = sorted(scs_skew, key=skew_sort_key)
 
     # Select 1 diagonal, 1 off diagonal.
-    return [sc_diagonal @ transmat, sc_off @ transmat]
+    return scs_diagonal[0], scs_skew[0]

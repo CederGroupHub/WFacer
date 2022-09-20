@@ -94,7 +94,7 @@ class MagneticChargeDecorator(GpOptimizedDecorator):
     Is a sub-class of GPOptimizedDecorator.
     """
     decorated_prop_name = "oxi_state"
-    required_prop_name = "sites_magmom_total"
+    required_prop_names = ["magmom"]
 
     def __init__(self, labels, cuts=None,
                  max_allowed_abs_charge=0):
