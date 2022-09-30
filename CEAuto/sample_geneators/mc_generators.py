@@ -6,7 +6,7 @@ from monty.json import MSONable
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
-from smol.moca import CanonicalEnsemble, Sampler
+from smol.moca import Ensemble, Sampler
 from smol.utils import derived_class_factory, class_name_from_str
 
 __author__ = "Fengyu Xie"
@@ -18,13 +18,13 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
     Provides unfreeze sampling, and saving of previously generated
     samples for the purpose of de-duplicating.
     """
-    default_anneal_series = [5000, 3200, 1600, 800, 400, 100]
+    default_anneal_series = [5000, 3200, 1600, 1000, 800, 600, 400, 200, 100]
     default_unfreeze_series = [500, 1500, 5000]
 
     def __init__(self, ce, sc_mat,
                  anneal_series=None,
                  unfreeze_series=None,
-                 n_steps_sa=50000,
+                 n_steps_anneal=50000,
                  n_steps_unfreeze=100000,
                  max_n_samples_per_iter=100,
                  past_occus=None,
@@ -42,7 +42,7 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
             unfreeze_series(List[float]): optional
                 A series of increasing temperatures to sample on.
                 Must be mono-increasing
-            n_steps_sa(int): optional
+            n_steps_anneal(int): optional
                 Number of steps to run per simulated annealing temperature.
             n_steps_unfreeze(int): optional
                 Number of steps to run per unfreeze temperature.
@@ -66,7 +66,7 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
 
         self.anneal_series = anneal_series or self.default_anneal_series
         self.unfreeze_series = unfreeze_series or self.default_unfreeze_series
-        self.n_steps_sa = n_steps_sa
+        self.n_steps_anneal = n_steps_anneal
         self.n_steps_unfreeze = n_steps_unfreeze
         self.max_n_samples_per_iter = max_n_samples_per_iter
 

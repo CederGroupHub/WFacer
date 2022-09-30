@@ -65,13 +65,6 @@ def construct_prim(bits, sublattice_sites, lattice, frac_coords):
 
     return Structure(lattice, site_comps, frac_coords)
 
-# TODO:
-#  3, write supercell and composition enumeration into Enumerator; (2 sc matrices.)
-#  4, integrate cluster-subspace trimming into Enumerator.
-#  5, don't forget to include an "add_composition" or "add_supercell" there.
-#  6, after all these, finish enumerator as it that calls MCenumeration procedure;
-#  7, after all these stuff, finish featurizer, then think about writing firetasks, dynamic WFs.
-
 
 class InputsHandler(MSONable):
     """Wraps options into formats required to init other modules.
@@ -156,8 +149,7 @@ class InputsHandler(MSONable):
             List[List[Specie]]
         """
         if self._bits is None:
-            # The sub-lattice orderings here might be different
-            # from smol.processor.
+            # Now will have the same order as in processor
             unique_spaces = sorted(set(get_site_spaces(self.prim)))
 
             # Same order as smol.moca.Sublattice
@@ -173,8 +165,7 @@ class InputsHandler(MSONable):
             List[List[int]]
         """
         if self._sublattice_sites is None:
-            # The sub-lattice orderings here might be different
-            # from smol.processor.
+            # Now will have the same order as in processor
             unique_spaces = sorted(set(get_site_spaces(self.prim)))
             allowed_species = get_allowed_species(self.prim)
             # Ordering between species in a sub-lattice is fixed.
@@ -228,7 +219,7 @@ class InputsHandler(MSONable):
 
         if self.is_charged_ce:
             subspace.add_external_term(EwaldTerm(**self.cluster_space_options
-                                       ["ewald_kwargs"]))
+            ["ewald_kwargs"]))
 
         return subspace
 
@@ -307,10 +298,16 @@ class InputsHandler(MSONable):
             Default to 32. Enumerated super-cell size will be
             a multiple of det(T) but the closest one to this objective
             size.
+            Note: since super-cell matrices with too high a conditional
+            number will be dropped, do not use a super-cell size whose
+            decompose to 3 integer factors are different in scale.
+            For example, 17 = 1 * 1 * 17 is the only possible factor
+            decomposition for 17, whose matrix conditional number will
+            always be larger than the cut-off (8).
         max_sc_cond(float):
             Maximum conditional number of the supercell lattice matrix.
             Default to 8, prevent overly slender super-cells.
-        max_sc_angle(float):
+        min_sc_angle(float):
             Minimum allowed angle of the supercell lattice.
             Default to 30, prevent overly skewed super-cells.
         sc_mats(List[3*3 ArrayLike[int]]):
@@ -324,11 +321,6 @@ class InputsHandler(MSONable):
                 'min_sc_angle': self._options.get('min_sc_angle', 30),
                 'sc_mats': self._options.get('sc_mats'),
                 # If sc_mats is given, will overwrite matrices enumeration.
-                'structs_to_comp_ratio': self._options.get('structs_to_comp_ratio',
-                                                           {"init": 4, "add": 2}),
-                'sample_generator_args':
-                    self._options.get('sample_generator_args', {}),
-                'select_method': self._options.get('select_method', 'leverage')
                 }
 
     @property
@@ -385,6 +377,10 @@ class InputsHandler(MSONable):
             If step > 1, on each dimension of the composition space,
             we will only yield one composition in every N compositions.
             Default to 1.
+        compositions (2D arrayLike[int]): optional
+            Fixed compositions with which to enumerate the structures. If
+            given, will not enumerate other compositions.
+            Should be provided in the "n"-format of
         """
         return {"comp_enumeration_step":
                 self._options.get("comp_enumeration_step", 1),
@@ -407,7 +403,7 @@ class InputsHandler(MSONable):
                Equality constraints, then leq and geq constraints,
                in the smol readable format.
         """
-        leqs_species, geqs_species\
+        leqs_species, geqs_species \
             = parse_species_constraints(self.composition_enumerator_options
                                         ["species_concentration_constraints"],
                                         self.bits, self.sublattice_sizes)
@@ -438,7 +434,7 @@ class InputsHandler(MSONable):
             the first int in the first iteration (pool initialization),
             then the amount of the second int in the following
             iterations.
-            It is recommended that, in each iteration, at least 2~3
+            It is recommended that in each iteration, at least 2~3
             structures are added for each composition.
             Default is (50, 30).
         sample_generator_kwargs(Dict):
@@ -451,6 +447,9 @@ class InputsHandler(MSONable):
             Structure selection method in subsequent iterations.
             Default is 'leverage'. Allowed options are: 'leverage'
             and 'random'.
+        keep_ground_states(bool):
+            Whether to keep new ground states in the training set.
+            Default to True.
         """
         return {"num_structs_per_iter":
                 self._options.get("num_structs_per_iter", (50, 30)),
@@ -459,7 +458,9 @@ class InputsHandler(MSONable):
                 "init_method":
                 self._options.get("init_method", "CUR"),
                 "add_method":
-                self._options.get("add_method", "CUR")}
+                self._options.get("add_method", "CUR"),
+                "keep_ground_states":
+                self._options.get("keep_ground_states", True)}
 
     @property
     def calculation_options(self):
@@ -521,19 +522,19 @@ class InputsHandler(MSONable):
 
         return {"apply_strain": writer_strain.tolist(),
                 "relax_generator_kwargs":
-                self._options.get("relax_generator_kwargs", {}),
+                    self._options.get("relax_generator_kwargs", {}),
                 "relax_maker_kwargs":
-                self._options.get("relax_maker_kwargs", {}),
+                    self._options.get("relax_maker_kwargs", {}),
                 "add_tight_relax":
-                self._options.get("add_tight_relax", True),
+                    self._options.get("add_tight_relax", True),
                 "tight_generator_kwargs":
-                self._options.get("tight_generator_kwargs", {}),
+                    self._options.get("tight_generator_kwargs", {}),
                 "tight_maker_kwargs":
-                self._options.get("tight_maker_kwargs", {}),
+                    self._options.get("tight_maker_kwargs", {}),
                 "static_generator_kwargs":
-                self._options.get("static_generator_kwargs", {}),
+                    self._options.get("static_generator_kwargs", {}),
                 "static_maker_kwargs":
-                self._options.get("static_maker_kwargs", {}),
+                    self._options.get("static_maker_kwargs", {}),
                 }
 
     @property
@@ -598,7 +599,7 @@ class InputsHandler(MSONable):
                 'decorator_kwargs': decorator_args
                 }
 
-# TODO: communicate with sparse-lm team to make estimators easier to import.
+    # TODO: communicate with sparse-lm team to make estimators easier to import.
     @property
     def fitting_options(self):
         """Get fitting options.
@@ -632,18 +633,18 @@ class InputsHandler(MSONable):
             See sparselm.
         """
         return {'estimator_type':
-                self._options.get('estimator_type', 'L2L0'),
+                    self._options.get('estimator_type', 'L2L0'),
                 'weighting_scheme':
-                self._options.get('weighting_scheme', 'unweighted'),
+                    self._options.get('weighting_scheme', 'unweighted'),
                 'use_hierarchy': self._options.get('use_hierarchy', True),
                 "estimator_kwargs":
-                self._options.get("estimator_kwargs", {}),
+                    self._options.get("estimator_kwargs", {}),
                 'optimizer_type':
-                self._options.get('optimizer_type', None),
+                    self._options.get('optimizer_type', None),
                 'optimizer_kwargs':
-                self._options.get('optimizer_kwargs', {}),
+                    self._options.get('optimizer_kwargs', {}),
                 'fit_kwargs':
-                self._options.get('fit_kwargs', {}),
+                    self._options.get('fit_kwargs', {}),
                 }
 
     @property
@@ -685,15 +686,15 @@ class InputsHandler(MSONable):
             number of required iterations.
         """
         return {'cv_atol':
-                self._options.get('cv_atol', 5),
+                    self._options.get('cv_atol', 5),
                 'cv_std_rtol':
-                self._options.get('cv_var_rtol', 1 / 2),
+                    self._options.get('cv_var_rtol', 1 / 2),
                 'delta_cv_rtol':
-                self._options.get('delta_cv_rtol', 1),
+                    self._options.get('delta_cv_rtol', 1),
                 'delta_min_e_rtol':
-                self._options.get('delta_min_e_rtol', 1),
+                    self._options.get('delta_min_e_rtol', 1),
                 "delta_eci_rtol":
-                self._options.get('delta_eci_rtol', 1),
+                    self._options.get('delta_eci_rtol', 1),
                 "continue_on_new_gs_structure":
                     self._options.get('continue_on_new_gs_structure', False)
                 }

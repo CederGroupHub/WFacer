@@ -172,7 +172,7 @@ def enumerate_matrices(sc_size, cluster_subspace,
         for i in n_range:
             for j in n_range:
                 for k in n_range:
-                    if i * j * k == 0:
+                    if i == 0 and j == 0 and k == 0:
                         continue
                     skewed = m.copy()
                     skewed[0, 1] = i
@@ -216,16 +216,16 @@ def enumerate_matrices(sc_size, cluster_subspace,
 
     # Sort diagonal by low stretch, then low alias level.
     def diagonal_sort_key(sc):
-        cond, angle = cond_and_angle(sc)
-        return cond, alias_level(sc)
+        cond, angle = cond_and_angle(sc @ conv_mat)
+        return cond, alias_level(sc @ conv_mat)
 
     # Sort diagonal by low stretch, then low alias level.
     def skew_sort_key(sc):
-        cond, angle = cond_and_angle(sc)
-        return alias_level(sc), -angle, cond
+        cond, angle = cond_and_angle(sc @ conv_mat)
+        return alias_level(sc @ conv_mat), -angle, cond
 
     scs_diagonal = sorted(scs_diagonal, key=diagonal_sort_key)
     scs_skew = sorted(scs_skew, key=skew_sort_key)
 
     # Select 1 diagonal, 1 off diagonal.
-    return scs_diagonal[0], scs_skew[0]
+    return scs_diagonal[0] @ conv_mat, scs_skew[0] @ conv_mat

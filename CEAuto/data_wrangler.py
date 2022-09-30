@@ -116,7 +116,7 @@ class CeDataWrangler(StructureWrangler):
         Returns:
             ComputedStructureEntry: entry with CE pertinent properties
         """
-        processed_entry = super(CEDataWrangler, self)\
+        processed_entry = super(CeDataWrangler, self)\
             .process_entry(entry, properties, weights,
                            supercell_matrix, site_mapping,
                            verbose, raise_failed)

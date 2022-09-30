@@ -1,1 +1,17 @@
 Must test with smol-cnsgmc, sparce-lm
+
+Devop plan as per week 9/20/22
+1, Inspect sample generators;
+2, Finish structure enumerator;
+3, Add helper function in data_wrangler to parse
+   atomate2 taskdoc into ComputedStructureEntry;
+4, Another data storage wrangler to store all past
+   generated structures (not necessarily successful
+   training data.)
+5, Write fitter class.
+6, Writer convergence checker class.
+
+Next week:
+1, write separate task makers according to atomate2;
+2, write dynamic workflow maker.
+3, begin production tests.

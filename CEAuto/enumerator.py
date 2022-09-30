@@ -1,4 +1,4 @@
-__author__="Fengyu Xie"
+__author__ = "Fengyu Xie"
 
 """
 This module implements a StructureEnumerator class for CE sampling.
@@ -11,23 +11,25 @@ module.
 """
 
 import logging
-log = logging.getLogger(__name__)
 
 import random
 import numpy as np
-import pandas as pd
 import multiprocessing as mp
 from itertools import product, chain
 from functools import partial
 import time
 
-from .utils.sc_utils import enumerate_matrices
-from .utils.math_utils import select_rows
-from .utils.comp_utils import (check_comp_restriction,
-                               get_Noccus_of_compstat)
+from monty.json import MSONable
+from smol.moca import CompSpace
+from smol.cofe import ClusterSubspace
 
-from .sample_geneators import CanonicalmcHandler
-from .comp_space import CompSpace
+from .utils.sc_utils import enumerate_matrices
+from .utils.select_utils import select_initial_rows, select_added_rows
+
+from .sample_geneators import CanonicalSampleGenerator
+
+
+log = logging.getLogger(__name__)
 
 
 def raw_sample_under_sc_comp(ce, handler_args, sc_mat_and_compstat):
@@ -60,11 +62,282 @@ def raw_sample_under_sc_comp(ce, handler_args, sc_mat_and_compstat):
     return handler.get_unfreeze_sample(), tot_noccus
 
 
+class SupercellMatrixEnumerator(MSONable):
+    """Supercell matrix enumeration."""
+
+    def __init__(self, cluster_space,
+                 conv_mat=None,
+                 supercell_from_conventional=True,
+                 objective_sc_size=32,
+                 max_sc_cond=8,
+                 min_sc_angle=30,
+                 sc_mats=None):
+        """Initialize SupercellMatrixEnumerator.
+
+        Args:
+            cluster_space(ClusterSubspace):
+                An un-trimmed ClusterSubspace as generated in
+                InputsHandler.
+            conv_mat(3*3 ArrayLike):
+                Conventional matrix from a primitive cell to
+                a conventional cell. Default to None.
+            supercell_from_conventional(bool):
+                Whether to find out primitive cell to conventional
+                standard structure transformation matrix T, and enumerate
+                super-cell matrices in the form of: M = M'T.
+                Default to true. If not, will set T to eye(3).
+            objective_sc_size(int):
+                The Supercel sizes (in number of prims) to approach.
+                Default to 32. Enumerated super-cell size will be
+                a multiple of det(T) but the closest one to this objective
+                size.
+                Note: since super-cell matrices with too high a conditional
+                number will be dropped, do not use a super-cell size whose
+                decompose to 3 integer factors are different in scale.
+                For example, 17 = 1 * 1 * 17 is the only possible factor
+                decomposition for 17, whose matrix conditional number will
+                always be larger than the cut-off (8).
+            max_sc_cond(float):
+                Maximum conditional number of the supercell lattice matrix.
+                Default to 8, prevent overly slender super-cells.
+            min_sc_angle(float):
+                Minimum allowed angle of the supercell lattice.
+                Default to 30, prevent overly skewed super-cells.
+            sc_mats(List[3*3 ArrayLike[int]]):
+                Supercell matrices. Will not enumerate super-cells if this
+                is given. Default to None.
+        """
+        self._cluster_space = cluster_space
+        self.supercell_from_conventional = supercell_from_conventional
+        if conv_mat is not None and supercell_from_conventional:
+            self.conv_mat = np.round(conv_mat).astype(int)
+        else:
+            self.conv_mat = np.eye(3, dtype=int)
+        self.conv_size = int(round(abs(np.linalg.det(self.conv_mat))))
+        self.sc_size = objective_sc_size // self.conv_size * self.conv_size
+        self.max_sc_cond = max_sc_cond
+        self.min_sc_angle = min_sc_angle
+        self._sc_mats = sc_mats or self._enumerate_sc_mats()
+        self._sc_mats = [np.round(m).astype(int) for m in self._sc_mats]
+
+    def _enumerate_sc_mats(self):
+        """Enumerate supercell matrices."""
+        return enumerate_matrices(self.sc_size,
+                                  self._cluster_space,
+                                  conv_mat=self.conv_mat,
+                                  max_sc_cond=self.max_sc_cond,
+                                  min_sc_angle=self.min_sc_angle)
+
+    @property
+    def supercell_matrices(self):
+        """Supercell matrices.
+
+        If enumerated, their maximum conditional number will not exceed
+        max_sc_cond, while their minimum angle will not be lower than
+        min_sc_angle. 2 optimum super-cell matrices, one diagonal, one
+        skew, will be chosen to minimize the degree of alias in
+        cluster subspace.
+        """
+        return self._sc_mats
+
+    def truncate_subspace(self):
+        """Truncate aliased orbits.
+
+        Aliased orbits with higher indices will be removed, only the orbit
+        with minimal index in alias list will be kept.
+        Only call this at the 1st iteration.
+        """
+        alias = []
+        for m in self.supercell_matrices:
+            alias_m = self._cluster_space.get_aliasd_orbits(m)
+            alias_m = {sorted(sub_orbit)[0]: set(sorted(sub_orbit)[1:])
+                       for sub_orbit in alias_m}
+            alias.append(alias_m)
+        to_remove = alias[0]
+        for alias_m in alias[1:]:
+            for key in to_remove:
+                if key in alias_m:
+                    to_remove[key] = to_remove[key].intersection(alias_m[key])
+        to_remove = list(set(chain(*to_remove)))
+        self._cluster_space.remove_orbits(to_remove)
+
+    @property
+    def cluster_subspace(self):
+        """Cluster subspace.
+
+        Will only be truncated until truncate_subspace is called.
+        """
+        return self._cluster_space
+
+    def as_dict(self):
+        """Serialize an object.
+
+        Returns:
+            dict.
+        """
+        return {
+            "cluster_space": self.cluster_subspace.as_dict(),
+            "conv_mat": self.conv_mat.tolist(),
+            "supercell_from_conventional": self.supercell_from_conventional,
+            "objective_sc_size": self.sc_size,
+            "max_sc_cond": self.max_sc_cond,
+            "min_sc_angle": self.min_sc_angle,
+            "sc_mats": [m.tolist() for m in self.supercell_matrices],
+            "@module": self.__class__.__module__,
+            "@class": self.__class__.__name__,
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        """Reload from dictionary.
+
+        Args:
+            d(dict):
+                Serialized dictionary of Enumerator.
+        Returns:
+            SupercellMatrixEnumerator.
+        """
+        d["cluster_space"] = ClusterSubspace.from_dict(d["cluster_space"])
+        if "@module" in d:
+            _ = d.pop("@module")
+        if "@class" in d:
+            _ = d.pop("@class")
+        return cls(**d)
+
+
+class CompositionEnumerator(MSONable):
+    """Composition enumeration.
+
+    Attributes:
+        compositions(np.ndarray[int]):
+            Enumerated compositions, in "n"-format of CompSpace,
+            not normalized by super-cell size.
+    """
+
+    def __init__(self, sc_size,
+                 comp_space=None,
+                 bits=None,
+                 sublattice_sizes=None,
+                 charge_balanced=True,
+                 other_constraints=None,
+                 leq_constraints=None,
+                 geq_constraints=None,
+                 comp_enumeration_step=1,
+                 compositions=None
+                 ):
+        """Initialize CompositionEnumerator.
+
+        Args:
+            sc_size(int):
+                Size of super-cell in number of prim cells.
+            comp_space(CompSpace):
+                A composition space object.
+            bits(List[List[Specie|Vacancy|Element]]): optional
+                Species on each sub-lattice.
+                Must at least give one of comp_space or bits.
+                comp_space is used as priority.
+            sublattice_sizes(1D ArrayLike[int]): optional
+                Number of sites in each sub-lattice per primitive cell.
+                If not given, assume one site for each sub-lattice.
+                Better provide them as co-prime integers.
+            charge_balanced(bool): optional
+                Whether to add charge balance constraint. Default
+                to true.
+            other_constraints(List[tuple(1D arrayLike[float], float)]): optional
+                Other equality type composition constraints except charge balance
+                and site-number conservation. Should be given in the form of
+                tuple(a, bb), each gives constraint np.dot(a, n)=bb. a and bb
+                should be in the form of per primitive cell.
+                For example, you may want to constrain n_Li + n_Vac = 0.5 per
+                primitive cell.
+            leq_constraints(List[tuple(1D arrayLike[float], float)]): optional
+                Constraint np.dot(a, n)<=bb. a and bb should be in the form of
+                per primitive cell.
+            geq_constraints(List[tuple(1D arrayLike[float], float)]): optional
+                Constraint np.dot(a, n)>=bb. a and bb should be in the form of
+                per primitive cell.
+                Both leq and geq constraints are only used when enumerating
+                compositions. Table ergodicity code will only consider equality
+                constraints, not leq and geqs.
+            comp_enumeration_step(int): optional
+                Step in returning the enumerated compositions.
+                If step = N > 1, on each dimension of the composition space,
+                we will only yield one composition every N compositions.
+                Default to 1.
+            compositions(2D ArrayLike[int]): optional
+                Enumerated compositions. If given, will not do enumeration
+                on compositions again.
+        """
+        if comp_space is None and bits is None:
+            raise ValueError("Must at least provide one of comp_space "
+                             "and bits.")
+        self._comp_space = comp_space or\
+            CompSpace(bits, sublattice_sizes,
+                      charge_balanced=charge_balanced,
+                      other_constraints=other_constraints,
+                      leq_constraints=leq_constraints,
+                      geq_constraints=geq_constraints)
+        self.step = comp_enumeration_step
+        self.sc_size = sc_size
+        self._compositions = compositions or self._enumerate_compositions()
+        self._compositions = np.round(self._compositions).astype(int)
+
+    def _enumerate_compositions(self):
+        """Enumerate compositions in n-format."""
+        xs = self._comp_space.get_comp_grid(sc_size=self.sc_size,
+                                            step=self.step)
+        ns = [self._comp_space.translate_format(x, self.sc_size,
+                                                from_format="x",
+                                                to_format="n",
+                                                rounding=True)
+              for x in xs]
+        return np.array(ns).astype(int)
+
+    @property
+    def compositions(self):
+        """Enumerated compositions."""
+        return self._compositions
+
+    def as_dict(self):
+        """Serialize an object.
+
+        Returns:
+            dict.
+        """
+        return {
+            "comp_space": self._comp_space.as_dict(),
+            "step": self.step,
+            "sc_size": self.sc_size,
+            "compositions": self._compositions.tolist(),
+            "@module": self.__class__.__module__,
+            "@class": self.__class__.__name__,
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        """Reload from dictionary.
+
+        Args:
+            d(dict):
+                Serialized dictionary of Enumerator.
+        Returns:
+            CompositionEnumerator.
+        """
+        d["comp_space"] = CompSpace.from_dict(d["comp_space"])
+        if "@module" in d:
+            _ = d.pop("@module")
+        if "@class" in d:
+            _ = d.pop("@class")
+        return cls(**d)
+
+
+# TODO: finish StructureEnumerator.
 class StructureEnumerator:
     """Structure enumeration class."""
+
     def __init__(self, data_manager, history_wrapper):
 
-        """Initialization.
+        """Initialize StructureEnumerator.
 
         Args:
             data_manager(DataManager):
@@ -80,38 +353,37 @@ class StructureEnumerator:
         self.sublat_list = self.inputs_wrapper.sublat_list
         self.sl_sizes = self.inputs_wrapper.sl_sizes
         self.is_charged_ce = self.inputs_wrapper.is_charged_ce
-           
+
         self.transmat = self.inputs_wrapper.enumerator_options['transmat']
         sc_size = self.inputs_wrapper.enumerator_options['sc_size']
         self.sc_size = sc_size
 
         self.max_sc_cond = (self.inputs_wrapper.
-                            enumerator_options['max_sc_cond'])
+            enumerator_options['max_sc_cond'])
         self.min_sc_angle = (self.inputs_wrapper.
-                             enumerator_options['min_sc_angle'])
+            enumerator_options['min_sc_angle'])
 
         # TODO: improve compspace to allow more sophisticated composition
         # constraints. (Smol edit work, not for here now.)
         self.comp_restrictions = (self.inputs_wrapper.
-                                  enumerator_options['comp_restrictions'])
+            enumerator_options['comp_restrictions'])
         self.comp_enumstep = (self.inputs_wrapper.
-                              enumerator_options['comp_enumstep'])
+            enumerator_options['comp_enumstep'])
         self.select_method = (self.inputs_wrapper.
-                              enumerator_options['select_method'])
+            enumerator_options['select_method'])
         self.n_strs_per_comp_init = (self.inputs_wrapper.
-                                     enumerator_options['n_strs_per_comp_init'])
+            enumerator_options['n_strs_per_comp_init'])
         self.n_strs_per_comp_add = (self.inputs_wrapper.
-                                    enumerator_options['n_strs_per_comp_add'])
+            enumerator_options['n_strs_per_comp_add'])
 
         self.handler_args = (self.inputs_wrapper.
-                             enumerator_options['handler_args_enum'])
+            enumerator_options['handler_args_enum'])
 
         self.ce = history_wrapper.last_ce
 
         if self.sc_size % self.comp_enumstep != 0:
             raise ValueError("Composition enumeration step can not" +
                              "divide supercell size {}.".format(self.sc_size))
-
 
     @property
     def n_strs(self):
@@ -186,7 +458,7 @@ class StructureEnumerator:
                 Supercell matrices to insert
         """
         for m in matrices:
-            if isinstance(m,np.ndarray):
+            if isinstance(m, np.ndarray):
                 m = m.tolist()
             _ = self._dm.insert_one_supercell(m)
 
@@ -217,7 +489,7 @@ class StructureEnumerator:
         Return:
             List of enumerated compositions by sublattice.
         """
-        if len(self.comp_df)>0:
+        if len(self.comp_df) > 0:
             log.warning("Attempt to set composition after 1st cycle. " +
                         "Do this at your own risk!")
             return
@@ -237,8 +509,8 @@ class StructureEnumerator:
             ucoords = self.compspace.frac_grids(sc_size=
                                                 scs // self.comp_enumstep)
             comps = (self.compspace.frac_grids(
-                     sc_size=scs // self.comp_enumstep,
-                     form='composition'))
+                sc_size=scs // self.comp_enumstep,
+                form='composition'))
 
             log.critical("****Enumerated {} compositions under matrix size {}."
                          .format(len(ucoords), scs))
@@ -298,8 +570,8 @@ class StructureEnumerator:
         all_sc_comps = []
         all_sc_comp_ids = []
         for (sc_id, mat), (comp_id, cstat) in \
-            product(zip(sc_df.sc_id, sc_df.matrix),
-                    zip(comp_df.comp_id, comp_df.cstat)):
+                product(zip(sc_df.sc_id, sc_df.matrix),
+                        zip(comp_df.comp_id, comp_df.cstat)):
             scs = int(round(abs(np.linalg.det(mat))))
             ucoords = np.array(list(chain(*[sl[: -1] for sl in cstat])))
             if np.allclose(ucoords, np.round(ucoords * scs) / scs, atol=1E-4):
@@ -323,7 +595,7 @@ class StructureEnumerator:
             n_strs_per_comp = self.n_strs_per_comp_add
 
         all_occus, weights = list(zip(*all_occus_n))
-        weights = np.array(weights)/np.max(weights)
+        weights = np.array(weights) / np.max(weights)
         W = np.sum(weights)
         N_pool = max(n_strs_per_comp * len(weights) * 3,
                      sum([len(occus) for occus in all_occus]))
@@ -335,7 +607,7 @@ class StructureEnumerator:
         if weight_by_comp:
             if keep_gs:
                 all_occus_filt = [[occus[0]] +
-                                   random.sample(occus[1:], n-1)
+                                  random.sample(occus[1:], n - 1)
                                   for occus, n in
                                   zip(all_occus, n_selects)]
             else:
@@ -347,7 +619,7 @@ class StructureEnumerator:
 
         log.info("**Deduplicating structures by pre_insertion.")
         inserted_eids = []  # List of ints
-        is_gs = []   # List of booleans
+        is_gs = []  # List of booleans
 
         dm_copy = self._dm.copy()
         for (sc_id, comp_id), occus in zip(all_sc_comp_ids, all_occus_filt):
@@ -395,14 +667,14 @@ class StructureEnumerator:
         log.critical("**Added {}/{} new structures. Time: {} s."
                      .format(len(selected_rids), len(femat),
                              time.time() - time_init)
-                    )
+                     )
 
         # Remove unselected entree.
-        dm_copy.remove_entree_by_id(unselected_eids) 
+        dm_copy.remove_entree_by_id(unselected_eids)
 
         # Update to real DataManager.
         self._dm = dm_copy.copy()
- 
+
         filt_ = (self.fact_df.iter_id == iter_id)
         return self.fact_df.loc[filt_, :]
 
