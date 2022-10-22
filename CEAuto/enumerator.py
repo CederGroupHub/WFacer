@@ -20,11 +20,11 @@ from functools import partial
 import time
 
 from monty.json import MSONable
-from smol.moca import CompSpace
+from smol.moca import CompositionSpace
 from smol.cofe import ClusterSubspace
 
-from .utils.sc_utils import enumerate_matrices
-from .utils.select_utils import select_initial_rows, select_added_rows
+from .utils.supercells import enumerate_matrices
+from .utils.select_methods import select_initial_rows, select_added_rows
 
 from .sample_geneators import CanonicalSampleGenerator
 

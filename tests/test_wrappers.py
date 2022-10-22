@@ -3,7 +3,7 @@ from CEAuto.calc_writer.base import BaseWriter
 from CEAuto.calc_manager.base import BaseManager
 from CEAuto.calc_reader.base import BaseReader
 from CEAuto.config_paths import *
-from CEAuto.utils.format_utils import merge_dicts
+from CEAuto.utils.formats import merge_dicts
 
 import pytest
 import numpy as np

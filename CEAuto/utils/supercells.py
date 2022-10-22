@@ -1,8 +1,7 @@
+"""Utility functions to enumerate supercell matrices."""
+
 __author__ = "Fengyu Xie"
 
-"""
-Utility functions to enumerate supercell matrices.
-"""
 import numpy as np
 from sympy import factorint
 from itertools import permutations, product, chain

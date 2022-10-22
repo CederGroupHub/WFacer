@@ -9,7 +9,7 @@ import os
 import uuid
 
 from monty.json import MSONable, MontyDecoder, MontyEncoder
-from pymatgen.core import Structure, Lattice, Composition, DummySpecies
+from pymatgen.core import Structure, Lattice, Composition
 from pymatgen.core.periodic_table import Element
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
@@ -19,9 +19,9 @@ from smol.cofe.space.domain import (get_site_spaces, Vacancy,
 
 from smol.cofe.extern import EwaldTerm  # Currently, only allow EwaldTerm.
 
-from .utils.format_utils import merge_dicts
-from .utils.comp_constraint_utils import (parse_species_constraints,
-                                          parse_generic_constraint)
+from .utils.formats import merge_dicts
+from .utils.comp_constraints import (parse_species_constraints,
+                                     parse_generic_constraint)
 from .config_paths import (INPUTS_FILE, OPTIONS_FILE, PRIM_FILE,
                            HISTORY_FILE)
 from .specie_decorators import allowed_decorators
@@ -304,23 +304,24 @@ class InputsHandler(MSONable):
             For example, 17 = 1 * 1 * 17 is the only possible factor
             decomposition for 17, whose matrix conditional number will
             always be larger than the cut-off (8).
-        max_sc_cond(float):
+        max_sc_condition_number(float):
             Maximum conditional number of the supercell lattice matrix.
             Default to 8, prevent overly slender super-cells.
         min_sc_angle(float):
             Minimum allowed angle of the supercell lattice.
             Default to 30, prevent overly skewed super-cells.
-        sc_mats(List[3*3 ArrayLike[int]]):
+        sc_matrices(List[3*3 ArrayLike[int]]):
             Supercell matrices. Will not enumerate super-cells if this
             is given. Default to None.
         """
         return {'supercell_from_conventional':
                 self._options.get('supercell_from_conventional', True),
                 'objective_sc_size': self._options.get('objective_sc_size', 32),
-                'max_sc_cond': self._options.get('max_sc_cond', 8),
+                'max_sc_condition_number':
+                    self._options.get('max_sc_condition_number', 8),
                 'min_sc_angle': self._options.get('min_sc_angle', 30),
-                'sc_mats': self._options.get('sc_mats'),
-                # If sc_mats is given, will overwrite matrices enumeration.
+                'sc_matrices': self._options.get('sc_matrices'),
+                # If sc_matrices is given, will overwrite matrices enumeration.
                 }
 
     @property

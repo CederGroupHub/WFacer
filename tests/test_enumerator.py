@@ -1,7 +1,7 @@
 from CEAuto import StructureEnumerator, DataManager
 from CEAuto.time_keeper import TimeKeeper
 from CEAuto.utils.frame_utils import load_dataframes
-from CEAuto.utils.sc_utils import is_proper_sc
+from CEAuto.utils.supercells import is_proper_sc
 from CEAuto.utils.comp_utils import check_comp_restriction
 from CEAuto.utils.occu_utils import structure_from_occu
 
