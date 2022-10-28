@@ -1,1 +1,2 @@
 pytest
+atomate >= 1.0.3

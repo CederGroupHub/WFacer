@@ -1,4 +1,4 @@
-"""Wrappers to load options and history files."""
+"""All preprocessing needed before initializing Makers."""
 
 __author__ = "Fengyu Xie"
 
@@ -6,7 +6,6 @@ import itertools
 import numpy as np
 import json
 import os
-import uuid
 
 from monty.json import MSONable, MontyDecoder, MontyEncoder
 from pymatgen.core import Structure, Lattice, Composition
@@ -16,8 +15,6 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from smol.cofe import ClusterSubspace
 from smol.cofe.space.domain import (get_site_spaces, Vacancy,
                                     get_allowed_species)
-
-from smol.cofe.extern import EwaldTerm  # Currently, only allow EwaldTerm.
 
 from .utils.formats import merge_dicts
 from .utils.comp_constraints import (parse_species_constraints,
@@ -66,6 +63,96 @@ def construct_prim(bits, sublattice_sites, lattice, frac_coords):
     return Structure(lattice, site_comps, frac_coords)
 
 
+def reduce_prim(prim, **kwargs):
+    """Reduce primitive cell to make it real primitive.
+
+    Args:
+        prim(Structure):
+            A primitive cell with partial occupancy to be expanded.
+        kwargs:
+            Keyword arguments for SpacegroupAnalyzer.
+    Returns:
+        Structure
+    """
+    sa = SpacegroupAnalyzer(prim, **kwargs)
+    # TODO: maybe we can re-define site_properties transformation
+    #  in the future.
+    return sa.find_primitive(keep_site_properties=True)
+
+
+def get_prim_specs(prim, **kwargs):
+    """Get specs of a primitive cell.
+
+    Args:
+        prim(Structure):
+            Primitive cell with partial occupancy to expand.
+        kwargs:
+            Keyword arguments for SpacegroupAnalyzer.
+    Returns:
+        dict:
+           spec dict containing bits, sub-lattice sites,
+           sub-lattice sizes, and more.
+    """
+    prim = reduce_prim(prim, **kwargs)
+    unique_spaces = sorted(set(get_site_spaces(prim)))
+
+    # Same order as smol.moca.Sublattice in processor.
+    # Ordering between species in a sub-lattice is fixed.
+    bits = [list(space.keys()) for space in unique_spaces]
+    allowed_species = get_allowed_species(prim)
+    sublattice_sites = [[i for i, sp in enumerate(allowed_species)
+                         if sp == list(space.keys())]
+                        for space in unique_spaces]
+    sublattice_sizes = [len(sites) for sites in sublattice_sites]
+
+    charge_decorated = False
+    for sp in itertools.chain(*bits):
+        if (not isinstance(sp, (Vacancy, Element)) and
+                sp.oxi_state != 0):
+            charge_decorated = True
+            break
+
+    d_nns = []
+    for i, site1 in enumerate(prim):
+        d_ij = []
+        for j, site2 in enumerate(prim):
+            if j > i:
+                d_ij.append(site1.distance(site2))
+        d_nns.append(min(d_ij
+                         + [prim.lattice.a,
+                            prim.lattice.b,
+                            prim.lattice.c]))
+    d_nn = min(d_nns)
+    # Empirical cutoffs from DRX (744, pair=3.5d, triplet=2d, quad=2d),
+    # not necessarily good for all. It is highly recommended setting your own.
+
+    return {
+            "prim": prim,
+            "bits": bits,
+            "sublattice_sites": sublattice_sites,
+            "sublattice_sizes": sublattice_sizes,
+            "charge_decorated": charge_decorated,
+            "nearest_neighbor_distance": d_nn,
+           }
+
+
+def get_initial_ce_coefficients(cluster_subspace):
+    """Initialize null ce coefficients.
+
+    Any coefficient, except those for external terms, will be initialized to 0.
+    This guarantees that for ionic systems, structures with lower ewald energy
+    are always selected first.
+    Args:
+        cluster_subspace(ClusterSubspace):
+            The initial cluster subspace.
+    Returns:
+        np.ndarray[float].
+    """
+    return np.array([0 for _ in range(cluster_subspace.num_corr_functions)]+
+                    [1 for _ in range(len(cluster_subspace.external_terms))])
+
+
+# TODO: This class to be removed.
 class InputsHandler(MSONable):
     """Wraps options into formats required to init other modules.
 
@@ -97,13 +184,6 @@ class InputsHandler(MSONable):
         self._bits = None
         self._sublattice_sites = None
 
-    def _process_prim(self):
-        """Make primitive cell the real primitive."""
-        sa = SpacegroupAnalyzer(self._prim, **self.space_group_options)
-        # TODO: maybe we can re-define site_properties transformation
-        #  in the future.
-        self._prim = sa.find_primitive(keep_site_properties=True)
-
     @property
     def prim(self):
         """Primitive cell (pre-processed).
@@ -112,50 +192,6 @@ class InputsHandler(MSONable):
             Structure
         """
         return self._prim
-
-    @property
-    def prim_to_conv_transmat(self):
-        """Matrix to transform primitive cell to a conventional cell.
-
-        If "supercell_from_conventional" set to True, will enumerate super-cell
-        matrices in the form of transmat @ enumerated_integer_matrix to preserve
-        some conventional cell symmetry.
-        Returns:
-            np.ndarray[int]
-        """
-        sa = SpacegroupAnalyzer(self.prim, **self.space_group_options)
-        t_inv = sa.get_conventional_to_primitive_transformation_matrix()
-        return np.round(np.linalg.inv(t_inv)).astype(int)
-
-    @property
-    def space_group_options(self):
-        """Options to pre-process the primitive cell.
-
-        Refer to kwargs of pymatgen's SpaceGroupAnalyzer.
-        Returns:
-            dict
-
-        Included keys:
-            prim_symmetry_precision(float):
-                precision to pass.
-        """
-        return self._options.get("space_group_kwargs", {})
-
-    @property
-    def bits(self):
-        """List of species on each sublattice.
-
-        Returns:
-            List[List[Specie]]
-        """
-        if self._bits is None:
-            # Now will have the same order as in processor
-            unique_spaces = sorted(set(get_site_spaces(self.prim)))
-
-            # Same order as smol.moca.Sublattice
-            self._bits = [list(space.keys()) for space in unique_spaces]
-
-        return self._bits
 
     @property
     def sublattice_sites(self):
@@ -184,101 +220,7 @@ class InputsHandler(MSONable):
         Returns:
             List[int]
         """
-        return [len(s) for s in self.sublattice_sites]
-
-    @property
-    def is_charged_ce(self):
-        """Check whether the charge decoration is needed.
-
-        If yes, will include EwaldTerm, and add charge decorators.
-        Returns:
-            bool.
-        """
-        is_charged_ce = False
-        for sp in itertools.chain(*self.bits):
-            if (not isinstance(sp, (Vacancy, Element)) and
-                    sp.oxi_state != 0):
-                is_charged_ce = True
-                break
-        return is_charged_ce
-
-    def get_cluster_subspace(self):
-        """Cluster subspace.
-
-        If none provided, will be intialized from cutoffs.
-        This cluster subspace is not yet trimmed for aliasing!
-        Returns:
-            ClusterSubspace.
-        """
-        subspace = (ClusterSubspace.
-                    from_cutoffs(self.prim,
-                                 self.cluster_space_options['cutoffs'],
-                                 basis=self.cluster_space_options['basis_type'],
-                                 **self.cluster_space_options['matcher_kwargs'])
-                    )
-
-        if self.is_charged_ce:
-            subspace.add_external_term(EwaldTerm(**self.cluster_space_options
-            ["ewald_kwargs"]))
-
-        return subspace
-
-    @property
-    def project_name(self):
-        """Name of the CE project.
-
-        Can be specified in options. If not specified, will
-        be named with a random UUID.
-        Return:
-            str
-        """
-        return self._options.get('project_name',
-                                 "ce-project-" + str(uuid.uuid4()))
-
-    @property
-    def cluster_space_options(self):
-        """ClusterSubspace options.
-
-        Returns:
-            Dict.
-
-        Included keys:
-        cutoffs(dict):
-            Cutoffs used to initialize cluster subspace.
-        basis_type(str):
-            Basis to use for this cluster expansion project.
-            Default to indicator.
-        matcher_kwargs(dict):
-            Keyword arguments to pass into cluster subspace's
-            structure matchers. Default to empty.
-        ewald_kwargs(dict):
-            Keyword arguments to pass into cluster subspace's
-            EwaldTerm, if it has one. Default to empty.
-        """
-        # Auto-generate cutoffs from neighbor distances.
-        cutoffs = self._options.get('cutoffs')
-        if cutoffs is None:
-            d_nns = []
-            for i, site1 in enumerate(self.prim):
-                d_ij = []
-                for j, site2 in enumerate(self.prim):
-                    if j > i:
-                        d_ij.append(site1.distance(site2))
-                d_nns.append(min(d_ij
-                                 + [self.prim.lattice.a,
-                                    self.prim.lattice.b,
-                                    self.prim.lattice.c]))
-            d_nn = min(d_nns)
-
-            # Empirical values from DRX (744), not necessarily good for all.
-            # It is highly recommended setting your own.
-            cutoffs = {2: d_nn * 3.5, 3: d_nn * 2.0, 4: d_nn * 2.0}
-
-        return {'cutoffs': cutoffs,
-                'basis_type': self._options.get('basis_type', 'indicator'),
-                'matcher_kwargs': self._options.get('matcher_kwargs', {}),
-                'ewald_kwargs': self._options.get('ewald_kwargs', {})
-                }
+        return [len(s) for s in self.sublattice_sites
 
     @property
     def supercell_enumerator_options(self):
@@ -304,6 +246,8 @@ class InputsHandler(MSONable):
             For example, 17 = 1 * 1 * 17 is the only possible factor
             decomposition for 17, whose matrix conditional number will
             always be larger than the cut-off (8).
+            Currently, we only support enumerating super-cells with the
+            same size.
         max_sc_condition_number(float):
             Maximum conditional number of the supercell lattice matrix.
             Default to 8, prevent overly slender super-cells.
@@ -788,146 +732,3 @@ class InputsHandler(MSONable):
         """Automatically save data into a json file."""
         with open(INPUTS_FILE, 'w') as fout:
             json.dump(self.as_dict(), fout, cls=MontyEncoder)
-
-
-class CeHistoryHandler(MSONable):
-    """History management.
-
-    This class stores multiple all the past fitting results.
-    Does not store past feature matrices. Matrices are stored in
-    DataWrangler.
-    """
-
-    def __init__(self, cluster_subspace, history=None):
-        """Initialize HistoryWrapper.
-
-        Args:
-            cluster_subspace(ClusterSubspace):
-              Cluster subspace used in CE.
-            history(List[dict]): optional
-              A list of dict storing all past history info for CE models
-              each iteration. Dict must contain at least the key "coefs".
-              Currently, only stores the expansion on energy.
-        """
-        if history is None:
-            history = []
-        self._history = history
-        self._subspace = cluster_subspace
-
-    @property
-    def history(self):
-        """History Dict."""
-        return self._history
-
-    @property
-    def cluster_subspace(self):
-        """Cluster subspace."""
-        return self._subspace
-
-    @property
-    def existing_attributes(self):
-        """All available attributes in history (besides coefs)."""
-        return set(key for record in self.history for key in record)
-
-    def get_coefs(self, iter_id=-1):
-        """Get the cluster expansion coefficients n iterations ago.
-
-        If none exist, will initialize a dummy CE, with all
-        external terms with coef 1, and cluster terms with coef 0.
-        Args:
-            iter_id(int):
-                Iteration index to get CE with. Default to -1.
-        Returns:
-            CE coefficients as described in smol.expansion:
-                np.ndarray
-        """
-        if len(self.history) == 0:
-            warnings.warn("No cluster expansion generated before, "
-                          "returning a dummy CE instead.")
-
-            coefs = np.zeros(self.cluster_subspace.num_corr_functions +
-                             len(self.cluster_subspace.external_terms))
-            if len(self.cluster_subspace.external_terms) > 0:
-                coefs[-len(self.cluster_subspace.external_terms):] = 1.0
-        else:
-            coefs = np.array(self.history[iter_id]['coefs'])
-
-        return coefs
-
-    def get_attribute(self, name, iter_id=-1):
-        """Get any other historical attributes.
-
-        If none exist, will return np.inf to block convergence.
-        Args:
-            name(str):
-                Name of attribute to get. For example, can be "cv".
-            iter_id(int):
-                Iteration index to get CE with. Default to -1.
-        Returns:
-            float.
-        """
-        if len(self.history) == 0:
-            return np.inf
-        elif name not in self.existing_attributes:
-            raise ValueError(f"Attribute {name} not inserted yet!")
-        return self.history[iter_id][name]
-
-    def add_record(self, record):
-        """Add a record to history.
-
-        Args:
-             record(dict):
-                 Dictionary containing CE fit infos. Must at least
-                 include key "coefs".
-        """
-        if "coefs" not in record:
-            raise ValueError("CE coefficients are required for a record!")
-        for attr in record:
-            if attr not in self.existing_attributes and len(self.history) > 0:
-                warnings.warn(f"Record contains a new key: {attr} "
-                              f"not found in previous records!")
-            record[attr] = np.array(record[attr]).tolist()  # Must store list.
-        self._history.append(record)
-
-    def as_dict(self):
-        """Serialize into dict.
-
-        Returns:
-           dict.
-        """
-        return {'cluster_subspace': self.cluster_subspace.as_dict(),
-                'history': self.history,
-                '@module': self.__class__.__module__,
-                '@class': self.__class__.__name__}
-
-    @classmethod
-    def from_dict(cls, d):
-        """Initialize from dict.
-
-        Args:
-           d(Dict):
-               Dict containing serialized object.
-
-        Returns:
-           CEHistoryWrapper.
-        """
-        return cls(ClusterSubspace.from_dict(d['cluster_subspace']),
-                   d.get('history'))
-
-    def to_file(self):
-        """Automatically save object to json file."""
-        with open(HISTORY_FILE, 'w') as fout:
-            json.dump(self.as_dict(), fout, cls=MontyEncoder)
-
-    @classmethod
-    def from_file(cls):
-        """Automatically load object from json file.
-
-        Recommended way to load.
-        Returns:
-            HistoryWrapper.
-        """
-        with open(HISTORY_FILE, 'r') as fin:
-            d = json.load(fin, cls=MontyDecoder)
-
-        return cls.from_dict(d)

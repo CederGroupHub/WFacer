@@ -1,10 +1,10 @@
 Must test with smol >= 0.0.8 and sparce-lm >= 0.2.1
 
 Devop plan as per week 9/20/22
-1, Inspect sample generators;
-2, Finish structure enumerator;
+1, Re-write everything into jobflows form.
+2, Rewrite handling as functions; remove things unless absolutely necessary; crate pre-sets.
 3, Add helper function in data_wrangler to parse
-   atomate2 taskdoc into ComputedStructureEntry;
+   atomate2 taskdoc into ComputedStructureEntry; (Do we really need such a wrangler here??)
 4, Another data storage wrangler to store all past
    generated structures (not necessarily successful
    training data.)
@@ -12,6 +12,4 @@ Devop plan as per week 9/20/22
 6, Writer convergence checker class.
 
 Next week:
-1, write separate task makers according to atomate2;
-2, write dynamic workflow maker.
 3, begin production tests.

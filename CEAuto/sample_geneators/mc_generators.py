@@ -2,18 +2,17 @@
 
 import numpy as np
 from abc import ABCMeta, abstractmethod
-from monty.json import MSONable
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
+from smol.cofe import ClusterExpansion
 from smol.moca import Ensemble, Sampler, CompositionSpace
-from smol.moca.utils.occu import get_dim_ids_by_sublattice
 from smol.utils import derived_class_factory, class_name_from_str
 
 __author__ = "Fengyu Xie"
 
 
-class McSampleGenerator(MSONable, metaclass=ABCMeta):
+class McSampleGenerator(metaclass=ABCMeta):
     """Abstract monte-carlo sampler class.
 
     Allows finding the ground state, and then gradually heats up the ground state
@@ -29,8 +28,7 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
                  anneal_temp_series=None,
                  heat_temp_series=None,
                  num_steps_anneal=50000,
-                 num_steps_heat=100000,
-                 num_samples=100):
+                 num_steps_heat=100000):
         """Initialize McSampleGenerator.
 
         Args:
@@ -48,24 +46,18 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
                 Number of MC steps to run per annealing temperature step.
             num_steps_heat(int): optional
                 Number of MC steps to run per heat temperature step.
-            num_samples(int): optional
-                Maximum number of samples to draw per unfreezing
-                run. Since Structures must be de-duplicated, the actual
-                number of structures returned might be fewer than this
-                threshold.
         """
         self.ce = ce
-        self.sc_matrix = sc_matrix
+        self.sc_matrix = np.array(sc_matrix, dtype=int)
         self.sc_size = int(round(abs(np.linalg.det(sc_matrix))))
         self.prim = self.ce.cluster_subspace.structure
 
         self.anneal_temp_series = (anneal_temp_series
                                    or self.default_anneal_temp_series)
         self.heat_temp_series = (heat_temp_series
-                                or self.default_heat_temp_series)
+                                 or self.default_heat_temp_series)
         self.num_steps_anneal = num_steps_anneal
         self.num_steps_heat = num_steps_heat
-        self.num_samples = num_samples
 
         self._gs_occu = None  # Cleared per-initialization.
         self._ensemble = None
@@ -152,16 +144,33 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
 
         return self._gs_occu
 
-    def get_unfrozen_sample(self):
+    def get_ground_state_structure(self):
+        return self.processor.structure_from_occupancy(self.get_ground_state())
+
+    def get_unfrozen_sample(self,
+                            previous_sampled_structures=None,
+                            num_samples=100):
         """Generate a sample of structures by heating the ground state.
+
+        Args:
+            previous_sampled_structures(list[Structure]): optional
+                Sample structures already calculated in past
+                iterations.
+            num_samples(int): optional
+                Maximum number of samples to draw per unfreezing
+                run. Since Structures must be de-duplicated, the actual
+                number of structures returned might be fewer than this
+                threshold. Default to 100.
 
         Return:
             list[Structure]:
                 New samples structures, not including the ground-state.
         """
+        previous_sampled_structures = previous_sampled_structures or []
+
         thin_by = max(1,
                       len(self.heat_temp_series) * self.num_steps_heat
-                      // (self.num_samples * 8))
+                      // (num_samples * 8))
         # Thin so we don't have to de-duplicate too many structures.
         # Here we leave out 8 * num_samples to compare.
 
@@ -189,39 +198,25 @@ class McSampleGenerator(MSONable, metaclass=ABCMeta):
                               .tolist())
 
         # Symmetry deduplication
-        sm = StructureMatcher(primitive_cell=False,
-                              attempt_supercell=False)
+        sm = StructureMatcher()
 
         rand_strs = [self.processor.structure_from_occupancy(occu)
                      for occu in rand_occus]
         new_strs = []
         for new_id, new_str in enumerate(rand_strs):
             dupe = False
-            for old_id, old_str in enumerate(new_strs):
+            for old_id, old_str in enumerate(previous_sampled_structures
+                                             + new_strs):
                 if sm.fit(new_str, old_str):
                     dupe = True
                     break
             if not dupe:
                 new_strs.append(new_str)
 
-            if len(new_strs) == self.num_samples:
+            if len(new_strs) == num_samples:
                 break
 
         return new_strs
-
-    def as_dict(self):
-        """Serialize into dict."""
-        d = {"@module": self.__class__.__module__,
-             "@class": self.__class__.__name__,
-             "ce": self.ce.as_dict(),
-             "sc_matrix": self.sc_matrix,
-             "anneal_temp_series": self.anneal_temp_series,
-             "heat_temp_series": self.heat_temp_series,
-             "num_steps_anneal": self.num_steps_anneal,
-             "num_steps_heat": self.num_steps_heat,
-             "num_samples": self.num_samples,
-             }
-        return d
 
 
 class CanonicalSampleGenerator(McSampleGenerator):
@@ -231,8 +226,7 @@ class CanonicalSampleGenerator(McSampleGenerator):
                  anneal_temp_series=None,
                  heat_temp_series=None,
                  num_steps_anneal=50000,
-                 num_steps_heat=100000,
-                 num_samples=100):
+                 num_steps_heat=100000):
         """Initialize.
 
         Args:
@@ -254,22 +248,15 @@ class CanonicalSampleGenerator(McSampleGenerator):
                 Number of steps to run per simulated annealing temperature.
             num_steps_heat(int): optional
                 Number of steps to run per heat temperature.
-            num_samples(int): optional
-                Maximum number of samples to draw per unfreezing
-                run. Will generate as many structure candidates as possible,
-                as long as they are not symmetrically equivalent with any
-                past entries, but for each iteration will generate this
-                many new structures at most.
         """
         super(CanonicalSampleGenerator, self)\
             .__init__(ce, sc_matrix,
                       anneal_temp_series=anneal_temp_series,
                       heat_temp_series=heat_temp_series,
                       num_steps_anneal=num_steps_anneal,
-                      num_steps_heat=num_steps_heat,
-                      num_samples=num_samples)
+                      num_steps_heat=num_steps_heat)
 
-        self.counts = counts
+        self.counts = np.round(counts).astype(int)
 
     @property
     def ensemble(self):
@@ -293,8 +280,7 @@ class SemigrandSampleGenerator(McSampleGenerator):
                  anneal_temp_series=None,
                  heat_temp_series=None,
                  num_steps_anneal=50000,
-                 num_steps_heat=100000,
-                 num_samples=100):
+                 num_steps_heat=100000):
         """Initialize.
 
         Args:
@@ -315,24 +301,15 @@ class SemigrandSampleGenerator(McSampleGenerator):
                 Number of steps to run per simulated annealing temperature.
             num_steps_heat(int): optional
                 Number of steps to run per heat temperature.
-            num_samples(int): optional
-                Maximum number of samples to draw per unfreezing
-                run. Will generate as many structure candidates as possible,
-                as long as they are not symmetrically equivalent with any
-                past entries, but for each iteration will generate this
-                many new structures at most.
         """
         super(SemigrandSampleGenerator, self)\
             .__init__(ce, sc_matrix,
                       anneal_temp_series=anneal_temp_series,
                       heat_temp_series=heat_temp_series,
                       num_steps_anneal=num_steps_anneal,
-                      num_steps_heat=num_steps_heat,
-                      num_samples=num_samples)
+                      num_steps_heat=num_steps_heat)
 
         self.chemical_potentials = chemical_potentials
-        bits = [sl.species for sl in self.sublattices]
-        self._comp_space = CompositionSpace(bits, sublattice_sizes)
 
     @property
     def ensemble(self):
@@ -347,7 +324,14 @@ class SemigrandSampleGenerator(McSampleGenerator):
 
     def _get_init_occu(self):
         """Get an initial occupancy for MC run."""
-        return self._random_occu_from_counts(self.counts)
+        bits = [sl.species for sl in self.sublattices]
+        sublattice_sizes = np.array([len(sl.sites) for sl in self.sublattices])
+        supercell_size = np.gcd.reduce(sublattice_sizes)
+        sublattice_sizes = sublattice_sizes / supercell_size
+        comp_space = CompositionSpace(bits, sublattice_sizes)
+        center_counts = comp_space.get_centroid_composition(supercell_size=
+                                                            supercell_size)
+        return self._random_occu_from_counts(center_counts)
 
 
 def mcgenerator_factory(mcgenerator_name, *args, **kwargs):
