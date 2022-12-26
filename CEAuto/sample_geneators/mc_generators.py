@@ -3,11 +3,11 @@
 import numpy as np
 from abc import ABCMeta, abstractmethod
 
-from pymatgen.analysis.structure_matcher import StructureMatcher
-
 from smol.cofe import ClusterExpansion
 from smol.moca import Ensemble, Sampler, CompositionSpace
 from smol.utils import derived_class_factory, class_name_from_str
+
+from ..utils.duplicacy import is_duplicate
 
 __author__ = "Fengyu Xie"
 
@@ -170,9 +170,9 @@ class McSampleGenerator(metaclass=ABCMeta):
 
         thin_by = max(1,
                       len(self.heat_temp_series) * self.num_steps_heat
-                      // (num_samples * 8))
+                      // (num_samples * 10))
         # Thin so we don't have to de-duplicate too many structures.
-        # Here we leave out 8 * num_samples to compare.
+        # Here we leave out 10 * num_samples to compare.
 
         gs_occu = self.get_ground_state()
 
@@ -198,7 +198,6 @@ class McSampleGenerator(metaclass=ABCMeta):
                               .tolist())
 
         # Symmetry deduplication
-        sm = StructureMatcher()
 
         rand_strs = [self.processor.structure_from_occupancy(occu)
                      for occu in rand_occus]
@@ -207,7 +206,8 @@ class McSampleGenerator(metaclass=ABCMeta):
             dupe = False
             for old_id, old_str in enumerate(previous_sampled_structures
                                              + new_strs):
-                if sm.fit(new_str, old_str):
+                # Must remove decorations to avoid getting fully duplicate inputs.
+                if is_duplicate(old_str, new_str, remove_decorations=True):
                     dupe = True
                     break
             if not dupe:

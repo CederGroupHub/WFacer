@@ -2,8 +2,8 @@ pyyaml>=6.0
 monty>=2022.4.26
 numpy==1.23.4
 pymatgen==2022.11.1
-smol>=0.0.8
-sparse-lm>=0.2.0
+smol>=0.2.0
+sparse-lm==0.2.1
 sympy>=1.11.1
 jobflow==0.1.9
 atomate2>=0.0.8

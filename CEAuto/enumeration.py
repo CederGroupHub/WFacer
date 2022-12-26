@@ -14,22 +14,24 @@ import logging
 import numpy as np
 from itertools import chain
 from scipy.special import gammaln
+from copy import deepcopy
 
 from pymatgen.core import Lattice
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from pymatgen.analysis.structure_matcher import StructureMatcher
 
 from smol.moca import CompositionSpace
 from smol.cofe import ClusterSubspace
 
-from CEAuto.utils.supercells import get_three_factors, is_duplicate_sc
-from CEAuto.utils.selection import select_initial_rows, select_added_rows
-from CEAuto.sample_geneators import CanonicalSampleGenerator
+from .utils.supercells import get_three_factors, is_duplicate_sc
+from .utils.selection import select_initial_rows, select_added_rows
+from .sample_geneators import CanonicalSampleGenerator
+from .utils.duplicacy import is_duplicate
+
 
 log = logging.getLogger(__name__)
 
 
-# TODO: in the future, may generate with mcsqs type algos.
+# TODO: in the future, may employ mcsqs type algos.
 def enumerate_matrices(objective_sc_size, cluster_subspace,
                        supercell_from_conventional=True,
                        space_group_args=None,
@@ -174,15 +176,16 @@ def truncate_cluster_subspace(cluster_subspace,
         alias_m = {sorted(sub_orbit)[0]: set(sorted(sub_orbit)[1:])
                    for sub_orbit in alias_m}
         alias.append(alias_m)
-    to_remove = alias[0]
+    to_remove = deepcopy(alias[0])
     for alias_m in alias[1:]:
         for key in to_remove:
             if key in alias_m:
                 to_remove[key] = to_remove[key].intersection(alias_m[key])
-    to_remove = list(set(chain(*to_remove)))
-    log.warning(f"Orbit aliasing could not be avoided "
-                f"with given supercells: {sc_matrices}!\n"
-                f"Removed orbits with indices: {to_remove}")
+    to_remove = list(set(chain(*to_remove.values())))
+    if len(to_remove) > 0:
+        log.warning(f"Orbit aliasing could not be avoided "
+                    f"with given supercells: {sc_matrices}!\n"
+                    f"Removed orbits with indices: {to_remove}")
     cluster_subspace_new = cluster_subspace.copy()
     cluster_subspace_new.remove_orbits(to_remove)
     return cluster_subspace_new
@@ -218,6 +221,8 @@ def enumerate_counts(sc_size,
     if comp_space is None:
         comp_space = CompositionSpace(bits, sublattice_sizes,
                                       **kwargs)
+        # This object can be saved in process to avoid additional
+        # enumeration cost.
     xs = comp_space.get_composition_grid(supercell_size=sc_size,
                                          step=comp_enumeration_step)
     ns = [comp_space.translate_format(x, sc_size,
@@ -226,29 +231,6 @@ def enumerate_counts(sc_size,
                                       rounding=True)
           for x in xs]
     return np.array(ns).astype(int)
-
-
-def generate_structs_with_supercell_and_counts(ce, sc_matrix, counts, **kwargs):
-    """Job to generate structures from canonical CEMC.
-
-    Currently, adding new structure with chemical potential is not supported.
-    Args:
-        ce(ClusterExpansion):
-            A cluster expansion object.
-        sc_matrix(3*3 ArrayLike[int]):
-            A super-cell matrix.
-        counts(1D ArrayLike[int]):
-            Composition in super-cell as "counts"
-            format. See smol.moca.composition.
-        kwargs:
-            Additional arguments passed into McSampleGenerator.
-    Returns:
-        List[Structure]
-    """
-    return CanonicalSampleGenerator(ce,
-                                    sc_matrix,
-                                    counts,
-                                    **kwargs).get_unfrozen_sample()
 
 
 def get_num_structs_to_sample(all_counts, num_structs_select):
@@ -283,6 +265,7 @@ def get_num_structs_to_sample(all_counts, num_structs_select):
     return num_structs
 
 
+# Currently, only supporting canonical sample generator.
 def generate_initial_training_structures(ce, supercell_and_counts,
                                          keep_ground_states=True,
                                          num_structs_init=60,
@@ -333,11 +316,11 @@ def generate_initial_training_structures(ce, supercell_and_counts,
         generator = CanonicalSampleGenerator(ce, sc_matrix, counts,
                                              **mc_generator_args)
 
-        sm = StructureMatcher()
         gs_struct = generator.get_ground_state_structure()
         gs_dupe = False
         for old_struct in structures:
-            if sm.fit(gs_struct, old_struct):
+            # Must remove all decorations to avoid adding in exactly the same input.
+            if is_duplicate(gs_struct, old_struct, remove_decorations=True):
                 gs_dupe = True
                 break
         samples = generator.get_unfrozen_sample(previous_sampled_structures=
@@ -423,11 +406,11 @@ def generate_additive_training_structures(ce, supercell_and_counts,
         generator = CanonicalSampleGenerator(ce, sc_matrix, counts,
                                              **mc_generator_args)
 
-        sm = StructureMatcher()
         gs_struct = generator.get_ground_state_structure()
         gs_dupe = False
         for old_struct in previous_sampled_structures + structures:
-            if sm.fit(gs_struct, old_struct):
+            # Must remove all decorations to avoid adding in exactly the same input.
+            if is_duplicate(gs_struct, old_struct, remove_decorations=True):
                 gs_dupe = True
                 break
         # Duplicacy removed in the generator.

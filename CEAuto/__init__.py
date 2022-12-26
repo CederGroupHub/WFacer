@@ -1,5 +1,5 @@
 from .preprocessing import InputsWrapper, CEHistoryWrapper
-from .data_wrangling import CeDataWrangler
+from .wrangling import CeDataWrangler
 from .enumeration import StructureEnumerator
 
 
