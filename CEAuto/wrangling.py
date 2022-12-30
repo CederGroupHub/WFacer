@@ -17,20 +17,6 @@ from smol.cofe.wrangling.wrangler import StructureWrangler
 from smol.cofe.wrangling.tools import _energies_above_hull
 
 
-def collinear(a1, a2):
-    """Check if 2 vectors are collinear.
-
-    Args:
-        a1, a2 (1D arraylike[float]):
-            Arrays to check.
-    """
-    return np.isclose(np.dot(a1, a2),
-                      np.linalg.norm(a1) * np.linalg.norm(a2))
-
-
-# TODO: write a parsing class to read structure results from atomate2-db as ComputedStructureEntry and get all
-#  site properties needed.
-
 # When using Seko's iterative procedure, it does not make much sense to weight energy.
 # We will not include sample weighting scheme here. You can play with the CeDataWangler.add_weights
 # if you want.
@@ -177,7 +163,7 @@ def get_min_energy_structures_by_composition(wrangler, max_iter_id=None):
     if max_iter_id is None:
         max_iter_id = wrangler.max_iter_id
     for entry in wrangler.entries:
-        if entry.iter_id <= max_iter_id:
+        if entry.properties["spec"]["iter_id"] <= max_iter_id:
             # Normalize composition and energy to eV per site.
             comp = Composition({k: v / entry.data["size"] / prim_size
                                 for k, v
@@ -188,39 +174,6 @@ def get_min_energy_structures_by_composition(wrangler, max_iter_id=None):
             if e < min_e[comp][0]:
                 min_e[comp] = (e, s)
     return min_e
-
-
-def compare_min_energy_structures_by_composition(min_e1, min_e2, matcher=None):
-    """Compare minimum energy and structure by composition for convergence check.
-
-     We will only compare keys that exist in both older and newer iterations.
-     If one composition appears in the older one but not the newer one, we will not
-     claim convergence.
-
-    Args:
-        min_e1 (defaultdict):
-            Minimum energies and structures from an earlier iteration.
-        min_e2 (defaultdict):
-            Minimum energies and structures from a later iteration.
-        matcher (StructureMatcher): optional
-            A StructureMatcher used compare structures.
-            wrangler.cluster_subspace._site_matcher is recommended.
-    Return:
-        float, bool:
-            maximum energy difference in eV/site, and whether a new GS appeared.
-    """
-    diffs = []
-    matches = []
-    matcher = matcher or StructureMatcher()
-    for comp in min_e2:
-        if comp not in min_e1:
-            return np.inf, True  # New composition appears.
-        if not (min_e2[comp][0] == np.inf and min_e1[comp][0] == np.inf):
-            diffs.append(np.abs(min_e2[comp] - min_e1[comp]))
-            matches.append(matcher.fit(min_e2[comp][1], min_e1[comp][1]))
-    if len(diffs) == 0:
-        return np.inf, True
-    return np.max(diffs), not(np.all(matches))
 
 
 def get_hull(wrangler, max_iter_id=None):
@@ -242,7 +195,7 @@ def get_hull(wrangler, max_iter_id=None):
     if max_iter_id is None:
         max_iter_id = wrangler.max_iter_id
     data = [(entry.structure, entry.energy) for entry in wrangler.entries
-            if entry.iter_id <= max_iter_id]
+            if entry.properties["spec"]["iter_id"] <= max_iter_id]
     structures, energies = list(zip(*data))
     e_above_hull = _energies_above_hull(structures, energies,
                                         wrangler.cluster_subspace.structure)

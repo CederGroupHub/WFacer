@@ -2,6 +2,9 @@
 
 Currently, we can only decorate charge. Plan to allow decorating
 spin in the future updates.
+
+#Note: all entries should be re-decorated and all decorators should be
+be-retrained after each iteration.
 """
 
 __author__ = 'Fengyu Xie, Julia H. Yang'
@@ -355,7 +358,8 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
             entries(List[ComputedStructureEntry]):
                 Entries of computed structures.
         Returns:
-            Entries with structures decorated. Returns None
+            Entries with structures decorated. Returns None if decoration
+            failed (not charge balanced, etc.)
             List[NoneType|ComputedStructureEntry]
         """
         if not self.is_trained:

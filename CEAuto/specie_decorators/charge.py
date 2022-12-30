@@ -1,7 +1,6 @@
 """For charge assignment.
 
-Charges will be assigned by magnitudes of magnetization
-vectors.
+Charges will be assigned by magnitudes of magnetic moments.
 """
 
 from .base import BaseDecorator, GpOptimizedDecorator
@@ -16,6 +15,9 @@ class PmgGuessChargeDecorator(BaseDecorator):
     Warning: This Decorator should not be used with
     structures that include multi-valent elements!
     """
+    decorated_prop_name = "oxi_state"
+    required_prop_names = []
+
     def __init__(self, max_allowed_abs_charge=0):
         """Initialize.
 
