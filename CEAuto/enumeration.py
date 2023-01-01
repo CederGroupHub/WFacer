@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
 # TODO: in the future, may employ mcsqs type algos.
 def enumerate_matrices(objective_sc_size, cluster_subspace,
                        supercell_from_conventional=True,
-                       space_group_args=None,
+                       space_group_kwargs=None,
                        max_sc_cond=8,
                        min_sc_angle=30):
     """Enumerate proper matrices with det size.
@@ -56,7 +56,7 @@ def enumerate_matrices(objective_sc_size, cluster_subspace,
             Whether to enumerate supercell matrices in the form M@T, where
             M is an integer matrix, T is the primitive to conventional cell
             transformation matrix. Default to True.
-        space_group_args(bool): optional
+        space_group_kwargs(bool): optional
             keyword arguments to pass into SpaceGroupAnalyzer.
         max_sc_cond(float):
             Maximum conditional number allowed of the skewed supercell
@@ -72,7 +72,7 @@ def enumerate_matrices(objective_sc_size, cluster_subspace,
         conv_mat = np.eye(3, dtype=int)
     else:
         prim = cluster_subspace.structure
-        space_group_args = space_group_args or {}
+        space_group_args = space_group_kwargs or {}
         sa = SpacegroupAnalyzer(prim, **space_group_args)
         t_inv = sa.get_conventional_to_primitive_transformation_matrix()
         conv_mat = np.round(np.linalg.inv(t_inv)).astype(int)
@@ -217,6 +217,9 @@ def enumerate_counts(sc_size,
             Default to 1.
         kwargs:
             Other keyword arguments to initialize CompositionSpace.
+    Returns:
+        Enumerated possible compositions in "counts" format, not normalized:
+            2D np.ndarray[int]
     """
     if comp_space is None:
         comp_space = CompositionSpace(bits, sublattice_sizes,
@@ -269,7 +272,7 @@ def get_num_structs_to_sample(all_counts, num_structs_select):
 def generate_initial_training_structures(ce, supercell_and_counts,
                                          keep_ground_states=True,
                                          num_structs_init=60,
-                                         mc_generator_args=None,
+                                         mc_generator_kwargs=None,
                                          **kwargs):
     """Generate training structures at the first iteration.
 
@@ -289,7 +292,7 @@ def generate_initial_training_structures(ce, supercell_and_counts,
             And it is recommended that num_structs_init * 10 > 2 *
             len(supercell_and_counts).
             Default is 60.
-        mc_generator_args(dict): optional
+        mc_generator_kwargs(dict): optional
             Keyword arguments for McSampleGenerator, except num_samples.
             Note: currently only support Canonical.
         kwargs:
@@ -299,7 +302,7 @@ def generate_initial_training_structures(ce, supercell_and_counts,
             Initial training structures, super-cell matrices,
             and normalized correlation vectors.
     """
-    mc_generator_args = mc_generator_args or {}
+    mc_generator_args = mc_generator_kwargs or {}
 
     # Scale the number of structures to select for each comp.
     num_samples = get_num_structs_to_sample([counts
@@ -340,9 +343,13 @@ def generate_initial_training_structures(ce, supercell_and_counts,
                                                      scmatrix=matrix)
              for s, matrix in zip(structures, sc_matrices)]
     femat = np.array(femat)
+    # External terms such as the ewald term should not be taken into comparison,
+    # when selecting structures
+    num_external_terms = len(ce.cluster_subspace.external_terms)
     initial_row_ids = select_initial_rows(femat,
                                           n_select=num_structs_init,
                                           keep_indices=keeps,
+                                          num_external_terms=num_external_terms,
                                           **kwargs)
 
     return ([s for i, s in enumerate(structures) if i in initial_row_ids],
@@ -355,7 +362,7 @@ def generate_additive_training_structures(ce, supercell_and_counts,
                                           previous_feature_matrix,
                                           keep_ground_states=True,
                                           num_structs_add=40,
-                                          mc_generator_args=None,
+                                          mc_generator_kwargs=None,
                                           **kwargs):
     """Generate new training structures at the beginning of each iteration.
 
@@ -379,7 +386,7 @@ def generate_additive_training_structures(ce, supercell_and_counts,
             And it is recommended that num_structs_add * 10 > 2 *
             len(supercell_and_counts).
             Default is 40.
-        mc_generator_args(dict): optional
+        mc_generator_kwargs(dict): optional
             Keyword arguments for McSampleGenerator, except num_samples.
             Note: currently only support Canonical.
         kwargs:
@@ -389,7 +396,7 @@ def generate_additive_training_structures(ce, supercell_and_counts,
             Added training structures, super-cell matrices,
             and normalized correlation vectors.
     """
-    mc_generator_args = mc_generator_args or {}
+    mc_generator_args = mc_generator_kwargs or {}
 
     # Scale the number of structures to select for each comp.
     num_samples = get_num_structs_to_sample([counts
@@ -433,10 +440,14 @@ def generate_additive_training_structures(ce, supercell_and_counts,
                                                      scmatrix=matrix)
              for s, matrix in zip(structures, sc_matrices)]
     femat = np.array(femat)
+    # External terms such as the ewald term should not be taken into comparison,
+    # when selecting structures
+    num_external_terms = len(ce.cluster_subspace.external_terms)
     added_row_ids = select_added_rows(femat,
                                       previous_feature_matrix,
                                       n_select=num_structs_add,
                                       keep_indices=keeps,
+                                      num_external_terms=num_external_terms,
                                       **kwargs)
 
     return ([s for i, s in enumerate(structures) if i in added_row_ids],

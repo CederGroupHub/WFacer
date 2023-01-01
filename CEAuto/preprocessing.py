@@ -100,7 +100,6 @@ def get_prim_specs(prim):
     sublattice_sites = [[i for i, sp in enumerate(allowed_species)
                          if sp == list(space.keys())]
                         for space in unique_spaces]
-    sublattice_sizes = [len(sites) for sites in sublattice_sites]
 
     charge_decorated = False
     for sp in itertools.chain(*bits):
@@ -125,22 +124,27 @@ def get_prim_specs(prim):
         "prim": prim,
         "bits": bits,
         "sublattice_sites": sublattice_sites,
-        "sublattice_sizes": sublattice_sizes,
         "charge_decorated": charge_decorated,
         "nn_distance": d_nn,
     }
 
 
 # Get cluster subspace.
-def get_cluster_subspace(prim_specs, cutoffs=None,
+def get_cluster_subspace(prim, charge_decorated,
+                         nn_distance, cutoffs=None,
                          use_ewald=True, ewald_kwargs=None,
                          other_terms=None,
                          **kwargs):
     """Get cluster subspace from primitive structure and cutoffs.
 
     Args:
-        prim_specs(dict):
-            Reduced primitive cell spec dict.
+        prim(Structure):
+            Reduced primitive cell.
+        charge_decorated(bool):
+            Whether to use a charge deocration in CE.
+        nn_distance(float):
+            Nearest neighbor distance in structure, used to guess cluster cutoffs
+            if argument "cutoffs" is not given.
         cutoffs(dict): optional
             Cluster cutoff diameters in Angstrom.
             If cutoff values not given, will use a guessing from the nearest neighbor
@@ -161,13 +165,12 @@ def get_cluster_subspace(prim_specs, cutoffs=None,
         ClusterSubspace:
             A cluster subspace generated from cutoffs.
     """
-    prim = prim_specs["prim"]
     if cutoffs is None:
-        d_nn = prim_specs["nn_distance"]
+        d_nn = nn_distance
         cutoffs = {2: 3.5 * d_nn, 3: 2 * d_nn, 4: 2 * d_nn}
     space = ClusterSubspace.from_cutoffs(prim, cutoffs=cutoffs, **kwargs)
     externals = []
-    if use_ewald and prim_specs["charge_decorated"]:
+    if use_ewald and charge_decorated:
         ewald_kwargs = ewald_kwargs or {}
         externals.append(EwaldTerm(**ewald_kwargs))
     externals = externals + other_terms
@@ -204,6 +207,9 @@ def process_supercell_options(d):
             always be larger than the cut-off (8).
             Currently, we only support enumerating super-cells with the
             same size.
+        spacegroup_kwargs(dict):
+            Keyword arguments used to initialize a SpaceGroupAnalyzer.
+            Will also be used in reducing the primitive cell.
         max_sc_condition_number(float):
             Maximum conditional number of the supercell lattice matrix.
             Default to 8, prevent overly slender super-cells.
@@ -212,10 +218,12 @@ def process_supercell_options(d):
             Default to 30, prevent overly skewed super-cells.
         sc_matrices(List[3*3 ArrayLike[int]]):
             Supercell matrices. Will not enumerate super-cells if this
-            is given. Default to None.
+            is given. Default to None. Note: if given, all supercell matrices
+            must be of the same size!
     """
     return {'supercell_from_conventional': d.get('supercell_from_conventional', True),
             'objective_sc_size': d.get('objective_sc_size', 32),
+            "spacegroup_kwargs": d.get("spacegroup_kwargs", {}),
             'max_sc_condition_number':
             d.get('max_sc_condition_number', 8),
             'min_sc_angle': d.get('min_sc_angle', 30),
@@ -337,17 +345,14 @@ def process_structure_options(d):
     Returns:
         dict:
             A dict containing structure options, including the following keys:
-        num_structs_per_iter (int|tuple(int)):
-            Number of new structures to enumerate per iteration.
-            If given in a single int, will add the same amount of
-            structures in any iteration.
-            If given in a tuple of two ints, will add the amount of
-            the first int in the first iteration (pool initialization),
-            then the amount of the second int in the following
-            iterations.
+        num_structs_per_iter_init (int):
+            Number of new structures to enumerate in the first iteration.
             It is recommended that in each iteration, at least 2~3
             structures are added for each composition.
-            Default is (50, 30).
+            Default is 60.
+        num_structs_per_iter_add (int):
+            Number of new structures to enumerate in each followed iteration.
+            Default is 40.
         sample_generator_kwargs(Dict):
             kwargs of CanonicalSampleGenerator.
         init_method(str):
@@ -362,14 +367,16 @@ def process_structure_options(d):
             Whether always to add new ground states to the training set.
             Default to True.
     """
-    return {"num_structs_per_iter":
-            d.get("num_structs_per_iter", (50, 30)),
+    return {"num_structs_per_iter_init":
+            d.get("num_structs_per_iter_init", 60),
+            "num_structs_per_iter_add":
+            d.get("num_structs_per_iter_add", 40),
             "sample_generator_kwargs":
             d.get("sample_generator_kwargs", {}),
             "init_method":
             d.get("init_method", "CUR"),
             "add_method":
-            d.get("add_method", "CUR"),
+            d.get("add_method", "leverage"),
             "keep_ground_states":
             d.get("keep_ground_states", True)}
 
@@ -516,7 +523,37 @@ def process_decorator_options(d):
             }
 
 
-# TODO: Make an estimator factory, but maybe contact the sparse-lm team to move it to spase-lm later.
+def process_subspace_options(d):
+    """Get options to create cluster subspace.
+
+    Args:
+        d(dict):
+            An input dictionary containing various options in the input file.
+    Returns:
+        dict:
+            A dict containing fit options, including the following keys:
+        cutoffs(dict{int: float}):
+            Cluster cutoff diameters of each type of clusters. If not given,
+            will guess with nearest neighbor distance in the structure.
+            Setting your own is highly recommended.
+        use_ewald(bool):
+            Whether to use the EwaldTerm as an ExternalTerm in the cluster
+            space. Only available when the expansion is charge decorated.
+            Default to True.
+        ewald_kwargs(dict):
+            Keyword arguments used to initialize EwaldTerm.
+            Note: Other external terms than ewald term not supported yet.
+        from_cutoffs_kwargs(dict):
+            Other keyword arguments to be used in ClusterSubspace.from_cutoffs,
+            for example, the cluster basis type. Check smol.cofe for detail.
+    """
+    return {"cutoffs": d.get("cutoffs", None),
+            "use_ewald": d.get("use_ewald", True),
+            "ewald_kwargs": d.get("ewald_kwargs", {}),
+            "from_cutoffs_kwargs": d.get("from_cutoffs_kwargs", {})
+            }
+
+
 def process_fit_options(d):
     """Get options to fit ECIs with sparse-lm.
     Args:
@@ -548,7 +585,7 @@ def process_fit_options(d):
             Keyword arguments when calling GridSearch/LineSearch/Estimator.fit.
             See docs of the specific estimator.
     """
-    return {'estimator_type':
+    return {"estimator_type":
             d.get('estimator_type', 'L2L0'),
             # Under Seko's iterative procedure, there is not much sense in weighting over energy.
             # We will not include sample weighting scheme here. You can play with the CeDataWangler
@@ -603,6 +640,9 @@ def process_convergence_options(d):
             continue even if all other criterion are satisfied.
             Default to False because this may also increase the
             number of iterations.
+        max_iter(int): optional
+            Maximum number of iterations allowed. Will not limit number
+            of iterations by default, but setting one limit is still recommended.
     """
     return {'cv_tol': d.get('cv_tol', 5),
             'std_cv_rtol': d.get('std_cv_rtol', 0.5),
@@ -610,7 +650,8 @@ def process_convergence_options(d):
             "delta_eci_rtol": d.get('delta_eci_rtol'),
             'delta_min_e_rtol': d.get('delta_min_e_rtol', 2),
             "continue_on_finding_new_gs":
-            d.get('continue_on_finding_new_gs', False)
+            d.get('continue_on_finding_new_gs', False),
+            "max_iter": d.get("max_iter")
             }
 
 

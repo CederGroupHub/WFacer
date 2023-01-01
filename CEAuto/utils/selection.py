@@ -21,6 +21,7 @@ def cur_decompose(g, c, r):
 
 def select_initial_rows(femat, n_select=10,
                         method="CUR",
+                        num_external_terms=0,
                         keep_indices=None):
     """Select structures to initialize an empty CE project.
 
@@ -32,13 +33,17 @@ def select_initial_rows(femat, n_select=10,
         method(str): optional
             The method used to select structures. Default is
             CUR decomposition ("CUR"). "random" is also supported.
+        num_external_terms(int): optional
+            Number of external terms in cluster subspace. These
+            terms should not be compared in a structure selection.
         keep_indices(list[int]): optional
             Indices of structures that must be selected. Usually
             those of important ground state structures.
     Returns:
         List[int]: indices of selected structures.
     """
-    a = np.array(femat)
+    # Leave out external terms.
+    a = np.array(femat)[:, :len(femat[0]) - num_external_terms]
     n, d = a.shape
 
     if keep_indices is None:
@@ -92,6 +97,7 @@ def select_added_rows(femat, old_femat,
                       n_select=10,
                       method="leverage",
                       keep_indices=None,
+                      num_external_terms=0,
                       domain_matrix=None):
 
     """Select structures to add to an existing CE project.
@@ -113,6 +119,9 @@ def select_added_rows(femat, old_femat,
         keep_indices(List[int]): optional
             Indices of structures that must be selected. Usually
             those of important ground state structures.
+        num_external_terms(int): optional
+            Number of external terms in cluster subspace. These
+            terms should not be compared in a structure selection.
         domain_matrix(2D arraylike): optional
             The domain matrix used to compute leverage score. By
             default, we use an identity matrix.
@@ -120,7 +129,9 @@ def select_added_rows(femat, old_femat,
     Outputs:
         List of ints. Indices of selected rows in femat.
     """
-    a = np.array(femat)
+    # Leave out external terms.
+    a = np.array(femat)[:, :len(femat[0]) - num_external_terms]
+    old_a = np.array(old_femat)[:, :len(old_femat[0]) - num_external_terms]
     n, d = a.shape
     if domain_matrix is None:
         domain_matrix = np.eye(d)
@@ -150,7 +161,7 @@ def select_added_rows(femat, old_femat,
     for _ in range(dn):
         if method == 'leverage':
             # Update feature matrix.
-            old_a = np.concatenate(old_femat, a[selected_indices, :], axis=0)
+            old_a = np.concatenate(old_a, a[selected_indices, :], axis=0)
             old_cov = old_a.T @ old_a
             old_inv = np.linalg.pinv(old_cov)
             reductions = []
