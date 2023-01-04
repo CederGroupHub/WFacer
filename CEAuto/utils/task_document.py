@@ -46,7 +46,7 @@ def get_property_from_taskdoc(taskdoc, property_name):
             These are properties that you wish to record besides
             "energy" and "uncorrected_energy", etc.
         Returns:
-            dict.
+            float: value of the queried property.
     """
     entry = taskdoc.entry
     last_calc = taskdoc.calcs_reversed[0]

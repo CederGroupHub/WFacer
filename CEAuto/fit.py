@@ -1,10 +1,12 @@
 """Fit ECIs from Wrangler."""
 
 import numpy as np
+from sklearn.model_selection import cross_val_score
 
 from smol.utils import class_name_from_str, derived_class_factory, get_subclasses
 
 from sparselm.model.base import Estimator
+from sparselm.model.ols import OrdinaryLeastSquares
 from sparselm.model.miqp.best_subset import BestSubsetSelection
 from sparselm.model.miqp.regularized_l0 import MixedL0
 from sparselm.optimizer import GridSearch, LineSearch
@@ -83,33 +85,57 @@ def fit_ecis_from_wrangler(wrangler,
     estimator_kwargs = estimator_kwargs or {}
     if est_class_name in hierarchy_classes and use_hierarchy:
         hierarchy = space.function_hierarchy()  # Need a better case-study in the future!
-        estimator = estimator_factory(estimator_name, hierarchy=hierarchy, **estimator_kwargs)
+        estimator = estimator_factory(estimator_name,
+                                      hierarchy=hierarchy,
+                                      **estimator_kwargs)
     else:
         estimator = estimator_factory(estimator_name, **estimator_kwargs)
 
     # Prepare the optimizer.
-    opt_class_name = class_name_from_str(optimizer_name)
-    optimizer_kwargs = optimizer_kwargs or {}
-    if opt_class_name not in all_optimizers:
-        raise ValueError(f"Hyperparameters optimization method {opt_class_name} not implemented!")
-    optimizer = all_optimizers[opt_class_name](estimator, param_grid, **optimizer_kwargs)
+    if not isinstance(estimator, OrdinaryLeastSquares):
+        opt_class_name = class_name_from_str(optimizer_name)
+        optimizer_kwargs = optimizer_kwargs or {}
+        if opt_class_name not in all_optimizers:
+            raise ValueError(f"Hyperparameters optimization method"
+                             f" {opt_class_name} not implemented!")
+        optimizer = all_optimizers[opt_class_name](estimator,
+                                                   param_grid,
+                                                   **optimizer_kwargs)
 
-    # Perform the optimization and fit.
-    optimizer = optimizer.fit(X=feature_matrix, y=normalized_energy, **kwargs)
-    best_coef = optimizer.best_estimator_.coef_
-    # Sklearn gives r2 score. Should be converted.
-    best_r2 = optimizer.best_score_
-    best_r2_std = optimizer.best_score_std_
-    best_params = optimizer.best_params_
+        # Perform the optimization and fit.
+        optimizer = optimizer.fit(X=feature_matrix,
+                                  y=normalized_energy,
+                                  **kwargs)
+        best_coef = optimizer.best_estimator_.coef_
+        # Sklearn gives r2 score. Should be converted.
+        best_r2 = optimizer.best_score_
+        best_r2_std = optimizer.best_score_std_
+        best_params = optimizer.best_params_
 
-    y_pred = optimizer.predict(feature_matrix)
-    tss = ((normalized_energy - y_pred) ** 2).sum() / len(y_pred)
-    best_cv = np.sqrt((1 - best_r2) * tss)
-    # Estimated.
-    min_r2 = max(0, best_r2 - best_r2_std)
-    max_r2 = min(1, best_r2 + best_r2_std)
-    min_cv = np.sqrt((1 - min_r2) * tss)
-    max_cv = np.sqrt((1 - max_r2) * tss)
-    best_cv_std = np.abs(min_cv - max_cv) / 2
+        y_pred = optimizer.predict(feature_matrix)
+        tss = ((normalized_energy - y_pred) ** 2).sum() / len(y_pred)
+        best_cv = np.sqrt((1 - best_r2) * tss)
+        # Estimated.
+        min_r2 = max(0, best_r2 - best_r2_std)
+        max_r2 = min(1, best_r2 + best_r2_std)
+        min_cv = np.sqrt((1 - min_r2) * tss)
+        max_cv = np.sqrt((1 - max_r2) * tss)
+        best_cv_std = np.abs(min_cv - max_cv) / 2
+    # TODO: ask the sparse-lm team to make RMSE as the default score metric.
+    else:
+        r2s = cross_val_score(estimator,
+                              X=feature_matrix,
+                              y=normalized_energy,
+                              **optimizer_kwargs)
+        estimator = estimator.fit(X=feature_matrix,
+                                  y=normalized_energy,
+                                  **kwargs)
+        best_coef = estimator.coef_
+        y_pred = estimator.predict(feature_matrix)
+        tss = ((normalized_energy - y_pred) ** 2).sum() / len(y_pred)
+        cvs = np.sqrt((1 - r2s) * tss)
+        best_cv = np.average(cvs)
+        best_cv_std = np.std(cvs)
+        best_params = None
 
     return best_coef, best_cv, best_cv_std, best_params

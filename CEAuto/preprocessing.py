@@ -305,12 +305,12 @@ def process_composition_options(d):
             }
 
 
-def parse_constraints(composition_options, bits, sublattice_sizes):
+def parse_comp_constraints(options, bits, sublattice_sizes):
     """Parse constraints from composition options.
 
     Args:
-        composition_options(dict):
-            Input options to enumerate compositions.
+        options(dict):
+            Input options to containing composition enumeration options.
         bits(list[list[Species]]):
             Allowed species on each sub-lattice, as given in specs (sorted).
         sublattice_sizes(list[int]):
@@ -321,18 +321,18 @@ def parse_constraints(composition_options, bits, sublattice_sizes):
            readable by smol CompositionSpace.
     """
     leqs_species, geqs_species \
-        = parse_species_constraints(composition_options
+        = parse_species_constraints(options
                                     ["species_concentration_constraints"],
                                     bits, sublattice_sizes)
     eqs = [parse_generic_constraint(d, r, bits)
            for d, r in
-           composition_options["eq_constraints"]]
+           options["eq_constraints"]]
     leqs = [parse_generic_constraint(d, r, bits)
             for d, r in
-            composition_options["leq_constraints"]]
+            options["leq_constraints"]]
     geqs = [parse_generic_constraint(d, r, bits)
             for d, r in
-            composition_options["geq_constraints"]]
+            options["geq_constraints"]]
 
     return eqs, leqs + leqs_species, geqs + geqs_species
 
@@ -424,6 +424,9 @@ def process_calculation_options(d):
             Additional arguments to pass into an atomate2
             StaticMaker.
             Not frequently used.
+        other_properties(list[str]): optional
+            Other properties to parse besides "energy".
+            Will be saved in entry, but CE only performed on "energy".
         Refer to the atomate2 documentation for more information.
         Note: the default vasp sets in atomate 2 are not specifically
         chosen for specific systems. Using your own vasp set input
@@ -456,6 +459,8 @@ def process_calculation_options(d):
             d.get("static_generator_kwargs", {}),
             "static_maker_kwargs":
             d.get("static_maker_kwargs", {}),
+            "other_properties":
+            d.get("other_properties")
             }
 
 
@@ -467,10 +472,6 @@ def process_decorator_options(d):
     Returns:
         dict:
             A dict containing calculation options, including the following keys:
-        decorated_properties(list(str)): optional
-            Name of properties to decorate on vasp output structures.
-            For example, "oxi_state" should be used for charge decorated CE,
-            otherwise an error will occur.
         decorator_types(list(str)): optional
             Name of decorators to use for each property. If None, will
             choose the first one in all implemented decorators
@@ -478,48 +479,32 @@ def process_decorator_options(d):
         decorator_kwargs(list[dict]): optional
             Arguments to pass into each decorator. See the doc of each specific
             decorator.
+        decorator_train_kwargs(list[dict]): optional
+            Arguments to pass into each decorator when calling decorator.train.
     """
     # Update these pre-processing rules when necessary,
     # if you have new decorators implemented.
-
-    decorated_properties = d.get('decorated_properties', [])
     decorator_types = d.get('decorator_types', [])
     decorator_kwargs = d.get('decorator_kwargs', [])
+    decorator_train_kwargs = d.get('decorator_kwargs', [])
 
-    if not len(decorator_types) == len(decorated_properties):
-        raise ValueError("Number of properties to decorate does not"
-                         " match the number of decorators. Be sure to use"
-                         " only 1 decorator per property!")
-    for tp, prop in zip(decorator_types, decorated_properties):
-        if prop not in allowed_decorators:
-            raise ValueError(f"Property {prop} does not have any decorator"
-                             f" implemented!")
-        if tp not in allowed_decorators[prop]:
-            raise ValueError(f"Decorator {tp} is not implemented for"
-                             f" property {prop}!")
     if (len(decorator_kwargs) > 0 and
-            len(decorator_kwargs) != len(decorated_properties)):
+            len(decorator_kwargs) != len(decorator_types)):
         raise ValueError("If provided any, number of kwargs must match"
-                         " the number of decorated properties exactly!")
+                         " the number of decorators exactly!")
     if len(decorator_kwargs) == 0:
-        decorator_kwargs = [{} for _ in decorated_properties]
+        decorator_kwargs = [{} for _ in decorator_types]
 
-    if (len(decorator_types) > 0 and
-            len(decorator_types) != len(decorated_properties)):
-        raise ValueError("Number of provided decorators must be the same as"
-                         " the number of decorated properties!")
-    if len(decorator_types) == 0:
-        warnings.warn(f"No decorator specified for properties"
-                      f" {decorated_properties}. The first allowed"
-                      f" decorator for each property will be selected"
-                      f" based on dictionary order. Use this at your"
-                      f" own risk!")
-        decorator_types = [sorted(allowed_decorators[prop])[0]
-                           for prop in decorated_properties]
+    if (len(decorator_train_kwargs) > 0 and
+            len(decorator_train_kwargs) != len(decorator_types)):
+        raise ValueError("If provided any, number of train kwargs must match"
+                         " the number of decorators exactly!")
+    if len(decorator_train_kwargs) == 0:
+        decorator_train_kwargs = [{} for _ in decorator_types]
 
-    return {'decorated_properties': decorated_properties,
-            'decorator_types': decorator_types,
-            'decorator_kwargs': decorator_kwargs
+    return {'decorator_types': decorator_types,
+            'decorator_kwargs': decorator_kwargs,
+            "decorator_train_kwargs": decorator_train_kwargs
             }
 
 
@@ -590,11 +575,14 @@ def process_fit_options(d):
             # Under Seko's iterative procedure, there is not much sense in weighting over energy.
             # We will not include sample weighting scheme here. You can play with the CeDataWangler
             # if you want.
-            'use_hierarchy': d.get('use_hierarchy', True),
+            'use_hierarchy':
+            d.get('use_hierarchy', True),
             "estimator_kwargs":
             d.get("estimator_kwargs", {}),
             'optimizer_type':
-            d.get('optimizer_type', None),
+            d.get('optimizer_type'),
+            "param_grid":
+            d.get("param_grid"),
             'optimizer_kwargs':
             d.get('optimizer_kwargs', {}),
             'fit_kwargs':

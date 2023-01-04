@@ -645,7 +645,7 @@ def decorator_factory(decorator_type, *args, **kwargs):
     Args:
         decorator_type(str):
             Name of a BaseDecorator subclass.
-        *args, **kwargs:
+        args, kwargs:
             Arguments used to initialize the class.
     """
     name = class_name_from_str(decorator_type)
