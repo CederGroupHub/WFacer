@@ -318,12 +318,13 @@ def generate_initial_training_structures(ce, supercell_and_counts,
                                                num_samples):
         generator = CanonicalSampleGenerator(ce, sc_matrix, counts,
                                              **mc_generator_args)
+        remove_decorations = generator.remove_decorations
 
         gs_struct = generator.get_ground_state_structure()
         gs_dupe = False
         for old_struct in structures:
             # Must remove all decorations to avoid adding in exactly the same input.
-            if is_duplicate(gs_struct, old_struct, remove_decorations=True):
+            if is_duplicate(gs_struct, old_struct, remove_decorations):
                 gs_dupe = True
                 break
         samples = generator.get_unfrozen_sample(previous_sampled_structures=
@@ -412,12 +413,13 @@ def generate_additive_training_structures(ce, supercell_and_counts,
                                                num_samples):
         generator = CanonicalSampleGenerator(ce, sc_matrix, counts,
                                              **mc_generator_args)
+        remove_decorations = generator.remove_decorations
 
         gs_struct = generator.get_ground_state_structure()
         gs_dupe = False
         for old_struct in previous_sampled_structures + structures:
             # Must remove all decorations to avoid adding in exactly the same input.
-            if is_duplicate(gs_struct, old_struct, remove_decorations=True):
+            if is_duplicate(gs_struct, old_struct, remove_decorations):
                 gs_dupe = True
                 break
         # Duplicacy removed in the generator.

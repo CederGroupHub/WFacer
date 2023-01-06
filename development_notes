@@ -2,7 +2,6 @@ You must test with smol >= 0.0.8 and sparce-lm >= 0.2.1
 
 Devop plan:
 1, Re-write a single jobflow maker to connect up everything.
-2, Define schema for CE workflow.
-3, begin production tests. (Begin ASAP, Finish after holidays.)
-4, Begin pytest writing for modules and jobflow generation. (Begin after holidays.)
-5, Begin docs writing. (Begin after holidays)
+2, begin production tests. (Begin ASAP, Finish after holidays.)
+3, Begin pytest writing for modules and jobflow generation. (Begin after holidays.)
+4, Begin docs writing. (Begin after holidays)

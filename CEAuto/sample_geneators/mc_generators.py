@@ -28,7 +28,8 @@ class McSampleGenerator(metaclass=ABCMeta):
                  anneal_temp_series=None,
                  heat_temp_series=None,
                  num_steps_anneal=50000,
-                 num_steps_heat=100000):
+                 num_steps_heat=100000,
+                 remove_decorations_before_duplicacy=False):
         """Initialize McSampleGenerator.
 
         Args:
@@ -46,6 +47,10 @@ class McSampleGenerator(metaclass=ABCMeta):
                 Number of MC steps to run per annealing temperature step.
             num_steps_heat(int): optional
                 Number of MC steps to run per heat temperature step.
+            remove_decorations_before_duplicacy(bool): optional
+                Whether to remove all decorations from species (i.e,
+                charge and other properties) before comparing duplicacy.
+                Default to false.
         """
         self.ce = ce
         self.sc_matrix = np.array(sc_matrix, dtype=int)
@@ -58,6 +63,7 @@ class McSampleGenerator(metaclass=ABCMeta):
                                  or self.default_heat_temp_series)
         self.num_steps_anneal = num_steps_anneal
         self.num_steps_heat = num_steps_heat
+        self.remove_decorations = remove_decorations_before_duplicacy
 
         self._gs_occu = None  # Cleared per-initialization.
         self._ensemble = None
@@ -207,7 +213,8 @@ class McSampleGenerator(metaclass=ABCMeta):
             for old_id, old_str in enumerate(previous_sampled_structures
                                              + new_strs):
                 # Must remove decorations to avoid getting fully duplicate inputs.
-                if is_duplicate(old_str, new_str, remove_decorations=True):
+                if is_duplicate(old_str, new_str,
+                                remove_decorations=self.remove_decorations):
                     dupe = True
                     break
             if not dupe:

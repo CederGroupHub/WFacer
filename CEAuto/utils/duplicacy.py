@@ -5,6 +5,7 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 
 from smol.cofe.space.domain import Vacancy
 
+
 def clean_up_decoration(s):
     """Remove all decoration from a structure.
 
@@ -39,7 +40,7 @@ def clean_up_decoration(s):
     return Structure(s.lattice, elements, frac_coords)
 
 
-def is_duplicate(s1, s2, remove_decorations=True, matcher=None):
+def is_duplicate(s1, s2, remove_decorations=False, matcher=None):
     """Check duplication between structures.
 
     Args:
@@ -49,8 +50,7 @@ def is_duplicate(s1, s2, remove_decorations=True, matcher=None):
             Same as s1.
         remove_decorations(bool): optional
             Whether or not to remove all decorations from species (i.e,
-            charge and other properties). Should be used when comparing
-            two structures before computation.
+            charge and other properties). Default to false.
         matcher(StructureMatcher): optional
             A StructureMatcher to compare two structures. Using the same
             _site_matcher as cluster_subspace is highly recommended.
