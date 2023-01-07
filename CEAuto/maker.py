@@ -140,203 +140,186 @@ def _filter_out_failed_entries(entries, entry_ids):
     return entries, entry_ids
 
 
-@dataclass
-class CeIterationMaker(Maker):
-    """Make an iterative cluster expansion job.
+@job
+def ce_iteration(last_ce_document):
+    """Make a CeIteration job."""
+    iter_id = last_ce_document.last_iter_id + 1
+    logging.info(f"Executing CE interation No. {iter_id}.")
+    if last_ce_document.converged:
+        logging.info("CE model converged or maximum allowed"
+                     " iterations reached. Exiting!")
+        return Response(output=last_ce_document)
 
-    Attributes:
-        last_ce_document(CeOutputsDocument):
-            The last iteration output. Must be provided.
-    """
-    # TODO: check how to properly set the name of job returned by maker.make,
-    #  when make is decorated by @job.
-    # TODO: check if this iterative implementation can work correctly.
-    # TODO: returning response with "add=" may include the output of all past
-    #  iterations, which might be redunant. How to keep only the output of the
-    #  last iteration? "replace="?
-    project_name: str = "ceauto_work"
-    name: str = project_name + "_iteration_0"
+    struct_id = len(last_ce_document.enumerated_structures)
+    # Must be pre-processed options.
+    options = last_ce_document.ce_options
+    project_name = last_ce_document.project_name
 
-    @job
-    def make(self, last_ce_document):
-        """Make a CeIteration job."""
-        iter_id = last_ce_document.last_iter_id + 1
-        logging.info(f"Executing CE interation No. {iter_id}.")
-        if last_ce_document.converged:
-            logging.info("CE model converged or maximum allowed"
-                         " iterations reached. Exiting!")
-            return Response(output=last_ce_document)
+    enumerated_structures = deepcopy(last_ce_document.enumerated_structures)
+    enumerated_matrices = deepcopy(last_ce_document.enumerated_matrices)
+    enumerated_features = deepcopy(last_ce_document.enumerated_features)
+    undecorated_entries = deepcopy(last_ce_document.undecorated_entries)
+    computed_properties = deepcopy(last_ce_document.computed_properties)
 
-        struct_id = len(last_ce_document.enumerated_structures)
-        # Must be pre-processed options.
-        options = last_ce_document.ce_options
-        project_name = last_ce_document.project_name
+    # Historical records.
+    cv_history = deepcopy(last_ce_document.cv_history)
+    cv_std_history = deepcopy(last_ce_document.cv_std_history)
+    coefs_history = deepcopy(last_ce_document.coefs_history)
+    params_history = deepcopy(last_ce_document.params_history)
+    wrangler = deepcopy(last_ce_document.data_wrangler)
 
-        enumerated_structures = deepcopy(last_ce_document.enumerated_structures)
-        enumerated_matrices = deepcopy(last_ce_document.enumerated_matrices)
-        enumerated_features = deepcopy(last_ce_document.enumerated_features)
-        undecorated_entries = deepcopy(last_ce_document.undecorated_entries)
-        computed_properties = deepcopy(last_ce_document.computed_properties)
+    subspace = last_ce_document.cluster_subspace
+    prim_specs = last_ce_document.prim_specs
+    sc_matrices = last_ce_document.supercell_matrices
+    compositions = last_ce_document.compositions
 
-        # Historical records.
-        cv_history = deepcopy(last_ce_document.cv_history)
-        cv_std_history = deepcopy(last_ce_document.cv_std_history)
-        coefs_history = deepcopy(last_ce_document.coefs_history)
-        params_history = deepcopy(last_ce_document.params_history)
-        wrangler = deepcopy(last_ce_document.data_wrangler)
+    if len(coefs_history) == 0:
+        coefs = get_initial_ce_coefficients(subspace)
+    else:
+        coefs = np.array(coefs_history[-1])
 
-        subspace = last_ce_document.cluster_subspace
-        prim_specs = last_ce_document.prim_specs
-        sc_matrices = last_ce_document.supercell_matrices
-        compositions = last_ce_document.compositions
+    # Enumerate structures.
+    logging.info("Enumerating new structures.")
+    new_structures, new_sc_matrices, new_features = \
+        _enumerate_structures(subspace, coefs, iter_id,
+                              sc_matrices, compositions,
+                              enumerated_structures,
+                              enumerated_features,
+                              options)
+    enumerated_structures.extend(new_structures)
+    enumerated_matrices.extend(new_sc_matrices)
+    enumerated_features = np.append(enumerated_features, new_features)
 
-        if len(coefs_history) == 0:
-            coefs = get_initial_ce_coefficients(subspace)
+    # Create calculations for all structures, and extract outputs.
+    logging.info("Performing ab-initio calculations.")
+    relax_maker, static_maker, tight_maker \
+        = _get_vasp_makers(options)
+    flows = []
+    # Todo: figure out if it is correct trying to retrieve and process outputs
+    #  other jobs in a job.
+    for i, structure in enumerate(new_structures):
+        fid = i + struct_id
+        logging.info(f"Calculating enumerated structure id: {fid}.")
+        flow_name = project_name + f"_enum_{fid}"
+        relax_maker.name = flow_name + "_relax"
+        tight_maker.name = flow_name + "_tight"
+        static_maker.name = flow_name + "_static"
+        deformation = Deformation(options["apply_strain"])
+        def_structure = deformation.apply_to_structure(structure)
+
+        jobs = list()
+        jobs.append(relax_maker.make(def_structure))
+        if options["add_tight_relax"]:
+            jobs.append(tight_maker.make(jobs[-1].output.structure,
+                                         prev_vasp_dir=
+                                         jobs[-1].output.dir_name))
+        jobs.append(static_maker.make(jobs[-1].output.structure,
+                                      prev_vasp_dir=
+                                      jobs[-1].output.dir_name))
+        flows.append(jobs)
+    # TODO: check with Matt if this will work correctly.
+    for jobs in flows:
+        flow_converged = _check_flow_convergence(jobs)
+        if flow_converged:
+            undecorated_entry, properties \
+                = get_entry_from_taskdoc(jobs[-1].output,
+                                         options["other_properties"],
+                                         options["decorator_types"])
+            undecorated_entries.append(undecorated_entry)
+            computed_properties.append(properties)
         else:
-            coefs = np.array(coefs_history[-1])
+            # Calculations failed.
+            undecorated_entries.append(None)
+            computed_properties.append(None)
+    # No need to save taskdoc into maker document because they will
+    # always be saved as job output.
 
-        # Enumerate structures.
-        logging.info("Enumerating new structures.")
-        new_structures, new_sc_matrices, new_features = \
-            _enumerate_structures(subspace, coefs, iter_id,
-                                  sc_matrices, compositions,
-                                  enumerated_structures,
-                                  enumerated_features,
-                                  options)
-        enumerated_structures.extend(new_structures)
-        enumerated_matrices.extend(new_sc_matrices)
-        enumerated_features = np.append(enumerated_features, new_features)
-
-        # Create calculations for all structures, and extract outputs.
-        logging.info("Performing ab-initio calculations.")
-        relax_maker, static_maker, tight_maker \
-            = _get_vasp_makers(options)
-        flows = []
-        # Todo: figure out if it is correct trying to retrieve and process outputs
-        #  other jobs in a job.
-        for i, structure in enumerate(new_structures):
-            fid = i + struct_id
-            logging.info(f"Calculating enumerated structure id: {fid}.")
-            flow_name = project_name + f"_enum_{fid}"
-            relax_maker.name = flow_name + "_relax"
-            tight_maker.name = flow_name + "_tight"
-            static_maker.name = flow_name + "_static"
-            deformation = Deformation(options["apply_strain"])
-            def_structure = deformation.apply_to_structure(structure)
-
-            jobs = list()
-            jobs.append(relax_maker.make(def_structure))
-            if options["add_tight_relax"]:
-                jobs.append(tight_maker.make(jobs[-1].output.structure,
-                                             prev_vasp_dir=
-                                             jobs[-1].output.dir_name))
-            jobs.append(static_maker.make(jobs[-1].output.structure,
-                                          prev_vasp_dir=
-                                          jobs[-1].output.dir_name))
-            flows.append(jobs)
-        # TODO: check with Matt if this will work correctly.
-        for jobs in flows:
-            flow_converged = _check_flow_convergence(jobs)
-            if flow_converged:
-                undecorated_entry, properties \
-                    = get_entry_from_taskdoc(jobs[-1].output,
-                                             options["other_properties"],
-                                             options["decorator_types"])
-                undecorated_entries.append(undecorated_entry)
-                computed_properties.append(properties)
-            else:
-                # Calculations failed.
-                undecorated_entries.append(None)
-                computed_properties.append(None)
-        # No need to save taskdoc into maker document because they will
-        # always be saved as job output.
-
-        # Decoration (clear up and re-insert wrangler entries each time.)
-        logging.info("Performing site decorations.")
-        decorators = _get_decorators(options,
-                                     prim_specs["charge_decorated"])
-        successful_entries = deepcopy(undecorated_entries)
-        successful_entry_ids = list(range(len(undecorated_entries)))
+    # Decoration (clear up and re-insert wrangler entries each time.)
+    logging.info("Performing site decorations.")
+    decorators = _get_decorators(options,
+                                 prim_specs["charge_decorated"])
+    successful_entries = deepcopy(undecorated_entries)
+    successful_entry_ids = list(range(len(undecorated_entries)))
+    successful_entries, successful_entry_ids \
+        = _filter_out_failed_entries(successful_entries,
+                                     successful_entry_ids)
+    n_calc_finished = len(successful_entries)
+    logging.info(f"{n_calc_finished}/{len(undecorated_entries)}"
+                 f" structures successfully calculated.")
+    for dec, kw in zip(decorators, options["decorator_train_kwargs"]):
+        dec.train(successful_entries, **kw)
+        # Failed entries will be returned as None, and get filtered out.
+        successful_entries = dec.decorate(successful_entries)
         successful_entries, successful_entry_ids \
             = _filter_out_failed_entries(successful_entries,
                                          successful_entry_ids)
-        n_calc_finished = len(successful_entries)
-        logging.info(f"{n_calc_finished}/{len(undecorated_entries)}"
-                     f" structures successfully calculated.")
-        for dec, kw in zip(decorators, options["decorator_train_kwargs"]):
-            dec.train(successful_entries, **kw)
-            # Failed entries will be returned as None, and get filtered out.
-            successful_entries = dec.decorate(successful_entries)
-            successful_entries, successful_entry_ids \
-                = _filter_out_failed_entries(successful_entries,
-                                             successful_entry_ids)
-        successful_properties = [p for i, p
-                                 in enumerate(computed_properties)
-                                 if i in successful_entry_ids]
-        successful_scmatrices = [m for i, m
-                                 in enumerate(enumerated_matrices)
-                                 if i in successful_entry_ids]
-        logging.info(f"{len(successful_entries)}/{n_calc_finished}"
-                     f" structures successfully decorated.")
+    successful_properties = [p for i, p
+                             in enumerate(computed_properties)
+                             if i in successful_entry_ids]
+    successful_scmatrices = [m for i, m
+                             in enumerate(enumerated_matrices)
+                             if i in successful_entry_ids]
+    logging.info(f"{len(successful_entries)}/{n_calc_finished}"
+                 f" structures successfully decorated.")
 
-        # Wrangler must be cleared and reloaded each time
-        # because decorator can change.
-        logging.info("Loading data to wrangler.")
-        wrangler.remove_all_data()
-        for eid, prop, entry, mat in zip(successful_entry_ids,
-                                         successful_properties,
-                                         successful_entries,
-                                         successful_scmatrices):
-            # Save iteration index and enumerated structure index.
-            prop["spec"] = {"iter_id": iter_id, "enum_id": eid}
-            wrangler.add_entry(entry,
-                               properties=prop,
-                               supercell_matrix=mat)
-        logging.info(f"{wrangler.num_structures}/{len(successful_entries)}"
-                     f" structures successfully mapped.")
+    # Wrangler must be cleared and reloaded each time
+    # because decorator can change.
+    logging.info("Loading data to wrangler.")
+    wrangler.remove_all_data()
+    for eid, prop, entry, mat in zip(successful_entry_ids,
+                                     successful_properties,
+                                     successful_entries,
+                                     successful_scmatrices):
+        # Save iteration index and enumerated structure index.
+        prop["spec"] = {"iter_id": iter_id, "enum_id": eid}
+        wrangler.add_entry(entry,
+                           properties=prop,
+                           supercell_matrix=mat)
+    logging.info(f"{wrangler.num_structures}/{len(successful_entries)}"
+                 f" structures successfully mapped.")
 
-        # fit
-        coefs, cv, cv_std, params \
-            = fit_ecis_from_wrangler(wrangler,
-                                     options["estimator_type"],
-                                     options["optimizer_type"],
-                                     options["param_grid"],
-                                     options["use_hierarchy"],
-                                     estimator_kwargs=
-                                     options["estimator_kwargs"],
-                                     optimizer_kwargs=
-                                     options["optimizer_kwargs"],
-                                     **options["fit_kwargs"])
-        cv_history.append(cv)
-        cv_std_history.append(cv_std)
-        coefs_history.append(coefs)
-        params_history.append(params)
+    # fit
+    coefs, cv, cv_std, params \
+        = fit_ecis_from_wrangler(wrangler,
+                                 options["estimator_type"],
+                                 options["optimizer_type"],
+                                 options["param_grid"],
+                                 options["use_hierarchy"],
+                                 estimator_kwargs=
+                                 options["estimator_kwargs"],
+                                 optimizer_kwargs=
+                                 options["optimizer_kwargs"],
+                                 **options["fit_kwargs"])
+    cv_history.append(cv)
+    cv_std_history.append(cv_std)
+    coefs_history.append(coefs)
+    params_history.append(params)
 
-        # Wrapping up.
-        new_ce_document = CeOutputsDocument(cluster_subspace=subspace,
-                                            prim_specs=prim_specs,
-                                            data_wrangler=wrangler,
-                                            ce_options=options,
-                                            coefs_history=coefs_history,
-                                            cv_history=cv_history,
-                                            cv_std_history=cv_std_history,
-                                            params_history=params_history,
-                                            supercell_matrices=sc_matrices,
-                                            compositions=compositions,
-                                            enumerated_structures=
-                                            enumerated_structures,
-                                            enumerated_matrices=
-                                            enumerated_matrices,
-                                            enumerated_features=
-                                            enumerated_features,
-                                            undecorated_entries=
-                                            undecorated_entries,
-                                            computed_properties=
-                                            computed_properties
-                                            )
-        next_job = self.make(new_ce_document)
-        next_job.name = self.project_name + f"_iteration_{iter_id + 1}"
-        return Response(output=new_ce_document, replace=next_job)
+    # Wrapping up.
+    new_ce_document = CeOutputsDocument(cluster_subspace=subspace,
+                                        prim_specs=prim_specs,
+                                        data_wrangler=wrangler,
+                                        ce_options=options,
+                                        coefs_history=coefs_history,
+                                        cv_history=cv_history,
+                                        cv_std_history=cv_std_history,
+                                        params_history=params_history,
+                                        supercell_matrices=sc_matrices,
+                                        compositions=compositions,
+                                        enumerated_structures=
+                                        enumerated_structures,
+                                        enumerated_matrices=
+                                        enumerated_matrices,
+                                        enumerated_features=
+                                        enumerated_features,
+                                        undecorated_entries=
+                                        undecorated_entries,
+                                        computed_properties=
+                                        computed_properties
+                                        )
+    next_job = ce_iteration(new_ce_document)
+    next_job.name = project_name + f"_iteration_{iter_id + 1}"
+    return Response(output=new_ce_document, replace=next_job)
 
 
 @dataclass
@@ -450,7 +433,8 @@ class CeAutoMaker(Maker):
                                              cluster_subspace=subspace,
                                              supercell_matrices=sc_matrices,
                                              compositions=compositions)
-        ce_iteration_job = CeIterationMaker(project_name=self.name).make(init_ce_document)
+        ce_iteration_job = ce_iteration(init_ce_document)
+        ce_iteration_job.name = self.name + "_iteration_0"
 
         return Flow([ce_iteration_job],
                     ce_iteration_job.output,
