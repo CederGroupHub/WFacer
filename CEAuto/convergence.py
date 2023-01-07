@@ -65,7 +65,7 @@ def compare_fitted_coefs(cluster_subspace, coefs_prev, coefs_now):
 
 
 def ce_converged(coefs_history, cv_history, cv_std_history,
-                 wrangler, iter_id, convergence_options):
+                 wrangler, convergence_options):
     """Check whether the ce workflow has converged.
 
     Args:
@@ -81,8 +81,6 @@ def ce_converged(coefs_history, cv_history, cv_std_history,
             A wrangler storing all past training data.
             Maximum recorded iteration index in wrangler
             must be equal to that of current iter_id - 1.
-        iter_id(int):
-            Index of the current iteration, counting from 0.
         convergence_options(dict):
             Pre-processed convergence criterion.
     Returns:
@@ -90,19 +88,9 @@ def ce_converged(coefs_history, cv_history, cv_std_history,
     """
     # Wrangler is not empty, but its maximum iteration index does not match the
     # last iteration.
-    if wrangler.max_iter_id is not None and wrangler.max_iter_id != iter_id - 1:
-        raise ValueError(f"Maximum iteration index read from wrangler"
-                         f" is {wrangler.max_iter_id}, which does not match"
-                         f" the last iteration index {iter_id - 1} !")
-    if len(coefs_history) != iter_id:
-        raise ValueError(f"Number of past fitted ECIs is {len(coefs_history)},"
-                         f" which does not match iteration index {iter_id}!")
-    if (len(coefs_history) != len(cv_history)
-            or len(cv_std_history) != len(cv_history)):
-        raise ValueError("Number of past fitted ECIs, CV errors, CV standard"
-                         " deviations must be equal!")
     if len(coefs_history) < 2:
         return False
+    iter_id = wrangler.max_iter_id
 
     cv_converged = (cv_history[-1] <= convergence_options["cv_tol"]
                     and cv_std_history[-1] / cv_history[-1]
@@ -117,9 +105,9 @@ def ce_converged(coefs_history, cv_history, cv_std_history,
                      <= convergence_options["delta_eci_rtol"])
 
     min_e1 = get_min_energy_structures_by_composition(wrangler,
-                                                      max_iter_id=iter_id - 2)
-    min_e2 = get_min_energy_structures_by_composition(wrangler,
                                                       max_iter_id=iter_id - 1)
+    min_e2 = get_min_energy_structures_by_composition(wrangler,
+                                                      max_iter_id=iter_id)
     matcher = wrangler.cluster_subspace._site_matcher
     max_diff, new_gs_found \
         = compare_min_energy_structures_by_composition(min_e1,
@@ -133,4 +121,4 @@ def ce_converged(coefs_history, cv_history, cv_std_history,
     max_iter = (convergence_options["max_iter"]
                 if convergence_options["max_iter"] is None else np.inf)
     return ((cv_converged and eci_converged and min_e_converged)
-            or iter_id >= max_iter)
+            or iter_id >= max_iter - 1)

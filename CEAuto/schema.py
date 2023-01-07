@@ -1,18 +1,25 @@
 """Defines the data schema for CEAuto jobs."""
-
+import numpy as np
 from pydantic import BaseModel, Field
 
 from smol.cofe import ClusterSubspace
 
 from .wrangling import CeDataWrangler
+from .convergence import ce_converged
 
 
 class CeOutputsDocument(BaseModel):
     """Summary of cluster expansion workflow as outputs."""
 
+    project_name: str = Field("ceauto_work",
+                              description="The name of cluster expansion"
+                                          " project.")
     cluster_subspace: ClusterSubspace = Field(None,
                                               description="The cluster subspace"
                                                           " for expansion.")
+    prim_specs: dict = Field({},
+                             description="Computed specifications of the primitive"
+                                         " cell.")
     data_wrangler: CeDataWrangler = Field(CeDataWrangler(cluster_subspace),
                                           description="The structure data"
                                                       " wrangler, including"
@@ -48,7 +55,11 @@ class CeOutputsDocument(BaseModel):
     enumerated_matrices: list = Field([],
                                       description="Supercell matrices for each"
                                                   " enumerated structure.")
-    enumerated_features: list = Field([],
+    enumerated_features: list = Field(np.array([]).reshape(0,
+                                                           cluster_subspace
+                                                           .num_corr_functions
+                                                           + len(cluster_subspace
+                                                                 .external_terms)),
                                       description="Feature vectors for each"
                                                   " enumerated structure.")
     undecorated_entries: list = Field([],
@@ -62,3 +73,37 @@ class CeOutputsDocument(BaseModel):
                                                  " structure. If failed, will"
                                                  " be None-type.")
 
+    @property
+    def last_iter_id(self):
+        """Index of the last iteration.
+
+        Returns:
+            int.
+        """
+        if (len(self.coefs_history) != len(self.cv_history) or
+                len(self.coefs_history) != len(self.cv_std_history) or
+                len(self.coefs_history) != len(self.params_history)):
+            raise ValueError("Length of history records in coefs, cv,"
+                             "cv_std and params must match!")
+        if self.data_wrangler.max_iter_id is None:
+            if len(self.coefs_history) > 0:
+                raise ValueError("Length of history and the record in"
+                                 "data wrangler must match!")
+        elif (self.data_wrangler.max_iter_id
+              != len(self.coefs_history) - 1):
+            raise ValueError("Length of history and the record in"
+                             "data wrangler must match!")
+        return len(self.coefs_history) - 1
+
+    @property
+    def converged(self):
+        """Check convergence based on given output doc.
+
+        Returns:
+            bool.
+        """
+        return ce_converged(self.coefs_history,
+                            self.cv_history,
+                            self.cv_std_history,
+                            self.data_wrangler,
+                            self.ce_options)

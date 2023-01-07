@@ -121,7 +121,6 @@ def get_prim_specs(prim):
     d_nn = min(d_nns)
 
     return {
-        "prim": prim,
         "bits": bits,
         "sublattice_sites": sublattice_sites,
         "charge_decorated": charge_decorated,
