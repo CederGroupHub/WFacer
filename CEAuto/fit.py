@@ -110,6 +110,7 @@ def fit_ecis_from_wrangler(wrangler,
         # Default sparse-lm scoring has changed to "neg_root_mean_square"
         best_cv = -optimizer.best_score_
         best_cv_std = optimizer.best_score_std_
+        best_params = optimizer.best_params_
 
     else:
         cvs = cross_val_score(estimator,
