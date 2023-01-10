@@ -107,33 +107,20 @@ def fit_ecis_from_wrangler(wrangler,
                                   y=normalized_energy,
                                   **kwargs)
         best_coef = optimizer.best_estimator_.coef_
-        # Sklearn gives r2 score. Should be converted.
-        best_r2 = optimizer.best_score_
-        best_r2_std = optimizer.best_score_std_
-        best_params = optimizer.best_params_
+        # Default sparse-lm scoring has changed to "neg_root_mean_square"
+        best_cv = -optimizer.best_score_
+        best_cv_std = optimizer.best_score_std_
 
-        y_pred = optimizer.predict(feature_matrix)
-        tss = ((normalized_energy - y_pred) ** 2).sum() / len(y_pred)
-        best_cv = np.sqrt((1 - best_r2) * tss)
-        # Estimated.
-        min_r2 = max(0, best_r2 - best_r2_std)
-        max_r2 = min(1, best_r2 + best_r2_std)
-        min_cv = np.sqrt((1 - min_r2) * tss)
-        max_cv = np.sqrt((1 - max_r2) * tss)
-        best_cv_std = np.abs(min_cv - max_cv) / 2
-    # TODO: ask the sparse-lm team to make RMSE as the default score metric.
     else:
-        r2s = cross_val_score(estimator,
+        cvs = cross_val_score(estimator,
                               X=feature_matrix,
                               y=normalized_energy,
+                              scoring="neg_root_mean_squared_error",
                               **optimizer_kwargs)
         estimator = estimator.fit(X=feature_matrix,
                                   y=normalized_energy,
                                   **kwargs)
         best_coef = estimator.coef_
-        y_pred = estimator.predict(feature_matrix)
-        tss = ((normalized_energy - y_pred) ** 2).sum() / len(y_pred)
-        cvs = np.sqrt((1 - r2s) * tss)
         best_cv = np.average(cvs)
         best_cv_std = np.std(cvs)
         best_params = None
