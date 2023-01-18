@@ -191,15 +191,16 @@ def truncate_cluster_subspace(cluster_subspace,
     return cluster_subspace_new
 
 
-def enumerate_counts(sc_size,
-                     comp_space=None,
-                     bits=None,
-                     sublattice_sizes=None,
-                     comp_enumeration_step=1,
-                     **kwargs):
+def enumerate_compositions_as_counts(sc_size,
+                                     comp_space=None,
+                                     bits=None,
+                                     sublattice_sizes=None,
+                                     comp_enumeration_step=1,
+                                     **kwargs):
     """Enumerate compositions in a given supercell size.
 
-    Results will be returned in "counts" format (see smol.moca.CompositionSpace).
+    Results will be returned in "counts" format
+    (see smol.moca.CompositionSpace).
     Args:
         sc_size(int):
             The super-cell size in the number of prim cells.

@@ -5,16 +5,16 @@ from sklearn.model_selection import cross_val_score
 
 from smol.utils import class_name_from_str, derived_class_factory, get_subclasses
 
-from sparselm.model.base import Estimator
-from sparselm.model.ols import OrdinaryLeastSquares
-from sparselm.model.miqp.best_subset import BestSubsetSelection
-from sparselm.model.miqp.regularized_l0 import MixedL0
-from sparselm.optimizer import GridSearch, LineSearch
+from sparselm.model._base import CVXEstimator
+from sparselm.model import OrdinaryLeastSquares
+from sparselm.model import BestSubsetSelection
+from sparselm.model import RegularizedL0
+from sparselm.model_selection import GridSearchCV, LineSearchCV
 
 
-all_optimizers = {"GridSearch": GridSearch,
-                  "LineSearch": LineSearch}
-hierarchy_classes = get_subclasses(MixedL0)
+all_optimizers = {"GridSearch": GridSearchCV,
+                  "LineSearch": LineSearchCV}
+hierarchy_classes = get_subclasses(RegularizedL0)
 hierarchy_classes.update({"BestSubsetSelection": BestSubsetSelection})
 hierarchy_classes.update(get_subclasses(BestSubsetSelection))
 
@@ -33,7 +33,20 @@ def estimator_factory(estimator_name, **kwargs):
         Estimator
     """
     class_name = class_name_from_str(estimator_name)
-    return derived_class_factory(class_name, Estimator, **kwargs)
+    return derived_class_factory(class_name, CVXEstimator, **kwargs)
+
+
+def is_hierarchy_estimator(class_name):
+    """Find whether an estimator needs hierarchy.
+
+    Args:
+        class_name(str):
+            Name of the estimator.
+    Returns:
+        bool.
+    """
+    class_name = class_name_from_str(class_name)
+    return class_name in hierarchy_classes
 
 
 # As mentioned in CeDataWrangler, weights does not make much sense and will not be used.
@@ -78,14 +91,25 @@ def fit_ecis_from_wrangler(wrangler,
     normalized_energy = wrangler.get_property_vector("energy", normalize=True)
 
     # Prepare the estimator.
-    # TODO: using function hierarchy instead of orbits hierarchy might not be correct
-    #  for basis other than indicator can be wrong! Currently, sparse-lm can only use
-    #  cluster hierarchy!!!
+    # Using function hierarchy instead of orbits hierarchy might not be correct
+    # for basis other than indicator can be wrong!
     est_class_name = class_name_from_str(estimator_name)
     estimator_kwargs = estimator_kwargs or {}
-    if est_class_name in hierarchy_classes and use_hierarchy:
-        hierarchy = space.function_hierarchy()  # Need a better case-study in the future!
+    if is_hierarchy_estimator(est_class_name) and use_hierarchy:
+        if space.basis_type == "indicator":
+            # Use function hierarchy for indicator.
+            hierarchy = space.function_hierarchy()
+            groups = list(range(space.num_corr_functions +
+                                len(space.external_terms)))
+        else:
+            # Use orbit hierarchy for other.
+            hierarchy = space.orbit_hierarchy()
+            groups = np.append(space.function_orbit_ids,
+                               np.arange(len(space.external_terms), dtype=int)
+                               + space.num_corr_functions)
+
         estimator = estimator_factory(estimator_name,
+                                      groups=groups,
                                       hierarchy=hierarchy,
                                       **estimator_kwargs)
     else:

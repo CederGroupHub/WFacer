@@ -557,8 +557,8 @@ def process_fit_options(d):
             estimator. See sparselm.models
         optimizer_type(str):
             The name of optimizer class used to optimize model hyperparameters
-            over cross validation. Default is None. Supports "grid-search" and
-            "line-search" optimizers. See sparselm.optimizer.
+            over cross validation. Default is None. Supports "grid-search-CV" and
+            "line-search-CV" optimizers. See sparselm.model_selection.
         param_grid(dict|list(tuple)):
             Parameters grid to search for estimator hyperparameters.
             See sparselm.optimizer.
@@ -579,9 +579,13 @@ def process_fit_options(d):
             "estimator_kwargs":
             d.get("estimator_kwargs", {}),
             'optimizer_type':
-            d.get('optimizer_type'),
+            d.get('optimizer_type', "line-search-CV"),
             "param_grid":
-            d.get("param_grid"),
+            d.get("param_grid",
+                  [("alpha",
+                    (2 ** np.linspace(-19, 0, 20)).tolist()),
+                   ("l0_ratio",
+                    [0] + (2 ** np.linspace(-10, -0.2, 15)).tolist())]),
             'optimizer_kwargs':
             d.get('optimizer_kwargs', {}),
             'fit_kwargs':
