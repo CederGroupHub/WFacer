@@ -343,7 +343,8 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
                                      successful_properties,
                                      successful_entries,
                                      successful_scmatrices):
-        # Save iteration index and enumerated structure index.
+        # Save iteration index and the structure's index in
+        # all enumerated structures.
         prop["spec"] = {"iter_id": iter_id, "enum_id": eid}
         wrangler.add_entry(entry,
                            properties=prop,
