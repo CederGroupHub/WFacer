@@ -1,6 +1,7 @@
 from monty.json import MSONable, MontyDecoder
 import json
 
+
 def assert_msonable(obj, test_if_subclass=True):
     """
     Tests if obj is MSONable and tries to verify whether the contract is
@@ -12,6 +13,7 @@ def assert_msonable(obj, test_if_subclass=True):
         assert isinstance(obj, MSONable)
     assert obj.as_dict() == obj.__class__.from_dict(obj.as_dict()).as_dict()
     _ = json.loads(obj.to_json(), cls=MontyDecoder)
+
 
 def assert_dict_equal(d1, d2):
     assert sorted(list(d1.keys())) == sorted(list(d2.keys()))

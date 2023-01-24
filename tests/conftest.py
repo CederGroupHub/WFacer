@@ -5,29 +5,37 @@ from monty.serialization import loadfn
 from smol.cofe import ClusterSubspace, ClusterExpansion
 from smol.cofe.extern import EwaldTerm
 
-from CEAuto import *
+from CEAuto.preprocessing import (reduce_prim,
+                                  get_prim_specs,
+                                  get_cluster_subspace)
 
 # load test data files and set them up as fixtures
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
 # some test structures to use in tests
-files = ['LiCaBr_prim.json']
+files = ["LiCaBr_prim.json", "CrFeW_prim.json"]
 
 test_structures = [loadfn(os.path.join(DATA_DIR, file)) for file in files]
 
+
 @pytest.fixture(params=test_structures, scope='module')
-def structure(request):
+def prim(request):
     return request.param
 
-@pytest.fixture(params=test_structures)
-def subspace(request):
-    space = ClusterSubspace.from_cutoffs(request.param,
-                                         cutoffs={2: 7, 3: 5, 4: 5},
-                                         supercell_size='volume')
-    space.add_external_term(EwaldTerm())
+
+@pytest.fixture(scope="module")
+def subspace(prim):
+    prim = reduce_prim(prim)
+    specs = get_prim_specs(prim)
+    space = get_cluster_subspace(prim,
+                                 specs["charge_decorated"],
+                                 specs["nn_distance"],
+                                 cutoffs={2: 7, 3: 5, 4: 5},
+                                 use_ewald=True)
     return space
 
-@pytest.fixture
+
+@pytest.fixture(scope="module")
 def cluster_expansion(subspace):
     coefs_ = (np.random.
               random(subspace.num_corr_functions +
@@ -37,37 +45,11 @@ def cluster_expansion(subspace):
     coefs_[-len(subspace.external_terms):] = 0.3
     return ClusterExpansion(subspace, coefs_)
 
-@pytest.fixture
-def inputs_wrapper(structure):
-    prim = structure
-    options = {'decorators_types':['Magcharge'],
-               'decorators_args':[{'labels_table':
-                                  {'Li':[1],
-                                   'Ca':[1],
-                                   'Br':[-1]
-                                  }}],
-               'radius':{2:7.0, 3:5.0, 4:5.0},
-               'extern_types': ['EwaldTerm'],
-               'handler_args_enum':
-                        {"n_runs_sa": 50,
-                         "n_runs_unfreeze": 100,
-                         "n_samples": 100}
-              }
-    # options are to be passed as kwargs, not dict.
-    return InputsWrapper(prim=prim, **options)
 
-@pytest.fixture
-def history_wrapper(subspace):
-    return HistoryWrapper(subspace)
+@pytest.fixture(scope="module")
+def data_wrangler(subspace):
+    """A fictitious data wrangler."""
+    n_entries_per_iter = 100
+    n_iters = 10
+    for iter_id in range(n_iters):
 
-@pytest.fixture
-def history_wrapper_loaded(subspace):
-    coefs = np.random.random(subspace.num_corr_functions +
-                             len(subspace.external_terms))
-    coefs[0] = 1.0
-    coefs = coefs.tolist()
-    cv = 0.998
-    rmse = 0.005
-    history = [{'coefs':coefs, 'cv':cv, 'rmse':rmse}]
-
-    return HistoryWrapper(subspace, history)

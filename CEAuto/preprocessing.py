@@ -86,6 +86,11 @@ def get_prim_specs(prim):
     Args:
         prim(Structure):
             Reduced primitive cell with partial occupancy to expand.
+            If a prim only contains charge neutral atoms, it is your
+            responsibility to make sure that all species in prim are
+            either Element or Vacancy. No Species or DummySpecies
+            with 0+ charge is allowed, otherwise computed structures
+            will not map into prim!
     Returns:
         dict:
            a spec dict containing bits, sub-lattice sites,
