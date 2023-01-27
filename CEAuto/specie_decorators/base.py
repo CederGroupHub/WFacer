@@ -23,11 +23,27 @@ from sklearn.mixture import GaussianMixture
 from skopt import gp_minimize
 
 from smol.cofe.space.domain import get_species
-from smol.utils import derived_class_factory, class_name_from_str
+from smol.utils import (derived_class_factory,
+                        class_name_from_str,
+                        get_subclasses)
 
 # Add here if you implement more decorators.
-valid_decorator_types = {"oxi_state": ("pmg-guess-charge-decorator",
-                                       "magnetic-charge-decorator",)}
+valid_decorator_types = {"oxi_state": ("pmg-guess-charge",
+                                       "magnetic-charge",)}
+
+
+def _get_required_site_property(entry, site_id, prop_name):
+    # Now if prop_name has dash ("-"), site property will be treated as a dictionary.
+    def explore_key_path(path, d):
+        d_last = d.copy()
+        for k in path:
+            d_last = d_last.get(k, {})
+        if isinstance(d_last, dict) and len(d_last) == 0:
+            return None
+        return d_last
+
+    key_path = prop_name.split("-")
+    return explore_key_path(key_path, entry[site_id].properties)
 
 
 class BaseDecorator(MSONable, metaclass=ABCMeta):
@@ -152,9 +168,9 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         for struct_id, site_id in structure_sites:
             site_props = []
             for prop_name in self.required_prop_names:
-                p = (entries[struct_id]
-                     .structure[site_id]
-                     .properties[prop_name])
+                p = _get_required_site_property(entries[struct_id],
+                                                site_id,
+                                                prop_name)
                 if hasattr(p, "__iter__"):
                     raise ValueError("Cannot train assignment on non-scalar"
                                      " property.")
@@ -648,5 +664,29 @@ def decorator_factory(decorator_type, *args, **kwargs):
         args, kwargs:
             Arguments used to initialize the class.
     """
+    if ("decorator" not in decorator_type
+            and "decorator" not in decorator_type):
+        decorator_type += "-decorator"
     name = class_name_from_str(decorator_type)
     return derived_class_factory(name, BaseDecorator, *args, **kwargs)
+
+
+def get_site_property_name_from_decorator(decname):
+    """Get the name of required properties from decorator name.
+
+    Args:
+        decname(str):
+            Decorator name.
+    Returns:
+        list[str]:
+            List of names of required site properties by the
+            decorator.
+    """
+    if ("decorator" not in decname
+            and "decorator" not in decname):
+        decname += "-decorator"
+    clsname = class_name_from_str(decname)
+    dec_class = get_subclasses(BaseDecorator).get(clsname)
+    if dec_class is None:
+        raise ValueError(f"required decorator {clsname} is not implemented!")
+    return dec_class.required_prop_names

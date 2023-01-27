@@ -95,6 +95,9 @@ def parse_generic_constraint(d_left, right, bits):
             corresponding species number in the constraint equation.
             If given in list of dictionary, each dictionary in the
             list will constrain a corresponding sub-lattice.
+            If given in a single dictionary, that means the amount
+            of species that appear in this dictionary will be
+            constrained regardless of sub-lattice.
             Note: numbers must be given as per primitive cell.
         right(float):
             Right-hand side of the equation. Must be given as per

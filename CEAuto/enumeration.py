@@ -24,7 +24,7 @@ from smol.cofe import ClusterSubspace
 
 from .utils.supercells import get_three_factors, is_duplicate_sc
 from .utils.selection import select_initial_rows, select_added_rows
-from .sample_geneators import CanonicalSampleGenerator
+from .sample_generators import CanonicalSampleGenerator
 from .utils.duplicacy import is_duplicate
 
 

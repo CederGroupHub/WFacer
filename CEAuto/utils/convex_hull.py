@@ -1,4 +1,9 @@
-"""Utilities related to min energies and convex hull."""
+"""Utilities related to min energies and convex hull.
+
+Notice: when generating and adding training structures, distinguish
+element oxidation states. But when generating hulls for comparing
+convergence, will not distinguish oxidation states.
+"""
 import numpy as np
 from collections import defaultdict
 
@@ -58,7 +63,9 @@ def get_hull(wrangler, max_iter_id=None):
             If none given, will read existing maximum iteration number.
 
     Returns:
-        dict: element composition and energies in eV/site.
+        dict:
+            element compositions as keys, energy per site and structure
+            as values.
     """
     if max_iter_id is None:
         max_iter_id = wrangler.max_iter_id
@@ -78,5 +85,5 @@ def get_hull(wrangler, max_iter_id=None):
                                 in entry.structure.composition
                                .element_composition.items()})
             e = energy / entry.data["size"] / prim_size  # eV/site
-            hull[comp] = e
+            hull[comp] = (e, entry.structure)
     return hull

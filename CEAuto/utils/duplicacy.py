@@ -1,6 +1,6 @@
 """Check duplicacy between structures."""
 
-from pymatgen.core import Structure, Lattice, Element, Species, DummySpecies
+from pymatgen.core import Structure, Element, Species, DummySpecies
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
 from smol.cofe.space.domain import Vacancy

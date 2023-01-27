@@ -1,9 +1,9 @@
 """Provide structure selection methods."""
 import numpy as np
-import warnings
+import logging
 
 
-def cur_decompose(g, c, r):
+def _cur_decompose(g, c, r):
     """Calculate u that g = cur.
 
     Args:
@@ -52,12 +52,12 @@ def select_initial_rows(femat, n_select=10,
     if n_keep > n:
         raise ValueError("Can not keep more structures than provided!")
     if n_keep > n_select:
-        warnings.warn("Keeping more structures than to be selected!"
-                      " Cannot select new structures.")
+        logging.warning("Keeping more structures than to be selected!"
+                        " Cannot select new structures.")
         return keep_indices
     if n_select > n:
-        warnings.warn("Structures to select more than provided,"
-                      " will select all provided structures.")
+        logging.warning("Structures to select more than provided,"
+                        " will select all provided structures.")
         return list(range(n))
     dn = n_select - n_keep
 
@@ -75,7 +75,7 @@ def select_initial_rows(femat, n_select=10,
                 c = g[:, trial_indices]
                 r = g[trial_indices, :]
 
-                u = cur_decompose(g, c, r)
+                u = _cur_decompose(g, c, r)
 
                 errs.append(np.linalg.norm(g - np.dot(np.dot(c, u), r)))
             select_index = available_indices[np.argmin(errs)]
@@ -144,12 +144,12 @@ def select_added_rows(femat, old_femat,
     if n_keep > n:
         raise ValueError("Can not keep more structures than provided!")
     if n_keep > n_select:
-        warnings.warn("Keeping more structures than to be selected!"
-                      " Cannot select new structures.")
+        logging.warning("Keeping more structures than to be selected!"
+                        " Cannot select new structures.")
         return keep_indices
     if n_select > n:
-        warnings.warn("Structures to select more than provided,"
-                      " will select all provided structures.")
+        logging.warning("Structures to select more than provided,"
+                        " will select all provided structures.")
         return list(range(n))
     dn = n_select - n_keep
 

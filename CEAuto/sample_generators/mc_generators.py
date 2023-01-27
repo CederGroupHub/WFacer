@@ -350,5 +350,8 @@ def mcgenerator_factory(mcgenerator_name, *args, **kwargs):
         *args, **kwargs:
             Arguments used to intialize the class.
     """
+    if ("sample-generator" not in mcgenerator_name
+            and "SampleGenerator" not in mcgenerator_name):
+        mcgenerator_name += "-sample-generator"
     name = class_name_from_str(mcgenerator_name)
     return derived_class_factory(name, McSampleGenerator, *args, **kwargs)

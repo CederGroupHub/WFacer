@@ -5,9 +5,7 @@ be extracted.
 """
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 
-from smol.utils import get_subclasses, class_name_from_str
-
-from ..specie_decorators import BaseDecorator
+from ..specie_decorators.base import get_site_property_name_from_decorator
 
 
 def merge_computed_structure_entry(entry, structure):
@@ -52,10 +50,7 @@ def get_property_from_taskdoc(taskdoc, property_name):
     last_calc = taskdoc.calcs_reversed[0]
     output = taskdoc.output
     # Add more special conversion rules if needed.
-    if property_name == "magmom":
-        query = "magnetization"
-    else:
-        query = property_name
+    query = property_name
 
     if query in entry.data:
         return entry.data[query]
@@ -72,24 +67,6 @@ def get_property_from_taskdoc(taskdoc, property_name):
     else:
         raise ValueError(f"{query} can not be found"
                          f" in task document!")
-
-
-def get_site_property_name_from_decorator(decname):
-    """Get the name of required properties from decorator name.
-
-    Args:
-        decname(str):
-            Decorator name.
-    Returns:
-        list[str]:
-            List of names of required site properties by the
-            decorator.
-    """
-    clsname = class_name_from_str(decname)
-    dec_class = get_subclasses(BaseDecorator).get(clsname)
-    if dec_class is None:
-        raise ValueError(f"required decorator {clsname} is not implemented!")
-    return dec_class.required_prop_names
 
 
 def get_entry_from_taskdoc(taskdoc, properties=None, decorator_names=None):
@@ -126,7 +103,10 @@ def get_entry_from_taskdoc(taskdoc, properties=None, decorator_names=None):
         for d in decorator_names:
             site_property_names = get_site_property_name_from_decorator(d)
             for sp in site_property_names:
-                site_props[sp] = get_property_from_taskdoc(taskdoc, sp)
+                # Total magnetization on each site is already read by atomate2,
+                # and added to structure site properties.
+                if sp != "magmom":
+                    site_props[sp] = get_property_from_taskdoc(taskdoc, sp)
     for sp, prop in site_props.items():
         structure.add_site_property(sp, prop)
     return (merge_computed_structure_entry(computed_entry, structure),

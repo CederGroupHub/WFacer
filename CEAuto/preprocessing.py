@@ -16,9 +16,6 @@ from smol.cofe.space.domain import (get_site_spaces, Vacancy,
 
 from .utils.comp_constraints import (parse_species_constraints,
                                      parse_generic_constraint)
-from .specie_decorators import allowed_decorators
-
-import warnings
 
 
 # Parse and process primitive cell.
@@ -198,9 +195,10 @@ def process_supercell_options(d):
             standard structure transformation matrix T, and enumerate
             super-cell matrices in the form of: M = M'T.
             Default to true. If not, will set T to eye(3).
-        objective_sc_size(int):
-            The Supercel sizes (in number of prims) to approach.
-            Default to 32. Enumerated super-cell size will be
+        objective_num_sites(int):
+            The Supercel sizes (in number of sites, both active and inactive)
+            to approach.
+            Default to 64. Enumerated super-cell size will be
             a multiple of det(T) but the closest one to this objective
             size.
             Note: since super-cell matrices with too high a conditional
@@ -226,7 +224,7 @@ def process_supercell_options(d):
             must be of the same size!
     """
     return {'supercell_from_conventional': d.get('supercell_from_conventional', True),
-            'objective_sc_size': d.get('objective_sc_size', 32),
+            'objective_num_sites': d.get('objective_num_sites', 64),
             "spacegroup_kwargs": d.get("spacegroup_kwargs", {}),
             'max_sc_condition_number':
             d.get('max_sc_condition_number', 8),

@@ -479,8 +479,9 @@ def initialize_document(prim,
 
     # Enumerate supercell matrices, and remove aliased orbits from subspace.
     logging.info("Enumerating super-cell matrices.")
+    objective_sc_size = options["objective_num_sites"] // len(prim)
     sc_matrices = (options["sc_matrices"] or
-                   enumerate_matrices(options["objective_sc_size"],
+                   enumerate_matrices(objective_sc_size,
                                       subspace,
                                       options["supercell_from_conventional"],
                                       options["spacegroup_kwargs"],

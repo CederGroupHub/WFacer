@@ -4,8 +4,7 @@ __author__ = "Fengyu Xie"
 
 import numpy as np
 from sympy import factorint
-from itertools import permutations, product, chain
-import warnings
+from itertools import permutations, product
 
 from pymatgen.core import Lattice
 from pymatgen.analysis.structure_matcher import StructureMatcher, \
