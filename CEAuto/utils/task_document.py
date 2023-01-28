@@ -111,3 +111,4 @@ def get_entry_from_taskdoc(taskdoc, properties=None, decorator_names=None):
         structure.add_site_property(sp, prop)
     return (merge_computed_structure_entry(computed_entry, structure),
             prop_dict)
+
