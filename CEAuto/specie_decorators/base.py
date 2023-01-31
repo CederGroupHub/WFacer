@@ -59,7 +59,7 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
     decorated_prop_name = None
     required_prop_names = None
 
-    def __init__(self, labels=None):
+    def __init__(self, labels=None, **kwargs):
         """Initialize.
 
         Args:
@@ -84,9 +84,6 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
                a property to, otherwise, you are responsible for your own error!
         """
         labels = labels or {}
-        for key in labels:
-            if len(labels[key]) < 1:
-                raise ValueError(f"No label given for {key}!")
         self.labels = {get_species(key): val
                        for key, val in labels.items()}
 
@@ -268,7 +265,7 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
                            'precisions_', 'precisions_cholesky_',
                            'converged_', 'n_iter_', 'lower_bound_')
 
-    def __init__(self, labels, gaussian_models=None):
+    def __init__(self, labels, gaussian_models=None, **kwargs):
         """Initialize.
 
         Args:
@@ -435,7 +432,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
     decorated_prop_name = ""
     required_prop_names = []
 
-    def __init__(self, labels, cuts=None):
+    def __init__(self, labels, cuts=None, **kwargs):
         """Initialize.
 
         Args:
@@ -655,6 +652,25 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         return cls(d["labels"], d.get("cuts"))
 
 
+class NoTrainDecorator(BaseDecorator):
+    """Decorators that does not need training."""
+    def __init__(self, labels, **kwargs):
+        super(NoTrainDecorator, self).__init__(labels)
+
+    @property
+    def is_trained(self):
+        """Always considered trained."""
+        return True
+
+    def train(self, entries=None, reset=False):
+        """Train the model.
+
+        This decorator does not require training at all. Keep
+        this method just for consistency.
+        """
+        return
+
+
 def decorator_factory(decorator_type, *args, **kwargs):
     """Create a species decorator with given name.
 
@@ -665,7 +681,7 @@ def decorator_factory(decorator_type, *args, **kwargs):
             Arguments used to initialize the class.
     """
     if ("decorator" not in decorator_type
-            and "decorator" not in decorator_type):
+            and "Decorator" not in decorator_type):
         decorator_type += "-decorator"
     name = class_name_from_str(decorator_type)
     return derived_class_factory(name, BaseDecorator, *args, **kwargs)

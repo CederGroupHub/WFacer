@@ -322,25 +322,16 @@ def generate_initial_training_structures(ce, supercell_and_counts,
         remove_decorations = generator.remove_decorations
 
         gs_struct = generator.get_ground_state_structure()
-        gs_dupe = False
-        for old_struct in structures:
-            # Must remove all decorations to avoid adding in exactly the same input.
-            if is_duplicate(gs_struct, old_struct, remove_decorations):
-                gs_dupe = True
-                break
         samples = generator.get_unfrozen_sample(previous_sampled_structures=
                                                 [gs_struct] + structures,
                                                 num_samples=num_sample)
-        if gs_dupe:
-            structures.extend(samples)
-            sc_matrices.extend([sc_matrix for _ in samples])
-            gs_id += len(samples)
-        else:
-            structures.extend([gs_struct] + samples)
-            sc_matrices.extend([sc_matrix for _ in range(len(samples) + 1)])
-            if keep_ground_states:
-                keeps.append(gs_id)
-            gs_id += (len(samples) + 1)
+
+        structures.extend([gs_struct] + samples)
+        sc_matrices.extend([sc_matrix for _ in range(len(samples) + 1)])
+        if keep_ground_states:
+            keeps.append(gs_id)
+        gs_id += (len(samples) + 1)
+
     femat = [ce.cluster_subspace.corr_from_structure(s,
                                                      scmatrix=matrix)
              for s, matrix in zip(structures, sc_matrices)]

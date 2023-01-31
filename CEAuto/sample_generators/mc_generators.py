@@ -21,7 +21,8 @@ class McSampleGenerator(metaclass=ABCMeta):
     Each Generator should only handle one composition (canonical) or one set of
     chemical potentials (grand-canonical)!
     """
-    default_anneal_temp_series = [5000, 3200, 1600, 1000, 800, 600, 400, 200, 100]
+    default_anneal_temp_series = [5000, 3200, 1600, 1000,
+                                  800, 600, 400, 200, 100]
     default_heat_temp_series = [500, 1500, 5000]
 
     def __init__(self, ce, sc_matrix,
@@ -196,6 +197,7 @@ class McSampleGenerator(metaclass=ABCMeta):
                              initial_occupancies=
                              np.array([init_occu], dtype=int),
                              thin_by=thin_by)
+            init_occu = self.sampler.samples.get_occupancies()[-1].astype(int)
             n_samples = self.sampler.samples.num_samples
             # Take the last half as equlibrated, only.
             rand_occus.extend(self.sampler.samples

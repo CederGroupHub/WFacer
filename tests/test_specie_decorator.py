@@ -1,4 +1,7 @@
-from CEAuto.specie_decorators import MagchargeDecorator, decorate_single_structure, decorator_factory
+from CEAuto.specie_decorators import (decorator_factory,
+                                      MagneticChargeDecorator,
+                                      PmgGuessChargeDecorator,
+                                      FixedChargeDecorator)
 from pymatgen.core import Lattice, Structure
 import numpy as np
 import random
@@ -6,14 +9,18 @@ from pymatgen.core import Species, DummySpecies
 
 from .utils import assert_msonable
 
-def test_decorator_factory():
+all_decorator_names = ["magnetic-charge", "pmg-guess-charge", "fixed-charge"]
+all_decorators = [MagneticChargeDecorator, PmgGuessChargeDecorator, FixedChargeDecorator]
+
+def test_decorator_factory(prim):
     decorator_names = ["Magcharge"]
-    labels_table = {"Li":[1],"Ca":1,"Br":[-1]}
+    labels_table = {"Li": [1], "Ca": [1], "Br": [-1]}
     decorator_args = [{}]
-    classes = [MagchargeDecorator]
+    classes = [MagneticChargeDecorator]
     for name, args, cls in zip(decorator_names, decorator_args, classes):
         assert isinstance(decorator_factory(name, labels_table, **args),
                           cls)
+
 
 def test_decorate_single():
     lat = Lattice.cubic(1)

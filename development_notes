@@ -4,3 +4,4 @@ Devop plan:
 1, Begin pytest writing for modules and jobflow generation. (Begin after holidays.)
 2, begin production tests. (Begin ASAP, Finish after holidays.)
 3, Begin docs writing. (Begin after holidays)
+4, Need to rewrite fitting to add point and ewald centering automatically.

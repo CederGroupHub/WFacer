@@ -5,6 +5,8 @@ import numpy.testing as npt
 
 from pymatgen.core import Element
 from smol.cofe.space.domain import Vacancy
+from smol.moca.utils.occu import (get_dim_ids_table,
+                                  occu_to_counts)
 
 
 def assert_msonable(obj, test_if_subclass=True):
@@ -120,3 +122,27 @@ def gen_random_neutral_occupancy(sublattices, lam=10, rng=None):
             return occu.copy()
 
     raise TimeoutError("Can not generate a neutral occupancy in 10000 flips!")
+
+
+def get_counts_from_occu(occu, sublattices):
+    dim_ids_table = get_dim_ids_table(sublattices)
+    n_dims = sum([len(sl.species) for sl in sublattices])
+    return occu_to_counts(occu, n_dims, dim_ids_table)
+
+
+def gen_random_neutral_counts(sublattices, lam=10, rng=None):
+    """Generate a random composition in species counts format.
+
+    Args:
+        sublattices (Sequence of Sublattice):
+            A sequence of sublattices
+        rng (optional): {None, int, array_like[ints], SeedSequence, BitGenerator, Generator},
+            A RNG, seed or otherwise to initialize defauly_rng
+
+    Returns:
+        ndarray:
+            a charge balanced composition.
+    """
+    occu = gen_random_neutral_occupancy(sublattices, lam=lam, rng=rng)
+
+    return get_counts_from_occu(occu, sublattices)
