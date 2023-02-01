@@ -1,0 +1,53 @@
+supercell_from_conventional: true
+objective_num_sites: 64
+spacegroup_kwargs: {}
+max_sc_condition_number: 8
+min_sc_angle: 30
+sc_matrices: null
+comp_enumeration_step: 1
+species_concentration_constraints: []
+eq_constraints: []
+leq_constraints: []
+geq_constraints: []
+compositions: []
+num_structs_per_iter_init: 60
+num_structs_per_iter_add: 40
+sample_generator_kwargs: {}
+init_method: "CUR"
+add_method: "leverage"
+keep_ground_states: true
+apply_strain: [[1.03, 0, 0], [0, 1.02, 0], [0, 0, 1.01]]
+relax_generator_kwargs: {}
+relax_maker_kwargs: {}
+add_tight_relax: true
+tight_generator_kwargs: {}
+tight_maker_kwargs: {}
+static_generator_kwargs: {}
+static_maker_kwargs: {}
+other_properties: null
+decorator_types: [],
+decorator_kwargs: [],
+decorator_train_kwargs: []
+cutoffs: null,
+use_ewald: true
+ewald_kwargs: {}
+from_cutoffs_kwargs: {}
+estimator_type: "L2L0"
+use_hierarchy: true
+center_point_external: true
+filter_unique_correlations: true
+estimator_kwargs: {}
+optimizer_type: "line-search-CV"
+param_grid: null
+optimizer_kwargs: {}
+fit_kwargs: {}
+'cv_tol': 5,
+std_cv_rtol: 0.5,
+delta_cv_rtol: 0.5,
+delta_eci_rtol: null
+delta_min_e_rtol: 2
+continue_on_finding_new_gs: false
+max_iter: 10
+
+
+

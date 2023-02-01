@@ -33,7 +33,7 @@ valid_decorator_types = {"oxi_state": ("pmg-guess-charge",
 
 
 def _get_required_site_property(entry, site_id, prop_name):
-    # Now if prop_name has dash ("-"), site property will be treated as a dictionary.
+    # Now if prop_name has dot ("."), site property will be treated as a dictionary.
     def explore_key_path(path, d):
         d_last = d.copy()
         for k in path:
@@ -42,7 +42,7 @@ def _get_required_site_property(entry, site_id, prop_name):
             return None
         return d_last
 
-    key_path = prop_name.split("-")
+    key_path = prop_name.split(".")
     return explore_key_path(key_path, entry[site_id].properties)
 
 
@@ -203,7 +203,7 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
                         if isinstance(sp, Element):
                             sp_decor = Species(sp.symbol,
                                                properties={self.decorated_prop_name:
-                                                               label})
+                                                           label})
                         else:
                             sp_decor = deepcopy(sp)
                             sp_decor._properties[self.decorated_prop_name] = label
@@ -213,9 +213,15 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
                 else:  # Undecorated sites might continue to be Element.
                     species_decor.append(sp)
 
+            # Preserve all information.
+            site_properties = defaultdict(lambda: [])
+            for site in s_undecor:
+                for p in site.properties:
+                    site_properties[p].append(site.properties[p])
             s_decor = Structure(s_undecor.lattice,
                                 species_decor,
                                 s_undecor.frac_coords)
+            s_decor.add_site_property(site_properties)
             energy_adjustments = (entry.energy_adjustments
                                   if len(entry.energy_adjustments) != 0
                                   else None)
@@ -258,9 +264,11 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
     """Mixture of Gaussians (MoGs) decorator class.
 
     Uses mixture of gaussian to label each species.
+
+    Note: not tested yet.
     """
-    decorated_prop_name = ""
-    required_prop_names = []
+    decorated_prop_name = None
+    required_prop_names = None
     gaussian_model_keys = ('weights_', 'means_', 'covariances_',
                            'precisions_', 'precisions_cholesky_',
                            'converged_', 'n_iter_', 'lower_bound_')
@@ -654,6 +662,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
 
 class NoTrainDecorator(BaseDecorator):
     """Decorators that does not need training."""
+
     def __init__(self, labels, **kwargs):
         super(NoTrainDecorator, self).__init__(labels)
 

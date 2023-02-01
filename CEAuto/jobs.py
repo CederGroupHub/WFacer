@@ -379,6 +379,8 @@ def fit_calculations(parse_output, last_ce_document):
                                  options["optimizer_type"],
                                  options["param_grid"],
                                  options["use_hierarchy"],
+                                 options["center_point_external"],
+                                 options["filter_unique_correlations"],
                                  estimator_kwargs=
                                  options["estimator_kwargs"],
                                  optimizer_kwargs=
@@ -445,9 +447,9 @@ def initialize_document(prim,
             A primitive cell structure (no need to be reduced) with
             partial occupancy on some sub-lattice. This defines the
             lattice model of your cluster expansion.
-        project_name(str):
+        project_name(str): optional
             Name of the cluster expansion project.
-        options(dict):
+        options(dict): optional
             A dictionary including all options to set up the automatic
             workflow.
             For available options, see docs in preprocessing.py.

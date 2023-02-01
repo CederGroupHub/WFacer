@@ -88,6 +88,8 @@ def get_prim_specs(prim):
             either Element or Vacancy. No Species or DummySpecies
             with 0+ charge is allowed, otherwise computed structures
             will not map into prim!
+            Also notice that only the sites with the same allowed species
+            and species concentrations are considered the same sub-lattice!
     Returns:
         dict:
            a spec dict containing bits, sub-lattice sites,
@@ -223,7 +225,8 @@ def process_supercell_options(d):
             is given. Default to None. Note: if given, all supercell matrices
             must be of the same size!
     """
-    return {'supercell_from_conventional': d.get('supercell_from_conventional', True),
+    return {'supercell_from_conventional':
+            d.get('supercell_from_conventional', True),
             'objective_num_sites': d.get('objective_num_sites', 64),
             "spacegroup_kwargs": d.get("spacegroup_kwargs", {}),
             'max_sc_condition_number':
@@ -600,7 +603,7 @@ def process_fit_options(d):
             d.get("param_grid",
                   [("alpha",
                     (2 ** np.linspace(-19, 0, 20)).tolist()),
-                   ("l0_ratio",
+                   ("eta",
                     [0] + (2 ** np.linspace(-10, -0.2, 15)).tolist())]),
             'optimizer_kwargs':
             d.get('optimizer_kwargs', {}),
@@ -649,7 +652,8 @@ def process_convergence_options(d):
             number of iterations.
         max_iter(int): optional
             Maximum number of iterations allowed. Will not limit number
-            of iterations by default, but setting one limit is still recommended.
+            of iterations if set to None, but setting one limit is still
+            recommended. Default to 10.
     """
     return {'cv_tol': d.get('cv_tol', 5),
             'std_cv_rtol': d.get('std_cv_rtol', 0.5),
@@ -658,7 +662,7 @@ def process_convergence_options(d):
             'delta_min_e_rtol': d.get('delta_min_e_rtol', 2),
             "continue_on_finding_new_gs":
             d.get('continue_on_finding_new_gs', False),
-            "max_iter": d.get("max_iter")
+            "max_iter": d.get("max_iter", 10)
             }
 
 
