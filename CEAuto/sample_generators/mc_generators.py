@@ -123,6 +123,7 @@ class McSampleGenerator(metaclass=ABCMeta):
             raise ValueError(f"Given composition: {counts}\n "
                              f"or sub-lattices: {self.sublattices}\n "
                              f"cannot give a valid occupancy!")
+        return occu
 
     @abstractmethod
     def _get_init_occu(self):

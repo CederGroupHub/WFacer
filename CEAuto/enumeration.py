@@ -34,9 +34,9 @@ log = logging.getLogger(__name__)
 # TODO: in the future, may employ mcsqs type algos.
 def enumerate_matrices(objective_sc_size, cluster_subspace,
                        supercell_from_conventional=True,
-                       space_group_kwargs=None,
                        max_sc_cond=8,
-                       min_sc_angle=30):
+                       min_sc_angle=30,
+                       **kwargs):
     """Enumerate proper matrices with det size.
 
     Will give 1 unskewed matrix and 1 skewed matrix.
@@ -56,8 +56,6 @@ def enumerate_matrices(objective_sc_size, cluster_subspace,
             Whether to enumerate supercell matrices in the form M@T, where
             M is an integer matrix, T is the primitive to conventional cell
             transformation matrix. Default to True.
-        space_group_kwargs(bool): optional
-            keyword arguments to pass into SpaceGroupAnalyzer.
         max_sc_cond(float):
             Maximum conditional number allowed of the skewed supercell
             matrices. By default set to 8, to prevent overstretching in one
@@ -65,6 +63,8 @@ def enumerate_matrices(objective_sc_size, cluster_subspace,
         min_sc_angle(float):
             Minmum allowed angle of the supercell lattice. By default set
             to 30, to prevent over-skewing.
+        kwargs:
+            keyword arguments to pass into SpaceGroupAnalyzer.
     Returns:
         List of 2D lists.
     """
@@ -72,8 +72,7 @@ def enumerate_matrices(objective_sc_size, cluster_subspace,
         conv_mat = np.eye(3, dtype=int)
     else:
         prim = cluster_subspace.structure
-        space_group_args = space_group_kwargs or {}
-        sa = SpacegroupAnalyzer(prim, **space_group_args)
+        sa = SpacegroupAnalyzer(prim, **kwargs)
         t_inv = sa.get_conventional_to_primitive_transformation_matrix()
         conv_mat = np.round(np.linalg.inv(t_inv)).astype(int)
 
@@ -143,7 +142,7 @@ def enumerate_matrices(objective_sc_size, cluster_subspace,
     # Sort diagonal by low stretch, then low alias level.
     def diagonal_sort_key(sc):
         cond, angle = cond_and_angle(sc @ conv_mat)
-        return cond, alias_level(sc @ conv_mat)
+        return cond, -angle, alias_level(sc @ conv_mat)
 
     # Sort diagonal by low stretch, then low alias level.
     def skew_sort_key(sc):
@@ -181,7 +180,7 @@ def truncate_cluster_subspace(cluster_subspace,
         for key in to_remove:
             if key in alias_m:
                 to_remove[key] = to_remove[key].intersection(alias_m[key])
-    to_remove = list(set(chain(*to_remove.values())))
+    to_remove = sorted(list(set(chain(*to_remove.values()))))
     if len(to_remove) > 0:
         log.warning(f"Orbit aliasing could not be avoided "
                     f"with given supercells: {sc_matrices}!\n"
@@ -223,6 +222,9 @@ def enumerate_compositions_as_counts(sc_size,
             2D np.ndarray[int]
     """
     if comp_space is None:
+        if bits is None or sublattice_sizes is None:
+            raise ValueError("Must provide either comp_space or"
+                             " bits and sublattice_sizes!")
         comp_space = CompositionSpace(bits, sublattice_sizes,
                                       **kwargs)
         # This object can be saved in process to avoid additional
@@ -237,32 +239,47 @@ def enumerate_compositions_as_counts(sc_size,
     return np.array(ns).astype(int)
 
 
-def get_num_structs_to_sample(all_counts, num_structs_select):
-    """Get number of structures to sample in each McSampleGenerator."""
+def get_num_structs_to_sample(all_counts,
+                              num_structs_select,
+                              min_num_per_composition=2):
+    """Get number of structures to sample in each McSampleGenerator.
+
+    Args:
+        all_counts(ArrayLike):
+            All enumerated compositions in "counts" format.
+        num_structs_select(int):
+            Number of structures to eventually select.
+            Will sample 6* the number of structures to select.
+        min_num_per_composition(int): optional
+            Minimum number of structures to sample per composition.
+            Default to 2.
+    """
 
     def get_ln_weight(counts):
         # Get number of configurations with the composition.
         return np.sum([gammaln(n + 1) for n in counts])
 
-    num_structs_total = num_structs_select * 10
+    num_structs_total = num_structs_select * 6
+    min_n = min_num_per_composition
 
     ln_weights = [get_ln_weight(counts)
                   for counts in all_counts]
     weights = np.exp(ln_weights)
     num_structs = weights / np.sum(weights) * num_structs_total
-    deficit = (num_structs < 2).sum() * 2 - num_structs[num_structs < 2].sum()
-    overflow = num_structs[num_structs > 2] - 2
+    deficit = ((num_structs < min_n).sum() * min_n
+               - num_structs[num_structs < min_n].sum())
+    overflow = num_structs[num_structs > min_n] - min_n
     deltas = deficit * overflow / overflow.sum()
-    num_structs[num_structs < 2] = 2
-    num_structs[num_structs > 2] -= deltas
-    if np.any(num_structs < 2):
+    num_structs[num_structs < min_n] = min_n
+    num_structs[num_structs > min_n] -= deltas
+    if np.any(num_structs < min_n):
         log.warning("Too many compositions enumerated compared to "
                     "the number of structures to enumerate. "
                     "You may increase comp_enumeration_step, "
                     "or increase num_structs_init. Force set "
-                    "all supercell and compositions to generate 2 "
+                    f"all supercell and compositions to generate {min_n} "
                     "sample structures.")
-        num_structs[:] = 2
+        num_structs[:] = min_n
     else:
         num_structs = np.round(num_structs).astype(int)
 

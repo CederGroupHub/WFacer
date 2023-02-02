@@ -585,7 +585,7 @@ def process_fit_options(d):
             See docs of the specific estimator.
     """
     return {"estimator_type":
-            d.get('estimator_type', 'L2L0'),
+            d.get('estimator_type', 'l2-l0'),
             # Under Seko's iterative procedure, there is not much sense in weighting over energy.
             # We will not include sample weighting scheme here. You can play with the CeDataWangler
             # if you want.
@@ -598,15 +598,15 @@ def process_fit_options(d):
             "estimator_kwargs":
             d.get("estimator_kwargs", {}),
             'optimizer_type':
-            d.get('optimizer_type', "line-search-CV"),
+            d.get('optimizer_type', "line-search"),
             "param_grid":
+            # Alpha is l0 term, eta is l2 term;
+            # Scan on l2 with l0=0 first, then scan l0.
             d.get("param_grid",
-                  [("alpha",
-                    (2 ** np.linspace(-19, 0, 20)).tolist()),
-                   ("eta",
-                    [0] + (2 ** np.linspace(-10, -0.2, 15)).tolist())]),
+                  [("eta", (2 ** np.linspace(-20, 4, 25)).tolist()),
+                   ("alpha", [0] + (2 ** np.linspace(-30, 0, 16)).tolist())]),
             'optimizer_kwargs':
-            d.get('optimizer_kwargs', {}),
+            d.get('optimizer_kwargs', {"n_iter": 3}),
             'fit_kwargs':
             d.get('fit_kwargs', {}),
             }
@@ -628,7 +628,8 @@ def process_convergence_options(d):
         std_cv_rtol(float): optional
             Maximum standard deviation of CV allowed in cross validations,
             normalized by mean CV value.
-            Dimensionless, default to 0.5.
+            Dimensionless, default to None, which means this standard deviation
+            of cv will not be checked.
         delta_cv_rtol(float): optional
             Maximum difference of CV allowed between the last 2 iterations,
             divided by the standard deviation of CV in cross validation.
@@ -656,7 +657,7 @@ def process_convergence_options(d):
             recommended. Default to 10.
     """
     return {'cv_tol': d.get('cv_tol', 5),
-            'std_cv_rtol': d.get('std_cv_rtol', 0.5),
+            'std_cv_rtol': d.get('std_cv_rtol'),
             'delta_cv_rtol': d.get('delta_cv_rtol', 0.5),
             "delta_eci_rtol": d.get('delta_eci_rtol'),
             'delta_min_e_rtol': d.get('delta_min_e_rtol', 2),

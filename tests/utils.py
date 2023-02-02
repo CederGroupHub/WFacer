@@ -4,9 +4,13 @@ import numpy as np
 import numpy.testing as npt
 
 from pymatgen.core import Element
+from pymatgen.entries.computed_entries import ComputedStructureEntry
+
 from smol.cofe.space.domain import Vacancy
 from smol.moca.utils.occu import (get_dim_ids_table,
                                   occu_to_counts)
+
+from CEAuto.wrangling import CeDataWrangler
 
 
 def assert_msonable(obj, test_if_subclass=True):
@@ -146,3 +150,42 @@ def gen_random_neutral_counts(sublattices, lam=10, rng=None):
     occu = gen_random_neutral_occupancy(sublattices, lam=lam, rng=rng)
 
     return get_counts_from_occu(occu, sublattices)
+
+
+def gen_random_wrangler(ensemble):
+    """Generate a random wrangler from ensemble object.
+
+    Args:
+        ensemble(Ensemble):
+            An ensemble object.
+    Returns:
+        CeDataWrangler.
+    """
+    n_entries_per_iter = 100
+    n_iters = 8
+    n_enum = 0
+    structures = []
+    specs = []
+    energies = []
+    for iter_id in range(n_iters):
+        for s_id in range(n_entries_per_iter):
+            occu = gen_random_neutral_occupancy(sublattices=ensemble.sublattices)
+            structures.append(ensemble.processor.structure_from_occupancy(occu))
+            specs.append({"iter_id": iter_id, "enum_id": n_enum + s_id})
+            energies.append(ensemble.natural_parameters @
+                            ensemble.compute_feature_vector(occu))
+        n_enum += n_entries_per_iter
+    noise = np.random.normal(loc=0, scale=np.sqrt(np.var(energies) * 0.0001,
+                             size=(len(energies),)))
+    energies = np.array(energies) + noise
+    entries = [ComputedStructureEntry(s, e)
+               for s, e in zip(structures, energies)]
+    wrangler = CeDataWrangler(ensemble.processor.cluster_subspace)
+    for ent, spec in zip(entries, specs):
+        wrangler.add_entry(ent,
+                           properties={"spec": spec},
+                           supercell_matrix
+                           =ensemble.processor.supercell_matrix
+                           )
+    return wrangler
+

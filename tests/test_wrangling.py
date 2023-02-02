@@ -2,8 +2,6 @@
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
-from CEAuto.wrangling import CeDataWrangler
-
 
 def test_data_wrangler(data_wrangler):
     # No duplication can occur.

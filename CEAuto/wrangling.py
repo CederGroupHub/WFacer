@@ -57,6 +57,7 @@ class CeDataWrangler(StructureWrangler):
         weights=None,
         supercell_matrix=None,
         site_mapping=None,
+        check_struct_duplicacy=True,
         verbose=True,
         raise_failed=False,
     ):
@@ -98,6 +99,9 @@ class CeDataWrangler(StructureWrangler):
                 such that the elements of site_mapping represent the indices
                 of the matching sites to the prim structure. If you pass this
                 option, you are fully responsible that the mappings are correct!
+            check_struct_duplicacy(bool): optional
+                if true, will check structure duplicacy, and skip an entry if it
+                is symmetrically equivalent to an existing one. Default to true.
             verbose (bool): optional
                 if True, will raise warning regarding  structures that fail in
                 StructureMatcher, and structures that have duplicate corr vectors.
@@ -128,7 +132,7 @@ class CeDataWrangler(StructureWrangler):
                                                    sm=self.cluster_subspace._site_matcher)
             # Force dropping duplicacy.
             # TODO: maybe move this to smol in the future as an option.
-            if dupe is None:
+            if dupe is None or (not check_struct_duplicacy):
                 self._entries.append(processed_entry)
                 if verbose:
                     self._corr_duplicate_warning(self.num_structures - 1)

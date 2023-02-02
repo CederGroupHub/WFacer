@@ -32,11 +32,14 @@ class CeOutputsDocument(BaseModel):
                                 description="All historical coefficients.")
     cv_history: list = Field([],
                              description="All historical cross validation"
-                                         " errors in meV/atom.")
+                                         " errors in meV/site.")
     cv_std_history: list = Field([],
                                  description="All historical cross validation"
                                              " standard deviations in"
-                                             " meV/atom.")
+                                             " meV/site.")
+    rmse_history: list = Field([],
+                               description="All historical cross training"
+                                           " errors in meV/site.")
     params_history: list = Field([],
                                  description="All historical fitting hyper-"
                                              "parameters, if needed by model.")
@@ -82,7 +85,8 @@ class CeOutputsDocument(BaseModel):
         """
         if (len(self.coefs_history) != len(self.cv_history) or
                 len(self.coefs_history) != len(self.cv_std_history) or
-                len(self.coefs_history) != len(self.params_history)):
+                len(self.coefs_history) != len(self.params_history) or
+                len(self.coefs_history) != len(self.rmse_history)):
             raise ValueError("Length of history records in coefs, cv,"
                              "cv_std and params must match!")
         if self.data_wrangler.max_iter_id is None:

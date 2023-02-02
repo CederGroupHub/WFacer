@@ -373,7 +373,7 @@ def fit_calculations(parse_output, last_ce_document):
            Dictionary containing fitted CE information.
     """
     options = last_ce_document.ce_options
-    coefs, cv, cv_std, params \
+    coefs, cv, cv_std, rmse, params \
         = fit_ecis_from_wrangler(parse_output["wrangler"],
                                  options["estimator_type"],
                                  options["optimizer_type"],
@@ -390,6 +390,7 @@ def fit_calculations(parse_output, last_ce_document):
         {"coefs": coefs,
          "cv": cv,
          "cv_std": cv_std,
+         "rmse": rmse,
          "params": params
          }
 
@@ -423,6 +424,7 @@ def update_document(enum_output,
     ce_document.coefs_history.append(fit_output["coefs"])
     ce_document.cv_history.append(fit_output["cv"])
     ce_document.cv_std_history.append(fit_output["cv_std"])
+    ce_document.rmse_history.append(fit_output["rmse"])
     ce_document.params_history.append(fit_output["params"])
     ce_document.enumerated_structures \
         .extend(enum_output["new_structures"])
@@ -486,9 +488,9 @@ def initialize_document(prim,
                    enumerate_matrices(objective_sc_size,
                                       subspace,
                                       options["supercell_from_conventional"],
-                                      options["spacegroup_kwargs"],
                                       options["max_sc_condition_number"],
-                                      options["min_sc_angle"]
+                                      options["min_sc_angle"],
+                                      **options["spacegroup_kwargs"]
                                       )
                    )
     # Not necessarily the same as the objective size.

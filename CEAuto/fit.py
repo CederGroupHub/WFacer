@@ -14,7 +14,6 @@ from sparselm.model import BestSubsetSelection
 from sparselm.model import RegularizedL0
 from sparselm.model_selection import GridSearchCV, LineSearchCV
 
-
 all_optimizers = {"GridSearch": GridSearchCV,
                   "LineSearch": LineSearchCV}
 hierarchy_classes = get_subclasses(RegularizedL0)
@@ -95,9 +94,10 @@ def fit_ecis_from_wrangler(wrangler,
         kwargs:
             Keyword arguments used by estimator._fit. For example, solver arguments.
     Returns:
-        1D np.ndarray, float, float, 1D np.ndarray:
-            Fitted coefficients (not ECIs), cross validation error (eV/site),
-            standard deviation of CV (eV/site) ,and corresponding best parameters.
+        1D np.ndarray, float, float, float, 1D np.ndarray:
+            Fitted coefficients (not ECIs), cross validation error (meV/site),
+            standard deviation of CV (meV/site) , RMSE(meV/site)
+            and corresponding best parameters.
     """
     space = wrangler.cluster_subspace
     feature_matrix = wrangler.feature_matrix.copy()
@@ -164,6 +164,10 @@ def fit_ecis_from_wrangler(wrangler,
 
     # Prepare the optimizer.
     if not isinstance(estimator, OrdinaryLeastSquares):
+        if ("-cv" not in optimizer_name
+                or "-CV" not in optimizer_name
+                or "-Cv" not in optimizer_name):
+            optimizer_name += "-CV"
         opt_class_name = class_name_from_str(optimizer_name)
         optimizer_kwargs = optimizer_kwargs or {}
         if opt_class_name not in all_optimizers:
@@ -216,4 +220,15 @@ def fit_ecis_from_wrangler(wrangler,
         best_cv_std = np.std(cvs)
         best_params = None
 
-    return best_coef, best_cv, best_cv_std, best_params
+    predicted_energy = np.dot(feature_matrix,
+                              best_coef)
+    rmse = np.sqrt(np.sum((predicted_energy - normalized_energy) ** 2)
+                   / len(normalized_energy))
+
+    # Convert from eV/prim to meV/site.
+    n_sites = len(wrangler.cluster_subspace.structure)
+    return (best_coef,
+            best_cv * 1000 / n_sites,
+            best_cv_std * 1000 / n_sites,
+            rmse * 1000 / n_sites,
+            best_params)

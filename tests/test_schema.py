@@ -19,6 +19,7 @@ def test_ce_outputs(subspace, data_wrangler):
                                       coefs_history=[[1.0]],
                                       cv_history=[1.0],
                                       cv_std_history=[1.0],
+                                      rmse_history=[1.0],
                                       params_history=[1.0])
     with pytest.raises(ValueError):
         _ = bad_document2.last_iter_id
@@ -29,6 +30,7 @@ def test_ce_outputs(subspace, data_wrangler):
                                       coefs_history=[[1.0]],
                                       cv_history=[1.0],
                                       cv_std_history=[1.0],
+                                      rmse_history=[1.0],
                                       params_history=[1.0])
     with pytest.raises(ValueError):
         _ = bad_document3.last_iter_id

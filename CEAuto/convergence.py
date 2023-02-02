@@ -1,5 +1,6 @@
 """Convergence checks."""
 import numpy as np
+import logging
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
@@ -93,8 +94,9 @@ def ce_converged(coefs_history, cv_history, cv_std_history,
     iter_id = wrangler.max_iter_id
 
     cv_converged = (cv_history[-1] <= convergence_options["cv_tol"]
-                    and cv_std_history[-1] / cv_history[-1]
-                    <= convergence_options["std_cv_rtol"]
+                    and (convergence_options["std_cv_rtol"] is None
+                         or cv_std_history[-1] / cv_history[-1]
+                         <= convergence_options["std_cv_rtol"])
                     and abs(cv_history[-1] - cv_history[-2]) / cv_history[-2]
                     <= convergence_options["delta_cv_rtol"])
 
@@ -119,6 +121,12 @@ def ce_converged(coefs_history, cv_history, cv_std_history,
                             or not new_gs_found))
 
     max_iter = (convergence_options["max_iter"]
-                if convergence_options["max_iter"] is None else np.inf)
-    return ((cv_converged and eci_converged and min_e_converged)
+                if convergence_options["max_iter"] is not None else np.inf)
+
+    real_convereged = (cv_converged and eci_converged and min_e_converged)
+    if iter_id >= max_iter - 1 and not real_convereged:
+        logging.warning(f"Maximum number of iterations {max_iter} reached,"
+                        f" but the cluster expansion is still not converged!"
+                        f" you may want to check your calculation settings.")
+    return (real_convereged
             or iter_id >= max_iter - 1)

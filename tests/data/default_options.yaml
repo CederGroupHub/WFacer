@@ -32,17 +32,18 @@ cutoffs: null,
 use_ewald: true
 ewald_kwargs: {}
 from_cutoffs_kwargs: {}
-estimator_type: "L2L0"
+estimator_type: "l2-l0"
 use_hierarchy: true
 center_point_external: true
 filter_unique_correlations: true
 estimator_kwargs: {}
-optimizer_type: "line-search-CV"
+optimizer_type: "line-search"
 param_grid: null
-optimizer_kwargs: {}
+optimizer_kwargs:
+  n_iter: 3
 fit_kwargs: {}
 'cv_tol': 5,
-std_cv_rtol: 0.5,
+std_cv_rtol: null,
 delta_cv_rtol: 0.5,
 delta_eci_rtol: null
 delta_min_e_rtol: 2
