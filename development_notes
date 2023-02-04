@@ -1,8 +1,7 @@
 You must test with smol >= 0.0.8 and sparce-lm >= 0.2.1
 
 Devop plan:
-1, Need a job to continue from an old document.
-2, Finish and pass pytests for modules and jobflows.
-3, Set up .github hooks.
-4, begin production tests in Al-Li, then  LFP. Think about another system.
-5, Begin writing notebooks and docs.
+1, Finish and pass pytests for modules and jobflows.
+2, Set up .github hooks.
+3, begin production tests in Al-Li, then  LFP. Think about another system.
+4, Begin writing notebooks and docs.

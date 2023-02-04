@@ -22,7 +22,8 @@ def initial_document(prim):
                "other_properties": ["some_test"],
                "estimator_type": "lasso",
                "optimizer_type": "grid-search",
-               "param_grid": {"alpha": 2 ** np.linspace(-25, 3, 15)}}
+               "param_grid": {"alpha": 2 ** np.linspace(-25, 3, 15)},
+               "max_iter": 5}
     if specs["charge_decorated"]:
         options["decorator_types"] = ["pmg-guess-charge"]
 
@@ -55,7 +56,7 @@ def test_trigger(initial_document):
     assert flow.jobs[5].name == "ceauto-work_iter_1_trigger"
 
 
-def test_ceauto_maker(prim):
+def test_ceauto_maker(prim, initial_document):
     maker = CeAutoMaker(name="goodluck")
     flow = maker.make(prim)
 
@@ -67,6 +68,13 @@ def test_ceauto_maker(prim):
         assert isinstance(job, Job)
     assert flow.jobs[0].name == "goodluch_initialize"
     assert flow.jobs[1].name == "goodluch_iter_0_trigger"
+
+    flow2 = maker.make(prim, last_document=initial_document)
+    assert len(flow2.jobs) == 1
+    assert flow2.jobs[0].name == "goodluch_iter_0_trigger"
+    # Since we restart form a workflow that has not reached max_iter yet,
+    # will not update max_iter. So it should still be 5.
+    assert initial_document.ce_options["max_iter"] == 5
 
 
 
