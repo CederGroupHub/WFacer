@@ -336,7 +336,6 @@ def generate_initial_training_structures(ce, supercell_and_counts,
                                                num_samples):
         generator = CanonicalSampleGenerator(ce, sc_matrix, counts,
                                              **mc_generator_args)
-        remove_decorations = generator.remove_decorations
 
         gs_struct = generator.get_ground_state_structure()
         samples = generator.get_unfrozen_sample(previous_sampled_structures=

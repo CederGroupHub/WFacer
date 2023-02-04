@@ -161,6 +161,8 @@ def _filter_out_failed_entries(entries, entry_ids):
     return entries, entry_ids
 
 
+# TODO: jobs with a dict or list as output is still considered unreferenced
+#  by pycharm. make sure these jobs actually work.
 @job
 def enumerate_structures(last_ce_document):
     """Enumerate new structures for DFT computation.
@@ -179,7 +181,6 @@ def enumerate_structures(last_ce_document):
     options = last_ce_document.ce_options
 
     enumerated_structures = deepcopy(last_ce_document.enumerated_structures)
-    enumerated_matrices = deepcopy(last_ce_document.enumerated_matrices)
     enumerated_features = deepcopy(last_ce_document.enumerated_features)
 
     subspace = last_ce_document.cluster_subspace
@@ -221,7 +222,7 @@ def calculate_structures(enum_output, last_ce_document):
             The last cluster expansion outputs document.
     Returns:
         list[TaskDocument]:
-            Results of VASP calculations.
+            Results of VASP calculations as TaskDocument.
     """
     project_name = last_ce_document.project_name
     iter_id = last_ce_document.last_iter_id + 1
@@ -236,7 +237,7 @@ def calculate_structures(enum_output, last_ce_document):
     for i, structure in enumerate(new_structures):
         fid = i + struct_id
         logging.info(f"Calculating enumerated structure id: {fid}.")
-        flow_name = project_name + f"_enum_{fid}"
+        flow_name = project_name + f"_iter_{iter_id}_enum_{fid}"
         relax_maker.name = flow_name + "_relax"
         tight_maker.name = flow_name + "_tight"
         static_maker.name = flow_name + "_static"
@@ -255,10 +256,11 @@ def calculate_structures(enum_output, last_ce_document):
         flows.append(Flow(jobs, output=jobs[-1].output, name=flow_name))
     outputs = [flow.output for flow in flows]
 
-    calc_flow = Flow(flows, outputs, 
+    calc_flow = Flow(flows,
+                     output=outputs,
                      name=project_name +
                      f"_iter_{iter_id}" +
-                     "_calculation")
+                     "_calculations")
     return Response(replace=calc_flow)
 
 
@@ -438,7 +440,7 @@ def update_document(enum_output,
 
 @job
 def initialize_document(prim,
-                        project_name="ceauto_work",
+                        project_name="ceauto-work",
                         options=None):
     """Initialize an empty cluster expansion document.
 
@@ -450,7 +452,9 @@ def initialize_document(prim,
             partial occupancy on some sub-lattice. This defines the
             lattice model of your cluster expansion.
         project_name(str): optional
-            Name of the cluster expansion project.
+            Name of the cluster expansion project. Since the underscore
+            will be used to separate fields of job names, it should not
+            appear in the project name!
         options(dict): optional
             A dictionary including all options to set up the automatic
             workflow.

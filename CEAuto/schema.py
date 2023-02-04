@@ -11,7 +11,7 @@ from .convergence import ce_converged
 class CeOutputsDocument(BaseModel):
     """Summary of cluster expansion workflow as outputs."""
 
-    project_name: str = Field("ceauto_work",
+    project_name: str = Field("ceauto-work",
                               description="The name of cluster expansion"
                                           " project.")
     cluster_subspace: ClusterSubspace = Field(None,

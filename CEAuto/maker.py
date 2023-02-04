@@ -64,34 +64,36 @@ def ce_step_trigger(last_ce_document):
 
         # Point to next iteration.
         trigger = ce_step_trigger(updating.output)
-        trigger.name = project_name + f"_iter_{iter_id}" + "_trigger"
+        trigger.name = project_name + f"_iter_{iter_id + 1}" + "_trigger"
 
         flow = Flow([enumeration,
                      calculation,
                      parsing,
+                     fitting,
                      updating,
                      trigger],
                     output=trigger.output,
                     name=project_name + f"_iter_{iter_id}")
 
         # Always return last_ce_document in this output.
-        return Response(output=last_ce_document, replace=flow)  # TODO: replace? addition?
+        return Response(output=last_ce_document, replace=flow)
 
 
 @dataclass
 class CeAutoMaker(Maker):
-    """The cluster expansion automatic maker.
+    """The cluster expansion automatic workflow maker.
 
     Attributes:
         name(str):
-            Name of the cluster expansion project. Will be used
-            to set the project_name in ce document.
+            Name of the cluster expansion project. Since the underscore
+            will be used to separate fields of job names, it should not
+            appear in the project name!
         options(dict):
             A dictionary including all options to set up the automatic
             workflow.
             For available options, see docs in preprocessing.py.
     """
-    name: str = "ceauto_work"
+    name: str = "ceauto-work"
     options: dict = field(default_factory=dict)
 
     def make(self, prim):

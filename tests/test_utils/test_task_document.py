@@ -10,7 +10,7 @@ from CEAuto.utils.task_document import (get_property_from_taskdoc,
                                         get_entry_from_taskdoc)
 
 # load test data files and set them up as fixtures
-DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 
 # some test structures to use in tests
 files = ["zns_taskdoc.json"]

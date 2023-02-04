@@ -124,9 +124,6 @@ def ce_converged(coefs_history, cv_history, cv_std_history,
                 if convergence_options["max_iter"] is not None else np.inf)
 
     real_convereged = (cv_converged and eci_converged and min_e_converged)
-    if iter_id >= max_iter - 1 and not real_convereged:
-        logging.warning(f"Maximum number of iterations {max_iter} reached,"
-                        f" but the cluster expansion is still not converged!"
-                        f" you may want to check your calculation settings.")
+
     return (real_convereged
             or iter_id >= max_iter - 1)

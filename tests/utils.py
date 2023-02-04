@@ -2,6 +2,8 @@ from monty.json import MSONable, MontyDecoder
 import json
 import numpy as np
 import numpy.testing as npt
+import builtins
+import types
 
 from pymatgen.core import Element
 from pymatgen.entries.computed_entries import ComputedStructureEntry
@@ -24,6 +26,19 @@ def assert_msonable(obj, test_if_subclass=True):
         assert isinstance(obj, MSONable)
     assert obj.as_dict() == obj.__class__.from_dict(obj.as_dict()).as_dict()
     _ = json.loads(obj.to_json(), cls=MontyDecoder)
+
+
+def execute_job_function(job):
+    # if Job was created using the job decorator, then access the original function
+    function = getattr(job.function, "original", job.function)
+
+    # if function is bound method we need to do some magic to bind the unwrapped
+    # function to the class/instance
+    bound = getattr(job.function, "__job__", None)
+    if bound is not None and bound is not builtins:
+        function = types.MethodType(function, bound)
+
+    return function(*job.function_args, **job.function_kwargs)
 
 
 def assert_dict_equal(d1, d2):
@@ -188,4 +203,3 @@ def gen_random_wrangler(ensemble):
                            =ensemble.processor.supercell_matrix
                            )
     return wrangler
-
