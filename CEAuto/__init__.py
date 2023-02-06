@@ -1,8 +1,9 @@
-from .preprocessing import InputsWrapper, CEHistoryWrapper
-from .wrangling import CeDataWrangler
-from .enumeration import StructureEnumerator
+"""Functions to automate building a cluster expansion model."""
 
+from importlib.metadata import PackageNotFoundError, version
 
-__all__ = ['InputsWrapper', 'CeHistoryWrapper',
-           'CeDataWrangler',
-           'StructureEnumerator']
+try:
+    __version__ = version("CEAuto")
+except PackageNotFoundError:
+    # package is not installed
+    pass
