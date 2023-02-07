@@ -108,7 +108,7 @@ def enumerate_matrices(objective_sc_size, cluster_subspace,
                         if is_duplicate_sc(m_old @ conv,
                                            skewed @ conv,
                                            space.structure,
-                                           space._sc_matcher):
+                                           ):
                             dupe = True
                             break
                     if not dupe:

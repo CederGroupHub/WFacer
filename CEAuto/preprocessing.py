@@ -173,6 +173,7 @@ def get_cluster_subspace(prim, charge_decorated,
         cutoffs = {2: 3.5 * d_nn, 3: 2 * d_nn, 4: 2 * d_nn}
     space = ClusterSubspace.from_cutoffs(prim, cutoffs=cutoffs, **kwargs)
     externals = []
+    other_terms = other_terms or []
     if use_ewald and charge_decorated:
         ewald_kwargs = ewald_kwargs or {}
         externals.append(EwaldTerm(**ewald_kwargs))
@@ -362,7 +363,7 @@ def process_structure_options(d):
             kwargs of CanonicalSampleGenerator.
         init_method(str):
             Structure selection method in the first iteration.
-            Default is "CUR". Allowed options include: "CUR" and
+            Default is "leverage". Allowed options include: "leverage" and
             "random".
         add_method(str):
             Structure selection method in subsequent iterations.
@@ -379,7 +380,7 @@ def process_structure_options(d):
             "sample_generator_kwargs":
             d.get("sample_generator_kwargs", {}),
             "init_method":
-            d.get("init_method", "CUR"),
+            d.get("init_method", "leverage"),
             "add_method":
             d.get("add_method", "leverage"),
             "keep_ground_states":

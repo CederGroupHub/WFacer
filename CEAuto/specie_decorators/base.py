@@ -103,7 +103,9 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         # These entries should not contain Vacancy.
         for e_id, entry in enumerate(entries):
             for s_id, site in enumerate(entry.structure):
-                sp = site.species
+                # site.species is always a Composition object.
+                # site.specie is an Element or Species.
+                sp = site.specie
                 groups_by_species[sp] += [(e_id, s_id)]
 
         return groups_by_species
@@ -183,7 +185,7 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
             s_undecor = entry.structure
             species_decor = []
             for site_id, site in enumerate(s_undecor):
-                sp = site.species
+                sp = site.specie
                 if isinstance(sp, Composition):
                     raise ValueError("Can not decorate partially disordered site: "
                                      f"{site}")

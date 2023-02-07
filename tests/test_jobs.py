@@ -30,9 +30,9 @@ def get_element_structure(structure):
     all_coords = []
     all_species = []
     for site in structure:
-        if not isinstance(site.species, Vacancy):
+        if not isinstance(site.specie, Vacancy):
             all_coords.append(site.frac_coords)
-            all_species.append(site.species.symbol)
+            all_species.append(site.specie.symbol)
 
     s = Structure(structure.lattice,
                   all_species,
@@ -201,7 +201,7 @@ def test_parse_calculations(enum_output, parse_output):
                       und.structure)
         assert ent.structure.charge == 0
         if specs["charge_decorated"]:
-            carry_charge = [(not isinstance(site.species,
+            carry_charge = [(not isinstance(site.specie,
                                             (Element, Vacancy))
                              or site.species.oxidation_state != 0)
                             for site in ent.structure]

@@ -129,7 +129,8 @@ class CeDataWrangler(StructureWrangler):
         )
         if processed_entry is not None:
             dupe = self._check_structure_duplicacy(entry,
-                                                   sm=self.cluster_subspace._site_matcher)
+                                                   sm=self.cluster_subspace
+                                                   ._site_matcher)
             # Force dropping duplicacy.
             # TODO: maybe move this to smol in the future as an option.
             if dupe is None or (not check_struct_duplicacy):

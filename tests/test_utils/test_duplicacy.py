@@ -15,15 +15,16 @@ def test_remove_decorations(data_wrangler):
         npt.assert_array_almost_equal(s.frac_coords,
                                       s_clean.frac_coords)
         assert (s.composition
-                .elemenet_composition
+                .element_composition
                 .almost_equals(s_clean.
                                composition.
                                element_composition)
                 )
         for site1, site2 in zip(s_clean, s):
-            assert isinstance(site1.species,
+            # Only a site without disordering can have attribute "specie".
+            assert isinstance(site1.specie,
                               (Element, DummySpecies))
-            assert site1.species.symbol == site2.species.symbol
+            assert site1.specie.symbol == site2.specie.symbol
 
 
 def test_duplicate():

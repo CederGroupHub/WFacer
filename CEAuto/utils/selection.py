@@ -3,24 +3,8 @@ import numpy as np
 import logging
 
 
-def _cur_decompose(g, c, r):
-    """Calculate u that g = cur.
-
-    Args:
-        g(np.ndarray):
-            g to compute u with.
-        c(np.ndarray):
-            c to compute u with.
-        r(np.ndarray):
-            r to compute u with.
-    Returns:
-        np.ndarray: u with g=cur.
-    """
-    return np.dot(np.dot(np.linalg.pinv(c), g), np.linalg.pinv(r))
-
-
 def select_initial_rows(femat, n_select=10,
-                        method="CUR",
+                        method="leverage",
                         num_external_terms=0,
                         keep_indices=None):
     """Select structures to initialize an empty CE project.
@@ -32,7 +16,10 @@ def select_initial_rows(femat, n_select=10,
             Number of structures to select. Default is 10.
         method(str): optional
             The method used to select structures. Default is
-            CUR decomposition ("CUR"). "random" is also supported.
+            base on leverage score, which minimizes the Frobenius
+            norm difference between the covariance matrix of all
+            structures and the covariance matrix of a selection.
+            "random" is also supported.
         num_external_terms(int): optional
             Number of external terms in cluster subspace. These
             terms should not be compared in a structure selection.
@@ -65,19 +52,17 @@ def select_initial_rows(femat, n_select=10,
     available_indices = np.setdiff1d(np.arange(n, dtype=int),
                                      keep_indices)
 
-    g = a @ a.T  # Gram matrix of features.
+    cov = a.T @ a  # Covariance matrix of features.
 
     for _ in range(dn):
-        if method == 'CUR':
+        if method == "leverage":
             errs = []
             for trial_index in available_indices:
                 trial_indices = np.append(selected_indices, trial_index)
-                c = g[:, trial_indices]
-                r = g[trial_indices, :]
+                a_trial = a[trial_indices, :]
+                cov_trial = a_trial.T @ a_trial
+                errs.append(np.sum((cov - cov_trial) ** 2))
 
-                u = _cur_decompose(g, c, r)
-
-                errs.append(np.linalg.norm(g - np.dot(np.dot(c, u), r)))
             select_index = available_indices[np.argmin(errs)]
 
         elif method == 'random':
@@ -161,17 +146,19 @@ def select_added_rows(femat, old_femat,
     for _ in range(dn):
         if method == 'leverage':
             # Update feature matrix.
-            old_a = np.concatenate(old_a, a[selected_indices, :], axis=0)
-            old_cov = old_a.T @ old_a
-            old_inv = np.linalg.pinv(old_cov)
+            prev_a = np.concatenate((old_a, a[selected_indices, :]), axis=0)
+            prev_cov = prev_a.T @ prev_a
+            prev_inv = np.linalg.pinv(prev_cov)
             reductions = []
-            for trial_index in enumerate(available_indices):
-                trial_a = np.concatenate((old_a, a[trial_index].reshape(1, d)),
+            for trial_index in available_indices:
+                trial_indices = np.append(selected_indices, trial_index)
+                trial_a = np.concatenate((old_a,
+                                          a[trial_indices, :]),
                                          axis=0)
                 trial_cov = trial_a.T @ trial_a
                 trial_inv = np.linalg.pinv(trial_cov)
                 # By assertion, should all be <= 0.
-                reductions.append(np.sum(np.multiply((trial_inv - old_inv),
+                reductions.append(np.sum(np.multiply((trial_inv - prev_inv),
                                                      domain_matrix)))
 
             select_index = available_indices[np.argmin(reductions)]

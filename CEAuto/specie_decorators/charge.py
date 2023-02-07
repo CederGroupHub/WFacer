@@ -143,7 +143,7 @@ class FixedChargeDecorator(ChargeDecorator, NoTrainDecorator):
         entries_decor = []
         for entry in entries:
             s_decor = entry.structure.copy()
-            oxi_states = [self.labels[site.species] for site in entry.structure]
+            oxi_states = [self.labels[site.specie] for site in entry.structure]
             s_decor.add_oxidation_state_by_site(oxi_states)
             energy_adjustments = (entry.energy_adjustments
                                   if len(entry.energy_adjustments) != 0

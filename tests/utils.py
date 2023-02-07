@@ -176,7 +176,7 @@ def gen_random_wrangler(ensemble):
     Returns:
         CeDataWrangler.
     """
-    n_entries_per_iter = 100
+    n_entries_per_iter = 50
     n_iters = 8
     n_enum = 0
     structures = []
@@ -189,17 +189,19 @@ def gen_random_wrangler(ensemble):
             specs.append({"iter_id": iter_id, "enum_id": n_enum + s_id})
             energies.append(ensemble.natural_parameters @
                             ensemble.compute_feature_vector(occu))
+            # print("len:", len(energies))
         n_enum += n_entries_per_iter
-    noise = np.random.normal(loc=0, scale=np.sqrt(np.var(energies) * 0.0001,
-                             size=(len(energies),)))
+    noise = np.random.normal(loc=0, scale=np.sqrt(np.var(energies)) * 0.0001,
+                             size=(len(energies),))
     energies = np.array(energies) + noise
     entries = [ComputedStructureEntry(s, e)
                for s, e in zip(structures, energies)]
     wrangler = CeDataWrangler(ensemble.processor.cluster_subspace)
+    # print("Inserting entries.")
     for ent, spec in zip(entries, specs):
         wrangler.add_entry(ent,
                            properties={"spec": spec},
                            supercell_matrix
-                           =ensemble.processor.supercell_matrix
+                           =ensemble.processor.supercell_matrix,
                            )
     return wrangler

@@ -13,7 +13,7 @@ compositions: []
 num_structs_per_iter_init: 60
 num_structs_per_iter_add: 40
 sample_generator_kwargs: {}
-init_method: "CUR"
+init_method: "leverage"
 add_method: "leverage"
 keep_ground_states: true
 apply_strain: [[1.03, 0, 0], [0, 1.02, 0], [0, 0, 1.01]]

@@ -7,8 +7,6 @@ from sympy import factorint
 from itertools import permutations, product
 
 from pymatgen.core import Lattice
-from pymatgen.analysis.structure_matcher import StructureMatcher, \
-    OrderDisorderElementComparator
 
 
 def get_three_factors(n):
@@ -85,7 +83,7 @@ def is_proper_sc(sc_matrix, lat, max_cond=8, min_angle=30):
             min(angles) >= min_angle)
 
 
-def is_duplicate_sc(m1, m2, prim, matcher=None):
+def is_duplicate_sc(m1, m2, prim):
     """Gives whether two super-cell matrices give identical super-cell.
 
     Args:
@@ -95,23 +93,23 @@ def is_duplicate_sc(m1, m2, prim, matcher=None):
             Supercell matrices to compare.
         prim(pymatgen.Structure):
             Primitive cell object.
-        matcher(pymatgen.StructureMatcher): optional
-            A StructureMatcher.
     Returns:
         bool.
     """
-    m1 = np.round(m1).astype(int)
-    m2 = np.round(m2).astype(int)
-    matcher = matcher or StructureMatcher(
-        primitive_cell=False,
-        attempt_supercell=True,
-        allow_subset=True,
-        comparator=OrderDisorderElementComparator(),
-        scale=True
-    )
     s1 = prim.copy()
     s2 = prim.copy()
     s1.make_supercell(m1)
     s2.make_supercell(m2)
-    return matcher.fit(s1, s2)
+    lengths1 = sorted(s1.lattice.lengths)
+    lengths2 = sorted(s2.lattice.lengths)
+    a1, b1, g1 = s1.lattice.angles
+    angles1 = sorted([a1, b1, g1,
+                      180 - a1, 180 - b1, 180 - g1])
+    a2, b2, g2 = s2.lattice.angles
+    angles2 = sorted([a2, b2, g2,
+                      180 - a2, 180 - b2, 180 - g2])
+
+    # Must have identical super lattice shapes.
+    return (np.allclose(lengths1, lengths2)
+            and np.allclose(angles1, angles2))
 

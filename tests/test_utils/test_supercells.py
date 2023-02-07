@@ -19,9 +19,9 @@ def test_three_factors():
         assert n > 0
         assert d == 3
         npt.assert_array_equal(np.product(factors, axis=-1), rand)
-        npt.assert_array_equal(sorted(factors), factors)
-    factors_12 = [[1, 1, 12], [1, 2, 6], [1, 3, 4],
-                  [2, 2, 3]]
+        npt.assert_array_equal(sorted(factors.tolist()), factors)
+
+    factors_12 = [[3, 2, 2], [4, 3, 1], [6, 2, 1], [12, 1, 1]]
     npt.assert_array_equal(factors_12,
                            get_three_factors(12))
 
