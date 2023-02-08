@@ -430,9 +430,14 @@ def process_calculation_options(d):
             Additional arguments to pass into an atomate2
             StaticMaker.
             Not frequently used.
-        other_properties(list[str]): optional
-            Other properties to parse besides "energy".
-            Will be saved in entry, but CE only performed on "energy".
+        other_properties(list[(str, str)| str]): optional
+            Other property names beyond "energy" and "uncorrected_energy"
+            to be retrieved from taskdoc and recorded into the wrangler,
+             and the query string to retrieve them, paired in tuples.
+            If only strings are given, will also query with the given
+            string.
+            For the rules in writing the query string, refer to utils.query.
+            By default, will not record any other property.
         Refer to the atomate2 documentation for more information.
         Note: the default vasp sets in atomate 2 are not specifically
         chosen for specific systems. Using your own vasp set input

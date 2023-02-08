@@ -698,7 +698,7 @@ def decorator_factory(decorator_type, *args, **kwargs):
     return derived_class_factory(name, BaseDecorator, *args, **kwargs)
 
 
-def get_site_property_name_from_decorator(decname):
+def get_site_property_query_names_from_decorator(decname):
     """Get the name of required properties from decorator name.
 
     Args:

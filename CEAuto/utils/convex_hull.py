@@ -36,13 +36,13 @@ def get_min_energy_structures_by_composition(wrangler, max_iter_id=None):
     if max_iter_id is None:
         max_iter_id = wrangler.max_iter_id
     for entry in wrangler.entries:
-        if entry.properties["spec"]["iter_id"] <= max_iter_id:
+        if entry.data["properties"]["spec"]["iter_id"] <= max_iter_id:
             # Normalize composition and energy to eV per site.
             comp = Composition({k: v / entry.data["size"] / prim_size
                                 for k, v
                                 in entry.structure.composition
                                .element_composition.items()})
-            e = entry.energy / entry.data["size"] / prim_size
+            e = entry.energy / entry.data["size"] / prim_size  # eV/site.
             s = entry.structure
             if e < min_e[comp][0]:
                 min_e[comp] = (e, s)
@@ -70,7 +70,7 @@ def get_hull(wrangler, max_iter_id=None):
     if max_iter_id is None:
         max_iter_id = wrangler.max_iter_id
     data = [(entry.structure, entry.energy) for entry in wrangler.entries
-            if entry.properties["spec"]["iter_id"] <= max_iter_id]
+            if entry.data["properties"]["spec"]["iter_id"] <= max_iter_id]
     structures, energies = list(zip(*data))
     e_above_hull = _energies_above_hull(structures, energies,
                                         wrangler.cluster_subspace.structure)

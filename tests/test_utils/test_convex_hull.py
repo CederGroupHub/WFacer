@@ -25,14 +25,14 @@ def test_min_energy_structures(data_wrangler):
     # and all structures in min_e must match its composition.
     for comp, (e, s) in min_e.items():
         assert _comp_equals(comp, s.composition)
-    for entry in data_wrangler:
+    for entry in data_wrangler.entries:
         entry_comp = Composition({k: v / entry.data["size"] / prim_size
                                   for k, v
                                   in entry.structure.composition
                                  .element_composition.items()})
         assert entry_comp in min_e
         emin, smin = min_e[entry_comp]
-        assert entry.energy >= emin
+        assert entry.energy / entry.data["size"] / prim_size >= emin
         assert _comp_equals(entry_comp, smin.composition)
 
 
@@ -42,8 +42,9 @@ def test_hull(data_wrangler):
     prim_size = len(data_wrangler.cluster_subspace.structure)
     # A hull must contain something, unless wrangler is empty.
     assert len(hull) > 0
+    energies = data_wrangler.get_property_vector("energy", normalize=False)
     e_above_hull = _energies_above_hull(data_wrangler.structures,
-                                        data_wrangler.energies,
+                                        energies,
                                         data_wrangler
                                         .cluster_subspace.structure)
     for i, entry in enumerate(data_wrangler.entries):

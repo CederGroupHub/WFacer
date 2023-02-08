@@ -3,12 +3,15 @@
 Extend the methods in this file if more site-wise properties other than magmom should
 be extracted.
 """
+
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 
-from ..specie_decorators.base import get_site_property_name_from_decorator
+from .query import get_property_from_object
+from ..specie_decorators.base import \
+    get_site_property_query_names_from_decorator
 
 
-def merge_computed_structure_entry(entry, structure):
+def _merge_computed_structure_entry(entry, structure):
     """Merge structure into ComputedEntry.
 
     Args:
@@ -29,61 +32,26 @@ def merge_computed_structure_entry(entry, structure):
                                   entry.entry_id)
 
 
-def get_property_from_taskdoc(taskdoc, property_name):
-    """Get structure properties from taskdoc.
-
-    Note: currently, will naively extract from taskdoc's computed entry,
-    calcs_reversed[0], outputsummary data dict and attributes. This will
-    work for most properties and site-wise properties.
-    If in the future more properties are needed, revise this function.
-    Args:
-        taskdoc(TaskDocument):
-            A task document generated as vasp task output by atomate2.
-        property_name(str):
-            A property names to be retrieved from taskdoc.
-            These are properties that you wish to record besides
-            "energy" and "uncorrected_energy", etc.
-        Returns:
-            float: value of the queried property.
-    """
-    entry = taskdoc.entry
-    last_calc = taskdoc.calcs_reversed[0]
-    output = taskdoc.output
-    # Add more special conversion rules if needed.
-    query = property_name
-
-    if query in entry.data:
-        return entry.data[query]
-    elif query in vars(entry):
-        return getattr(entry, query)
-    elif query in vars(last_calc):
-        return getattr(last_calc, query)
-    elif query in vars(last_calc.output):
-        return getattr(last_calc.output, query)
-    elif query in last_calc.output.outcar:
-        return last_calc.output.outcar[query]
-    elif query in vars(output):
-        return getattr(last_calc.output, query)
-    else:
-        raise ValueError(f"{query} can not be found"
-                         f" in task document!")
-
-
-def get_entry_from_taskdoc(taskdoc, properties=None, decorator_names=None):
+def get_entry_from_taskdoc(taskdoc,
+                           property_and_queries=None,
+                           decorator_names=None):
     """Get the computed structure entry from taskdoc.
 
     Args:
         taskdoc(TaskDocument):
             A task document generated as vasp task output by atomate2.
-        properties(list[str]): optional
-            A list of property names to be retrieved from taskdoc.
+        property_and_queries(list[(str, str)|str]): optional
+            A list of property names to be retrieved from taskdoc,
+            and the query string to retrieve them, paired in tuples.
+            If only strings are given, will also query with the given
+            string.
             These are properties that you wish to record besides
             "energy" and "uncorrected_energy", etc. By default,
             will not record any other property.
         decorator_names(list[str]): optional
             The name of decorators used in this CE workflow, used to
-            determine what site-wise properties to retrieve from
-            TaskDocument, and to include in the returned entry.
+            determine what site properties to retrieve from
+            TaskDocument and to include in the returned entry.
     Returns:
         ComputedStructureEntry, dict:
             The computed structure entry, with each site having the site
@@ -95,20 +63,27 @@ def get_entry_from_taskdoc(taskdoc, properties=None, decorator_names=None):
     # The computed entry, not including the structure.
     computed_entry = taskdoc.entry
     prop_dict = {}
-    if properties is not None:
-        for p in properties:
-            prop_dict[p] = get_property_from_taskdoc(taskdoc, property_name=p)
+    if property_and_queries is not None:
+        for p in property_and_queries:
+            if isinstance(p, (tuple, list)):
+                prop_dict[p[0]] = get_property_from_object(taskdoc, p[1])
+            elif isinstance(p, str):
+                prop_dict[p] = get_property_from_object(taskdoc, p)
+            else:
+                raise ValueError(f"Property names and their query strings"
+                                 f" must either be in tuples or be in"
+                                 f" strings!")
     site_props = {}
     if decorator_names is not None:
         for d in decorator_names:
-            site_property_names = get_site_property_name_from_decorator(d)
-            for sp in site_property_names:
-                # Total magnetization on each site is already read by atomate2,
-                # and added to structure site properties.
+            site_property_query_names =\
+                get_site_property_query_names_from_decorator(d)
+            for sp, query in site_property_query_names:
+                # Total magnetization on each site is already read and added to structure
+                # by atomate2. It should be overwritten.
                 if sp != "magmom":
-                    site_props[sp] = get_property_from_taskdoc(taskdoc, sp)
+                    site_props[sp] = get_property_from_object(taskdoc, query)
     for sp, prop in site_props.items():
         structure.add_site_property(sp, prop)
-    return (merge_computed_structure_entry(computed_entry, structure),
+    return (_merge_computed_structure_entry(computed_entry, structure),
             prop_dict)
-

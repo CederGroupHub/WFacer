@@ -36,8 +36,12 @@ def _assert_single_species_d(d, bits, sl_sizes):
         geq_l = np.zeros(n_dims)
         leq_l[dim_ids_sp] = 1
         geq_l[dim_ids_sp] = 1
-        leq_r = d[sp][1] * sl_sizes[sl_ids_sp]
-        geq_r = d[sp][0] * sl_sizes[sl_ids_sp]
+        if isinstance(d[sp], tuple):
+            leq_r = d[sp][1] * np.sum(sl_sizes[sl_ids_sp])
+            geq_r = d[sp][0] * np.sum(sl_sizes[sl_ids_sp])
+        else:
+            leq_r = d[sp] * np.sum(sl_sizes[sl_ids_sp])
+            geq_r = 0
         leqs_expected.append(np.append(leq_l, leq_r))
         geqs_expected.append(np.append(geq_l, geq_r))
 
@@ -64,8 +68,12 @@ def _assert_list_species_d(ds, bits, sl_sizes):
             dim_id = sl_dim_ids[sl_bits.index(bit)]
             leq_l[dim_id] = 1
             geq_l[dim_id] = 1
-            geq_r = sl_size * d[bit][0]
-            leq_r = sl_size * d[bit][1]
+            if isinstance(d[bit], tuple):
+                geq_r = sl_size * d[bit][0]
+                leq_r = sl_size * d[bit][1]
+            else:
+                geq_r = 0
+                leq_r = sl_size * d[bit]
             leqs_expected.append(np.append(leq_l, leq_r))
             geqs_expected.append(np.append(geq_l, geq_r))
     leqs_gen, geqs_gen = \
@@ -88,10 +96,23 @@ def test_species_constraints(specs):
              for sp in species}
         _assert_single_species_d(d, bits, sl_sizes)
     for _ in range(5):
+        d = {sp: random.uniform(0.3, 0.6)
+             for sp in species}
+        _assert_single_species_d(d, bits, sl_sizes)
+    for _ in range(5):
         # Half of random species are not constrained.
         random_missing_sps = random.sample(species,
                                            len(species) // 2)
         ds = [{bit: (random.uniform(0, 0.2), random.uniform(0.6, 0.8))
+               for bit in sl_bits
+               if bit not in random_missing_sps
+               } for sl_bits in bits]
+        _assert_list_species_d(ds, bits, sl_sizes)
+    for _ in range(5):
+        # Half of random species are not constrained.
+        random_missing_sps = random.sample(species,
+                                           len(species) // 2)
+        ds = [{bit: random.uniform(0.3, 0.8)
                for bit in sl_bits
                if bit not in random_missing_sps
                } for sl_bits in bits]

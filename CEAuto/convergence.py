@@ -115,7 +115,8 @@ def ce_converged(coefs_history, cv_history, cv_std_history,
         = compare_min_energy_structures_by_composition(min_e1,
                                                        min_e2,
                                                        matcher)
-    min_e_converged = (max_diff / cv_history[-1]
+    # eV/site to meV/site.
+    min_e_converged = (1000 * max_diff / cv_history[-1]
                        <= convergence_options["delta_min_e_rtol"]
                        and (not convergence_options["continue_on_finding_new_gs"]
                             or not new_gs_found))

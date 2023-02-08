@@ -2,6 +2,9 @@ import os
 import pytest
 import numpy as np
 from monty.serialization import loadfn
+from pydantic import parse_file_as
+
+from atomate2.vasp.schemas.task import TaskDocument
 
 from smol.cofe import ClusterExpansion
 from smol.moca import Ensemble
@@ -103,3 +106,9 @@ def data_wrangler(ensemble):
 def data_wrangler_sin(ensemble_sin):
     """A fictitious data wrangler, with sinusoid basis."""
     return gen_random_wrangler(ensemble_sin)
+
+
+@pytest.fixture(scope="package", params=["zns_taskdoc.json"])
+def single_taskdoc(request):
+    return parse_file_as(TaskDocument, os.path.join(DATA_DIR,
+                                                    request.param))
