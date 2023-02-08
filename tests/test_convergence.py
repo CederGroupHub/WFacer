@@ -1,6 +1,5 @@
 """Test convergence functions."""
 import numpy as np
-import pytest
 
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 
@@ -11,20 +10,7 @@ from CEAuto.convergence import ce_converged
 from CEAuto.wrangling import CeDataWrangler
 from CEAuto.preprocessing import get_prim_specs
 
-from .utils import gen_random_neutral_occupancy
-
-
-def gen_random_occu_from_counts(ensemble, counts):
-    n_species = 0
-    occu = np.zeros(ensemble.num_sites, dtype=int) - 1
-    for sublatt in ensemble.sublattices:
-        n_sublatt = counts[n_species: n_species + len(sublatt.encoding)]
-        occu_sublatt = [code for code, n in zip(sublatt.encoding, n_sublatt)
-                        for _ in range(n)]
-        np.random.shuffle(occu_sublatt)
-        occu[sublatt.sites] = occu_sublatt
-        n_species += len(sublatt.encoding)
-    return occu
+from .utils import gen_random_occu_from_counts
 
 
 def get_one_wrangler(subspace, coefs, bad_wangler=False):
@@ -36,7 +22,7 @@ def get_one_wrangler(subspace, coefs, bad_wangler=False):
         .from_cluster_expansion(ClusterExpansion(subspace, coefs),
                                 np.eye(3) * 2)
     prim_specs = get_prim_specs(subspace.structure)
-    sl_sizes = (len(sl) for sl in prim_specs["sublattice_sites"])
+    sl_sizes = [len(sl) for sl in prim_specs["sublattice_sites"]]
 
     comp_space = CompositionSpace(prim_specs["bits"],
                                   sl_sizes)
@@ -57,7 +43,7 @@ def get_one_wrangler(subspace, coefs, bad_wangler=False):
                 # Energy decrease greatly for each iteration.
                 rand_energies = (standard_energies +
                                  np.random.random(size=5)
-                                 - iter_id * 5)
+                                 - iter_id * 10)
             rand_occus = [gen_random_occu_from_counts(ensemble, count)
                           for _ in range(5)]
             rand_strs = [ensemble.processor.structure_from_occupancy(o)
@@ -86,11 +72,11 @@ def test_ce_converged(subspace):
                                     + len(subspace.external_terms))) - 10
 
     coefs2 = np.random.normal(size=(subspace.num_corr_functions
-                                    + len)) + 10
+                                    + len(subspace.external_terms))) + 10
 
     # wrangler including 3 iterations in total.
-    converged_wrangler = get_one_wrangler(subspace, bad_wangler=False)
-    bad_wrangler = get_one_wrangler(subspace, bad_wangler=True)
+    converged_wrangler = get_one_wrangler(subspace, coefs1, bad_wangler=False)
+    bad_wrangler = get_one_wrangler(subspace, coefs1, bad_wangler=True)
 
     # Not enough iterations
     assert not ce_converged([coefs1],
@@ -137,7 +123,7 @@ def test_ce_converged(subspace):
                             )
 
     # Bad because wranglers minimum energis cannot match.
-    assert not ce_converged([coefs1, coefs1, coefs2],
+    assert not ce_converged([coefs1, coefs1, coefs1],
                             [1.0, 1.0, 1.0],
                             [0.1, 0.1, 0.1],
                             bad_wrangler,
@@ -152,7 +138,7 @@ def test_ce_converged(subspace):
                             )
 
     # Bad because std_cv is too large.
-    assert not ce_converged([coefs1, coefs1, coefs2],
+    assert not ce_converged([coefs1, coefs1, coefs1],
                             [1.0, 1.0, 1.0],
                             [0.1, 0.1, 1.0],
                             converged_wrangler,
@@ -167,17 +153,18 @@ def test_ce_converged(subspace):
                             )
 
     # Good just because max number of iteration has been exceeded,
-    # But you should be warned.
-    assert not ce_converged([coefs1, coefs1, coefs2],
-                            [1.0, 1.0, 1.0],
-                            [0.1, 0.1, 1.0],
-                            converged_wrangler,
-                            {"cv_tol": 5,
-                             "std_cv_rtol": 0.1,
-                             "delta_cv_rtol": 0.5,
-                             "delta_eci_rtol": 0.1,
-                             "delta_min_e_rtol": 2,
-                             "continue_on_finding_new_gs": False,
-                             "max_iter": 2
-                             }
-                            )
+    # But you should be warned by maker.
+    assert ce_converged([coefs1, coefs1, coefs1],
+                        [1.0, 1.0, 1.0],
+                        [0.1, 0.1, 1.0],
+                        converged_wrangler,
+                        {"cv_tol": 5,
+                         "std_cv_rtol": 0.1,
+                         "delta_cv_rtol": 0.5,
+                         "delta_eci_rtol": 0.1,
+                         "delta_min_e_rtol": 2,
+                         "continue_on_finding_new_gs": False,
+                         "max_iter": 2
+                         }
+                        )
+    assert converged_wrangler.max_iter_id == 2

@@ -42,7 +42,7 @@ def generator(cluster_expansion, request):
 
 def test_ground_state(generator):
     sm = StructureMatcher()
-    occu = generator.get_ground_state()
+    occu = generator.get_ground_state_occupancy()
     s = generator.get_ground_state_structure()
     assert sm.fit(generator.processor.structure_from_occupancy(occu),
                   s)
@@ -59,7 +59,7 @@ def test_unfreeze(generator):
                   for _ in range(20)]
     prev_structs = [generator.processor.structure_from_occupancy(o)
                     for o in prev_occus]
-    sample = generator.get_get_unfrozen_sample(prev_structs, 50)
+    sample = generator.get_unfrozen_sample(prev_structs, 50)
     # No duplication with old and among themselves.
     for sid, s in enumerate(sample):
         dupe = False

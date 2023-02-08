@@ -4,6 +4,8 @@ import random
 
 from pydantic import BaseModel
 
+log = logging.getLogger(__name__)
+
 
 def query_keypath(obj, keypath):
     """Query attributes of an object along a path.
@@ -27,9 +29,9 @@ def query_keypath(obj, keypath):
     if isinstance(obj, (list, tuple)):
         # List needs to be pre-processed.
         if "-" not in k and not k.startswith("^"):
-            logging.warning(f"Object {obj} is a list, but the exact index"
-                            f" of the member to refer to is not specified with"
-                            f" id-. Will query the first member in the list.")
+            log.warning(f"Object {obj} is a list, but the exact index"
+                        f" of the member to refer to is not specified with"
+                        f" id-. Will query the first member in the list.")
             return query_keypath(obj[0], keypath)
         elif "-" in k:
             if len(k.split("-")) != 2:

@@ -25,10 +25,10 @@ tight_maker_kwargs: {}
 static_generator_kwargs: {}
 static_maker_kwargs: {}
 other_properties: null
-decorator_types: [],
-decorator_kwargs: [],
+decorator_types: []
+decorator_kwargs: []
 decorator_train_kwargs: []
-cutoffs: null,
+cutoffs: null
 use_ewald: true
 ewald_kwargs: {}
 from_cutoffs_kwargs: {}
@@ -42,9 +42,9 @@ param_grid: null
 optimizer_kwargs:
   n_iter: 3
 fit_kwargs: {}
-'cv_tol': 5,
-std_cv_rtol: null,
-delta_cv_rtol: 0.5,
+'cv_tol': 5
+std_cv_rtol: null
+delta_cv_rtol: 0.5
 delta_eci_rtol: null
 delta_min_e_rtol: 2
 continue_on_finding_new_gs: false

@@ -20,7 +20,7 @@ class CeOutputsDocument(BaseModel):
     prim_specs: dict = Field({},
                              description="Computed specifications of the primitive"
                                          " cell.")
-    data_wrangler: CeDataWrangler = Field(CeDataWrangler(cluster_subspace),
+    data_wrangler: CeDataWrangler = Field(None,
                                           description="The structure data"
                                                       " wrangler, including"
                                                       " all successfully"
@@ -58,11 +58,8 @@ class CeOutputsDocument(BaseModel):
     enumerated_matrices: list = Field([],
                                       description="Supercell matrices for each"
                                                   " enumerated structure.")
-    enumerated_features: list = Field(np.array([]).reshape(0,
-                                                           cluster_subspace
-                                                           .num_corr_functions
-                                                           + len(cluster_subspace
-                                                                 .external_terms)),
+    # Needs to be reshaped when initialized.
+    enumerated_features: list = Field(np.array([]),
                                       description="Feature vectors for each"
                                                   " enumerated structure.")
     undecorated_entries: list = Field([],

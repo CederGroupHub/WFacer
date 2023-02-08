@@ -2,6 +2,8 @@
 import numpy as np
 import logging
 
+log = logging.getLogger(__name__)
+
 
 def select_initial_rows(femat, n_select=10,
                         method="leverage",
@@ -39,12 +41,12 @@ def select_initial_rows(femat, n_select=10,
     if n_keep > n:
         raise ValueError("Can not keep more structures than provided!")
     if n_keep > n_select:
-        logging.warning("Keeping more structures than to be selected!"
-                        " Cannot select new structures.")
+        log.warning("Keeping more structures than to be selected!"
+                    " Cannot select new structures.")
         return keep_indices
     if n_select > n:
-        logging.warning("Structures to select more than provided,"
-                        " will select all provided structures.")
+        log.warning("Structures to select more than provided,"
+                    " will select all provided structures.")
         return list(range(n))
     dn = n_select - n_keep
 
@@ -84,7 +86,6 @@ def select_added_rows(femat, old_femat,
                       keep_indices=None,
                       num_external_terms=0,
                       domain_matrix=None):
-
     """Select structures to add to an existing CE project.
 
     We select structures by minimizing the leverage score under a
@@ -129,12 +130,12 @@ def select_added_rows(femat, old_femat,
     if n_keep > n:
         raise ValueError("Can not keep more structures than provided!")
     if n_keep > n_select:
-        logging.warning("Keeping more structures than to be selected!"
-                        " Cannot select new structures.")
+        log.warning("Keeping more structures than to be selected!"
+                    " Cannot select new structures.")
         return keep_indices
     if n_select > n:
-        logging.warning("Structures to select more than provided,"
-                        " will select all provided structures.")
+        log.warning("Structures to select more than provided,"
+                    " will select all provided structures.")
         return list(range(n))
     dn = n_select - n_keep
 

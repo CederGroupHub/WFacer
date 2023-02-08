@@ -142,7 +142,7 @@ def fit_ecis_from_wrangler(wrangler,
                 groups = list(range(space.num_corr_functions
                                     - num_point_funcs - 1))
         else:
-            # Use orbit hierarchy for other.
+            # Use orbit hierarchy for other bases.
             hierarchy = space.orbit_hierarchy()
             if center_point_external:
                 hierarchy = [[orb_id - num_point_orbs - 1 for orb_id in sub]

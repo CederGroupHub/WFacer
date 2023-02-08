@@ -14,8 +14,8 @@ def test_data_wrangler(data_wrangler):
         assert "iter_id" in spec
         assert spec["iter_id"] <= 7
         assert "enum_id" in spec
-        assert spec["enum_id"] < (spec["iter_id"] + 1) * 100
-        for j in range(i, n):
+        assert spec["enum_id"] < (spec["iter_id"] + 1) * 50  # 50 structs per iter.
+        for j in range(i + 1, n):
             assert not sm.fit(data_wrangler.entries[i].structure,
                               data_wrangler.entries[j].structure)
     # Must give the correct iteration index.

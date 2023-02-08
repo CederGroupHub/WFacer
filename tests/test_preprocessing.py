@@ -54,15 +54,18 @@ def test_cluster_subspace(prim):
 
     d_nn = specs["nn_distance"]
     cutoffs = {1: np.inf, 2: 3.5 * d_nn, 3: 2 * d_nn, 4: 2 * d_nn}
-    filtered_orbits = [[orbit for orbit in orbits
-                       if orbit.base_cluster.diameter <= cutoffs[size]]
-                      for size, orbits in space.orbits_by_size.items()
-                      if 1 <= size <= 4]
+    filtered_orbits = [orbit for orbit in space.orbits
+                       if (1 <= len(orbit.base_cluster.sites) <= 4 and
+                           orbit.base_cluster.diameter
+                           <= cutoffs[len(orbit.base_cluster.sites)])
+                       ]
+
     assert filtered_orbits == space.orbits
 
 
 def test_parse_comp_constraints():
     bits = [["Li+", "Mn2+", "Mn3+", "Vacancy"], ["O2-", "F-"]]
+    bits = [[get_species(b) for b in sl_bits] for sl_bits in bits]
     sl_sizes = [2, 1]
     species_constraints = {"Li+": (0.1, 0.2), "Mn2+": (0.3, 0.5),
                            "O2-": 0.8}
@@ -88,6 +91,7 @@ def test_parse_comp_constraints():
 
 def test_options():
     options = _preprocess_options({})
+    # Update this yaml if new options have been implemented!
     with open("./data/default_options.yaml", "r") as fin:
         default_options = yaml.load(fin, Loader=yaml.SafeLoader)
     assert set(options.keys()) == set(default_options.keys())
@@ -103,11 +107,7 @@ def test_options():
 def test_initialize_coefs(subspace):
     coefs = get_initial_ce_coefficients(subspace)
     npt.assert_array_almost_equal(coefs[: subspace.num_corr_functions],
-                                  0)
-    npt.assert_array_almost_equal(coefs[-len(subspace.external_terms):],
-                                  1)
-
-
-
-
-
+                                  np.zeros(subspace.num_corr_functions))
+    if len(subspace.external_terms) > 0:
+        npt.assert_array_almost_equal(coefs[-len(subspace.external_terms):],
+                                      np.ones(len(subspace.external_terms)))

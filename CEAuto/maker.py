@@ -11,6 +11,8 @@ from .jobs import (enumerate_structures,
                    update_document,
                    initialize_document)
 
+log = logging.getLogger(__name__)
+
 
 @job
 def ce_step_trigger(last_ce_document):
@@ -29,9 +31,9 @@ def ce_step_trigger(last_ce_document):
     max_iter = last_ce_document.ce_options["max_iter"]
     project_name = last_ce_document.project_name
     if iter_id >= max_iter and not last_ce_document.converged:
-        logging.warning(f"Maximum number of iterations: {max_iter}"
-                        f" reached, but cluster expansion model is"
-                        f" still not converged!")
+        log.warning(f"Maximum number of iterations: {max_iter}"
+                    f" reached, but cluster expansion model is"
+                    f" still not converged!")
     if iter_id >= max_iter or last_ce_document.converged:
         return last_ce_document
     else:

@@ -1,6 +1,5 @@
 """Convergence checks."""
 import numpy as np
-import logging
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
@@ -27,7 +26,8 @@ def compare_min_energy_structures_by_composition(min_e1, min_e2, matcher=None):
             wrangler.cluster_subspace._site_matcher is recommended.
     Return:
         float, bool:
-            maximum energy difference in eV/site, and whether a new GS appeared.
+            maximum energy difference in eV/site,
+            and whether a new ground state structure appeared.
     """
     diffs = []
     matches = []
@@ -36,7 +36,7 @@ def compare_min_energy_structures_by_composition(min_e1, min_e2, matcher=None):
         if comp not in min_e1:
             return np.inf, True  # New composition appears.
         if not (min_e2[comp][0] == np.inf and min_e1[comp][0] == np.inf):
-            diffs.append(np.abs(min_e2[comp] - min_e1[comp]))
+            diffs.append(np.abs(min_e2[comp][0] - min_e1[comp][0]))
             matches.append(matcher.fit(min_e2[comp][1], min_e1[comp][1]))
     if len(diffs) == 0:
         return np.inf, True
@@ -62,7 +62,8 @@ def compare_fitted_coefs(cluster_subspace, coefs_prev, coefs_now):
     eci_prev = ClusterExpansion(cluster_subspace, coefficients=coefs_prev).eci
     eci_now = ClusterExpansion(cluster_subspace, coefficients=coefs_now).eci
 
-    return np.linalg.norm(eci_prev - eci_now, ord=1) / np.linalg.norm(eci_prev, ord=1)
+    return (np.linalg.norm(eci_prev - eci_now, ord=1)
+            / np.linalg.norm(eci_prev, ord=1))
 
 
 def ce_converged(coefs_history, cv_history, cv_std_history,

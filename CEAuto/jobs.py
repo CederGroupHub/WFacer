@@ -39,6 +39,7 @@ from .enumeration import (enumerate_matrices,
                           generate_initial_training_structures,
                           generate_additive_training_structures)
 from .fit import fit_ecis_from_wrangler
+from .wrangling import CeDataWrangler
 from .utils.task_document import get_entry_from_taskdoc
 from .specie_decorators import decorator_factory, PmgGuessChargeDecorator
 
@@ -433,8 +434,8 @@ def update_document(enum_output,
     ce_document.enumerated_matrices \
         .extend(enum_output["new_sc_matrices"])
     ce_document.enumerated_features \
-        = np.append(ce_document.enumerated_features,
-                    enum_output["new_features"])
+        = np.concatenate((ce_document.enumerated_features,
+                          enum_output["new_features"]), axis=0)
     return ce_document
 
 
@@ -525,9 +526,12 @@ def initialize_document(prim,
     init_ce_document = CeOutputsDocument(project_name=project_name,
                                          cluster_subspace=subspace,
                                          prim_specs=prim_specs,
+                                         data_wrangler=CeDataWrangler(subspace),
                                          ce_options=options,
                                          supercell_matrices=sc_matrices,
                                          compositions=compositions)
+    num_features = len(subspace.external_terms) + subspace.num_corr_functions
+    init_ce_document.enumerated_features = np.array([]).reshape((0, num_features))
 
     return init_ce_document
 

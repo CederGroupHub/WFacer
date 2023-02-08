@@ -57,5 +57,3 @@ def test_hull(data_wrangler):
                               entry.energy / entry.data["size"] / prim_size)
             assert sm.fit(data_wrangler.structures[i],
                           hull[comp][1])
-
-

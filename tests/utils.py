@@ -167,6 +167,19 @@ def gen_random_neutral_counts(sublattices, lam=10, rng=None):
     return get_counts_from_occu(occu, sublattices)
 
 
+def gen_random_occu_from_counts(ensemble, counts):
+    n_species = 0
+    occu = np.zeros(ensemble.num_sites, dtype=int) - 1
+    for sublatt in ensemble.sublattices:
+        n_sublatt = counts[n_species: n_species + len(sublatt.encoding)]
+        occu_sublatt = [code for code, n in zip(sublatt.encoding, n_sublatt)
+                        for _ in range(n)]
+        np.random.shuffle(occu_sublatt)
+        occu[sublatt.sites] = occu_sublatt
+        n_species += len(sublatt.encoding)
+    return occu
+
+
 def gen_random_wrangler(ensemble):
     """Generate a random wrangler from ensemble object.
 

@@ -119,7 +119,7 @@ class McSampleGenerator(metaclass=ABCMeta):
             np.random.shuffle(occu_sublatt)
             occu[sublatt.sites] = occu_sublatt
             n_species += len(sublatt.encoding)
-        if not np.any(occu < 0):
+        if np.any(occu < 0):
             raise ValueError(f"Given composition: {counts}\n "
                              f"or sub-lattices: {self.sublattices}\n "
                              f"cannot give a valid occupancy!")
@@ -129,8 +129,8 @@ class McSampleGenerator(metaclass=ABCMeta):
     def _get_init_occu(self):
         return np.array([], dtype=int)
 
-    def get_ground_state(self):
-        """Use simulated annealing to solve the ground state.
+    def get_ground_state_occupancy(self):
+        """Use simulated annealing to solve the ground state occupancy.
 
         Returns:
             ground state in encoded occupancy array:
@@ -153,7 +153,8 @@ class McSampleGenerator(metaclass=ABCMeta):
         return self._gs_occu
 
     def get_ground_state_structure(self):
-        return self.processor.structure_from_occupancy(self.get_ground_state())
+        return self.processor\
+            .structure_from_occupancy(self.get_ground_state_occupancy())
 
     def get_unfrozen_sample(self,
                             previous_sampled_structures=None,
@@ -182,7 +183,7 @@ class McSampleGenerator(metaclass=ABCMeta):
         # Thin so we don't have to de-duplicate too many structures.
         # Here we leave out 10 * num_samples to compare.
 
-        gs_occu = self.get_ground_state()
+        gs_occu = self.get_ground_state_occupancy()
 
         # Will always contain GS at the first position in list.
         rand_occus = []
