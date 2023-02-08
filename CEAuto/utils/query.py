@@ -1,4 +1,4 @@
-"""Define rules to query a task document or dictionary."""
+"""Define rules to query a nested task documents and dictionaries."""
 import logging
 import random
 
@@ -9,7 +9,7 @@ def query_keypath(obj, keypath):
     """Query attributes of an object along a path.
 
     Args:
-        obj(Any):
+        obj(Object|dict):
             The object to be queried.
         keypath(list[str]):
             A path of attribute names to query.
@@ -62,10 +62,10 @@ def query_keypath(obj, keypath):
 
 
 def query_name_iteratively(obj, name):
-    """Query an attribute from children attributes of an objects.
+    """Query an attribute from a nested object.
 
     Args:
-        obj(Any):
+        obj(Object|dict):
             The object to be queried.
         name(str):
             The attribute name.
@@ -110,7 +110,7 @@ def query_name_iteratively(obj, name):
 
 
 def get_property_from_object(obj, query_string):
-    """Get structure properties from generic object.
+    """Get a property value from a generic nested object.
 
     Args:
         obj(Object):
