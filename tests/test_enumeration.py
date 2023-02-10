@@ -77,7 +77,7 @@ def test_enumerate_compositions(specs):
     bits = specs["bits"]
     bit_charges = [(0
                     if isinstance(sp, (Element, Vacancy))
-                    else sp.oxidation_state)
+                    else sp.oxi_state)
                    for sp in chain(*bits)]
     sl_sites = specs["sublattice_sites"]
     sl_sizes = [len(sites) for sites in sl_sites]

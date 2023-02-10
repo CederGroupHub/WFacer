@@ -203,7 +203,7 @@ def test_parse_calculations(enum_output, parse_output):
         if specs["charge_decorated"]:
             carry_charge = [(not isinstance(site.specie,
                                             (Element, Vacancy))
-                             or site.species.oxidation_state != 0)
+                             or site.species.oxi_state != 0)
                             for site in ent.structure]
             assert np.any(carry_charge)
     # Assert other properties are correctly parsed.

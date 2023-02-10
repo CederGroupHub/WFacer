@@ -6,9 +6,10 @@ import numpy as np
 import numpy.testing as npt
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.core import Element
 
 from smol.moca import Ensemble
-from smol.cofe.space.domain import get_allowed_species
+from smol.cofe.space.domain import get_allowed_species, Vacancy
 
 from CEAuto.sample_generators import (CanonicalSampleGenerator,
                                       SemigrandSampleGenerator)
@@ -18,6 +19,13 @@ from .utils import (gen_random_neutral_counts,
                     get_counts_from_occu)
 
 all_generators = [CanonicalSampleGenerator, SemigrandSampleGenerator]
+
+
+def get_oxi_state(s):
+    if isinstance(s, (Element, Vacancy)):
+        return 0
+    else:
+        return s.oxi_state
 
 
 @pytest.fixture(params=all_generators)
@@ -35,9 +43,22 @@ def generator(cluster_expansion, request):
                                                  .cluster_subspace
                                                  .structure)))
         chempots = {p: random.random() for p in species}
-        return request.param(cluster_expansion,
-                             sc_matrix,
-                             chempots)
+        generator = request.param(cluster_expansion,
+                                  sc_matrix,
+                                  chempots)
+
+        assert len(generator.sampler.mckernels) == 1
+        usher = generator.sampler.mckernels[0].mcusher.__class__.__name__
+        charge_decorated = False
+        for sp in species:
+            if get_oxi_state(sp) != 0:
+                charge_decorated = True
+        if charge_decorated:
+            assert usher == "TableFlip"
+        else:
+            assert usher == "Flip"
+
+        return generator
 
 
 def test_ground_state(generator):
@@ -60,6 +81,7 @@ def test_unfreeze(generator):
     prev_structs = [generator.processor.structure_from_occupancy(o)
                     for o in prev_occus]
     sample = generator.get_unfrozen_sample(prev_structs, 50)
+    assert len(sample) >= 20   # Number of samples should not be too few!
     # No duplication with old and among themselves.
     for sid, s in enumerate(sample):
         dupe = False
@@ -72,4 +94,3 @@ def test_unfreeze(generator):
             occu = generator.processor.occupancy_from_structure(s)
             counts = get_counts_from_occu(occu, generator.sublattices)
             npt.assert_array_almost_equal(counts, generator.counts)
-

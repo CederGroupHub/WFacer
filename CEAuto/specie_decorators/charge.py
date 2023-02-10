@@ -165,8 +165,8 @@ class MagneticChargeDecorator(GpOptimizedDecorator, ChargeDecorator):
     Is a sub-class of GPOptimizedDecorator.
     """
     decorated_prop_name = "oxi_state"
-    # (name of the site property to use in pymatgen.structure,
-    #  the string path used to query TaskDocument)
+    # [(name of the site property to use in pymatgen.structure,
+    #  the string path used to query TaskDocument)]
     required_prop_names = [("magmom",
                             "calcs_reversed.0-output" +
                             ".outcar.magnetization.^tot")]

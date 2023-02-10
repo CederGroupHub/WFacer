@@ -10,7 +10,7 @@ be-retrained after each iteration.
 __author__ = 'Fengyu Xie, Julia H. Yang'
 
 from abc import ABCMeta, abstractmethod
-import warnings
+import logging
 import numpy as np
 from monty.json import MSONable
 from collections import defaultdict
@@ -27,12 +27,16 @@ from smol.utils import (derived_class_factory,
                         class_name_from_str,
                         get_subclasses)
 
+log = logging.getLogger(__name__)
+
 # Add here if you implement more decorators.
 valid_decorator_types = {"oxi_state": ("pmg-guess-charge",
                                        "magnetic-charge",)}
 
 
 def _get_required_site_property(entry, site_id, prop_name):
+    """Find required site property."""
+
     # Now if prop_name has dot ("."), site property will be treated as a dictionary.
     def explore_key_path(path, d):
         d_last = d.copy()
@@ -43,7 +47,8 @@ def _get_required_site_property(entry, site_id, prop_name):
         return d_last
 
     key_path = prop_name.split(".")
-    return explore_key_path(key_path, entry[site_id].properties)
+    return explore_key_path(key_path,
+                            entry.structure[site_id].properties)
 
 
 class BaseDecorator(MSONable, metaclass=ABCMeta):
@@ -166,7 +171,7 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         structure_sites = groups[species]
         for struct_id, site_id in structure_sites:
             site_props = []
-            for prop_name in self.required_prop_names:
+            for prop_name, taskdoc_query in self.required_prop_names:
                 p = _get_required_site_property(entries[struct_id],
                                                 site_id,
                                                 prop_name)
@@ -185,10 +190,10 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
             s_undecor = entry.structure
             species_decor = []
             for site_id, site in enumerate(s_undecor):
-                sp = site.specie
-                if isinstance(sp, Composition):
+                if not hasattr(site, "specie"):
                     raise ValueError("Can not decorate partially disordered site: "
                                      f"{site}")
+                sp = site.specie
                 if (struct_id in decorate_rules
                         and site_id in decorate_rules[struct_id]):
                     label = decorate_rules[struct_id][site_id]
@@ -223,9 +228,11 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
             s_decor = Structure(s_undecor.lattice,
                                 species_decor,
                                 s_undecor.frac_coords)
-            s_decor.add_site_property(site_properties)
+            for prop, values in site_properties.items():
+                s_decor.add_site_property(prop, values)
             energy_adjustments = (entry.energy_adjustments
-                                  if len(entry.energy_adjustments) != 0
+                                  if (len(entry.energy_adjustments) != 0
+                                      and entry.energy_adjustments is not None)
                                   else None)
             # Constant energy adjustment is set as a manual class object.
             entry_decor = ComputedStructureEntry(s_decor,
@@ -301,15 +308,15 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
            gaussian_models(dict{str|Element|Species:GaussianMixture}):
                Gaussian models corresponding to each key in labels.
         """
-        super(MixtureGaussianDecorator, self).__init__(labels)
+        super(MixtureGaussianDecorator, self).__init__(labels, **kwargs)
         if gaussian_models is None:
             gaussian_models = {}
         gaussian_models = {get_species(key): val
                            for key, val in gaussian_models.items()}
         for key in self.labels:
             if key not in gaussian_models:
-                warnings.warn(f"Gaussian model for {key} is missing! "
-                              "Initializing from empty.")
+                log.warning(f"Gaussian model for {key} is missing! "
+                            "Initializing from empty.")
                 gaussian_models[key] = GaussianMixture(n_components=len(
                     self.labels[key]))
         self._gms = gaussian_models
@@ -319,29 +326,30 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
         """Serialize gaussian model into dict."""
         data = {'init_params': model.get_params(),
                 'model_params': {}}
-        for p in MixtureGaussianDecorator.gaussian_model_keys:
-            if p in model.__dict__:
-                data['model_params'][p] = getattr(model, p)
-            # Contains np.array, not directly json.dump-able.
+        for k in MixtureGaussianDecorator.gaussian_model_keys:
+            if k in model.__dict__:
+                data['model_params'][k] = getattr(model, k)
+            # Contains np.array, not directly json.dump-able. Use monty.
         return data
 
     @staticmethod
     def deserialize_gaussian_model(data):
         """Recover gaussian model from dict."""
         model = GaussianMixture(**data["init_params"])
-        for p, v in data["model_params"].items():
-            setattr(model, p, v)
+        for k, v in data["model_params"].items():
+            setattr(model, k, v)
+        return model
 
     @staticmethod
     def is_trained_gaussian_model(model):
         """Whether a gaussian model is trained."""
-        return all(k in model.__dict__
-                   for k in MixtureGaussianDecorator.gaussian_model_keys)
+        return all([k in model.__dict__
+                   for k in MixtureGaussianDecorator.gaussian_model_keys])
 
     @property
     def is_trained(self):
-        return all(MixtureGaussianDecorator.is_trained_gaussian_model(m)
-                   for m in self._gms.values())
+        return all([self.is_trained_gaussian_model(m)
+                    for m in self._gms.values()])
 
     def train(self, entries, reset=False):
         """Train the decoration model.
@@ -366,10 +374,10 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
                 props = self._load_props(species, entries, groups)
                 props = np.array(props)
                 if len(props.shape) > 2:
-                    raise ValueError("Can not train on tensoral properties! "
+                    raise ValueError("Can not train on tensor properties! "
                                      "Convert to scalar or vector before "
                                      "training!")
-                _ = self._gms[species].fit(props)
+                self._gms[species] = self._gms[species].fit(props)
 
     def decorate(self, entries):
         """Give decoration to entries based on trained model.
@@ -398,15 +406,15 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
             # flip to make sure that first dim sorted first.
             marks = np.flip(np.array(centers).transpose(),
                             axis=0)
-            centers_argsort = np.lexsort(marks)
+            centers_argsort = np.lexsort(marks).tolist()
             props = self._load_props(species, entries, groups)
             props = np.array(props)
             if len(props.shape) > 2:
-                raise ValueError("Can not train on tensoral properties! "
+                raise ValueError("Can not train on tensor properties! "
                                  "Convert to scalar or vector before "
                                  "training!")
             cluster_ids = model.predict(props)
-            label_ids = centers_argsort[cluster_ids]
+            label_ids = [centers_argsort.index(c) for c in cluster_ids]
             labels = np.array(self.labels[species])
             assigned_labels = labels[label_ids]
             for i, (struct_id, site_id) in enumerate(structure_sites):
@@ -428,7 +436,11 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
     def from_dict(cls, d):
         """Load from dict."""
         # Please load dict with monty.
-        return cls(d["labels"], d.get("models"))
+        models = d.get("models")
+        if models is not None:
+            models = {k: cls.deserialize_gaussian_model(v)
+                      for k, v in models.items()}
+        return cls(d["labels"], models)
 
 
 class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
@@ -479,11 +491,10 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
                1, Must be monotonically ascending,
                2, Must be len(labels[key]) = len(cuts[key]) + 1 for any key.
         """
-        super(GpOptimizedDecorator, self).__init__(labels)
+        super(GpOptimizedDecorator, self).__init__(labels, **kwargs)
         if cuts is not None:
             cuts = {get_species(key): val
                     for key, val in cuts.items()}
-        if cuts is not None:
             for species in self.labels:
                 if species not in cuts:
                     raise ValueError(f"Cuts not provided for species {species}!")
@@ -507,10 +518,9 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
 
         def get_sector_id(x, sector_cuts):
             # sector_cuts must be ascending.
-            assert np.allclose(sector_cuts, np.sort(sector_cuts))
             y = np.append(sector_cuts, np.inf)
             for yid, yy in enumerate(y):
-                if x < yy:
+                if x <= yy:
                     return yid
 
         groups = self.group_site_by_species(entries)
@@ -519,7 +529,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
             structure_sites = groups[species]
             props = self._load_props(species, entries, groups)
             props = np.array(props)
-            if props.shape[1] != 0:
+            if props.shape[1] != 1:
                 raise ValueError("GpOptimizedDecorator can only be trained "
                                  "on one scalar property!")
             props = props.flatten()
@@ -566,16 +576,22 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
             model = GaussianMixture(n_components=len(self.labels[species]))
             _ = model.fit(props.reshape(-1, 1))
             centers = getattr(model, "means_")
-            centers_argsort = np.argsort(centers)
-            lin_space = np.linspace(np.min(props) - 0.1, np.max(props) + 0.1, 1000)
+            # Lex sort on dimensions,
+            # flip to make sure that first dim sorted first.
+            marks = np.flip(np.array(centers).transpose(),
+                            axis=0)
+            centers_argsort = np.lexsort(marks).tolist()
+            lin_space = np.linspace(np.min(props) - 0.5, np.max(props) + 0.5, 2000)
             cluster_ids = model.predict(lin_space.reshape(-1, 1))
-            label_ids = centers_argsort[cluster_ids]
+            label_ids = [centers_argsort.index(c) for c in cluster_ids]
             cuts_species = []
             last_label_id = label_ids[0]
             for label_id, p in zip(label_ids, lin_space):
-                if label_id == last_label_id + 1:
+                if label_id != last_label_id:
+                    # assert label_id == last_label_id + 1
                     cuts_species.append(p)
                     last_label_id = label_id
+
             if len(cuts_species) > 1:
                 delta = np.min([cuts_species[i] - cuts_species[i - 1]
                                 for i in range(1, len(cuts_species))]) * 0.3
@@ -616,9 +632,9 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
             if result is not None and result.x is not None:
                 cuts_flatten_opt = result.x
             else:
-                warnings.warn("Decorator model can't be optimized properly "
-                              "with Bayesian process, use mixture of gaussian "
-                              "clustering prediction instead!")
+                log.warning("Decorator model can't be optimized properly "
+                            "with Bayesian process, use mixture of gaussian "
+                            "clustering prediction instead!")
                 cuts_flatten_opt = cuts_flatten_init
             # De-flatten.
             cuts = {}
@@ -653,7 +669,8 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         d = super(GpOptimizedDecorator, self).as_dict()
         # Species serialized to string directly. Many other properties
         # might not be supported. Wait for pymatgen update.
-        d["cuts"] = {str(key): val for key, val in self._cuts.items()}
+        if self.is_trained:
+            d["cuts"] = {str(key): val for key, val in self._cuts.items()}
         return d
 
     @classmethod
