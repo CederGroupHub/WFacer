@@ -200,6 +200,7 @@ def test_enumerate_structures(single_expansion):
                 break
         assert not dupe
 
+    # Passed!
     if len(structures) < 50:
         logging.warning(f"Number of structures in the initial pool is"
                         f" {len(structures)}, fewer than 50."
