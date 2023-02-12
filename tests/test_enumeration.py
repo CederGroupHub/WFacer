@@ -129,7 +129,9 @@ def test_enumerate_structures(single_expansion):
     subspace = single_expansion.cluster_subspace
     supercells = enumerate_matrices(32, subspace)
     ensembles = [Ensemble.from_cluster_expansion(single_expansion,
-                                                 m) for m in supercells]
+                                                 m,
+                                                 processor_type="expansion")
+                 for m in supercells]
     specs = get_prim_specs(subspace.structure)
     sl_sizes = [len(sl) for sl in specs["sublattice_sites"]]
     n_dims = sum(len(sl) for sl in specs["bits"])

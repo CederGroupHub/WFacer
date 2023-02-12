@@ -32,12 +32,14 @@ def get_oxi_state(s):
 def generator(cluster_expansion, request):
     sc_matrix = [[3, 0, 0], [0, 3, 0], [0, 0, 3]]
     ensemble = Ensemble.from_cluster_expansion(cluster_expansion,
-                                               sc_matrix)
+                                               sc_matrix,
+                                               processor_type="expansion")
     if "Canonical" in request.param.__name__:
         counts = gen_random_neutral_counts(ensemble.sublattices)
         return request.param(cluster_expansion,
                              sc_matrix,
-                             counts)
+                             counts,
+                             duplicacy_criteria="structure")
     elif "Semigrand" in request.param.__name__:
         species = set(chain(*get_allowed_species(cluster_expansion
                                                  .cluster_subspace
@@ -45,7 +47,8 @@ def generator(cluster_expansion, request):
         chempots = {p: random.random() for p in species}
         generator = request.param(cluster_expansion,
                                   sc_matrix,
-                                  chempots)
+                                  chempots,
+                                  duplicacy_criteria="structure")
 
         assert len(generator.sampler.mckernels) == 1
         usher = generator.sampler.mckernels[0].mcusher.__class__.__name__
@@ -68,6 +71,10 @@ def test_ground_state(generator):
     assert sm.fit(generator.processor.structure_from_occupancy(occu),
                   s)
     assert np.isclose(s.charge, 0)
+    corr_std = generator.ce.cluster_subspace\
+        .corr_from_structure(s, scmatrix=generator.processor.supercell_matrix)
+    npt.assert_array_almost_equal(corr_std,
+                                  generator.get_ground_state_features())
 
     if "Canonical" in generator.__class__.__name__:
         counts = get_counts_from_occu(occu, generator.sublattices)
@@ -78,10 +85,14 @@ def test_unfreeze(generator):
     sm = StructureMatcher()
     prev_occus = [gen_random_neutral_occupancy(generator.sublattices)
                   for _ in range(20)]
-    prev_structs = [generator.processor.structure_from_occupancy(o)
+    processor = generator.processor
+    prev_structs = [processor.structure_from_occupancy(o)
                     for o in prev_occus]
+    prev_feats = [(processor.compute_feature_vector(o) / processor.size)
+                  .tolist()
+                  for o in prev_occus]
     sample, sample_occus, sample_feats =\
-        generator.get_unfrozen_sample(prev_structs, 50)
+        generator.get_unfrozen_sample(prev_structs, prev_feats, 50)
     gs = generator.get_ground_state_structure()
     assert len(sample) >= 20   # Number of samples should not be too few!
     # No duplication with old and among themselves.

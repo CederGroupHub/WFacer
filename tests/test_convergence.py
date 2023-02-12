@@ -20,7 +20,8 @@ def get_one_wrangler(subspace, coefs, bad_wangler=False):
 
     ensemble = Ensemble \
         .from_cluster_expansion(ClusterExpansion(subspace, coefs),
-                                np.eye(3) * 2)
+                                np.eye(3) * 2,
+                                processor_type="expansion")
     prim_specs = get_prim_specs(subspace.structure)
     sl_sizes = [len(sl) for sl in prim_specs["sublattice_sites"]]
 

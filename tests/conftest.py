@@ -105,7 +105,8 @@ def ensemble(cluster_expansion):
     return Ensemble.from_cluster_expansion(cluster_expansion,
                                            [[3, 0, 0],
                                             [0, 3, 0],
-                                            [0, 0, 3]])
+                                            [0, 0, 3]],
+                                           processor_type="expansion")
 
 
 @pytest.fixture(scope="package")
@@ -113,7 +114,8 @@ def ensemble_sin(cluster_expansion_sin):
     return Ensemble.from_cluster_expansion(cluster_expansion_sin,
                                            [[3, 0, 0],
                                             [0, 3, 0],
-                                            [0, 0, 3]])
+                                            [0, 0, 3]],
+                                           processor_type="expansion")
 
 
 @pytest.fixture(scope="package")

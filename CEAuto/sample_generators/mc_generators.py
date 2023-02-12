@@ -201,9 +201,9 @@ class McSampleGenerator(metaclass=ABCMeta):
 
         Return:
             list[Structure], list[list[int]], list[list[float]]:
-                New samples structures, NOT including the ground-state;
-                sampled occupancy arrays;
-                feature vectors of sampled structures.
+                New samples structures, NOT including the ground-state,
+                sampled occupancy arrays, and feature vectors of sampled
+                structures.
         """
         previous_sampled_structures = previous_sampled_structures or []
         previous_sampled_features = previous_sampled_features or []
@@ -249,11 +249,11 @@ class McSampleGenerator(metaclass=ABCMeta):
         rand_feats = [(self.processor.compute_feature_vector(np.array(occu))
                        / self.processor.size).tolist()
                       for occu in rand_occus]
-        new_strs = []
         new_ids = []
         for new_id, new_str in enumerate(rand_strs):
             dupe = False
-            old_strs = previous_sampled_features + [gs_str] + new_strs
+            old_strs = (previous_sampled_structures + [gs_str] +
+                        [rand_strs[ii] for ii in new_ids])
             old_feats = (previous_sampled_features + [gs_feature] +
                          [rand_feats[ii] for ii in new_ids])
             for old_id, (old_str, old_feat) in enumerate(zip(old_strs,
@@ -272,13 +272,12 @@ class McSampleGenerator(metaclass=ABCMeta):
                 if dupe:
                     break
             if not dupe:
-                new_strs.append(new_str)
                 new_ids.append(new_id)
 
-            if len(new_strs) == num_samples:
+            if len(new_ids) == num_samples:
                 break
 
-        return (new_strs,
+        return ([rand_strs[i] for i in new_ids],
                 [rand_occus[i] for i in new_ids],
                 [rand_feats[i] for i in new_ids])
 
@@ -344,9 +343,11 @@ class CanonicalSampleGenerator(McSampleGenerator):
     @property
     def ensemble(self):
         """CanonicalEnsemble."""
+        # Must use "expansion" as the processor type to give correlation vectors.
         if self._ensemble is None:
             self._ensemble = (Ensemble.
-                              from_cluster_expansion(self.ce, self.sc_matrix))
+                              from_cluster_expansion(self.ce, self.sc_matrix,
+                                                     processor_type="expansion"))
         return self._ensemble
 
     @property
@@ -432,7 +433,8 @@ class SemigrandSampleGenerator(McSampleGenerator):
                               from_cluster_expansion(self.ce,
                                                      self.sc_matrix,
                                                      chemical_potentials=
-                                                     self.chemical_potentials))
+                                                     self.chemical_potentials,
+                                                     processor_type="expansion"))
         return self._ensemble
 
     @property
