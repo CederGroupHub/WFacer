@@ -2,7 +2,6 @@
 from copy import deepcopy
 import numpy as np
 from jobflow import Response, Flow, job
-from itertools import product
 import logging
 
 from pymatgen.analysis.elasticity.strain import Deformation
@@ -36,8 +35,7 @@ from .preprocessing import (reduce_prim,
 from .enumeration import (enumerate_matrices,
                           enumerate_compositions_as_counts,
                           truncate_cluster_subspace,
-                          generate_initial_training_structures,
-                          generate_additive_training_structures)
+                          generate_training_structures)
 from .fit import fit_ecis_from_wrangler
 from .wrangling import CeDataWrangler
 from .utils.task_document import get_entry_from_taskdoc
@@ -79,28 +77,28 @@ def _enumerate_structures(subspace, coefs, iter_id,
     mc_generator_kwargs = options["sample_generator_kwargs"]
     init_method = options["init_method"]
     add_method = options["add_method"]
+    n_parallel = options["n_parallel"]
+    duplicacy_criteria = options["duplicacy_criteria"]
     if iter_id == 0:
-        new_structures, new_sc_matrices, new_features = \
-            generate_initial_training_structures(ce,
-                                                 product(sc_matrices,
-                                                         compositions),
-                                                 keep_ground_states,
-                                                 num_structs_init,
-                                                 mc_generator_kwargs,
-                                                 method=init_method
-                                                 )
+        method = init_method
+        n_select = num_structs_init
     else:
-        new_structures, new_sc_matrices, new_features = \
-            generate_additive_training_structures(ce,
-                                                  product(sc_matrices,
-                                                          compositions),
-                                                  enumerated_structures,
-                                                  enumerated_features,
-                                                  keep_ground_states,
-                                                  num_structs_add,
-                                                  mc_generator_kwargs,
-                                                  method=add_method
-                                                  )
+        method = add_method
+        n_select = num_structs_add
+    new_structures, new_sc_matrices, new_features = \
+        generate_training_structures(ce,
+                                     sc_matrices,
+                                     compositions,
+                                     enumerated_structures,
+                                     enumerated_features,
+                                     keep_ground_states,
+                                     n_select,
+                                     mc_generator_kwargs,
+                                     n_parallel,
+                                     duplicacy_criteria
+                                     =duplicacy_criteria,
+                                     method=method,
+                                     )
     return new_structures, new_sc_matrices, new_features
 
 
@@ -177,6 +175,8 @@ def enumerate_structures(last_ce_document):
            and feature vectors.
 
     """
+    # Current iteration index. If starting from scratch,
+    # last_iter_id will be -1.
     iter_id = last_ce_document.last_iter_id + 1
     # Must be pre-processed options.
     options = last_ce_document.ce_options
@@ -260,8 +260,8 @@ def calculate_structures(enum_output, last_ce_document):
     calc_flow = Flow(flows,
                      output=outputs,
                      name=project_name +
-                     f"_iter_{iter_id}" +
-                     "_calculations")
+                          f"_iter_{iter_id}" +
+                          "_calculations")
     return Response(replace=calc_flow)
 
 
@@ -498,8 +498,14 @@ def initialize_document(prim,
                                       **options["spacegroup_kwargs"]
                                       )
                    )
+
     # Not necessarily the same as the objective size.
     sc_size = subspace.num_prims_from_matrix(sc_matrices[0])
+    # Supercells must be the same size
+    if not np.allclose([subspace.num_prims_from_matrix(m) for m in sc_matrices],
+                       sc_size):
+        raise ValueError(f"Provided super-cell matrices {sc_matrices} does"
+                         f" not have the same size! This is not allowed!")
     subspace = truncate_cluster_subspace(subspace, sc_matrices)
 
     # Enumerate compositions as "counts" format in smol.moca.CompositionSpace.
@@ -534,4 +540,3 @@ def initialize_document(prim,
     init_ce_document.enumerated_features = np.array([]).reshape((0, num_features))
 
     return init_ce_document
-

@@ -369,6 +369,19 @@ def process_structure_options(d):
             Structure selection method in subsequent iterations.
             Default is 'leverage'. Allowed options are: 'leverage'
             and 'random'.
+        duplicacy_criteria(str):
+            The criteria when to consider two structures as the same and
+            old to add one of them into the candidate training set.
+            Default is "correlations", which means to assert duplication
+            if two structures have the same correlation vectors. While
+            "structure" means two structures must be symmetrically equivalent
+            after being reduced. No other option is allowed.
+            Note that option "structure" might be significantly slower since
+            it has to attempt reducing every structure to its primitive cell
+            before matching. It should be used with caution.
+        n_parallel(int): optional
+            Number of generators to run in parallel. Default is to use
+            a quarter of cpu count.
         keep_ground_states(bool):
             Whether always to add new ground states to the training set.
             Default to True.
@@ -383,6 +396,10 @@ def process_structure_options(d):
             d.get("init_method", "leverage"),
             "add_method":
             d.get("add_method", "leverage"),
+            "duplicacy_criteria":
+            d.get("duplicacy_criteria", "correlations"),
+            "n_parallel":
+            d.get("n_parallel"),
             "keep_ground_states":
             d.get("keep_ground_states", True)}
 

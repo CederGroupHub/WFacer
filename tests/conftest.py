@@ -69,6 +69,26 @@ def cluster_expansion(subspace):
     return ClusterExpansion(subspace, coefs_)
 
 
+# enumeration tests takes too long to finish. Can only test one prim.
+@pytest.fixture(scope="package")
+def single_expansion():
+    prim = test_structures[0]
+    prim = reduce_prim(prim)
+    specs = get_prim_specs(prim)
+    space = get_cluster_subspace(prim,
+                                 specs["charge_decorated"],
+                                 specs["nn_distance"],
+                                 cutoffs={2: 7, 3: 4},
+                                 use_ewald=True)
+    coefs_ = (np.random.
+              random(space.num_corr_functions +
+                     len(space.external_terms)))
+    coefs_ = coefs_ - 0.5
+    coefs_[0] = 1.0
+    coefs_[-len(space.external_terms):] = 0.3
+    return ClusterExpansion(space, coefs_)
+
+
 @pytest.fixture(scope="package")
 def cluster_expansion_sin(subspace_sin):
     coefs_ = (np.random.

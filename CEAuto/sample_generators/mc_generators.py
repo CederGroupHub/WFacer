@@ -10,7 +10,7 @@ from smol.cofe.space.domain import Vacancy
 from smol.moca import Ensemble, Sampler, CompositionSpace
 from smol.utils import derived_class_factory, class_name_from_str
 
-from ..utils.duplicacy import is_duplicate
+from ..utils.duplicacy import is_duplicate, is_corr_duplicate
 from ..utils.occu import get_random_occupancy_from_counts
 
 __author__ = "Fengyu Xie"
@@ -32,8 +32,9 @@ class McSampleGenerator(metaclass=ABCMeta):
     def __init__(self, ce, sc_matrix,
                  anneal_temp_series=None,
                  heat_temp_series=None,
-                 num_steps_anneal=50000,
-                 num_steps_heat=100000,
+                 num_steps_anneal=None,
+                 num_steps_heat=None,
+                 duplicacy_criteria="correlations",
                  remove_decorations_before_duplicacy=False):
         """Initialize McSampleGenerator.
 
@@ -52,10 +53,20 @@ class McSampleGenerator(metaclass=ABCMeta):
                 Number of MC steps to run per annealing temperature step.
             num_steps_heat(int): optional
                 Number of MC steps to run per heat temperature step.
+            duplicacy_criteria(str):
+                The criteria when to consider two structures as the same and
+                old to add one of them into the candidate training set.
+                Default is "correlations", which means to assert duplication
+                if two structures have the same correlation vectors. While
+                "structure" means two structures must be symmetrically equivalent
+                after being reduced. No other option is allowed.
+                Note that option "structure" might be significantly slower since
+                it has to attempt reducing every structure to its primitive cell
+                before matching. It should be used with caution.
             remove_decorations_before_duplicacy(bool): optional
                 Whether to remove all decorations from species (i.e,
                 charge and other properties) before comparing duplicacy.
-                Default to false.
+                Default to false. Only valid when duplicacy_criteria="structure".
         """
         self.ce = ce
         self.sc_matrix = np.array(sc_matrix, dtype=int)
@@ -66,8 +77,9 @@ class McSampleGenerator(metaclass=ABCMeta):
                                    or self.default_anneal_temp_series)
         self.heat_temp_series = (heat_temp_series
                                  or self.default_heat_temp_series)
-        self.num_steps_anneal = num_steps_anneal
-        self.num_steps_heat = num_steps_heat
+        self._num_steps_anneal = num_steps_anneal
+        self._num_steps_heat = num_steps_heat
+        self.duplicacy_criteria = duplicacy_criteria
         self.remove_decorations = remove_decorations_before_duplicacy
 
         self._gs_occu = None  # Cleared per-initialization.
@@ -100,6 +112,28 @@ class McSampleGenerator(metaclass=ABCMeta):
         """
         return self.ensemble.sublattices
 
+    @property
+    def n_steps_per_scan(self):
+        """Least number of steps required to span configurations."""
+        return np.sum([len(sublatt.encoding) * len(sublatt.active_sites)
+                       for sublatt in self.sublattices])
+
+    @property
+    def num_steps_anneal(self):
+        """Number of steps to run at each temperature when annealing."""
+        if self._num_steps_anneal is None:
+            # By default, run over all configurations for 20 times.
+            self._num_steps_anneal = self.n_steps_per_scan * 20
+        return self._num_steps_anneal
+
+    @property
+    def num_steps_heat(self):
+        """Number of steps to run at each temperature when annealing."""
+        if self._num_steps_heat is None:
+            # By default, run over all configurations for 40 times.
+            self._num_steps_heat = self.n_steps_per_scan * 40
+        return self._num_steps_heat
+
     @abstractmethod
     def _get_init_occu(self):
         return
@@ -109,7 +143,7 @@ class McSampleGenerator(metaclass=ABCMeta):
 
         Returns:
             ground state in encoded occupancy array:
-                np.ndarray[int]
+                list[int]
         """
         if self._gs_occu is None:
             init_occu = self._get_init_occu()
@@ -128,11 +162,27 @@ class McSampleGenerator(metaclass=ABCMeta):
         return self._gs_occu
 
     def get_ground_state_structure(self):
-        return self.processor\
+        """Get the ground state structure.
+
+        Returns:
+            Structure.
+        """
+        return self.processor \
             .structure_from_occupancy(self.get_ground_state_occupancy())
+
+    def get_ground_state_features(self):
+        """Get the feature vector of the ground state.
+
+        Returns:
+            list[float].
+        """
+        gs_occu = self.get_ground_state_occupancy()
+        return (self.processor.compute_feature_vector(np.array(gs_occu))
+                / self.processor.size).tolist()
 
     def get_unfrozen_sample(self,
                             previous_sampled_structures=None,
+                            previous_sampled_features=None,
                             num_samples=100):
         """Generate a sample of structures by heating the ground state.
 
@@ -140,6 +190,9 @@ class McSampleGenerator(metaclass=ABCMeta):
             previous_sampled_structures(list[Structure]): optional
                 Sample structures already calculated in past
                 iterations.
+            previous_sampled_features(list[arrayLike]): optional
+                Feature vectors of sample structures already
+                calculated in past iterations.
             num_samples(int): optional
                 Maximum number of samples to draw per unfreezing
                 run. Since Structures must be de-duplicated, the actual
@@ -147,18 +200,26 @@ class McSampleGenerator(metaclass=ABCMeta):
                 threshold. Default to 100.
 
         Return:
-            list[Structure]:
-                New samples structures, not including the ground-state.
+            list[Structure], list[list[int]], list[list[float]]:
+                New samples structures, NOT including the ground-state;
+                sampled occupancy arrays;
+                feature vectors of sampled structures.
         """
         previous_sampled_structures = previous_sampled_structures or []
+        previous_sampled_features = previous_sampled_features or []
+        if len(previous_sampled_features) != len(previous_sampled_structures):
+            raise ValueError("Must provide a feature vector for each"
+                             " structure passed in!")
 
         thin_by = max(1,
                       len(self.heat_temp_series) * self.num_steps_heat
-                      // (num_samples * 10))
+                      // (num_samples * 5))
         # Thin so we don't have to de-duplicate too many structures.
         # Here we leave out 10 * num_samples to compare.
 
         gs_occu = self.get_ground_state_occupancy()
+        gs_feature = self.get_ground_state_features()
+        gs_str = self.get_ground_state_structure()
 
         # Will always contain GS at the first position in list.
         rand_occus = []
@@ -183,26 +244,43 @@ class McSampleGenerator(metaclass=ABCMeta):
                               .tolist())
 
         # Symmetry deduplication
-
         rand_strs = [self.processor.structure_from_occupancy(occu)
                      for occu in rand_occus]
+        rand_feats = [(self.processor.compute_feature_vector(np.array(occu))
+                       / self.processor.size).tolist()
+                      for occu in rand_occus]
         new_strs = []
+        new_ids = []
         for new_id, new_str in enumerate(rand_strs):
             dupe = False
-            for old_id, old_str in enumerate(previous_sampled_structures
-                                             + new_strs):
+            old_strs = previous_sampled_features + [gs_str] + new_strs
+            old_feats = (previous_sampled_features + [gs_feature] +
+                         [rand_feats[ii] for ii in new_ids])
+            for old_id, (old_str, old_feat) in enumerate(zip(old_strs,
+                                                             old_feats)):
                 # Must remove decorations to avoid getting fully duplicate inputs.
-                if is_duplicate(old_str, new_str,
-                                remove_decorations=self.remove_decorations):
-                    dupe = True
+                if self.duplicacy_criteria == "correlations":
+                    dupe = is_corr_duplicate(new_str, self.processor,
+                                             features2=old_feat)
+                elif self.duplicacy_criteria == "structure":
+                    dupe = is_duplicate(old_str, new_str,
+                                        remove_decorations=
+                                        self.remove_decorations)
+                else:
+                    raise ValueError(f"{self.duplicacy_criteria} comparison not"
+                                     f" supported!")
+                if dupe:
                     break
             if not dupe:
                 new_strs.append(new_str)
+                new_ids.append(new_id)
 
             if len(new_strs) == num_samples:
                 break
 
-        return new_strs
+        return (new_strs,
+                [rand_occus[i] for i in new_ids],
+                [rand_feats[i] for i in new_ids])
 
 
 class CanonicalSampleGenerator(McSampleGenerator):
@@ -211,8 +289,10 @@ class CanonicalSampleGenerator(McSampleGenerator):
     def __init__(self, ce, sc_matrix, counts,
                  anneal_temp_series=None,
                  heat_temp_series=None,
-                 num_steps_anneal=50000,
-                 num_steps_heat=100000):
+                 num_steps_anneal=None,
+                 num_steps_heat=None,
+                 duplicacy_criteria="correlations",
+                 remove_decorations_before_duplicacy=False):
         """Initialize.
 
         Args:
@@ -234,13 +314,30 @@ class CanonicalSampleGenerator(McSampleGenerator):
                 Number of steps to run per simulated annealing temperature.
             num_steps_heat(int): optional
                 Number of steps to run per heat temperature.
+            duplicacy_criteria(str):
+                The criteria when to consider two structures as the same and
+                old to add one of them into the candidate training set.
+                Default is "correlations", which means to assert duplication
+                if two structures have the same correlation vectors. While
+                "structure" means two structures must be symmetrically equivalent
+                after being reduced. No other option is allowed.
+                Note that option "structure" might be significantly slower since
+                it has to attempt reducing every structure to its primitive cell
+                before matching. It should be used with caution.
+            remove_decorations_before_duplicacy(bool): optional
+                Whether to remove all decorations from species (i.e,
+                charge and other properties) before comparing duplicacy.
+                Default to false. Only valid when duplicacy_criteria="structure".
         """
-        super(CanonicalSampleGenerator, self)\
+        super(CanonicalSampleGenerator, self) \
             .__init__(ce, sc_matrix,
                       anneal_temp_series=anneal_temp_series,
                       heat_temp_series=heat_temp_series,
                       num_steps_anneal=num_steps_anneal,
-                      num_steps_heat=num_steps_heat)
+                      num_steps_heat=num_steps_heat,
+                      duplicacy_criteria=duplicacy_criteria,
+                      remove_decorations_before_duplicacy=
+                      remove_decorations_before_duplicacy)
 
         self.counts = np.round(counts).astype(int)
 
@@ -276,8 +373,10 @@ class SemigrandSampleGenerator(McSampleGenerator):
                  chemical_potentials,
                  anneal_temp_series=None,
                  heat_temp_series=None,
-                 num_steps_anneal=50000,
-                 num_steps_heat=100000):
+                 num_steps_anneal=None,
+                 num_steps_heat=None,
+                 duplicacy_criteria="correlations",
+                 remove_decorations_before_duplicacy=False):
         """Initialize.
 
         Args:
@@ -298,13 +397,30 @@ class SemigrandSampleGenerator(McSampleGenerator):
                 Number of steps to run per simulated annealing temperature.
             num_steps_heat(int): optional
                 Number of steps to run per heat temperature.
+            duplicacy_criteria(str):
+                The criteria when to consider two structures as the same and
+                old to add one of them into the candidate training set.
+                Default is "correlations", which means to assert duplication
+                if two structures have the same correlation vectors. While
+                "structure" means two structures must be symmetrically equivalent
+                after being reduced. No other option is allowed.
+                Note that option "structure" might be significantly slower since
+                it has to attempt reducing every structure to its primitive cell
+                before matching. It should be used with caution.
+            remove_decorations_before_duplicacy(bool): optional
+                Whether to remove all decorations from species (i.e,
+                charge and other properties) before comparing duplicacy.
+                Default to false. Only valid when duplicacy_criteria="structure".
         """
-        super(SemigrandSampleGenerator, self)\
+        super(SemigrandSampleGenerator, self) \
             .__init__(ce, sc_matrix,
                       anneal_temp_series=anneal_temp_series,
                       heat_temp_series=heat_temp_series,
                       num_steps_anneal=num_steps_anneal,
-                      num_steps_heat=num_steps_heat)
+                      num_steps_heat=num_steps_heat,
+                      duplicacy_criteria=duplicacy_criteria,
+                      remove_decorations_before_duplicacy=
+                      remove_decorations_before_duplicacy)
 
         self.chemical_potentials = chemical_potentials
 

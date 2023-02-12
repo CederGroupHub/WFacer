@@ -80,17 +80,18 @@ def test_unfreeze(generator):
                   for _ in range(20)]
     prev_structs = [generator.processor.structure_from_occupancy(o)
                     for o in prev_occus]
-    sample = generator.get_unfrozen_sample(prev_structs, 50)
+    sample, sample_occus, sample_feats =\
+        generator.get_unfrozen_sample(prev_structs, 50)
+    gs = generator.get_ground_state_structure()
     assert len(sample) >= 20   # Number of samples should not be too few!
     # No duplication with old and among themselves.
-    for sid, s in enumerate(sample):
+    for sid, (s, occu) in enumerate(zip(sample, sample_occus)):
         dupe = False
-        for s_old in prev_structs + sample[sid + 1:]:
+        for s_old in prev_structs + [gs] + sample[sid + 1:]:
             if sm.fit(s_old, s):
                 dupe = True
                 break
         assert not dupe
         if "Canonical" in generator.__class__.__name__:
-            occu = generator.processor.occupancy_from_structure(s)
             counts = get_counts_from_occu(occu, generator.sublattices)
             npt.assert_array_almost_equal(counts, generator.counts)

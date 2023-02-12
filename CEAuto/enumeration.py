@@ -11,22 +11,23 @@ module.
 """
 
 import logging
-import numpy as np
 from itertools import chain
-from scipy.special import gammaln
 from copy import deepcopy
+from joblib import Parallel, delayed, cpu_count
+
+from scipy.special import gammaln
+import numpy as np
 
 from pymatgen.core import Lattice
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-from smol.moca import CompositionSpace
+from smol.moca import CompositionSpace, Ensemble
 from smol.cofe import ClusterSubspace
 
 from .utils.supercells import get_three_factors, is_duplicate_sc
 from .utils.selection import select_initial_rows, select_added_rows
 from .sample_generators import CanonicalSampleGenerator
-from .utils.duplicacy import is_duplicate
-
+from .utils.duplicacy import is_duplicate, is_corr_duplicate
 
 log = logging.getLogger(__name__)
 
@@ -92,11 +93,11 @@ def enumerate_matrices(objective_sc_size, cluster_subspace,
     def get_skews(m, conv, space):
         # Get skews of a matrix. only upper-triangular used.
         skews = []
-        margin = m[0, 0]
-        n_range = sorted({0, 1, margin // 2, margin})
-        for i in n_range:
-            for j in n_range:
-                for k in n_range:
+        ij_range = sorted({0, 1, m[0, 0] // 2, m[0, 0]})
+        k_range = sorted({0, 1, m[1, 1] // 2, m[1, 1]})
+        for i in ij_range:
+            for j in ij_range:
+                for k in k_range:
                     if i == 0 and j == 0 and k == 0:
                         continue
                     skewed = m.copy()
@@ -137,7 +138,7 @@ def enumerate_matrices(objective_sc_size, cluster_subspace,
     scs_skew = list(filter(filt_func_, scs_skew))
 
     def alias_level(sc):
-        return len(list(chain(*cluster_subspace.get_aliasd_orbits(sc))))
+        return len(list(chain(*cluster_subspace.get_aliased_orbits(sc))))
 
     # Sort diagonal by low stretch, then low alias level.
     def diagonal_sort_key(sc):
@@ -241,6 +242,7 @@ def enumerate_compositions_as_counts(sc_size,
 
 def get_num_structs_to_sample(all_counts,
                               num_structs_select,
+                              scale=3,
                               min_num_per_composition=2):
     """Get number of structures to sample in each McSampleGenerator.
 
@@ -249,7 +251,9 @@ def get_num_structs_to_sample(all_counts,
             All enumerated compositions in "counts" format.
         num_structs_select(int):
             Number of structures to eventually select.
-            Will sample 6* the number of structures to select.
+        scale(int): optional
+            How many structures to sample in total, divided by
+            num_structs_select. Default is 3.
         min_num_per_composition(int): optional
             Minimum number of structures to sample per composition.
             Default to 2.
@@ -257,9 +261,11 @@ def get_num_structs_to_sample(all_counts,
 
     def get_ln_weight(counts):
         # Get number of configurations with the composition.
-        return np.sum([gammaln(n + 1) for n in counts])
+        return (gammaln(np.sum(counts) + 1)
+                - np.sum([gammaln(n + 1) for n in counts]))
 
-    num_structs_total = num_structs_select * 6
+    # In total sample 3 * structures than finally to be selected.
+    num_structs_total = num_structs_select * scale
     min_n = min_num_per_composition
 
     ln_weights = [get_ln_weight(counts)
@@ -286,26 +292,91 @@ def get_num_structs_to_sample(all_counts,
     return num_structs
 
 
+def _sample_single_generator(ce,
+                             all_previous_structs,
+                             all_previous_features,
+                             mc_generator_args,
+                             sc_matrix,
+                             counts,
+                             num_sample,
+                             duplicacy_criteria="correlations"):
+    """Create and sample a single generator.
+
+    Used for parallel sampling multiple compositions.
+    """
+    generator = CanonicalSampleGenerator(ce, sc_matrix, counts,
+                                         duplicacy_criteria=
+                                         duplicacy_criteria,
+                                         **mc_generator_args)
+
+    gs_occu = generator.get_ground_state_occupancy()
+    gs_feat = generator.get_ground_state_features()
+    gs_struct = generator.get_ground_state_structure()
+    samples, samples_occu, samples_feat = generator \
+        .get_unfrozen_sample(previous_sampled_structures=
+                             [gs_struct] + all_previous_structs,
+                             previous_sampled_features=
+                             [gs_feat] + all_previous_features,
+                             num_samples=num_sample)
+
+    gs_dupe = False
+    for old_struct, old_feat in zip(all_previous_structs,
+                                    all_previous_features):
+        if duplicacy_criteria == "correlations":
+            gs_dupe = is_corr_duplicate(gs_struct, generator.processor,
+                                        features2=old_feat)
+        elif duplicacy_criteria == "structure":
+            gs_dupe = is_duplicate(gs_struct, old_struct,
+                                   remove_decorations=
+                                   generator.remove_decorations)
+        else:
+            raise ValueError(f"{duplicacy_criteria} comparison not"
+                             f" supported!")
+        # Must remove all decorations to avoid adding in exactly the same input.
+        if gs_dupe:
+            break
+
+    return (gs_struct, gs_occu, gs_feat,
+            samples, samples_occu, samples_feat,
+            gs_dupe)
+
+
 # Currently, only supporting canonical sample generator.
-def generate_initial_training_structures(ce, supercell_and_counts,
-                                         keep_ground_states=True,
-                                         num_structs_init=60,
-                                         mc_generator_kwargs=None,
-                                         **kwargs):
+def generate_training_structures(ce,
+                                 enumerated_matrices,
+                                 enumerated_counts,
+                                 previous_sampled_structures=None,
+                                 previous_feature_matrix=None,
+                                 keep_ground_states=True,
+                                 num_structs=60,
+                                 mc_generator_kwargs=None,
+                                 n_parallel=None,
+                                 duplicacy_criteria="correlations",
+                                 **kwargs):
     """Generate training structures at the first iteration.
 
     Args:
         ce(ClusterExpansion):
             ClusterExpansion object initialized as null. If charge decorated,
             will contain an ewald contribution at 100%
-        supercell_and_counts(list[(3*3 ArrayLike[int], 1D ArrayLike[int])]):
-            A supercell matrix and a composition in super-cell (as "counts"
-            format).
+        enumerated_matrices(list[3*3 ArrayLike[int]]):
+            Previously enumerated supercell matrices. Must be the same super-cell
+            size.
+        enumerated_counts(list[1D ArrayLike]):
+            Previously enumerated compositions in "counts" format. Must fit in
+            the super-cell size.
+            Note: Different super-cell sizes not supported!
+        previous_sampled_structures(list[Structure]): optional
+            Sample structures already calculated in past iterations.
+            If given, that means you will add structures to an existing
+            training set.
+        previous_feature_matrix(list[list[[float]]): optional
+            Correlation vectors of structures already calculated in past iterations.
         keep_ground_states(bool): optional
             Whether always to include the electrostatic ground states.
             Default to True.
-        num_structs_init(int): optional
-            Number of training structures to add at the first iteration.
+        num_structs(int): optional
+            Number of training structures to add at the iteration.
             At least 2~3 structures should be enumerated for each composition.
             And it is recommended that num_structs_init * 10 > 2 *
             len(supercell_and_counts).
@@ -313,6 +384,19 @@ def generate_initial_training_structures(ce, supercell_and_counts,
         mc_generator_kwargs(dict): optional
             Keyword arguments for McSampleGenerator, except num_samples.
             Note: currently only support Canonical.
+        n_parallel(int): optional
+            Number of generators to run in parallel. Default is to use
+            a quarter of cpu count.
+        duplicacy_criteria(str):
+            The criteria when to consider two structures as the same and
+            old to add one of them into the candidate training set.
+            Default is "correlations", which means to assert duplication
+            if two structures have the same correlation vectors. While
+            "structure" means two structures must be symmetrically equivalent
+            after being reduced. No other option is allowed.
+            Note that option "structure" might be significantly slower since
+            it has to attempt reducing every structure to its primitive cell
+            before matching. It should be used with caution.
         kwargs:
             Keyword arguments for utils.selection.select_initial_rows.
     Returns:
@@ -321,145 +405,89 @@ def generate_initial_training_structures(ce, supercell_and_counts,
             and normalized correlation vectors.
     """
     mc_generator_args = mc_generator_kwargs or {}
+    n_parallel = n_parallel or min(cpu_count() // 4,
+                                   len(enumerated_counts))
+    previous_sampled_structures = previous_sampled_structures or []
+    previous_feature_matrix = (np.array(previous_feature_matrix).tolist()
+                               or [])
+    if len(previous_feature_matrix) != len(previous_sampled_structures):
+        raise ValueError("Must provide a feature vector for each"
+                         " structure passed in!")
 
     # Scale the number of structures to select for each comp.
     num_samples = get_num_structs_to_sample([counts
-                                             for sc_matrix, counts
-                                             in supercell_and_counts],
-                                            num_structs_init)
-    # TODO: maybe parallelize this in the future?
-    gs_id = 0
-    keeps = []
-    structures = []
-    sc_matrices = []
-    for (sc_matrix, counts), num_sample in zip(supercell_and_counts,
-                                               num_samples):
-        generator = CanonicalSampleGenerator(ce, sc_matrix, counts,
-                                             **mc_generator_args)
+                                             for _ in enumerated_matrices
+                                             for counts in enumerated_counts],
+                                            num_structs)
 
-        gs_struct = generator.get_ground_state_structure()
-        samples = generator.get_unfrozen_sample(previous_sampled_structures=
-                                                [gs_struct] + structures,
-                                                num_samples=num_sample)
+    with Parallel(n_jobs=n_parallel) as par:
+        gs_id = 0
+        keeps = []
+        structures = []
+        femat = []
+        sc_matrices = []
+        sc_matrix_indices = []
 
-        structures.extend([gs_struct] + samples)
-        sc_matrices.extend([sc_matrix for _ in range(len(samples) + 1)])
-        if keep_ground_states:
-            keeps.append(gs_id)
-        gs_id += (len(samples) + 1)
+        for mid, sc_matrix in enumerate(enumerated_matrices):
+            # This should work on pytest.
+            results = par(delayed(_sample_single_generator)
+                          (ce,
+                           previous_sampled_structures + structures,
+                           previous_feature_matrix + femat,
+                           mc_generator_args,
+                           sc_matrix,
+                           counts,
+                           num_sample,
+                           duplicacy_criteria=duplicacy_criteria)
+                          for counts, num_sample in
+                          zip(enumerated_counts,
+                              num_samples[mid * len(enumerated_counts):
+                                          (mid + 1) * len(enumerated_counts)]
+                              )
+                          )
 
-    femat = [ce.cluster_subspace.corr_from_structure(s,
-                                                     scmatrix=matrix)
-             for s, matrix in zip(structures, sc_matrices)]
+            for (gs_struct, gs_occu, gs_feat,
+                 samples, samples_occu, samples_feat,
+                 gs_dupe) in results:
+                if gs_dupe:
+                    structures.extend(samples)
+                    femat.extend(samples_feat)
+                    sc_matrices.extend([sc_matrix for _ in samples])
+                    sc_matrix_indices.extend([mid for _ in samples])
+                    gs_id += len(samples)
+                else:
+                    structures.extend([gs_struct] + samples)
+                    femat.extend([gs_feat] + samples_feat)
+                    sc_matrices.extend([sc_matrix
+                                        for _ in range(len(samples) + 1)])
+                    sc_matrix_indices.extend([mid
+                                              for _ in range(len(samples) + 1)])
+                    if keep_ground_states:
+                        keeps.append(gs_id)
+                    gs_id += (len(samples) + 1)
+
     femat = np.array(femat)
+
     # External terms such as the ewald term should not be taken into comparison,
     # when selecting structures
     num_external_terms = len(ce.cluster_subspace.external_terms)
-    initial_row_ids = select_initial_rows(femat,
-                                          n_select=num_structs_init,
-                                          keep_indices=keeps,
-                                          num_external_terms=num_external_terms,
-                                          **kwargs)
 
-    return ([s for i, s in enumerate(structures) if i in initial_row_ids],
-            [m for i, m in enumerate(sc_matrices) if i in initial_row_ids],
-            femat[initial_row_ids])
+    if len(previous_sampled_structures) == 0:
+        # Start from scratch.
+        selected_row_ids = select_initial_rows(femat,
+                                               n_select=num_structs,
+                                               keep_indices=keeps,
+                                               num_external_terms=num_external_terms,
+                                               **kwargs)
+    else:
+        # Add to existing:
+        selected_row_ids = select_added_rows(femat,
+                                             np.array(previous_feature_matrix),
+                                             n_select=num_structs,
+                                             keep_indices=keeps,
+                                             num_external_terms=num_external_terms,
+                                             **kwargs)
 
-
-def generate_additive_training_structures(ce, supercell_and_counts,
-                                          previous_sampled_structures,
-                                          previous_feature_matrix,
-                                          keep_ground_states=True,
-                                          num_structs_add=40,
-                                          mc_generator_kwargs=None,
-                                          **kwargs):
-    """Generate new training structures at the beginning of each iteration.
-
-    Args:
-        ce(ClusterExpansion):
-            ClusterExpansion object from the last iteration.
-        supercell_and_counts(list[(3*3 ArrayLike[int], 1D ArrayLike[int])]):
-            A supercell matrix and a composition in super-cell (as "counts"
-            format).
-        previous_sampled_structures(list[Structure]):
-            Sample structures already calculated in past iterations.
-        previous_feature_matrix(2D ArrayLike[float]):
-            Correlation vectors of structures already calculated in past iterations.
-        keep_ground_states(bool): optional
-            Whether always to include the ground states predicted by the last
-            iteration CE.
-            Default to True.
-        num_structs_add(int): optional
-            Number of new training structures to add.
-            At least 2~3 structures should be enumerated for each composition.
-            And it is recommended that num_structs_add * 10 > 2 *
-            len(supercell_and_counts).
-            Default is 40.
-        mc_generator_kwargs(dict): optional
-            Keyword arguments for McSampleGenerator, except num_samples.
-            Note: currently only support Canonical.
-        kwargs:
-            Keyword arguments for utils.selection.select_added_rows.
-    Returns:
-        list[Structure], list[3*3 ArrayLike[int]], 2D np.ArrayLike[float]:
-            Added training structures, super-cell matrices,
-            and normalized correlation vectors.
-    """
-    mc_generator_args = mc_generator_kwargs or {}
-
-    # Scale the number of structures to select for each comp.
-    num_samples = get_num_structs_to_sample([counts
-                                             for sc_matrix, counts
-                                             in supercell_and_counts],
-                                            num_structs_add)
-    # TODO: maybe parallelize this in the future?
-    gs_id = 0
-    keeps = []
-    structures = []
-    sc_matrices = []
-    for (sc_matrix, counts), num_sample in zip(supercell_and_counts,
-                                               num_samples):
-        generator = CanonicalSampleGenerator(ce, sc_matrix, counts,
-                                             **mc_generator_args)
-        remove_decorations = generator.remove_decorations
-
-        gs_struct = generator.get_ground_state_structure()
-        gs_dupe = False
-        for old_struct in previous_sampled_structures + structures:
-            # Must remove all decorations to avoid adding in exactly the same input.
-            if is_duplicate(gs_struct, old_struct, remove_decorations):
-                gs_dupe = True
-                break
-        # Duplicacy removed in the generator.
-        samples = generator.get_unfrozen_sample(previous_sampled_structures=
-                                                previous_sampled_structures
-                                                + [gs_struct]
-                                                + structures,
-                                                num_samples=num_sample)
-        if gs_dupe:
-            structures.extend(samples)
-            sc_matrices.extend([sc_matrix for _ in samples])
-            gs_id += len(samples)
-        else:
-            structures.extend([gs_struct] + samples)
-            sc_matrices.extend([sc_matrix for _ in range(len(samples) + 1)])
-            if keep_ground_states:
-                keeps.append(gs_id)
-            gs_id += (len(samples) + 1)
-    femat = [ce.cluster_subspace.corr_from_structure(s,
-                                                     scmatrix=matrix)
-             for s, matrix in zip(structures, sc_matrices)]
-    femat = np.array(femat)
-    # External terms such as the ewald term should not be taken into comparison,
-    # when selecting structures
-    num_external_terms = len(ce.cluster_subspace.external_terms)
-    added_row_ids = select_added_rows(femat,
-                                      previous_feature_matrix,
-                                      n_select=num_structs_add,
-                                      keep_indices=keeps,
-                                      num_external_terms=num_external_terms,
-                                      **kwargs)
-
-    return ([s for i, s in enumerate(structures) if i in added_row_ids],
-            [m for i, m in enumerate(sc_matrices) if i in added_row_ids],
-            femat[added_row_ids])
+    return ([s for i, s in enumerate(structures) if i in selected_row_ids],
+            [m for i, m in enumerate(sc_matrices) if i in selected_row_ids],
+            femat[selected_row_ids])

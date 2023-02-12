@@ -66,7 +66,8 @@ def gen_fake_taskdoc(structure, energy):
 def initial_document(prim):
     specs = get_prim_specs(prim)
     options = {"cutoffs": {2: 7, 3: 4},
-               "comp_enumeration_step": 4,
+               "objective_num_sites": 64,
+               "comp_enumeration_step": 16,
                "num_structs_per_iter_init": 50,
                "num_structs_per_iter_add": 30,
                "other_properties": ["some_test"],
