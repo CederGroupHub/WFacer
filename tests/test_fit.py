@@ -10,15 +10,15 @@ from CEAuto.fit import (estimator_factory,
 from sparselm.model import __all__ as all_estimator_names
 
 
-@pytest.mark.parametrize(params=all_estimator_names)
-def test_estimator_factory(request):
-    if is_hierarchy_estimator(request.param):
+@pytest.mark.parametrize("name", all_estimator_names)
+def test_estimator_factory(name):
+    if is_hierarchy_estimator(name):
         groups = [[i] for i in range(10)]
-        estimator = estimator_factory(request.param,
+        estimator = estimator_factory(name,
                                       groups=groups)
     else:
-        estimator = estimator_factory(request.param)
-    assert estimator.__class__.__name__ == request.param
+        estimator = estimator_factory(name)
+    assert estimator.__class__.__name__ == name
 
 
 def test_fit_ecis_indicator(data_wrangler):
@@ -116,3 +116,23 @@ def test_fit_ecis_indicator(data_wrangler):
                                  )
     npt.assert_array_almost_equal(best_coef3, best_coef1)
     assert np.isclose(rmse3, rmse1)
+
+
+def test_fit_ecis_sinusoid(data_wrangler_sin):
+    # Centering, lasso.
+    grid = {"alpha": (2 ** np.linspace(-20, 4, 25)).tolist()}
+    best_coef, best_cv, best_cv_std, rmse, best_params\
+        = fit_ecis_from_wrangler(data_wrangler_sin,
+                                 "lasso",
+                                 "grid-search",
+                                 grid,
+                                 optimizer_kwargs
+                                 ={"n_iter": 3})
+    assert len(best_coef) == data_wrangler_sin.feature_matrix.shape[1]
+    e_predict = np.dot(data_wrangler_sin.feature_matrix,
+                       best_coef)
+    e = data_wrangler_sin.get_property_vector("energy")
+    r2 = 1 - np.sum((e_predict - e) ** 2) / (np.var(e) * len(e))
+    # prediction error per atom should not be too large.
+    assert r2 >= 0.8
+
