@@ -1,24 +1,8 @@
 """Test the fitting functions."""
-import pytest
 import numpy as np
 import numpy.testing as npt
 
-from CEAuto.fit import (estimator_factory,
-                        is_hierarchy_estimator,
-                        fit_ecis_from_wrangler)
-
-from sparselm.model import __all__ as all_estimator_names
-
-
-@pytest.mark.parametrize("name", all_estimator_names)
-def test_estimator_factory(name):
-    if is_hierarchy_estimator(name):
-        groups = [[i] for i in range(10)]
-        estimator = estimator_factory(name,
-                                      groups=groups)
-    else:
-        estimator = estimator_factory(name)
-    assert estimator.__class__.__name__ == name
+from CEAuto.fit import fit_ecis_from_wrangler
 
 
 def test_fit_ecis_indicator(data_wrangler):

@@ -1,58 +1,26 @@
 """Fit ECIs from Wrangler."""
-
+import logging
 import numpy as np
 from sklearn.model_selection import cross_val_score
 
-from smol.utils import (class_name_from_str,
-                        derived_class_factory,
-                        get_subclasses)
+from smol.utils import class_name_from_str
 from smol.cofe.wrangling.tools import unique_corr_vector_indices
 
-from sparselm.model._base import CVXEstimator
 from sparselm.model import OrdinaryLeastSquares, Lasso
-from sparselm.model import BestSubsetSelection
-from sparselm.model import RegularizedL0
 from sparselm.model_selection import GridSearchCV, LineSearchCV
+
+from CEAuto.utils.sparselm_estimators import prepare_estimator
 
 all_optimizers = {"GridSearch": GridSearchCV,
                   "LineSearch": LineSearchCV}
-hierarchy_classes = get_subclasses(RegularizedL0)
-hierarchy_classes.update({"BestSubsetSelection": BestSubsetSelection})
-hierarchy_classes.update(get_subclasses(BestSubsetSelection))
 
 
-# Model factories for sparse-lm.
-def estimator_factory(estimator_name, **kwargs):
-    """Get an estimator object from class name.
-
-    Args:
-        estimator_name (str):
-            Name of the estimator.
-        kwargs:
-            Other keyword arguments to initialize an estimator.
-            Depends on the specific class
-    Returns:
-        Estimator
-    """
-    class_name = class_name_from_str(estimator_name)
-    return derived_class_factory(class_name, CVXEstimator, **kwargs)
+log = logging.getLogger(__name__)
 
 
-def is_hierarchy_estimator(class_name):
-    """Find whether an estimator needs hierarchy.
-
-    Args:
-        class_name(str):
-            Name of the estimator.
-    Returns:
-        bool.
-    """
-    class_name = class_name_from_str(class_name)
-    return class_name in hierarchy_classes
-
-
-# As mentioned in CeDataWrangler, weights does not make much sense and will not be used.
-# Also only energy fitting is supported.
+# As mentioned in CeDataWrangler, weights does not make much
+# sense and will not be used. Also, only fitting with energy is
+# supported.
 def fit_ecis_from_wrangler(wrangler,
                            estimator_name,
                            optimizer_name,
@@ -65,6 +33,7 @@ def fit_ecis_from_wrangler(wrangler,
                            **kwargs):
     """Fit ECIs from a fully processed wrangler.
 
+    No weights will be used.
     Args:
         wrangler(CeDataWrangler):
             A CeDataWrangler storing all training structures.
@@ -104,8 +73,6 @@ def fit_ecis_from_wrangler(wrangler,
     # Corrected and normalized DFT energy in eV/prim.
     normalized_energy = wrangler.get_property_vector("energy", normalize=True)
     point_func_inds = space.function_inds_by_size[1]
-    num_point_funcs = len(point_func_inds)
-    num_point_orbs = len(space.orbits_by_size[1])
     external_inds = list(range(space.num_corr_functions,
                                space.num_corr_functions +
                                len(space.external_terms)))
@@ -119,48 +86,11 @@ def fit_ecis_from_wrangler(wrangler,
         normalized_energy = normalized_energy[unique_inds]
 
     # Prepare the estimator.
-    # Using function hierarchy instead of orbits hierarchy might not be correct
-    # for basis other than indicator can be wrong!
-    est_class_name = class_name_from_str(estimator_name)
-    estimator_kwargs = estimator_kwargs or {}
-    if center_point_external:
-        # Here we must set fit_intercept to False because
-        # the CE intercept is already subtracted.
-        estimator_kwargs["fit_intercept"] = False
-    if is_hierarchy_estimator(est_class_name) and use_hierarchy:
-        if space.basis_type == "indicator":
-            # Use function hierarchy for indicator.
-            hierarchy = space.function_hierarchy()
-            if center_point_external:
-                # Get hierarchy without point terms.
-                # minus 1 more to exclude the intercept term.
-                hierarchy = [[func_id - num_point_funcs - 1 for func_id in sub]
-                             for sub in hierarchy[num_point_funcs + 1:]]
-            groups = list(range(space.num_corr_functions +
-                                len(space.external_terms)))
-            if center_point_external:
-                groups = list(range(space.num_corr_functions
-                                    - num_point_funcs - 1))
-        else:
-            # Use orbit hierarchy for other bases.
-            hierarchy = space.orbit_hierarchy()
-            if center_point_external:
-                hierarchy = [[orb_id - num_point_orbs - 1 for orb_id in sub]
-                             for sub in hierarchy[num_point_orbs + 1:]]
-            groups = np.append(space.function_orbit_ids,
-                               np.arange(len(space.external_terms), dtype=int)
-                               + space.num_orbits)
-            if center_point_external:
-                groups = [oid - num_point_funcs - 1
-                          for oid in
-                          space.function_orbit_ids[num_point_funcs + 1:]]
-
-        estimator = estimator_factory(estimator_name,
-                                      groups=groups,
-                                      hierarchy=hierarchy,
-                                      **estimator_kwargs)
-    else:
-        estimator = estimator_factory(estimator_name, **estimator_kwargs)
+    estimator = prepare_estimator(space,
+                                  estimator_name,
+                                  use_hierarchy=use_hierarchy,
+                                  center_point_external=center_point_external,
+                                  estimator_kwargs=estimator_kwargs)
 
     # Prepare the optimizer.
     if not isinstance(estimator, OrdinaryLeastSquares):
