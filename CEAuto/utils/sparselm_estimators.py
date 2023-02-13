@@ -31,7 +31,7 @@ def is_subclass(classname, parent_classname):
         if hasattr(base, parent_classname):
             pcls = getattr(base, parent_classname)
         else:
-            import sparselm.model.miqp._base as base
+            import sparselm.model._miqp._base as base
             if hasattr(base, parent_classname):
                 pcls = getattr(base, parent_classname)
             else:
@@ -40,8 +40,6 @@ def is_subclass(classname, parent_classname):
     return issubclass(cls, pcls)
 
 
-# RegularizedL0 is not to be initialized.
-all_estimator_names.remove("RegularizedL0")
 # For now, Overlapped group lasso is not supported!
 unsupported_parents = [OverlapGroupLasso]
 unsupported_estimator_names = []
@@ -114,10 +112,9 @@ def prepare_estimator(cluster_subspace,
     # for basis other than indicator can be wrong!
     est_class_name = class_name_from_str(estimator_name)
     estimator_kwargs = estimator_kwargs or {}
-    if center_point_external:
-        # Here we must set fit_intercept to False because
-        # the CE intercept is already subtracted.
-        estimator_kwargs["fit_intercept"] = False
+    # Here we must set fit_intercept to False because
+    # the CE intercept is already included in fitting the feature "1".
+    estimator_kwargs["fit_intercept"] = False
 
     # Groups are required, and hierarchy might be as well.
     is_l0 = is_subclass(est_class_name, "MIQP_L0")
@@ -130,10 +127,12 @@ def prepare_estimator(cluster_subspace,
             # Use function hierarchy for indicator.
             hierarchy = cluster_subspace.function_hierarchy()
             if center_point_external:
-                # Get hierarchy without point terms.
-                # minus 1 more to exclude the intercept term.
-                hierarchy = [[func_id - num_point_funcs - 1 for func_id in sub]
+                # Points and empty are not included in hierarchy.
+                hierarchy = [[func_id - num_point_funcs - 1
+                              for func_id in sub
+                              if func_id - num_point_funcs - 1 >= 0]
                              for sub in hierarchy[num_point_funcs + 1:]]
+            # groups argument should be a 1d array.
             groups = list(range(cluster_subspace.num_corr_functions +
                                 len(cluster_subspace.external_terms)))
             if center_point_external:
@@ -143,22 +142,25 @@ def prepare_estimator(cluster_subspace,
             # Use orbit hierarchy for other bases.
             hierarchy = cluster_subspace.orbit_hierarchy()
             if center_point_external:
-                hierarchy = [[orb_id - num_point_orbs - 1 for orb_id in sub]
+                # Points and empty are not included in hierarchy.
+                hierarchy = [[orb_id - num_point_orbs - 1
+                              for orb_id in sub
+                              if orb_id - num_point_orbs - 1 >= 0]
                              for sub in hierarchy[num_point_orbs + 1:]]
             groups = np.append(cluster_subspace.function_orbit_ids,
-                               np.arange(len(cluster_subspace.external_terms), dtype=int)
+                               np.arange(len(cluster_subspace.external_terms),
+                                         dtype=int)
                                + cluster_subspace.num_orbits)
             if center_point_external:
-                groups = [oid - num_point_funcs - 1
+                groups = [oid - num_point_orbs - 1
                           for oid in
-                          cluster_subspace.function_orbit_ids[num_point_funcs + 1:]]
+                          cluster_subspace
+                          .function_orbit_ids[num_point_funcs + 1:]]
 
-        # Mute hierarchy when not needed.
-        if is_group or not use_hierarchy:
-            hierarchy = None
-
-        estimator_kwargs["hierarchy"] = hierarchy
         estimator_kwargs["groups"] = groups
+        # Mute hierarchy when not needed.
+        if is_l0 and use_hierarchy:
+            estimator_kwargs["hierarchy"] = hierarchy
 
         if is_subset and "sparse_bound" not in estimator_kwargs:
             default_sparse_bound = int(round(0.8 * len(groups)))

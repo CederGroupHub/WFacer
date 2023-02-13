@@ -47,7 +47,7 @@ def subspace_sin(prim):
     space = get_cluster_subspace(prim,
                                  specs["charge_decorated"],
                                  specs["nn_distance"],
-                                 basis_type="sinusoid",
+                                 basis="sinusoid",
                                  cutoffs={2: 7, 3: 4, 4: 4},
                                  use_ewald=True)
     return space
