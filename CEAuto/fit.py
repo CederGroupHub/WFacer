@@ -11,8 +11,8 @@ from sparselm.model_selection import GridSearchCV, LineSearchCV
 
 from CEAuto.utils.sparselm_estimators import prepare_estimator
 
-all_optimizers = {"GridSearch": GridSearchCV,
-                  "LineSearch": LineSearchCV}
+all_optimizers = {"GridSearchCV": GridSearchCV,
+                  "LineSearchCV": LineSearchCV}
 
 
 log = logging.getLogger(__name__)
@@ -76,10 +76,12 @@ def fit_ecis_from_wrangler(wrangler,
     external_inds = list(range(space.num_corr_functions,
                                space.num_corr_functions +
                                len(space.external_terms)))
+    # Index "0" is always excluded as it will be fitted as intercept.
     centered_inds = point_func_inds + external_inds
     other_inds = np.setdiff1d(np.arange(1,
                                         space.num_corr_functions +
-                                        len(space.external_terms)))
+                                        len(space.external_terms)),
+                              centered_inds)
     if filter_unique_correlations:
         unique_inds = unique_corr_vector_indices(wrangler, "energy")
         feature_matrix = feature_matrix[unique_inds, :]
@@ -119,9 +121,11 @@ def fit_ecis_from_wrangler(wrangler,
                                       y=residuals,
                                       **kwargs)
             best_coef = np.concatenate([[lasso.intercept_],
-                                        lasso.coef_[:-len(space.external_terms)],
+                                        lasso.coef_[:len(centered_inds)
+                                                    - len(space.external_terms)],
                                         optimizer.best_estimator_.coef_,
-                                        lasso.coef_[-len(space.external_terms):]])
+                                        lasso.coef_[len(centered_inds)
+                                                    - len(space.external_terms):]])
             # Default sparse-lm scoring has changed to "neg_root_mean_square"
             best_cv = -optimizer.best_score_
             best_cv_std = optimizer.best_score_std_
@@ -130,7 +134,7 @@ def fit_ecis_from_wrangler(wrangler,
             optimizer = optimizer.fit(X=feature_matrix,
                                       y=normalized_energy,
                                       **kwargs)
-            best_coef = optimizer.best_estimator_.coef_,
+            best_coef = optimizer.best_estimator_.coef_
             # Default sparse-lm scoring has changed to "neg_root_mean_square"
             best_cv = -optimizer.best_score_
             best_cv_std = optimizer.best_score_std_
@@ -146,7 +150,7 @@ def fit_ecis_from_wrangler(wrangler,
                                   y=normalized_energy,
                                   **kwargs)
         best_coef = estimator.coef_
-        best_cv = np.average(cvs)
+        best_cv = -np.average(cvs)  # negative rmse.
         best_cv_std = np.std(cvs)
         best_params = None
 

@@ -65,11 +65,25 @@ def cluster_expansion(subspace):
                      len(subspace.external_terms)))
     coefs_ = coefs_ - 0.5
     coefs_[0] = 1.0
-    coefs_[-len(subspace.external_terms):] = 0.3
+    coefs_[len(coefs_)
+           - len(subspace.external_terms):] = 0.3
     return ClusterExpansion(subspace, coefs_)
 
 
-# enumeration tests takes too long to finish. Can only test one prim.
+@pytest.fixture(scope="package")
+def cluster_expansion_sin(subspace_sin):
+    coefs_ = (np.random.
+              random(subspace_sin.num_corr_functions +
+                     len(subspace_sin.external_terms)))
+    coefs_ = coefs_ - 0.5
+    coefs_[0] = 1.0
+    coefs_[len(coefs_)
+           - len(subspace_sin.external_terms):] = 0.3
+    return ClusterExpansion(subspace_sin, coefs_)
+
+
+# Enumeration tests takes too long to finish. Can only test one prim.
+# Fitting tests as well.
 @pytest.fixture(scope="package")
 def single_expansion():
     prim = test_structures[0]
@@ -85,19 +99,30 @@ def single_expansion():
                      len(space.external_terms)))
     coefs_ = coefs_ - 0.5
     coefs_[0] = 1.0
-    coefs_[-len(space.external_terms):] = 0.3
+    coefs_[len(coefs_)
+           - len(subspace_sin.external_terms):] = 0.3
     return ClusterExpansion(space, coefs_)
 
 
 @pytest.fixture(scope="package")
-def cluster_expansion_sin(subspace_sin):
+def single_expansion_sin():
+    prim = test_structures[0]
+    prim = reduce_prim(prim)
+    specs = get_prim_specs(prim)
+    space = get_cluster_subspace(prim,
+                                 specs["charge_decorated"],
+                                 specs["nn_distance"],
+                                 cutoffs={2: 7, 3: 4},
+                                 use_ewald=True,
+                                 basis="sinusoid")
     coefs_ = (np.random.
-              random(subspace_sin.num_corr_functions +
-                     len(subspace_sin.external_terms)))
+              random(space.num_corr_functions +
+                     len(space.external_terms)))
     coefs_ = coefs_ - 0.5
     coefs_[0] = 1.0
-    coefs_[-len(subspace_sin.external_terms):] = 0.3
-    return ClusterExpansion(subspace_sin, coefs_)
+    coefs_[len(coefs_)
+           - len(subspace_sin.external_terms):] = 0.3
+    return ClusterExpansion(space, coefs_)
 
 
 @pytest.fixture(scope="package")
@@ -128,6 +153,36 @@ def data_wrangler(ensemble):
 def data_wrangler_sin(ensemble_sin):
     """A fictitious data wrangler, with sinusoid basis."""
     return gen_random_wrangler(ensemble_sin)
+
+
+@pytest.fixture(scope="package")
+def single_ensemble(single_expansion):
+    return Ensemble.from_cluster_expansion(single_expansion,
+                                           [[3, 0, 0],
+                                            [0, 3, 0],
+                                            [0, 0, 3]],
+                                           processor_type="expansion")
+
+
+@pytest.fixture(scope="package")
+def single_ensemble_sin(single_expansion_sin):
+    return Ensemble.from_cluster_expansion(single_expansion_sin,
+                                           [[3, 0, 0],
+                                            [0, 3, 0],
+                                            [0, 0, 3]],
+                                           processor_type="expansion")
+
+
+@pytest.fixture(scope="package")
+def single_wrangler(single_ensemble):
+    """A fictitious data wrangler."""
+    return gen_random_wrangler(single_ensemble, 30)
+
+
+@pytest.fixture(scope="package")
+def single_wrangler_sin(single_ensemble_sin):
+    """A fictitious data wrangler, with sinusoid basis."""
+    return gen_random_wrangler(single_ensemble_sin, 30)
 
 
 @pytest.fixture(scope="package", params=["zns_taskdoc.json"])

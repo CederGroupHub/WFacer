@@ -180,17 +180,19 @@ def gen_random_occu_from_counts(ensemble, counts):
     return occu
 
 
-def gen_random_wrangler(ensemble):
+def gen_random_wrangler(ensemble, n_entries_per_iter=50, n_iters=8):
     """Generate a random wrangler from ensemble object.
 
     Args:
         ensemble(Ensemble):
             An ensemble object.
+        n_entries_per_iter(int):
+            Number of entries per iteration.
+        n_iters(int):
+            Number of iterations.
     Returns:
         CeDataWrangler.
     """
-    n_entries_per_iter = 50
-    n_iters = 8
     n_enum = 0
     structures = []
     specs = []

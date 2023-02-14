@@ -629,7 +629,9 @@ def process_fit_options(d):
                   [("eta", (2 ** np.linspace(-20, 4, 25)).tolist()),
                    ("alpha", [0] + (2 ** np.linspace(-30, 0, 16)).tolist())]),
             'optimizer_kwargs':
-            d.get('optimizer_kwargs', {"n_iter": 3}),
+            d.get('optimizer_kwargs',
+                  {"n_iter": 5,
+                   "opt_selection_method": ["one_std_score", "max_score"]}),
             'fit_kwargs':
             d.get('fit_kwargs', {}),
             }

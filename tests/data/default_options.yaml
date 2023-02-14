@@ -42,7 +42,8 @@ estimator_kwargs: {}
 optimizer_type: "line-search"
 param_grid: null
 optimizer_kwargs:
-  n_iter: 3
+  opt_selection_method: ["one_std_score", "max_score"]
+  n_iter: 5
 fit_kwargs: {}
 'cv_tol': 5
 std_cv_rtol: null
