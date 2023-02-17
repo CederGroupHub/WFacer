@@ -621,17 +621,13 @@ def process_fit_options(d):
             "estimator_kwargs":
             d.get("estimator_kwargs", {}),
             'optimizer_type':
-            d.get('optimizer_type', "line-search"),
+            d.get('optimizer_type', "grid-search"),
             "param_grid":
-            # Alpha is l0 term, eta is l2 term;
-            # Scan on l2 with l0=0 first, then scan l0.
+            # Use lasso as default as mixed l0 might get too aggressive.
             d.get("param_grid",
-                  [("eta", (2 ** np.linspace(-20, 4, 25)).tolist()),
-                   ("alpha", [0] + (2 ** np.linspace(-30, 0, 16)).tolist())]),
+                  {"alpha": (2 ** np.linspace(-20, 4, 25)).tolist()}),
             'optimizer_kwargs':
-            d.get('optimizer_kwargs',
-                  {"n_iter": 5,
-                   "opt_selection_method": ["one_std_score", "max_score"]}),
+            d.get('optimizer_kwargs', {}),
             'fit_kwargs':
             d.get('fit_kwargs', {}),
             }

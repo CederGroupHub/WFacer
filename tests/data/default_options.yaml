@@ -34,16 +34,14 @@ cutoffs: null
 use_ewald: true
 ewald_kwargs: {}
 from_cutoffs_kwargs: {}
-estimator_type: "l2-l0"
+estimator_type: "lasso"
 use_hierarchy: true
 center_point_external: true
 filter_unique_correlations: true
 estimator_kwargs: {}
-optimizer_type: "line-search"
+optimizer_type: "grid-search"
 param_grid: null
-optimizer_kwargs:
-  opt_selection_method: ["one_std_score", "max_score"]
-  n_iter: 5
+optimizer_kwargs: {}
 fit_kwargs: {}
 'cv_tol': 5
 std_cv_rtol: null

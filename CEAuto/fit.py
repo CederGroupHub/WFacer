@@ -93,7 +93,7 @@ def fit_ecis_from_wrangler(wrangler,
                                   use_hierarchy=use_hierarchy,
                                   center_point_external=center_point_external,
                                   estimator_kwargs=estimator_kwargs)
-
+    optimizer_kwargs = optimizer_kwargs or {}
     # Prepare the optimizer.
     if not isinstance(estimator, OrdinaryLeastSquares):
         if ("-cv" not in optimizer_name
@@ -101,7 +101,6 @@ def fit_ecis_from_wrangler(wrangler,
                 or "-Cv" not in optimizer_name):
             optimizer_name += "-CV"
         opt_class_name = class_name_from_str(optimizer_name)
-        optimizer_kwargs = optimizer_kwargs or {}
         if opt_class_name not in all_optimizers:
             raise ValueError(f"Hyperparameters optimization method"
                              f" {opt_class_name} not implemented!")

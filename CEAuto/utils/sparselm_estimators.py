@@ -163,10 +163,10 @@ def prepare_estimator(cluster_subspace,
             estimator_kwargs["hierarchy"] = hierarchy
 
         if is_subset and "sparse_bound" not in estimator_kwargs:
-            default_sparse_bound = int(round(0.8 * len(groups)))
+            default_sparse_bound = int(round(0.6 * len(groups)))
             log.warning(f"Estimator class {est_class_name} is a subclass of"
                         f" BestSubsetSelection, but argument sparse_bound is"
-                        f" not specified. Setting to 80% of all available"
+                        f" not specified. Setting to 60% of all available"
                         f" correlation function groups by default. In this case,"
                         f" will be: {default_sparse_bound}")
             estimator_kwargs["sparse_bound"] = default_sparse_bound
