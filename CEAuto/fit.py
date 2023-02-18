@@ -156,7 +156,7 @@ def fit_ecis_from_wrangler(
         )
         estimator = estimator.fit(X=feature_matrix, y=normalized_energy, **kwargs)
         best_coef = estimator.coef_
-        best_coef[0] += best_coef.intercept_
+        best_coef[0] += estimator.intercept_
         best_cv = -np.average(cvs)  # negative rmse.
         best_cv_std = np.std(cvs)
         best_params = None

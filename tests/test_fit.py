@@ -6,10 +6,10 @@ from CEAuto.fit import fit_ecis_from_wrangler
 
 # Only test a single small-sized wrangler, because fitting can take long.
 def test_fit_ecis_indicator(single_wrangler):
-    # e = single_wrangler.get_property_vector("energy")
+    e = single_wrangler.get_property_vector("energy")
 
-    # print("feature matrix:", single_wrangler.feature_matrix)
-    # print("energies:", e)
+    print("feature matrix:", single_wrangler.feature_matrix)
+    print("energies:", e)
     # Centering, L0L2. Not very good as all the other coefficients
     # can be suppressed to 0.
     grid = [("eta", (2 ** np.linspace(-20, 4, 25)).tolist()),
@@ -28,6 +28,8 @@ def test_fit_ecis_indicator(single_wrangler):
     assert best_cv_std >= -1e-8
     assert rmse >= 0
     assert best_params is not None
+    for param in best_params:
+        assert "__" not in param    # parameters are clean.
     assert np.any(np.isclose(best_params["eta"], grid[0][1]))
     assert np.any(np.isclose(best_params["alpha"], grid[1][1]))
 
@@ -66,13 +68,13 @@ def test_fit_ecis_indicator(single_wrangler):
     e = single_wrangler.get_property_vector("energy")
     r2 = 1 - np.sum((e_predict - e) ** 2) / (np.var(e) * len(e))
     # prediction error per atom should not be too large.
-    # print("\nTest non-centered L0L2:")
-    # print("fitted coefficients:", best_coef)
-    # print("fitted cv:", best_cv)
-    # print("fitted rmse:", rmse)
-    # print("fitted parameters:", best_params)
-    # print("predicted energy:", e_predict)
-    # print("r2 score of prediction:", r2)
+    print("\nTest non-centered L0L2:")
+    print("fitted coefficients:", best_coef)
+    print("fitted cv:", best_cv)
+    print("fitted rmse:", rmse)
+    print("fitted parameters:", best_params)
+    print("predicted energy:", e_predict)
+    print("r2 score of prediction:", r2)
     assert r2 >= 0.3
 
     # No filtering, L0L2.
@@ -95,13 +97,13 @@ def test_fit_ecis_indicator(single_wrangler):
     r2 = 1 - np.sum((e_predict - e) ** 2) / (np.var(e) * len(e))
     # prediction error per atom should not be too large.
     assert r2 >= 0.8
-    # print("\nTest non-filtered L0L2:")
-    # print("fitted coefficients:", best_coef)
-    # print("fitted cv:", best_cv)
-    # print("fitted rmse:", rmse)
-    # print("fitted parameters:", best_params)
-    # print("predicted energy:", e_predict)
-    # print("r2 score of prediction:", r2)
+    print("\nTest non-filtered L0L2:")
+    print("fitted coefficients:", best_coef)
+    print("fitted cv:", best_cv)
+    print("fitted rmse:", rmse)
+    print("fitted parameters:", best_params)
+    print("predicted energy:", e_predict)
+    print("r2 score of prediction:", r2)
 
     # Filtered, OLS. (overfit scheme)
     best_coef1, best_cv1, best_cv_std1, rmse1, best_params1\
@@ -118,13 +120,13 @@ def test_fit_ecis_indicator(single_wrangler):
     # prediction error per atom should not be too large.
     assert r2 >= 0.7
     assert best_params1 is None
-    # print("\nTest OLS:")
-    # print("fitted coefficients:", best_coef1)
-    # print("fitted cv:", best_cv1)
-    # print("fitted rmse:", rmse1)
-    # print("fitted parameters:", best_params1)
-    # print("predicted energy:", e_predict)
-    # print("r2 score of prediction:", r2)
+    print("\nTest OLS:")
+    print("fitted coefficients:", best_coef1)
+    print("fitted cv:", best_cv1)
+    print("fitted rmse:", rmse1)
+    print("fitted parameters:", best_params1)
+    print("predicted energy:", e_predict)
+    print("r2 score of prediction:", r2)
 
     # Not filtered, OLS. Should have larger fitting error than filtered ones.
     best_coef2, best_cv2, best_cv_std2, rmse2, best_params2\
@@ -140,14 +142,14 @@ def test_fit_ecis_indicator(single_wrangler):
     r2 = 1 - np.sum((e_predict - e) ** 2) / (np.var(e) * len(e))
     # prediction error per atom should not be too large.
     assert r2 >= 0.7
-    # assert rmse2 >= rmse1
-    # print("\nTest unfiltered OLS:")
-    # print("fitted coefficients:", best_coef2)
-    # print("fitted cv:", best_cv2)
-    # print("fitted rmse:", rmse2)
-    # print("fitted parameters:", best_params2)
-    # print("predicted energy:", e_predict)
-    # print("r2 score of prediction:", r2)
+    assert rmse2 >= rmse1
+    print("\nTest unfiltered OLS:")
+    print("fitted coefficients:", best_coef2)
+    print("fitted cv:", best_cv2)
+    print("fitted rmse:", rmse2)
+    print("fitted parameters:", best_params2)
+    print("predicted energy:", e_predict)
+    print("r2 score of prediction:", r2)
 
     # Center or not should not affect OLS greatly?
     best_coef3, best_cv3, best_cv_std3, rmse3, best_params3\
@@ -159,12 +161,12 @@ def test_fit_ecis_indicator(single_wrangler):
                                  )
     # npt.assert_array_almost_equal(best_coef3, best_coef1)
     assert abs(rmse3 - rmse1) / rmse1 <= 0.2
-    # print("\nTest uncentered OLS:")
-    # print("fitted coefficients:", best_coef3)
-    # print("fitted cv:", best_cv3)
-    # print("fitted rmse:", rmse3)
-    # print("fitted parameters:", best_params3)
-    # print("predicted energy:", e_predict)
+    print("\nTest uncentered OLS:")
+    print("fitted coefficients:", best_coef3)
+    print("fitted cv:", best_cv3)
+    print("fitted rmse:", rmse3)
+    print("fitted parameters:", best_params3)
+    print("predicted energy:", e_predict)
 
     # Centering, lasso.
     grid = {"alpha": (2 ** np.linspace(-20, 4, 25)).tolist()}
@@ -183,13 +185,14 @@ def test_fit_ecis_indicator(single_wrangler):
     r2 = 1 - np.sum((e_predict - e) ** 2) / (np.var(e) * len(e))
     # prediction error per atom should not be too large.
     assert r2 >= 0.8
-    # print("\nTest LASSO:")
-    # print("fitted coefficients:", best_coef)
-    # print("fitted cv:", best_cv)
-    # print("fitted rmse:", rmse)
-    # print("fitted parameters:", best_params)
-    # print("predicted energy:", e_predict)
-    # print("r2 score of prediction:", r2)
+    print("\nTest LASSO:")
+    print("fitted coefficients:", best_coef)
+    print("fitted cv:", best_cv)
+    print("fitted rmse:", rmse)
+    print("fitted parameters:", best_params)
+    print("predicted energy:", e_predict)
+    print("r2 score of prediction:", r2)
+    assert False
 
 
 def test_fit_ecis_sinusoid(single_wrangler_sin):

@@ -138,7 +138,7 @@ def prepare_estimator(
                         for func_id in sub
                         if func_id - num_point_funcs - 1 >= 0
                     ]
-                    for sub in hierarchy[num_point_funcs + 1 :]
+                    for sub in hierarchy[num_point_funcs + 1:]
                 ]
             # groups argument should be a 1d array.
             groups = list(
@@ -162,7 +162,7 @@ def prepare_estimator(
                         for orb_id in sub
                         if orb_id - num_point_orbs - 1 >= 0
                     ]
-                    for sub in hierarchy[num_point_orbs + 1 :]
+                    for sub in hierarchy[num_point_orbs + 1:]
                 ]
             groups = np.append(
                 cluster_subspace.function_orbit_ids,
@@ -173,7 +173,7 @@ def prepare_estimator(
                 groups = [
                     oid - num_point_orbs - 1
                     for oid in cluster_subspace.function_orbit_ids[
-                        num_point_funcs + 1 :
+                        num_point_funcs + 1:
                     ]
                 ]
 
@@ -200,7 +200,6 @@ def prepare_estimator(
                 + len(cluster_subspace.external_terms),
             )
         )
-        # Index "0" is always excluded as it will be fitted as intercept.
         centered_inds = [0] + point_func_inds + external_inds
         other_inds = np.setdiff1d(
             np.arange(
@@ -210,8 +209,9 @@ def prepare_estimator(
             centered_inds,
         ).tolist()
 
+        # Only the first center estimator is allowed to fit intercept.
         center_estimator = Lasso(
-            alpha=1e-6, fit_intercept=estimator_kwargs["fit_intercept"]
+            alpha=1e-6, fit_intercept=estimator_kwargs.get("fit_intercept", False)
         )
         estimator_kwargs["fit_intercept"] = False
         main_estimator = estimator_factory(estimator_name, **estimator_kwargs)

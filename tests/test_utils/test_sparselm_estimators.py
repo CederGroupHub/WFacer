@@ -5,6 +5,8 @@ import pytest
 import numpy as np
 import numpy.testing as npt
 
+from sparselm.model import StepwiseEstimator
+
 from CEAuto.utils.sparselm_estimators import (unsupported_estimator_names,
                                               is_subclass,
                                               estimator_factory,
@@ -41,31 +43,36 @@ def test_bad_estimator_name():
         _ = estimator_factory("what-ever")
     with pytest.raises(ValueError):
         _ = estimator_factory("overlap-group-lasso")
+    with pytest.raises(ValueError):
+        _ = estimator_factory("stepwise-estimator")
 
 
 @pytest.mark.parametrize("name", supported_estimator_names)
 def test_prepare_estimator(subspace, name):
     if is_subclass(name, "MIQP_L0") or is_subclass(name, "GroupLasso"):
-        estimator = prepare_estimator(subspace, name)
+        estimator = prepare_estimator(subspace, name,
+                                      center_point_external=True)
         num_point_terms = len(subspace.function_inds_by_size[1])
         total_terms = len(subspace.external_terms) + subspace.num_corr_functions
         # Centered by points and ewald; each func is a group itself
         # Groups should always be a 1d array.
-        assert len(np.array(estimator.groups).shape) == 1
-        assert estimator.groups[0] == 0
-        assert len(estimator.groups) == (subspace.num_corr_functions
-                                         - num_point_terms - 1)
-        npt.assert_array_equal(np.arange(len(estimator.groups)),
-                               estimator.groups)
+        assert isinstance(estimator, StepwiseEstimator)
+        groups = estimator._estimators[-1].groups
+        assert len(np.array(groups).shape) == 1
+        assert groups[0] == 0
+        assert len(groups) == (subspace.num_corr_functions
+                               - num_point_terms - 1)
+        npt.assert_array_equal(np.arange(len(groups)), groups)
         if is_subclass(name, "MIQP_L0"):
-            assert np.all(np.array(list(chain(*estimator.hierarchy))) >= 0)
+            hierarchy = estimator._estimators[-1].hierarchy
+            assert np.all(np.array(list(chain(*hierarchy))) >= 0)
             function_inds = list(range(1 + num_point_terms,
                                        subspace.num_corr_functions))
             # print("Num funcs:", subspace.num_corr_functions)
             # print("Func inds:", function_inds)
             # print("func_hierarchy:", subspace.function_hierarchy())
             hierarchy_reconstruct = [[function_inds[i] for i in sub_funcs]
-                                     for sub_funcs in estimator.hierarchy]
+                                     for sub_funcs in hierarchy]
             hierarchy_standard = [[fid for fid in sub if fid >= 1 + num_point_terms]
                                   for sub in
                                   subspace.function_hierarchy()[num_point_terms + 1:]]
@@ -73,11 +80,13 @@ def test_prepare_estimator(subspace, name):
             # print("reconstructed:", hierarchy_reconstruct)
             # assert False
             assert hierarchy_reconstruct == hierarchy_standard
-        assert not estimator.fit_intercept
+        assert not estimator._estimators[0].fit_intercept
+        assert not estimator._estimators[1].fit_intercept
 
         # Not centered.
         estimator = prepare_estimator(subspace, name,
                                       center_point_external=False)
+        assert not isinstance(estimator, StepwiseEstimator)
         assert len(np.array(estimator.groups).shape) == 1
         assert estimator.groups[0] == 0
         assert len(estimator.groups) == total_terms
@@ -91,22 +100,26 @@ def test_prepare_estimator(subspace, name):
 @pytest.mark.parametrize("name", supported_estimator_names)
 def test_prepare_estimator_sin(subspace_sin, name):
     if is_subclass(name, "MIQP_L0") or is_subclass(name, "GroupLasso"):
-        estimator = prepare_estimator(subspace_sin, name)
+        estimator = prepare_estimator(subspace_sin, name,
+                                      center_point_external=True)
         num_point_orbs = len(subspace_sin.orbits_by_size[1])
         num_point_funcs = len(subspace_sin.function_inds_by_size[1])
         total_terms = len(subspace_sin.external_terms) + subspace_sin.num_corr_functions
         # Centered by points and ewald; each func is a group itself
         # Groups should always be a 1d array.
-        assert len(np.array(estimator.groups).shape) == 1
-        assert estimator.groups[0] == 0
-        assert len(estimator.groups) == (subspace_sin.num_corr_functions
-                                         - num_point_funcs - 1)
+        assert isinstance(estimator, StepwiseEstimator)
+        groups = estimator._estimators[-1].groups
+        assert len(np.array(groups).shape) == 1
+        assert groups[0] == 0
+        assert len(groups) == (subspace_sin.num_corr_functions
+                               - num_point_funcs - 1)
         # groups always starts with 0.
         npt.assert_array_equal((subspace_sin.function_orbit_ids[1 + num_point_funcs:]
                                 - num_point_orbs - 1),
-                               estimator.groups)
+                               groups)
         if is_subclass(name, "MIQP_L0"):
-            assert np.all(np.array(list(chain(*estimator.hierarchy))) >= 0)
+            hierarchy = estimator._estimators[-1].hierarchy
+            assert np.all(np.array(list(chain(*hierarchy))) >= 0)
             orbit_inds = list(range(1 + num_point_orbs,
                                     subspace_sin.num_orbits))
             # print("Num orbits:", subspace_sin.num_orbits)
@@ -114,7 +127,7 @@ def test_prepare_estimator_sin(subspace_sin, name):
             # print("Orbit inds:", orbit_inds)
             # print("orbit_hierarchy:", subspace_sin.orbit_hierarchy())
             hierarchy_reconstruct = [[orbit_inds[i] for i in sub_orbs]
-                                     for sub_orbs in estimator.hierarchy]
+                                     for sub_orbs in hierarchy]
             hierarchy_standard = [[oid for oid in sub if oid >= 1 + num_point_orbs]
                                   for sub in
                                   subspace_sin.orbit_hierarchy()[num_point_orbs + 1:]]
@@ -122,11 +135,13 @@ def test_prepare_estimator_sin(subspace_sin, name):
             # print("reconstructed:", hierarchy_reconstruct)
             # assert False
             assert hierarchy_reconstruct == hierarchy_standard
-        assert not estimator.fit_intercept
+        assert not estimator._estimators[0].fit_intercept
+        assert not estimator._estimators[1].fit_intercept
 
         # Not centered.
         estimator = prepare_estimator(subspace_sin, name,
                                       center_point_external=False)
+        assert not isinstance(estimator, StepwiseEstimator)
         assert len(np.array(estimator.groups).shape) == 1
         assert estimator.groups[0] == 0
         assert len(estimator.groups) == total_terms
