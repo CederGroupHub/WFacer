@@ -25,15 +25,17 @@ class CeDataWrangler(StructureWrangler):
 
     Note: This DataWrangler is not compatible with legacy version of smol.
     """
+
     def _check_structure_duplicacy(self, entry, sm=None):
         """Whether an entry symmetrically duplicates with existing ones."""
         if sm is None:
             sm = StructureMatcher()
         for entry_old in self.entries:
-            if (np.allclose(entry_old.data["correlations"],
-                            entry.data["correlations"]) and
-                sm.fit(entry_old.data["refined_structure"],
-                       entry.data["refined_structure"])):
+            if np.allclose(
+                entry_old.data["correlations"], entry.data["correlations"]
+            ) and sm.fit(
+                entry_old.data["refined_structure"], entry.data["refined_structure"]
+            ):
                 # Allows inserting multiple in-equivalent structures
                 # with the same correlation functions.
                 # Returns the first duplicating entry in self.entries.
@@ -46,9 +48,11 @@ class CeDataWrangler(StructureWrangler):
 
         Iteration counted from 0.
         """
-        return (max(entry.data["properties"]["spec"]["iter_id"]
-                    for entry in self.entries)
-                if self.num_structures > 0 else None)
+        return (
+            max(entry.data["properties"]["spec"]["iter_id"] for entry in self.entries)
+            if self.num_structures > 0
+            else None
+        )
 
     def add_entry(
         self,
@@ -128,9 +132,9 @@ class CeDataWrangler(StructureWrangler):
             raise_failed,
         )
         if processed_entry is not None:
-            dupe = self._check_structure_duplicacy(entry,
-                                                   sm=self.cluster_subspace
-                                                   ._site_matcher)
+            dupe = self._check_structure_duplicacy(
+                entry, sm=self.cluster_subspace._site_matcher
+            )
             # Force dropping duplicacy.
             # TODO: maybe move this to smol in the future as an option.
             if dupe is None or (not check_struct_duplicacy):
@@ -139,6 +143,7 @@ class CeDataWrangler(StructureWrangler):
                     self._corr_duplicate_warning(self.num_structures - 1)
             else:
                 if verbose:
-                    warnings.warn("Provided entry duplicates with existing entry:\n"
-                                  f"{dupe}. Skipped.")
-
+                    warnings.warn(
+                        "Provided entry duplicates with existing entry:\n"
+                        f"{dupe}. Skipped."
+                    )

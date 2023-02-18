@@ -4,12 +4,14 @@ from jobflow import Maker, Response, Flow, job
 import logging
 
 from .schema import CeOutputsDocument
-from .jobs import (enumerate_structures,
-                   calculate_structures,
-                   parse_calculations,
-                   fit_calculations,
-                   update_document,
-                   initialize_document)
+from .jobs import (
+    enumerate_structures,
+    calculate_structures,
+    parse_calculations,
+    fit_calculations,
+    update_document,
+    initialize_document,
+)
 
 log = logging.getLogger(__name__)
 
@@ -31,9 +33,11 @@ def ce_step_trigger(last_ce_document):
     max_iter = last_ce_document.ce_options["max_iter"]
     project_name = last_ce_document.project_name
     if iter_id >= max_iter and not last_ce_document.converged:
-        log.warning(f"Maximum number of iterations: {max_iter}"
-                    f" reached, but cluster expansion model is"
-                    f" still not converged!")
+        log.warning(
+            f"Maximum number of iterations: {max_iter}"
+            f" reached, but cluster expansion model is"
+            f" still not converged!"
+        )
     if iter_id >= max_iter or last_ce_document.converged:
         return last_ce_document
     else:
@@ -42,40 +46,34 @@ def ce_step_trigger(last_ce_document):
         enumeration.name = project_name + f"_iter_{iter_id}" + "_enumeration"
 
         # Create calculations for all structures, and extract outputs.
-        calculation = calculate_structures(enumeration.output,
-                                           last_ce_document)
+        calculation = calculate_structures(enumeration.output, last_ce_document)
         calculation.name = project_name + f"_iter_{iter_id}" + "_calculation"
 
         # Analyze outputs and wrap up all necessary datas into wrangler.
-        parsing = parse_calculations(calculation.output,
-                                     enumeration.output,
-                                     last_ce_document)
+        parsing = parse_calculations(
+            calculation.output, enumeration.output, last_ce_document
+        )
         parsing.name = project_name + f"_iter_{iter_id}" + "_parsing"
 
         # fit from wrangler.
-        fitting = fit_calculations(parsing.output,
-                                   last_ce_document)
+        fitting = fit_calculations(parsing.output, last_ce_document)
         fitting.name = project_name + f"_iter_{iter_id}" + "_fitting"
 
         # Wrapping up.
-        updating = update_document(enumeration.output,
-                                   parsing.output,
-                                   fitting.output,
-                                   last_ce_document)
+        updating = update_document(
+            enumeration.output, parsing.output, fitting.output, last_ce_document
+        )
         updating.name = project_name + f"_iter_{iter_id}" + "_updating"
 
         # Point to next iteration.
         trigger = ce_step_trigger(updating.output)
         trigger.name = project_name + f"_iter_{iter_id + 1}" + "_trigger"
 
-        flow = Flow([enumeration,
-                     calculation,
-                     parsing,
-                     fitting,
-                     updating,
-                     trigger],
-                    output=trigger.output,
-                    name=project_name + f"_iter_{iter_id}")
+        flow = Flow(
+            [enumeration, calculation, parsing, fitting, updating, trigger],
+            output=trigger.output,
+            name=project_name + f"_iter_{iter_id}",
+        )
 
         # Always return last_ce_document in this output.
         return Response(output=last_ce_document, replace=flow)
@@ -95,12 +93,11 @@ class CeAutoMaker(Maker):
             workflow.
             For available options, see docs in preprocessing.py.
     """
+
     name: str = "ceauto-work"
     options: dict = field(default_factory=dict)
 
-    def make(self, prim,
-             last_document=None,
-             add_num_iterations=None):
+    def make(self, prim, last_document=None, add_num_iterations=None):
         """Make the workflow.
 
         Args:
@@ -123,17 +120,15 @@ class CeAutoMaker(Maker):
                 The iterative cluster expansion workflow.
         """
         if last_document is None:
-            initialize = initialize_document(prim,
-                                             project_name=self.name,
-                                             options=self.options)
+            initialize = initialize_document(
+                prim, project_name=self.name, options=self.options
+            )
             initialize.name = self.name + "_initialize"
 
             # Enter iteration.
             ce_trigger = ce_step_trigger(initialize.output)
             ce_trigger.name = self.name + f"_iter_0_trigger"
-            return Flow([initialize, ce_trigger],
-                        ce_trigger.output,
-                        name=self.name)
+            return Flow([initialize, ce_trigger], ce_trigger.output, name=self.name)
 
         # Warm restart.
         else:
@@ -141,11 +136,10 @@ class CeAutoMaker(Maker):
             prev_iter = last_document.last_iter_id
             # Do max_iter iterations again.
             if prev_max_iter is not None and prev_iter >= prev_max_iter - 1:
-                last_document.ce_options["max_iter"] += (add_num_iterations
-                                                         or prev_max_iter)
+                last_document.ce_options["max_iter"] += (
+                    add_num_iterations or prev_max_iter
+                )
 
             ce_trigger = ce_step_trigger(last_document)
             ce_trigger.name = self.name + f"_iter_{prev_iter + 1}_trigger"
-            return Flow([ce_trigger],
-                        ce_trigger.output,
-                        name=self.name)
+            return Flow([ce_trigger], ce_trigger.output, name=self.name)

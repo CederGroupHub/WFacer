@@ -6,11 +6,12 @@ Charges will be assigned by magnitudes of magnetic moments.
 from .base import BaseDecorator, GpOptimizedDecorator, NoTrainDecorator
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 
-__author__ = 'Fengyu Xie'
+__author__ = "Fengyu Xie"
 
 
 class ChargeDecorator(BaseDecorator):
     """A type of decorators to assign charge."""
+
     decorated_prop_name = "oxi_state"
     required_prop_names = None
 
@@ -48,10 +49,14 @@ class ChargeDecorator(BaseDecorator):
 
     def _filter(self, entries):
         """Filter out entries with imbalanced charge."""
-        return [(entry if abs(entry.structure.charge)
-                 <= self.max_allowed_abs_charge
-                 else None)
-                for entry in entries]
+        return [
+            (
+                entry
+                if abs(entry.structure.charge) <= self.max_allowed_abs_charge
+                else None
+            )
+            for entry in entries
+        ]
 
     def as_dict(self):
         """Serialize to dict."""
@@ -62,8 +67,7 @@ class ChargeDecorator(BaseDecorator):
     @classmethod
     def from_dict(cls, d):
         """De-serialize."""
-        return cls(d.get("labels"),
-                   d.get("max_allowed_abs_charge", 0))
+        return cls(d.get("labels"), d.get("max_allowed_abs_charge", 0))
 
 
 class PmgGuessChargeDecorator(ChargeDecorator, NoTrainDecorator):
@@ -73,6 +77,7 @@ class PmgGuessChargeDecorator(ChargeDecorator, NoTrainDecorator):
     Warning: This Decorator should not be used with
     structures that include multi-valent elements!
     """
+
     decorated_prop_name = "oxi_state"
     required_prop_names = []
 
@@ -105,16 +110,18 @@ class PmgGuessChargeDecorator(ChargeDecorator, NoTrainDecorator):
         for entry in entries:
             s_decor = entry.structure.copy()
             s_decor.add_oxidation_state_by_guess()
-            energy_adjustments = (entry.energy_adjustments
-                                  if len(entry.energy_adjustments) != 0
-                                  else None)
+            energy_adjustments = (
+                entry.energy_adjustments if len(entry.energy_adjustments) != 0 else None
+            )
             # Constant energy adjustment is set as a manual class object.
-            entry_decor = ComputedStructureEntry(s_decor,
-                                                 energy=entry.uncorrected_energy,
-                                                 energy_adjustments=energy_adjustments,
-                                                 parameters=entry.parameters,
-                                                 data=entry.data,
-                                                 entry_id=entry.entry_id)
+            entry_decor = ComputedStructureEntry(
+                s_decor,
+                energy=entry.uncorrected_energy,
+                energy_adjustments=energy_adjustments,
+                parameters=entry.parameters,
+                data=entry.data,
+                entry_id=entry.entry_id,
+            )
             entries_decor.append(entry_decor)
         return self._filter(entries_decor)
 
@@ -125,6 +132,7 @@ class FixedChargeDecorator(ChargeDecorator, NoTrainDecorator):
     Warning: This Decorator should not be used with
     structures that include multi-valent elements!
     """
+
     decorated_prop_name = "oxi_state"
     required_prop_names = []
 
@@ -145,16 +153,18 @@ class FixedChargeDecorator(ChargeDecorator, NoTrainDecorator):
             s_decor = entry.structure.copy()
             oxi_states = [self.labels[site.specie] for site in entry.structure]
             s_decor.add_oxidation_state_by_site(oxi_states)
-            energy_adjustments = (entry.energy_adjustments
-                                  if len(entry.energy_adjustments) != 0
-                                  else None)
+            energy_adjustments = (
+                entry.energy_adjustments if len(entry.energy_adjustments) != 0 else None
+            )
             # Constant energy adjustment is set as a manual class object.
-            entry_decor = ComputedStructureEntry(s_decor,
-                                                 energy=entry.uncorrected_energy,
-                                                 energy_adjustments=energy_adjustments,
-                                                 parameters=entry.parameters,
-                                                 data=entry.data,
-                                                 entry_id=entry.entry_id)
+            entry_decor = ComputedStructureEntry(
+                s_decor,
+                energy=entry.uncorrected_energy,
+                energy_adjustments=energy_adjustments,
+                parameters=entry.parameters,
+                data=entry.data,
+                entry_id=entry.entry_id,
+            )
             entries_decor.append(entry_decor)
         return self._filter(entries_decor)
 
@@ -164,16 +174,16 @@ class MagneticChargeDecorator(GpOptimizedDecorator, ChargeDecorator):
 
     Is a sub-class of GPOptimizedDecorator.
     """
+
     decorated_prop_name = "oxi_state"
     # [(name of the site property to use in pymatgen.structure,
     #  the string path used to query TaskDocument)]
-    required_prop_names = [("magmom",
-                            "calcs_reversed.0-output" +
-                            ".outcar.magnetization.^tot")]
+    required_prop_names = [
+        ("magmom", "calcs_reversed.0-output" + ".outcar.magnetization.^tot")
+    ]
 
-    def __init__(self, labels, cuts=None,
-                 max_allowed_abs_charge=0):
-        """ Initialize.
+    def __init__(self, labels, cuts=None, max_allowed_abs_charge=0):
+        """Initialize.
 
         Args:
             labels(dict{str: List[int|float]...}):
@@ -201,7 +211,6 @@ class MagneticChargeDecorator(GpOptimizedDecorator, ChargeDecorator):
                will be filtered and returned as a NoneType.
                Default to 0, which means we require absolute charge balance.
         """
-        super(MagneticChargeDecorator, self).__init__(labels=labels,
-                                                      cuts=cuts,
-                                                      max_allowed_abs_charge=
-                                                      max_allowed_abs_charge)
+        super(MagneticChargeDecorator, self).__init__(
+            labels=labels, cuts=cuts, max_allowed_abs_charge=max_allowed_abs_charge
+        )

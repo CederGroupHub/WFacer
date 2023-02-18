@@ -41,13 +41,15 @@ def get_three_factors(n):
     prime_factor_counts = factorint(n)
     prime_factors = sorted(prime_factor_counts.keys(), reverse=True)
     prime_factors = np.array(prime_factors, dtype=int)
-    all_three_nums = [enumerate_three_summations(prime_factor_counts[p])
-                      for p in prime_factors]
+    all_three_nums = [
+        enumerate_three_summations(prime_factor_counts[p]) for p in prime_factors
+    ]
     all_factors = []
     for sol in product(*all_three_nums):
         ns = np.array(sol, dtype=int)
-        factors = sorted(np.product(prime_factors[:, None] ** ns, axis=0).tolist(),
-                         reverse=True)
+        factors = sorted(
+            np.product(prime_factors[:, None] ** ns, axis=0).tolist(), reverse=True
+        )
         if factors not in all_factors:
             all_factors.append(factors)
     return sorted(all_factors)
@@ -75,12 +77,16 @@ def is_proper_sc(sc_matrix, lat, max_cond=8, min_angle=30):
     """
     new_mat = np.dot(sc_matrix, lat.matrix)
     new_lat = Lattice(new_mat)
-    angles = [new_lat.alpha, new_lat.beta, new_lat.gamma,
-              180 - new_lat.alpha, 180 - new_lat.beta,
-              180 - new_lat.gamma]
+    angles = [
+        new_lat.alpha,
+        new_lat.beta,
+        new_lat.gamma,
+        180 - new_lat.alpha,
+        180 - new_lat.beta,
+        180 - new_lat.gamma,
+    ]
 
-    return (abs(np.linalg.cond(new_mat)) <= max_cond and
-            min(angles) >= min_angle)
+    return abs(np.linalg.cond(new_mat)) <= max_cond and min(angles) >= min_angle
 
 
 def is_duplicate_sc(m1, m2, prim):
@@ -103,13 +109,9 @@ def is_duplicate_sc(m1, m2, prim):
     lengths1 = sorted(s1.lattice.lengths)
     lengths2 = sorted(s2.lattice.lengths)
     a1, b1, g1 = s1.lattice.angles
-    angles1 = sorted([a1, b1, g1,
-                      180 - a1, 180 - b1, 180 - g1])
+    angles1 = sorted([a1, b1, g1, 180 - a1, 180 - b1, 180 - g1])
     a2, b2, g2 = s2.lattice.angles
-    angles2 = sorted([a2, b2, g2,
-                      180 - a2, 180 - b2, 180 - g2])
+    angles2 = sorted([a2, b2, g2, 180 - a2, 180 - b2, 180 - g2])
 
     # Must have identical super lattice shapes.
-    return (np.allclose(lengths1, lengths2)
-            and np.allclose(angles1, angles2))
-
+    return np.allclose(lengths1, lengths2) and np.allclose(angles1, angles2)

@@ -5,10 +5,9 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def select_initial_rows(femat, n_select=10,
-                        method="leverage",
-                        num_external_terms=0,
-                        keep_indices=None):
+def select_initial_rows(
+    femat, n_select=10, method="leverage", num_external_terms=0, keep_indices=None
+):
     """Select structures to initialize an empty CE project.
 
     Args:
@@ -32,7 +31,7 @@ def select_initial_rows(femat, n_select=10,
         List[int]: indices of selected structures.
     """
     # Leave out external terms.
-    a = np.array(femat)[:, :len(femat[0]) - num_external_terms]
+    a = np.array(femat)[:, : len(femat[0]) - num_external_terms]
     n, d = a.shape
 
     if keep_indices is None:
@@ -41,18 +40,21 @@ def select_initial_rows(femat, n_select=10,
     if n_keep > n:
         raise ValueError("Can not keep more structures than provided!")
     if n_keep > n_select:
-        log.warning("Keeping more structures than to be selected!"
-                    " Cannot select new structures.")
+        log.warning(
+            "Keeping more structures than to be selected!"
+            " Cannot select new structures."
+        )
         return keep_indices
     if n_select > n:
-        log.warning("Structures to select more than provided,"
-                    " will select all provided structures.")
+        log.warning(
+            "Structures to select more than provided,"
+            " will select all provided structures."
+        )
         return list(range(n))
     dn = n_select - n_keep
 
     selected_indices = np.array(keep_indices, dtype=int)
-    available_indices = np.setdiff1d(np.arange(n, dtype=int),
-                                     keep_indices)
+    available_indices = np.setdiff1d(np.arange(n, dtype=int), keep_indices)
 
     cov = a.T @ a  # Covariance matrix of features.
 
@@ -67,7 +69,7 @@ def select_initial_rows(femat, n_select=10,
 
             select_index = available_indices[np.argmin(errs)]
 
-        elif method == 'random':
+        elif method == "random":
             select_index = np.random.choice(available_indices)
 
         else:
@@ -80,12 +82,15 @@ def select_initial_rows(femat, n_select=10,
 
 
 # TODO: implement composition dependent domain matrices. (not urgent)
-def select_added_rows(femat, old_femat,
-                      n_select=10,
-                      method="leverage",
-                      keep_indices=None,
-                      num_external_terms=0,
-                      domain_matrix=None):
+def select_added_rows(
+    femat,
+    old_femat,
+    n_select=10,
+    method="leverage",
+    keep_indices=None,
+    num_external_terms=0,
+    domain_matrix=None,
+):
     """Select structures to add to an existing CE project.
 
     We select structures by minimizing the leverage score under a
@@ -116,8 +121,8 @@ def select_added_rows(femat, old_femat,
         List of ints. Indices of selected rows in femat.
     """
     # Leave out external terms.
-    a = np.array(femat)[:, :len(femat[0]) - num_external_terms]
-    old_a = np.array(old_femat)[:, :len(old_femat[0]) - num_external_terms]
+    a = np.array(femat)[:, : len(femat[0]) - num_external_terms]
+    old_a = np.array(old_femat)[:, : len(old_femat[0]) - num_external_terms]
     n, d = a.shape
     if domain_matrix is None:
         domain_matrix = np.eye(d)
@@ -130,22 +135,25 @@ def select_added_rows(femat, old_femat,
     if n_keep > n:
         raise ValueError("Can not keep more structures than provided!")
     if n_keep > n_select:
-        log.warning("Keeping more structures than to be selected!"
-                    " Cannot select new structures.")
+        log.warning(
+            "Keeping more structures than to be selected!"
+            " Cannot select new structures."
+        )
         return keep_indices
     if n_select > n:
-        log.warning("Structures to select more than provided,"
-                    " will select all provided structures.")
+        log.warning(
+            "Structures to select more than provided,"
+            " will select all provided structures."
+        )
         return list(range(n))
     dn = n_select - n_keep
 
     selected_indices = np.array(keep_indices, dtype=int)
-    available_indices = np.setdiff1d(np.arange(n, dtype=int),
-                                     keep_indices)
+    available_indices = np.setdiff1d(np.arange(n, dtype=int), keep_indices)
 
     # Used Penrose-Moore inverse
     for _ in range(dn):
-        if method == 'leverage':
+        if method == "leverage":
             # Update feature matrix.
             prev_a = np.concatenate((old_a, a[selected_indices, :]), axis=0)
             prev_cov = prev_a.T @ prev_a
@@ -153,18 +161,17 @@ def select_added_rows(femat, old_femat,
             reductions = []
             for trial_index in available_indices:
                 trial_indices = np.append(selected_indices, trial_index)
-                trial_a = np.concatenate((old_a,
-                                          a[trial_indices, :]),
-                                         axis=0)
+                trial_a = np.concatenate((old_a, a[trial_indices, :]), axis=0)
                 trial_cov = trial_a.T @ trial_a
                 trial_inv = np.linalg.pinv(trial_cov)
                 # By assertion, should all be <= 0.
-                reductions.append(np.sum(np.multiply((trial_inv - prev_inv),
-                                                     domain_matrix)))
+                reductions.append(
+                    np.sum(np.multiply((trial_inv - prev_inv), domain_matrix))
+                )
 
             select_index = available_indices[np.argmin(reductions)]
 
-        elif method == 'random':
+        elif method == "random":
             select_index = np.random.choice(available_indices)
 
         else:

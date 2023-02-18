@@ -7,7 +7,7 @@ spin in the future updates.
 be-retrained after each iteration.
 """
 
-__author__ = 'Fengyu Xie, Julia H. Yang'
+__author__ = "Fengyu Xie, Julia H. Yang"
 
 from abc import ABCMeta, abstractmethod
 import logging
@@ -23,15 +23,17 @@ from sklearn.mixture import GaussianMixture
 from skopt import gp_minimize
 
 from smol.cofe.space.domain import get_species
-from smol.utils import (derived_class_factory,
-                        class_name_from_str,
-                        get_subclasses)
+from smol.utils import derived_class_factory, class_name_from_str, get_subclasses
 
 log = logging.getLogger(__name__)
 
 # Add here if you implement more decorators.
-valid_decorator_types = {"oxi_state": ("pmg-guess-charge",
-                                       "magnetic-charge",)}
+valid_decorator_types = {
+    "oxi_state": (
+        "pmg-guess-charge",
+        "magnetic-charge",
+    )
+}
 
 
 def _get_required_site_property(entry, site_id, prop_name):
@@ -47,8 +49,7 @@ def _get_required_site_property(entry, site_id, prop_name):
         return d_last
 
     key_path = prop_name.split(".")
-    return explore_key_path(key_path,
-                            entry.structure[site_id].properties)
+    return explore_key_path(key_path, entry.structure[site_id].properties)
 
 
 class BaseDecorator(MSONable, metaclass=ABCMeta):
@@ -60,6 +61,7 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
     which should be sufficient for most purposes.
     3, Can not decorate entries with partial disorder.
     """
+
     # Edit this as you implement new child classes.
     decorated_prop_name = None
     required_prop_names = None
@@ -89,8 +91,7 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
                a property to, otherwise, you are responsible for your own error!
         """
         labels = labels or {}
-        self.labels = {get_species(key): val
-                       for key, val in labels.items()}
+        self.labels = {get_species(key): val for key, val in labels.items()}
 
     @staticmethod
     def group_site_by_species(entries):
@@ -172,12 +173,11 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         for struct_id, site_id in structure_sites:
             site_props = []
             for prop_name, taskdoc_query in self.required_prop_names:
-                p = _get_required_site_property(entries[struct_id],
-                                                site_id,
-                                                prop_name)
+                p = _get_required_site_property(entries[struct_id], site_id, prop_name)
                 if hasattr(p, "__iter__"):
-                    raise ValueError("Cannot train assignment on non-scalar"
-                                     " property.")
+                    raise ValueError(
+                        "Cannot train assignment on non-scalar" " property."
+                    )
                 else:
                     site_props.append(p)
             props.append(site_props)
@@ -191,11 +191,11 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
             species_decor = []
             for site_id, site in enumerate(s_undecor):
                 if not hasattr(site, "specie"):
-                    raise ValueError("Can not decorate partially disordered site: "
-                                     f"{site}")
+                    raise ValueError(
+                        "Can not decorate partially disordered site: " f"{site}"
+                    )
                 sp = site.specie
-                if (struct_id in decorate_rules
-                        and site_id in decorate_rules[struct_id]):
+                if struct_id in decorate_rules and site_id in decorate_rules[struct_id]:
                     label = decorate_rules[struct_id][site_id]
                     if self.decorated_prop_name == "oxi_state":
                         if isinstance(sp, Element):
@@ -205,12 +205,14 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
                             sp_decor._oxi_state = label
                     else:
                         if self.decorated_prop_name not in sp.supported_properties:
-                            raise ValueError("Pymatgen Species does not support "
-                                             f"property {self.decorated_prop_name}!")
+                            raise ValueError(
+                                "Pymatgen Species does not support "
+                                f"property {self.decorated_prop_name}!"
+                            )
                         if isinstance(sp, Element):
-                            sp_decor = Species(sp.symbol,
-                                               properties={self.decorated_prop_name:
-                                                           label})
+                            sp_decor = Species(
+                                sp.symbol, properties={self.decorated_prop_name: label}
+                            )
                         else:
                             sp_decor = deepcopy(sp)
                             sp_decor._properties[self.decorated_prop_name] = label
@@ -225,22 +227,26 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
             for site in s_undecor:
                 for p in site.properties:
                     site_properties[p].append(site.properties[p])
-            s_decor = Structure(s_undecor.lattice,
-                                species_decor,
-                                s_undecor.frac_coords)
+            s_decor = Structure(s_undecor.lattice, species_decor, s_undecor.frac_coords)
             for prop, values in site_properties.items():
                 s_decor.add_site_property(prop, values)
-            energy_adjustments = (entry.energy_adjustments
-                                  if (len(entry.energy_adjustments) != 0
-                                      and entry.energy_adjustments is not None)
-                                  else None)
+            energy_adjustments = (
+                entry.energy_adjustments
+                if (
+                    len(entry.energy_adjustments) != 0
+                    and entry.energy_adjustments is not None
+                )
+                else None
+            )
             # Constant energy adjustment is set as a manual class object.
-            entry_decor = ComputedStructureEntry(s_decor,
-                                                 energy=entry.uncorrected_energy,
-                                                 energy_adjustments=energy_adjustments,
-                                                 parameters=entry.parameters,
-                                                 data=entry.data,
-                                                 entry_id=entry.entry_id)
+            entry_decor = ComputedStructureEntry(
+                s_decor,
+                energy=entry.uncorrected_energy,
+                energy_adjustments=energy_adjustments,
+                parameters=entry.parameters,
+                data=entry.data,
+                entry_id=entry.entry_id,
+            )
             entries_decor.append(entry_decor)
         return entries_decor
 
@@ -258,9 +264,11 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
     def as_dict(self):
         """Serialization method."""
         labels = {str(key): val for key, val in self.labels.items()}
-        return {"@module": self.__class__.__module__,
-                "@class": self.__class__.__name__,
-                "labels": labels}
+        return {
+            "@module": self.__class__.__module__,
+            "@class": self.__class__.__name__,
+            "labels": labels,
+        }
 
     @classmethod
     @abstractmethod
@@ -276,11 +284,19 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
 
     Note: not tested yet.
     """
+
     decorated_prop_name = None
     required_prop_names = None
-    gaussian_model_keys = ('weights_', 'means_', 'covariances_',
-                           'precisions_', 'precisions_cholesky_',
-                           'converged_', 'n_iter_', 'lower_bound_')
+    gaussian_model_keys = (
+        "weights_",
+        "means_",
+        "covariances_",
+        "precisions_",
+        "precisions_cholesky_",
+        "converged_",
+        "n_iter_",
+        "lower_bound_",
+    )
 
     def __init__(self, labels, gaussian_models=None, **kwargs):
         """Initialize.
@@ -311,24 +327,26 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
         super(MixtureGaussianDecorator, self).__init__(labels, **kwargs)
         if gaussian_models is None:
             gaussian_models = {}
-        gaussian_models = {get_species(key): val
-                           for key, val in gaussian_models.items()}
+        gaussian_models = {
+            get_species(key): val for key, val in gaussian_models.items()
+        }
         for key in self.labels:
             if key not in gaussian_models:
-                log.warning(f"Gaussian model for {key} is missing! "
-                            "Initializing from empty.")
-                gaussian_models[key] = GaussianMixture(n_components=len(
-                    self.labels[key]))
+                log.warning(
+                    f"Gaussian model for {key} is missing! " "Initializing from empty."
+                )
+                gaussian_models[key] = GaussianMixture(
+                    n_components=len(self.labels[key])
+                )
         self._gms = gaussian_models
 
     @staticmethod
     def serialize_gaussian_model(model):
         """Serialize gaussian model into dict."""
-        data = {'init_params': model.get_params(),
-                'model_params': {}}
+        data = {"init_params": model.get_params(), "model_params": {}}
         for k in MixtureGaussianDecorator.gaussian_model_keys:
             if k in model.__dict__:
-                data['model_params'][k] = getattr(model, k)
+                data["model_params"][k] = getattr(model, k)
             # Contains np.array, not directly json.dump-able. Use monty.
         return data
 
@@ -343,13 +361,13 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
     @staticmethod
     def is_trained_gaussian_model(model):
         """Whether a gaussian model is trained."""
-        return all([k in model.__dict__
-                   for k in MixtureGaussianDecorator.gaussian_model_keys])
+        return all(
+            [k in model.__dict__ for k in MixtureGaussianDecorator.gaussian_model_keys]
+        )
 
     @property
     def is_trained(self):
-        return all([self.is_trained_gaussian_model(m)
-                    for m in self._gms.values()])
+        return all([self.is_trained_gaussian_model(m) for m in self._gms.values()])
 
     def train(self, entries, reset=False):
         """Train the decoration model.
@@ -374,9 +392,11 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
                 props = self._load_props(species, entries, groups)
                 props = np.array(props)
                 if len(props.shape) > 2:
-                    raise ValueError("Can not train on tensor properties! "
-                                     "Convert to scalar or vector before "
-                                     "training!")
+                    raise ValueError(
+                        "Can not train on tensor properties! "
+                        "Convert to scalar or vector before "
+                        "training!"
+                    )
                 self._gms[species] = self._gms[species].fit(props)
 
     def decorate(self, entries):
@@ -394,8 +414,7 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
             List[NoneType|ComputedStructureEntry]
         """
         if not self.is_trained:
-            raise ValueError("Can not make predictions from un-trained"
-                             " models!")
+            raise ValueError("Can not make predictions from un-trained" " models!")
         groups = self.group_site_by_species(entries)
         decoration_rule = {}
         for species in groups:
@@ -404,15 +423,16 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
             centers = getattr(model, "means_")
             # Lex sort on dimensions,
             # flip to make sure that first dim sorted first.
-            marks = np.flip(np.array(centers).transpose(),
-                            axis=0)
+            marks = np.flip(np.array(centers).transpose(), axis=0)
             centers_argsort = np.lexsort(marks).tolist()
             props = self._load_props(species, entries, groups)
             props = np.array(props)
             if len(props.shape) > 2:
-                raise ValueError("Can not train on tensor properties! "
-                                 "Convert to scalar or vector before "
-                                 "training!")
+                raise ValueError(
+                    "Can not train on tensor properties! "
+                    "Convert to scalar or vector before "
+                    "training!"
+                )
             cluster_ids = model.predict(props)
             label_ids = [centers_argsort.index(c) for c in cluster_ids]
             labels = np.array(self.labels[species])
@@ -420,16 +440,17 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
             for i, (struct_id, site_id) in enumerate(structure_sites):
                 if struct_id not in decoration_rule:
                     decoration_rule[struct_id] = {}
-                decoration_rule[struct_id][site_id] = \
-                    assigned_labels[i]
+                decoration_rule[struct_id][site_id] = assigned_labels[i]
         entries_processed = self._process(entries, decoration_rule)
         return self._filter(entries_processed)
 
     def as_dict(self):
         """Serialize to dict."""
         d = super(MixtureGaussianDecorator, self).as_dict()
-        d["models"] = {str(species): self.serialize_gaussian_model(model)
-                       for species, model in self._gms.items()}
+        d["models"] = {
+            str(species): self.serialize_gaussian_model(model)
+            for species, model in self._gms.items()
+        }
         return d
 
     @classmethod
@@ -438,8 +459,7 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
         # Please load dict with monty.
         models = d.get("models")
         if models is not None:
-            models = {k: cls.deserialize_gaussian_model(v)
-                      for k, v in models.items()}
+            models = {k: cls.deserialize_gaussian_model(v) for k, v in models.items()}
         return cls(d["labels"], models)
 
 
@@ -450,6 +470,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
     et.al. Can only handle decoration from a single scalar
     property up to now.
     """
+
     # Edit this as you implement new child classes.
     decorated_prop_name = ""
     required_prop_names = []
@@ -493,14 +514,15 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         """
         super(GpOptimizedDecorator, self).__init__(labels, **kwargs)
         if cuts is not None:
-            cuts = {get_species(key): val
-                    for key, val in cuts.items()}
+            cuts = {get_species(key): val for key, val in cuts.items()}
             for species in self.labels:
                 if species not in cuts:
                     raise ValueError(f"Cuts not provided for species {species}!")
                 if len(cuts[species]) + 1 != len(self.labels[species]):
-                    raise ValueError(f"Number of cuts for species {species} "
-                                     f"does not match the number of its labels!")
+                    raise ValueError(
+                        f"Number of cuts for species {species} "
+                        f"does not match the number of its labels!"
+                    )
         self._cuts = cuts
 
     @property
@@ -530,8 +552,10 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
             props = self._load_props(species, entries, groups)
             props = np.array(props)
             if props.shape[1] != 1:
-                raise ValueError("GpOptimizedDecorator can only be trained "
-                                 "on one scalar property!")
+                raise ValueError(
+                    "GpOptimizedDecorator can only be trained "
+                    "on one scalar property!"
+                )
             props = props.flatten()
             label_ids = [get_sector_id(p, cuts[species]) for p in props]
             labels = np.array(self.labels[species])
@@ -539,8 +563,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
             for i, (struct_id, site_id) in enumerate(structure_sites):
                 if struct_id not in decoration_rule:
                     decoration_rule[struct_id] = {}
-                decoration_rule[struct_id][site_id] = \
-                    assigned_labels[i]
+                decoration_rule[struct_id][site_id] = assigned_labels[i]
         return decoration_rule
 
     def _evaluate_objective(self, entries, cuts_flatten):
@@ -549,13 +572,15 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         cuts = {}
         n_cuts = 0
         for species in sorted(self.labels.keys()):
-            cuts[species] = cuts_flatten[n_cuts:
-                                         n_cuts + len(self.labels[species]) - 1]
+            cuts[species] = cuts_flatten[
+                n_cuts : n_cuts + len(self.labels[species]) - 1
+            ]
             n_cuts = n_cuts + len(self.labels[species]) - 1
         decoration_rules = self._decoration_rules_from_cuts(entries, cuts)
         entries_processed = self._process(entries, decoration_rules)
-        return len([entry for entry in self._filter(entries_processed)
-                    if entry is None])  # To be minimized.
+        return len(
+            [entry for entry in self._filter(entries_processed) if entry is None]
+        )  # To be minimized.
 
     def _form_initial_guesses(self, entries):
         """Form initial guesses (flatten)."""
@@ -570,16 +595,16 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
             props = self._load_props(species, entries, groups)
             props = np.array(props)
             if props.shape[1] != 1:
-                raise ValueError("GpOptimizedDecorator can only be used "
-                                 "on scalar properties!")
+                raise ValueError(
+                    "GpOptimizedDecorator can only be used " "on scalar properties!"
+                )
             props = props.flatten()
             model = GaussianMixture(n_components=len(self.labels[species]))
             _ = model.fit(props.reshape(-1, 1))
             centers = getattr(model, "means_")
             # Lex sort on dimensions,
             # flip to make sure that first dim sorted first.
-            marks = np.flip(np.array(centers).transpose(),
-                            axis=0)
+            marks = np.flip(np.array(centers).transpose(), axis=0)
             centers_argsort = np.lexsort(marks).tolist()
             lin_space = np.linspace(np.min(props) - 0.5, np.max(props) + 0.5, 2000)
             cluster_ids = model.predict(lin_space.reshape(-1, 1))
@@ -593,8 +618,15 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
                     last_label_id = label_id
 
             if len(cuts_species) > 1:
-                delta = np.min([cuts_species[i] - cuts_species[i - 1]
-                                for i in range(1, len(cuts_species))]) * 0.3
+                delta = (
+                    np.min(
+                        [
+                            cuts_species[i] - cuts_species[i - 1]
+                            for i in range(1, len(cuts_species))
+                        ]
+                    )
+                    * 0.3
+                )
                 # Only allow a small amount of tuning with gp-minimize.
                 # This also keeps ascending order between cutting points.
             else:
@@ -622,27 +654,33 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         if self.is_trained and not reset:
             return
         else:
-            cuts_flatten_init, domains_flatten_init = \
-                self._form_initial_guesses(entries)
+            cuts_flatten_init, domains_flatten_init = self._form_initial_guesses(
+                entries
+            )
             objective = functools.partial(self._evaluate_objective, entries)
-            result = gp_minimize(objective, domains_flatten_init,
-                                 n_calls=n_calls,
-                                 acq_optimizer='sampling',
-                                 noise=0.001)
+            result = gp_minimize(
+                objective,
+                domains_flatten_init,
+                n_calls=n_calls,
+                acq_optimizer="sampling",
+                noise=0.001,
+            )
             if result is not None and result.x is not None:
                 cuts_flatten_opt = result.x
             else:
-                log.warning("Decorator model can't be optimized properly "
-                            "with Bayesian process, use mixture of gaussian "
-                            "clustering prediction instead!")
+                log.warning(
+                    "Decorator model can't be optimized properly "
+                    "with Bayesian process, use mixture of gaussian "
+                    "clustering prediction instead!"
+                )
                 cuts_flatten_opt = cuts_flatten_init
             # De-flatten.
             cuts = {}
             n_cuts = 0
             for species in sorted(self.labels.keys()):
-                cuts[species] = cuts_flatten_opt[n_cuts:
-                                                 n_cuts
-                                                 + len(self.labels[species]) - 1]
+                cuts[species] = cuts_flatten_opt[
+                    n_cuts : n_cuts + len(self.labels[species]) - 1
+                ]
                 cuts[species] = np.array(cuts[species]).tolist()
                 n_cuts += len(self.labels[species]) - 1
             self._cuts = cuts
@@ -659,8 +697,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         Returns:
             List[NoneType|ComputedStructureEntry]
         """
-        decoration_rules = self._decoration_rules_from_cuts(entries,
-                                                            self._cuts)
+        decoration_rules = self._decoration_rules_from_cuts(entries, self._cuts)
         entries_decorated = self._process(entries, decoration_rules)
         return self._filter(entries_decorated)
 
@@ -708,8 +745,7 @@ def decorator_factory(decorator_type, *args, **kwargs):
         args, kwargs:
             Arguments used to initialize the class.
     """
-    if ("decorator" not in decorator_type
-            and "Decorator" not in decorator_type):
+    if "decorator" not in decorator_type and "Decorator" not in decorator_type:
         decorator_type += "-decorator"
     name = class_name_from_str(decorator_type)
     return derived_class_factory(name, BaseDecorator, *args, **kwargs)
@@ -726,8 +762,7 @@ def get_site_property_query_names_from_decorator(decname):
             List of names of required site properties by the
             decorator.
     """
-    if ("decorator" not in decname
-            and "decorator" not in decname):
+    if "decorator" not in decname and "decorator" not in decname:
         decname += "-decorator"
     clsname = class_name_from_str(decname)
     dec_class = get_subclasses(BaseDecorator).get(clsname)

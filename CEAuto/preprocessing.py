@@ -11,11 +11,9 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from smol.cofe import ClusterSubspace
 from smol.cofe.extern import EwaldTerm
-from smol.cofe.space.domain import (get_site_spaces, Vacancy,
-                                    get_allowed_species)
+from smol.cofe.space.domain import get_site_spaces, Vacancy, get_allowed_species
 
-from .utils.comp_constraints import (parse_species_constraints,
-                                     parse_generic_constraint)
+from .utils.comp_constraints import parse_species_constraints, parse_generic_constraint
 
 
 # Parse and process primitive cell.
@@ -61,16 +59,23 @@ def construct_prim(bits, sublattice_sites, lattice, frac_coords, **kwargs):
             Structure
     """
     n_sites = len(frac_coords)
-    if not np.allclose(np.arange(n_sites),
-                       sorted(list(itertools.chain(*sublattice_sites)))):
-        raise ValueError(f"Provided site indices: {sublattice_sites} "
-                         f"does not include all {n_sites} sites!")
+    if not np.allclose(
+        np.arange(n_sites), sorted(list(itertools.chain(*sublattice_sites)))
+    ):
+        raise ValueError(
+            f"Provided site indices: {sublattice_sites} "
+            f"does not include all {n_sites} sites!"
+        )
 
     site_comps = [{} for _ in range(n_sites)]
     for sublatt_id, sublatt in enumerate(sublattice_sites):
-        comp = Composition({sp: 1 / len(bits[sublatt_id])
-                            for sp in bits[sublatt_id]
-                            if not isinstance(sp, Vacancy)})
+        comp = Composition(
+            {
+                sp: 1 / len(bits[sublatt_id])
+                for sp in bits[sublatt_id]
+                if not isinstance(sp, Vacancy)
+            }
+        )
         for i in sublatt:
             site_comps[i] = comp
 
@@ -101,14 +106,14 @@ def get_prim_specs(prim):
     # Ordering between species in a sub-lattice is fixed.
     bits = [list(space.keys()) for space in unique_spaces]
     allowed_species = get_allowed_species(prim)
-    sublattice_sites = [[i for i, sp in enumerate(allowed_species)
-                         if sp == list(space.keys())]
-                        for space in unique_spaces]
+    sublattice_sites = [
+        [i for i, sp in enumerate(allowed_species) if sp == list(space.keys())]
+        for space in unique_spaces
+    ]
 
     charge_decorated = False
     for sp in itertools.chain(*bits):
-        if (not isinstance(sp, (Vacancy, Element)) and
-                sp.oxi_state != 0):
+        if not isinstance(sp, (Vacancy, Element)) and sp.oxi_state != 0:
             charge_decorated = True
             break
 
@@ -118,10 +123,7 @@ def get_prim_specs(prim):
         for j, site2 in enumerate(prim):
             if j > i:
                 d_ij.append(site1.distance(site2))
-        d_nns.append(min(d_ij
-                         + [prim.lattice.a,
-                            prim.lattice.b,
-                            prim.lattice.c]))
+        d_nns.append(min(d_ij + [prim.lattice.a, prim.lattice.b, prim.lattice.c]))
     d_nn = min(d_nns)
 
     return {
@@ -133,11 +135,16 @@ def get_prim_specs(prim):
 
 
 # Get cluster subspace.
-def get_cluster_subspace(prim, charge_decorated,
-                         nn_distance, cutoffs=None,
-                         use_ewald=True, ewald_kwargs=None,
-                         other_terms=None,
-                         **kwargs):
+def get_cluster_subspace(
+    prim,
+    charge_decorated,
+    nn_distance,
+    cutoffs=None,
+    use_ewald=True,
+    ewald_kwargs=None,
+    other_terms=None,
+    **kwargs,
+):
     """Get cluster subspace from primitive structure and cutoffs.
 
     Args:
@@ -226,15 +233,14 @@ def process_supercell_options(d):
             is given. Default to None. Note: if given, all supercell matrices
             must be of the same size!
     """
-    return {'supercell_from_conventional':
-            d.get('supercell_from_conventional', True),
-            'objective_num_sites': d.get('objective_num_sites', 64),
-            "spacegroup_kwargs": d.get("spacegroup_kwargs", {}),
-            'max_sc_condition_number':
-            d.get('max_sc_condition_number', 8),
-            'min_sc_angle': d.get('min_sc_angle', 30),
-            'sc_matrices': d.get('sc_matrices'),
-            }
+    return {
+        "supercell_from_conventional": d.get("supercell_from_conventional", True),
+        "objective_num_sites": d.get("objective_num_sites", 64),
+        "spacegroup_kwargs": d.get("spacegroup_kwargs", {}),
+        "max_sc_condition_number": d.get("max_sc_condition_number", 8),
+        "min_sc_angle": d.get("min_sc_angle", 30),
+        "sc_matrices": d.get("sc_matrices"),
+    }
 
 
 def process_composition_options(d):
@@ -296,19 +302,16 @@ def process_composition_options(d):
             given, will not enumerate other compositions.
             Should be provided as the "species count"-format of CompositionSpace.
     """
-    return {"comp_enumeration_step":
-            d.get("comp_enumeration_step", 1),
-            "species_concentration_constraints":
-            d.get("species_concentration_constraints", []),
-            "eq_constraints":
-            d.get("eq_constraints", []),
-            "leq_constraints":
-            d.get("leq_constraints", []),
-            "geq_constraints":
-            d.get("geq_constraints", []),
-            "compositions":
-            d.get("compositions", [])
-            }
+    return {
+        "comp_enumeration_step": d.get("comp_enumeration_step", 1),
+        "species_concentration_constraints": d.get(
+            "species_concentration_constraints", []
+        ),
+        "eq_constraints": d.get("eq_constraints", []),
+        "leq_constraints": d.get("leq_constraints", []),
+        "geq_constraints": d.get("geq_constraints", []),
+        "compositions": d.get("compositions", []),
+    }
 
 
 def parse_comp_constraints(options, bits, sublattice_sizes):
@@ -326,19 +329,12 @@ def parse_comp_constraints(options, bits, sublattice_sizes):
            Equality constraints, then leq and geq constraints,
            readable by smol CompositionSpace.
     """
-    leqs_species, geqs_species \
-        = parse_species_constraints(options
-                                    ["species_concentration_constraints"],
-                                    bits, sublattice_sizes)
-    eqs = [parse_generic_constraint(d, r, bits)
-           for d, r in
-           options["eq_constraints"]]
-    leqs = [parse_generic_constraint(d, r, bits)
-            for d, r in
-            options["leq_constraints"]]
-    geqs = [parse_generic_constraint(d, r, bits)
-            for d, r in
-            options["geq_constraints"]]
+    leqs_species, geqs_species = parse_species_constraints(
+        options["species_concentration_constraints"], bits, sublattice_sizes
+    )
+    eqs = [parse_generic_constraint(d, r, bits) for d, r in options["eq_constraints"]]
+    leqs = [parse_generic_constraint(d, r, bits) for d, r in options["leq_constraints"]]
+    geqs = [parse_generic_constraint(d, r, bits) for d, r in options["geq_constraints"]]
 
     return eqs, leqs + leqs_species, geqs + geqs_species
 
@@ -386,22 +382,16 @@ def process_structure_options(d):
             Whether always to add new ground states to the training set.
             Default to True.
     """
-    return {"num_structs_per_iter_init":
-            d.get("num_structs_per_iter_init", 60),
-            "num_structs_per_iter_add":
-            d.get("num_structs_per_iter_add", 40),
-            "sample_generator_kwargs":
-            d.get("sample_generator_kwargs", {}),
-            "init_method":
-            d.get("init_method", "leverage"),
-            "add_method":
-            d.get("add_method", "leverage"),
-            "duplicacy_criteria":
-            d.get("duplicacy_criteria", "correlations"),
-            "n_parallel":
-            d.get("n_parallel"),
-            "keep_ground_states":
-            d.get("keep_ground_states", True)}
+    return {
+        "num_structs_per_iter_init": d.get("num_structs_per_iter_init", 60),
+        "num_structs_per_iter_add": d.get("num_structs_per_iter_add", 40),
+        "sample_generator_kwargs": d.get("sample_generator_kwargs", {}),
+        "init_method": d.get("init_method", "leverage"),
+        "add_method": d.get("add_method", "leverage"),
+        "duplicacy_criteria": d.get("duplicacy_criteria", "correlations"),
+        "n_parallel": d.get("n_parallel"),
+        "keep_ground_states": d.get("keep_ground_states", True),
+    }
 
 
 def process_calculation_options(d):
@@ -460,36 +450,29 @@ def process_calculation_options(d):
         chosen for specific systems. Using your own vasp set input
         settings is highly recommended!
     """
-    strain_before_relax = \
-        d.get('apply_strain',
-              [1.03, 1.02, 1.01])
+    strain_before_relax = d.get("apply_strain", [1.03, 1.02, 1.01])
     strain_before_relax = np.array(strain_before_relax)
     if len(strain_before_relax.shape) == 1:
         strain_before_relax = np.diag(strain_before_relax)
-    
+
     if strain_before_relax.shape != (3, 3):
-        raise ValueError("Provided strain format "
-                         "must be either 3*3 arraylike or "
-                         "an 1d arraylike of length 3!")
-    
-    return {"apply_strain": strain_before_relax.tolist(),
-            "relax_generator_kwargs":
-            d.get("relax_generator_kwargs", {}),
-            "relax_maker_kwargs":
-            d.get("relax_maker_kwargs", {}),
-            "add_tight_relax":
-            d.get("add_tight_relax", True),
-            "tight_generator_kwargs":
-            d.get("tight_generator_kwargs", {}),
-            "tight_maker_kwargs":
-            d.get("tight_maker_kwargs", {}),
-            "static_generator_kwargs":
-            d.get("static_generator_kwargs", {}),
-            "static_maker_kwargs":
-            d.get("static_maker_kwargs", {}),
-            "other_properties":
-            d.get("other_properties")
-            }
+        raise ValueError(
+            "Provided strain format "
+            "must be either 3*3 arraylike or "
+            "an 1d arraylike of length 3!"
+        )
+
+    return {
+        "apply_strain": strain_before_relax.tolist(),
+        "relax_generator_kwargs": d.get("relax_generator_kwargs", {}),
+        "relax_maker_kwargs": d.get("relax_maker_kwargs", {}),
+        "add_tight_relax": d.get("add_tight_relax", True),
+        "tight_generator_kwargs": d.get("tight_generator_kwargs", {}),
+        "tight_maker_kwargs": d.get("tight_maker_kwargs", {}),
+        "static_generator_kwargs": d.get("static_generator_kwargs", {}),
+        "static_maker_kwargs": d.get("static_maker_kwargs", {}),
+        "other_properties": d.get("other_properties"),
+    }
 
 
 def process_decorator_options(d):
@@ -512,28 +495,33 @@ def process_decorator_options(d):
     """
     # Update these pre-processing rules when necessary,
     # if you have new decorators implemented.
-    decorator_types = d.get('decorator_types', [])
-    decorator_kwargs = d.get('decorator_kwargs', [])
-    decorator_train_kwargs = d.get('decorator_kwargs', [])
+    decorator_types = d.get("decorator_types", [])
+    decorator_kwargs = d.get("decorator_kwargs", [])
+    decorator_train_kwargs = d.get("decorator_kwargs", [])
 
-    if (len(decorator_kwargs) > 0 and
-            len(decorator_kwargs) != len(decorator_types)):
-        raise ValueError("If provided any, number of kwargs must match"
-                         " the number of decorators exactly!")
+    if len(decorator_kwargs) > 0 and len(decorator_kwargs) != len(decorator_types):
+        raise ValueError(
+            "If provided any, number of kwargs must match"
+            " the number of decorators exactly!"
+        )
     if len(decorator_kwargs) == 0:
         decorator_kwargs = [{} for _ in decorator_types]
 
-    if (len(decorator_train_kwargs) > 0 and
-            len(decorator_train_kwargs) != len(decorator_types)):
-        raise ValueError("If provided any, number of train kwargs must match"
-                         " the number of decorators exactly!")
+    if len(decorator_train_kwargs) > 0 and len(decorator_train_kwargs) != len(
+        decorator_types
+    ):
+        raise ValueError(
+            "If provided any, number of train kwargs must match"
+            " the number of decorators exactly!"
+        )
     if len(decorator_train_kwargs) == 0:
         decorator_train_kwargs = [{} for _ in decorator_types]
 
-    return {'decorator_types': decorator_types,
-            'decorator_kwargs': decorator_kwargs,
-            "decorator_train_kwargs": decorator_train_kwargs
-            }
+    return {
+        "decorator_types": decorator_types,
+        "decorator_kwargs": decorator_kwargs,
+        "decorator_train_kwargs": decorator_train_kwargs,
+    }
 
 
 def process_subspace_options(d):
@@ -560,11 +548,12 @@ def process_subspace_options(d):
             Other keyword arguments to be used in ClusterSubspace.from_cutoffs,
             for example, the cluster basis type. Check smol.cofe for detail.
     """
-    return {"cutoffs": d.get("cutoffs", None),
-            "use_ewald": d.get("use_ewald", True),
-            "ewald_kwargs": d.get("ewald_kwargs", {}),
-            "from_cutoffs_kwargs": d.get("from_cutoffs_kwargs", {})
-            }
+    return {
+        "cutoffs": d.get("cutoffs", None),
+        "use_ewald": d.get("use_ewald", True),
+        "ewald_kwargs": d.get("ewald_kwargs", {}),
+        "from_cutoffs_kwargs": d.get("from_cutoffs_kwargs", {}),
+    }
 
 
 def process_fit_options(d):
@@ -607,30 +596,23 @@ def process_fit_options(d):
             Keyword arguments when calling GridSearch/LineSearch/Estimator.fit.
             See docs of the specific estimator.
     """
-    return {"estimator_type":
-            d.get('estimator_type', 'l2-l0'),
-            # Under Seko's iterative procedure, there is not much sense in weighting over energy.
-            # We will not include sample weighting scheme here. You can play with the CeDataWangler
-            # if you want.
-            'use_hierarchy':
-            d.get('use_hierarchy', True),
-            "center_point_external":
-            d.get("center_point_external", True),
-            "filter_unique_correlations":
-            d.get("filter_unique_correlations", True),
-            "estimator_kwargs":
-            d.get("estimator_kwargs", {}),
-            'optimizer_type':
-            d.get('optimizer_type', "grid-search"),
-            "param_grid":
-            # Use lasso as default as mixed l0 might get too aggressive.
-            d.get("param_grid",
-                  {"alpha": (2 ** np.linspace(-20, 4, 25)).tolist()}),
-            'optimizer_kwargs':
-            d.get('optimizer_kwargs', {}),
-            'fit_kwargs':
-            d.get('fit_kwargs', {}),
-            }
+    return {
+        "estimator_type": d.get("estimator_type", "l2-l0"),
+        # Under Seko's iterative procedure, there is not much sense in weighting
+        # over energy, because low energy samples are always preferred.
+        # We will not include sample weighting scheme here. You can play with the
+        # final CeDataWangler if you want.
+        "use_hierarchy": d.get("use_hierarchy", True),
+        "center_point_external": d.get("center_point_external", True),
+        "filter_unique_correlations": d.get("filter_unique_correlations", True),
+        "estimator_kwargs": d.get("estimator_kwargs", {}),
+        "optimizer_type": d.get("optimizer_type", "grid-search"),
+        "param_grid":
+        # Use lasso as default as mixed l0 might get too aggressive.
+        d.get("param_grid", {"alpha": (2 ** np.linspace(-20, 4, 25)).tolist()}),
+        "optimizer_kwargs": d.get("optimizer_kwargs", {}),
+        "fit_kwargs": d.get("fit_kwargs", {}),
+    }
 
 
 def process_convergence_options(d):
@@ -677,15 +659,15 @@ def process_convergence_options(d):
             of iterations if set to None, but setting one limit is still
             recommended. Default to 10.
     """
-    return {'cv_tol': d.get('cv_tol', 5),
-            'std_cv_rtol': d.get('std_cv_rtol'),
-            'delta_cv_rtol': d.get('delta_cv_rtol', 0.5),
-            "delta_eci_rtol": d.get('delta_eci_rtol'),
-            'delta_min_e_rtol': d.get('delta_min_e_rtol', 2),
-            "continue_on_finding_new_gs":
-            d.get('continue_on_finding_new_gs', False),
-            "max_iter": d.get("max_iter", 10)
-            }
+    return {
+        "cv_tol": d.get("cv_tol", 5),
+        "std_cv_rtol": d.get("std_cv_rtol"),
+        "delta_cv_rtol": d.get("delta_cv_rtol", 0.5),
+        "delta_eci_rtol": d.get("delta_eci_rtol"),
+        "delta_min_e_rtol": d.get("delta_min_e_rtol", 2),
+        "continue_on_finding_new_gs": d.get("continue_on_finding_new_gs", False),
+        "max_iter": d.get("max_iter", 10),
+    }
 
 
 def get_initial_ce_coefficients(cluster_subspace):
@@ -700,5 +682,7 @@ def get_initial_ce_coefficients(cluster_subspace):
     Returns:
         np.ndarray[float].
     """
-    return np.array([0 for _ in range(cluster_subspace.num_corr_functions)] +
-                    [1 for _ in range(len(cluster_subspace.external_terms))])
+    return np.array(
+        [0 for _ in range(cluster_subspace.num_corr_functions)]
+        + [1 for _ in range(len(cluster_subspace.external_terms))]
+    )

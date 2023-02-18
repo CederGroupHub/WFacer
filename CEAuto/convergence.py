@@ -62,12 +62,12 @@ def compare_fitted_coefs(cluster_subspace, coefs_prev, coefs_now):
     eci_prev = ClusterExpansion(cluster_subspace, coefficients=coefs_prev).eci
     eci_now = ClusterExpansion(cluster_subspace, coefficients=coefs_now).eci
 
-    return (np.linalg.norm(eci_prev - eci_now, ord=1)
-            / np.linalg.norm(eci_prev, ord=1))
+    return np.linalg.norm(eci_prev - eci_now, ord=1) / np.linalg.norm(eci_prev, ord=1)
 
 
-def ce_converged(coefs_history, cv_history, cv_std_history,
-                 wrangler, convergence_options):
+def ce_converged(
+    coefs_history, cv_history, cv_std_history, wrangler, convergence_options
+):
     """Check whether the ce workflow has converged.
 
     Args:
@@ -94,38 +94,41 @@ def ce_converged(coefs_history, cv_history, cv_std_history,
         return False
     iter_id = wrangler.max_iter_id
 
-    cv_converged = (cv_history[-1] <= convergence_options["cv_tol"]
-                    and (convergence_options["std_cv_rtol"] is None
-                         or cv_std_history[-1] / cv_history[-1]
-                         <= convergence_options["std_cv_rtol"])
-                    and abs(cv_history[-1] - cv_history[-2]) / cv_history[-2]
-                    <= convergence_options["delta_cv_rtol"])
+    cv_converged = (
+        cv_history[-1] <= convergence_options["cv_tol"]
+        and (
+            convergence_options["std_cv_rtol"] is None
+            or cv_std_history[-1] / cv_history[-1] <= convergence_options["std_cv_rtol"]
+        )
+        and abs(cv_history[-1] - cv_history[-2]) / cv_history[-2]
+        <= convergence_options["delta_cv_rtol"]
+    )
 
-    eci_converged = (convergence_options["delta_eci_rtol"] is None
-                     or compare_fitted_coefs(wrangler.cluster_subspace,
-                                             coefs_history[-2],
-                                             coefs_history[-1])
-                     <= convergence_options["delta_eci_rtol"])
+    eci_converged = (
+        convergence_options["delta_eci_rtol"] is None
+        or compare_fitted_coefs(
+            wrangler.cluster_subspace, coefs_history[-2], coefs_history[-1]
+        )
+        <= convergence_options["delta_eci_rtol"]
+    )
 
-    min_e1 = get_min_energy_structures_by_composition(wrangler,
-                                                      max_iter_id=iter_id - 1)
-    min_e2 = get_min_energy_structures_by_composition(wrangler,
-                                                      max_iter_id=iter_id)
+    min_e1 = get_min_energy_structures_by_composition(wrangler, max_iter_id=iter_id - 1)
+    min_e2 = get_min_energy_structures_by_composition(wrangler, max_iter_id=iter_id)
     matcher = wrangler.cluster_subspace._site_matcher
-    max_diff, new_gs_found \
-        = compare_min_energy_structures_by_composition(min_e1,
-                                                       min_e2,
-                                                       matcher)
+    max_diff, new_gs_found = compare_min_energy_structures_by_composition(
+        min_e1, min_e2, matcher
+    )
     # eV/site to meV/site.
-    min_e_converged = (1000 * max_diff / cv_history[-1]
-                       <= convergence_options["delta_min_e_rtol"]
-                       and (not convergence_options["continue_on_finding_new_gs"]
-                            or not new_gs_found))
+    min_e_converged = 1000 * max_diff / cv_history[-1] <= convergence_options[
+        "delta_min_e_rtol"
+    ] and (not convergence_options["continue_on_finding_new_gs"] or not new_gs_found)
 
-    max_iter = (convergence_options["max_iter"]
-                if convergence_options["max_iter"] is not None else np.inf)
+    max_iter = (
+        convergence_options["max_iter"]
+        if convergence_options["max_iter"] is not None
+        else np.inf
+    )
 
-    real_convereged = (cv_converged and eci_converged and min_e_converged)
+    real_convereged = cv_converged and eci_converged and min_e_converged
 
-    return (real_convereged
-            or iter_id >= max_iter - 1)
+    return real_convereged or iter_id >= max_iter - 1

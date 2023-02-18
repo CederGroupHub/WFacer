@@ -9,33 +9,37 @@ from pymatgen.analysis.elasticity.strain import Deformation
 from smol.cofe import ClusterExpansion
 from smol.moca import CompositionSpace
 
-from atomate2.vasp.jobs.core import (RelaxMaker,
-                                     StaticMaker,
-                                     TightRelaxMaker)
-from atomate2.vasp.sets.core import (RelaxSetGenerator,
-                                     StaticSetGenerator,
-                                     TightRelaxSetGenerator)
+from atomate2.vasp.jobs.core import RelaxMaker, StaticMaker, TightRelaxMaker
+from atomate2.vasp.sets.core import (
+    RelaxSetGenerator,
+    StaticSetGenerator,
+    TightRelaxSetGenerator,
+)
 from atomate2.vasp.schemas.calculation import Status
 
 from .schema import CeOutputsDocument
 from .wrangling import CeDataWrangler
-from .preprocessing import (reduce_prim,
-                            get_prim_specs,
-                            parse_comp_constraints,
-                            get_cluster_subspace,
-                            get_initial_ce_coefficients,
-                            process_supercell_options,
-                            process_composition_options,
-                            process_structure_options,
-                            process_calculation_options,
-                            process_decorator_options,
-                            process_subspace_options,
-                            process_fit_options,
-                            process_convergence_options)
-from .enumeration import (enumerate_matrices,
-                          enumerate_compositions_as_counts,
-                          truncate_cluster_subspace,
-                          generate_training_structures)
+from .preprocessing import (
+    reduce_prim,
+    get_prim_specs,
+    parse_comp_constraints,
+    get_cluster_subspace,
+    get_initial_ce_coefficients,
+    process_supercell_options,
+    process_composition_options,
+    process_structure_options,
+    process_calculation_options,
+    process_decorator_options,
+    process_subspace_options,
+    process_fit_options,
+    process_convergence_options,
+)
+from .enumeration import (
+    enumerate_matrices,
+    enumerate_compositions_as_counts,
+    truncate_cluster_subspace,
+    generate_training_structures,
+)
 from .fit import fit_ecis_from_wrangler
 from .wrangling import CeDataWrangler
 from .utils.task_document import get_entry_from_taskdoc
@@ -64,11 +68,16 @@ def _preprocess_options(options):
     return options
 
 
-def _enumerate_structures(subspace, coefs, iter_id,
-                          sc_matrices, compositions,
-                          enumerated_structures,
-                          enumerated_features,
-                          options):
+def _enumerate_structures(
+    subspace,
+    coefs,
+    iter_id,
+    sc_matrices,
+    compositions,
+    enumerated_structures,
+    enumerated_features,
+    options,
+):
     """Enumerate structures in an interation."""
     ce = ClusterExpansion(subspace, coefs)
     keep_ground_states = options["keep_ground_states"]
@@ -85,20 +94,19 @@ def _enumerate_structures(subspace, coefs, iter_id,
     else:
         method = add_method
         n_select = num_structs_add
-    new_structures, new_sc_matrices, new_features = \
-        generate_training_structures(ce,
-                                     sc_matrices,
-                                     compositions,
-                                     enumerated_structures,
-                                     enumerated_features,
-                                     keep_ground_states,
-                                     n_select,
-                                     mc_generator_kwargs,
-                                     n_parallel,
-                                     duplicacy_criteria
-                                     =duplicacy_criteria,
-                                     method=method,
-                                     )
+    new_structures, new_sc_matrices, new_features = generate_training_structures(
+        ce,
+        sc_matrices,
+        compositions,
+        enumerated_structures,
+        enumerated_features,
+        keep_ground_states,
+        n_select,
+        mc_generator_kwargs,
+        n_parallel,
+        duplicacy_criteria=duplicacy_criteria,
+        method=method,
+    )
     return new_structures, new_sc_matrices, new_features
 
 
@@ -107,18 +115,19 @@ def _get_vasp_makers(options):
     relax_gen_kwargs = options["relax_generator_kwargs"]
     relax_generator = RelaxSetGenerator(**relax_gen_kwargs)
     relax_maker_kwargs = options["relax_maker_kwargs"]
-    relax_maker = RelaxMaker(input_set_generator=relax_generator,
-                             **relax_maker_kwargs)
+    relax_maker = RelaxMaker(input_set_generator=relax_generator, **relax_maker_kwargs)
     static_gen_kwargs = options["static_generator_kwargs"]
     static_generator = StaticSetGenerator(**static_gen_kwargs)
     static_maker_kwargs = options["static_maker_kwargs"]
-    static_maker = StaticMaker(input_set_generator=static_generator,
-                               **static_maker_kwargs)
+    static_maker = StaticMaker(
+        input_set_generator=static_generator, **static_maker_kwargs
+    )
     tight_gen_kwargs = options["tight_generator_kwargs"]
     tight_generator = TightRelaxSetGenerator(**tight_gen_kwargs)
     tight_maker_kwargs = options["tight_maker_kwargs"]
-    tight_maker = TightRelaxMaker(input_set_generator=tight_generator,
-                                  **tight_maker_kwargs)
+    tight_maker = TightRelaxMaker(
+        input_set_generator=tight_generator, **tight_maker_kwargs
+    )
     return relax_maker, static_maker, tight_maker
 
 
@@ -135,28 +144,29 @@ def _check_flow_convergence(taskdoc):
 
 def _get_decorators(options, is_charge_decorated):
     """Get required decorators."""
-    decorators = [decorator_factory(dt, **kw) for dt, kw
-                  in zip(options["decorator_types"],
-                         options["decorator_kwargs"])]
-    decorated_properties = [d.decorated_prop_name for d in
-                            decorators]
+    decorators = [
+        decorator_factory(dt, **kw)
+        for dt, kw in zip(options["decorator_types"], options["decorator_kwargs"])
+    ]
+    decorated_properties = [d.decorated_prop_name for d in decorators]
     if len(decorated_properties) != len(set(decorated_properties)):
-        raise ValueError("Can not use multiple decorators for decorating"
-                         " the same property!!")
+        raise ValueError(
+            "Can not use multiple decorators for decorating" " the same property!!"
+        )
     if is_charge_decorated and len(decorators) == 0:
-        logging.warning("Cluster expansion is charge decorated, but"
-                        " no charge decoration method is specified."
-                        " Use default PmgGuessCharge at your risk!")
+        logging.warning(
+            "Cluster expansion is charge decorated, but"
+            " no charge decoration method is specified."
+            " Use default PmgGuessCharge at your risk!"
+        )
         decorators.append(PmgGuessChargeDecorator())
     return decorators
 
 
 def _filter_out_failed_entries(entries, entry_ids):
     """Mark failed entries as none and return successful indices."""
-    entry_ids = [eid for eid, ent in zip(entries, entry_ids)
-                 if ent is not None]
-    entries = [ent for ent in entries
-               if ent is not None]
+    entry_ids = [eid for eid, ent in zip(entries, entry_ids) if ent is not None]
+    entries = [ent for ent in entries if ent is not None]
     return entries, entry_ids
 
 
@@ -197,17 +207,22 @@ def enumerate_structures(last_ce_document):
 
     # Enumerate structures.
     logging.info("Enumerating new structures.")
-    new_structures, new_sc_matrices, new_features = \
-        _enumerate_structures(subspace, coefs, iter_id,
-                              sc_matrices, compositions,
-                              enumerated_structures,
-                              enumerated_features,
-                              options)
+    new_structures, new_sc_matrices, new_features = _enumerate_structures(
+        subspace,
+        coefs,
+        iter_id,
+        sc_matrices,
+        compositions,
+        enumerated_structures,
+        enumerated_features,
+        options,
+    )
 
-    return \
-        {"new_structures": new_structures,
-         "new_sc_matrices": new_sc_matrices,
-         "new_features": new_features}
+    return {
+        "new_structures": new_structures,
+        "new_sc_matrices": new_sc_matrices,
+        "new_features": new_features,
+    }
 
 
 @job
@@ -229,8 +244,7 @@ def calculate_structures(enum_output, last_ce_document):
     iter_id = last_ce_document.last_iter_id + 1
     struct_id = len(last_ce_document.enumerated_structures)
     options = last_ce_document.ce_options
-    relax_maker, static_maker, tight_maker \
-        = _get_vasp_makers(options)
+    relax_maker, static_maker, tight_maker = _get_vasp_makers(options)
 
     logging.info("Performing ab-initio calculations.")
     new_structures = enum_output["new_structures"]
@@ -248,20 +262,22 @@ def calculate_structures(enum_output, last_ce_document):
         jobs = list()
         jobs.append(relax_maker.make(def_structure))
         if options["add_tight_relax"]:
-            jobs.append(tight_maker.make(jobs[-1].output.structure,
-                                         prev_vasp_dir=
-                                         jobs[-1].output.dir_name))
-        jobs.append(static_maker.make(jobs[-1].output.structure,
-                                      prev_vasp_dir=
-                                      jobs[-1].output.dir_name))
+            jobs.append(
+                tight_maker.make(
+                    jobs[-1].output.structure, prev_vasp_dir=jobs[-1].output.dir_name
+                )
+            )
+        jobs.append(
+            static_maker.make(
+                jobs[-1].output.structure, prev_vasp_dir=jobs[-1].output.dir_name
+            )
+        )
         flows.append(Flow(jobs, output=jobs[-1].output, name=flow_name))
     outputs = [flow.output for flow in flows]
 
-    calc_flow = Flow(flows,
-                     output=outputs,
-                     name=project_name +
-                          f"_iter_{iter_id}" +
-                          "_calculations")
+    calc_flow = Flow(
+        flows, output=outputs, name=project_name + f"_iter_{iter_id}" + "_calculations"
+    )
     return Response(replace=calc_flow)
 
 
@@ -295,10 +311,9 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
     for doc in taskdocs:
         flow_converged = _check_flow_convergence(doc)
         if flow_converged:
-            undecorated_entry, properties \
-                = get_entry_from_taskdoc(doc,
-                                         options["other_properties"],
-                                         options["decorator_types"])
+            undecorated_entry, properties = get_entry_from_taskdoc(
+                doc, options["other_properties"], options["decorator_types"]
+            )
             undecorated_entries.append(undecorated_entry)
             computed_properties.append(properties)
         else:
@@ -306,60 +321,65 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
             undecorated_entries.append(None)
             computed_properties.append(None)
 
-    decorators = _get_decorators(options,
-                                 prim_specs["charge_decorated"])
+    decorators = _get_decorators(options, prim_specs["charge_decorated"])
     successful_entries = deepcopy(undecorated_entries)
     successful_entry_ids = list(range(len(undecorated_entries)))
-    successful_entries, successful_entry_ids \
-        = _filter_out_failed_entries(successful_entries,
-                                     successful_entry_ids)
+    successful_entries, successful_entry_ids = _filter_out_failed_entries(
+        successful_entries, successful_entry_ids
+    )
     n_calc_finished = len(successful_entries)
-    logging.info(f"{n_calc_finished}/{len(undecorated_entries)}"
-                 f" structures successfully calculated.")
+    logging.info(
+        f"{n_calc_finished}/{len(undecorated_entries)}"
+        f" structures successfully calculated."
+    )
 
     logging.info("Performing site decorations.")
     for dec, kw in zip(decorators, options["decorator_train_kwargs"]):
         dec.train(successful_entries, **kw)
         # Failed entries will be returned as None, and get filtered out.
         successful_entries = dec.decorate(successful_entries)
-        successful_entries, successful_entry_ids \
-            = _filter_out_failed_entries(successful_entries,
-                                         successful_entry_ids)
+        successful_entries, successful_entry_ids = _filter_out_failed_entries(
+            successful_entries, successful_entry_ids
+        )
 
-    successful_properties = [p for i, p
-                             in enumerate(computed_properties)
-                             if i in successful_entry_ids]
-    sc_matrices = (deepcopy(last_ce_document.enumerated_matrices)
-                   + enum_output["new_sc_matrices"])
-    successful_scmatrices = [m for i, m
-                             in enumerate(sc_matrices)
-                             if i in successful_entry_ids]
-    logging.info(f"{len(successful_entries)}/{n_calc_finished}"
-                 f" structures successfully decorated.")
+    successful_properties = [
+        p for i, p in enumerate(computed_properties) if i in successful_entry_ids
+    ]
+    sc_matrices = (
+        deepcopy(last_ce_document.enumerated_matrices) + enum_output["new_sc_matrices"]
+    )
+    successful_scmatrices = [
+        m for i, m in enumerate(sc_matrices) if i in successful_entry_ids
+    ]
+    logging.info(
+        f"{len(successful_entries)}/{n_calc_finished}"
+        f" structures successfully decorated."
+    )
 
     # Wrangler must be cleared and reloaded each time
     # because decorator parameters can change.
     logging.info("Loading data to wrangler.")
-    wrangler = CeDataWrangler(last_ce_document.data_wrangler
-                              .cluster_subspace)
-    for eid, prop, entry, mat in zip(successful_entry_ids,
-                                     successful_properties,
-                                     successful_entries,
-                                     successful_scmatrices):
+    wrangler = CeDataWrangler(last_ce_document.data_wrangler.cluster_subspace)
+    for eid, prop, entry, mat in zip(
+        successful_entry_ids,
+        successful_properties,
+        successful_entries,
+        successful_scmatrices,
+    ):
         # Save iteration index and the structure's index in
         # all enumerated structures.
         prop["spec"] = {"iter_id": iter_id, "enum_id": eid}
-        wrangler.add_entry(entry,
-                           properties=prop,
-                           supercell_matrix=mat)
-    logging.info(f"{wrangler.num_structures}/{len(successful_entries)}"
-                 f" structures successfully mapped.")
+        wrangler.add_entry(entry, properties=prop, supercell_matrix=mat)
+    logging.info(
+        f"{wrangler.num_structures}/{len(successful_entries)}"
+        f" structures successfully mapped."
+    )
 
-    return \
-        {"wrangler": wrangler,
-         "undecorated_entries": undecorated_entries,
-         "computed_properties": computed_properties
-         }
+    return {
+        "wrangler": wrangler,
+        "undecorated_entries": undecorated_entries,
+        "computed_properties": computed_properties,
+    }
 
 
 @job
@@ -376,33 +396,23 @@ def fit_calculations(parse_output, last_ce_document):
            Dictionary containing fitted CE information.
     """
     options = last_ce_document.ce_options
-    coefs, cv, cv_std, rmse, params \
-        = fit_ecis_from_wrangler(parse_output["wrangler"],
-                                 options["estimator_type"],
-                                 options["optimizer_type"],
-                                 options["param_grid"],
-                                 options["use_hierarchy"],
-                                 options["center_point_external"],
-                                 options["filter_unique_correlations"],
-                                 estimator_kwargs=
-                                 options["estimator_kwargs"],
-                                 optimizer_kwargs=
-                                 options["optimizer_kwargs"],
-                                 **options["fit_kwargs"])
-    return \
-        {"coefs": coefs,
-         "cv": cv,
-         "cv_std": cv_std,
-         "rmse": rmse,
-         "params": params
-         }
+    coefs, cv, cv_std, rmse, params = fit_ecis_from_wrangler(
+        parse_output["wrangler"],
+        options["estimator_type"],
+        options["optimizer_type"],
+        options["param_grid"],
+        options["use_hierarchy"],
+        options["center_point_external"],
+        options["filter_unique_correlations"],
+        estimator_kwargs=options["estimator_kwargs"],
+        optimizer_kwargs=options["optimizer_kwargs"],
+        **options["fit_kwargs"],
+    )
+    return {"coefs": coefs, "cv": cv, "cv_std": cv_std, "rmse": rmse, "params": params}
 
 
 @job
-def update_document(enum_output,
-                    parse_output,
-                    fit_output,
-                    last_ce_document):
+def update_document(enum_output, parse_output, fit_output, last_ce_document):
     """Update the document to current iteration.
 
     Args:
@@ -420,29 +430,23 @@ def update_document(enum_output,
     """
     ce_document = deepcopy(last_ce_document)
     ce_document.data_wrangler = parse_output["wrangler"]
-    ce_document.undecorated_entries \
-        = parse_output["undecorated_entries"]
-    ce_document.computed_properties \
-        = parse_output["computed_properties"]
+    ce_document.undecorated_entries = parse_output["undecorated_entries"]
+    ce_document.computed_properties = parse_output["computed_properties"]
     ce_document.coefs_history.append(fit_output["coefs"])
     ce_document.cv_history.append(fit_output["cv"])
     ce_document.cv_std_history.append(fit_output["cv_std"])
     ce_document.rmse_history.append(fit_output["rmse"])
     ce_document.params_history.append(fit_output["params"])
-    ce_document.enumerated_structures \
-        .extend(enum_output["new_structures"])
-    ce_document.enumerated_matrices \
-        .extend(enum_output["new_sc_matrices"])
-    ce_document.enumerated_features \
-        = np.concatenate((ce_document.enumerated_features,
-                          enum_output["new_features"]), axis=0)
+    ce_document.enumerated_structures.extend(enum_output["new_structures"])
+    ce_document.enumerated_matrices.extend(enum_output["new_sc_matrices"])
+    ce_document.enumerated_features = np.concatenate(
+        (ce_document.enumerated_features, enum_output["new_features"]), axis=0
+    )
     return ce_document
 
 
 @job
-def initialize_document(prim,
-                        project_name="ceauto-work",
-                        options=None):
+def initialize_document(prim, project_name="ceauto-work", options=None):
     """Initialize an empty cluster expansion document.
 
     In this job, a cluster subspace will be created, super-cells
@@ -474,68 +478,77 @@ def initialize_document(prim,
     sublattice_sizes = [len(sites) for sites in sublattice_sites]
     charge_decorated = prim_specs["charge_decorated"]
     nn_distance = prim_specs["nn_distance"]
-    eq_constraints, leq_constraints, geq_constraints \
-        = parse_comp_constraints(options, bits, sublattice_sizes)
+    eq_constraints, leq_constraints, geq_constraints = parse_comp_constraints(
+        options, bits, sublattice_sizes
+    )
 
     # Get the cluster subspace. Other external terms than ewald not supported yet.
-    subspace = get_cluster_subspace(prim, charge_decorated,
-                                    nn_distance=nn_distance,
-                                    cutoffs=options["cutoffs"],
-                                    use_ewald=options["use_ewald"],
-                                    ewald_kwargs=options["ewald_kwargs"],
-                                    **options["from_cutoffs_kwargs"]
-                                    )
+    subspace = get_cluster_subspace(
+        prim,
+        charge_decorated,
+        nn_distance=nn_distance,
+        cutoffs=options["cutoffs"],
+        use_ewald=options["use_ewald"],
+        ewald_kwargs=options["ewald_kwargs"],
+        **options["from_cutoffs_kwargs"],
+    )
 
     # Enumerate supercell matrices, and remove aliased orbits from subspace.
     logging.info("Enumerating super-cell matrices.")
     objective_sc_size = options["objective_num_sites"] // len(prim)
-    sc_matrices = (options["sc_matrices"] or
-                   enumerate_matrices(objective_sc_size,
-                                      subspace,
-                                      options["supercell_from_conventional"],
-                                      options["max_sc_condition_number"],
-                                      options["min_sc_angle"],
-                                      **options["spacegroup_kwargs"]
-                                      )
-                   )
+    sc_matrices = options["sc_matrices"] or enumerate_matrices(
+        objective_sc_size,
+        subspace,
+        options["supercell_from_conventional"],
+        options["max_sc_condition_number"],
+        options["min_sc_angle"],
+        **options["spacegroup_kwargs"],
+    )
 
     # Not necessarily the same as the objective size.
     sc_size = subspace.num_prims_from_matrix(sc_matrices[0])
     # Supercells must be the same size
-    if not np.allclose([subspace.num_prims_from_matrix(m) for m in sc_matrices],
-                       sc_size):
-        raise ValueError(f"Provided super-cell matrices {sc_matrices} does"
-                         f" not have the same size! This is not allowed!")
+    if not np.allclose(
+        [subspace.num_prims_from_matrix(m) for m in sc_matrices], sc_size
+    ):
+        raise ValueError(
+            f"Provided super-cell matrices {sc_matrices} does"
+            f" not have the same size! This is not allowed!"
+        )
     subspace = truncate_cluster_subspace(subspace, sc_matrices)
 
     # Enumerate compositions as "counts" format in smol.moca.CompositionSpace.
     logging.info("Enumerating valid compositions.")
-    comp_space = CompositionSpace(bits, sublattice_sizes,
-                                  charge_balanced=True,
-                                  other_constraints=eq_constraints,
-                                  geq_constraints=geq_constraints,
-                                  leq_constraints=leq_constraints,
-                                  optimize_basis=False,
-                                  table_ergodic=False
-                                  )  # Not doing table flips.
-    compositions = (np.array(options["compositions"]).astype(int) or
-                    enumerate_compositions_as_counts(sc_size,
-                                                     comp_space=comp_space,
-                                                     bits=bits,
-                                                     sublattice_sizes=
-                                                     sublattice_sizes,
-                                                     comp_enumeration_step=
-                                                     options["comp_enumeration_step"])
-                    )
+    comp_space = CompositionSpace(
+        bits,
+        sublattice_sizes,
+        charge_balanced=True,
+        other_constraints=eq_constraints,
+        geq_constraints=geq_constraints,
+        leq_constraints=leq_constraints,
+        optimize_basis=False,
+        table_ergodic=False,
+    )  # Not doing table flips.
+    compositions = np.array(options["compositions"]).astype(
+        int
+    ) or enumerate_compositions_as_counts(
+        sc_size,
+        comp_space=comp_space,
+        bits=bits,
+        sublattice_sizes=sublattice_sizes,
+        comp_enumeration_step=options["comp_enumeration_step"],
+    )
 
     # Set up the initial document.
-    init_ce_document = CeOutputsDocument(project_name=project_name,
-                                         cluster_subspace=subspace,
-                                         prim_specs=prim_specs,
-                                         data_wrangler=CeDataWrangler(subspace),
-                                         ce_options=options,
-                                         supercell_matrices=sc_matrices,
-                                         compositions=compositions)
+    init_ce_document = CeOutputsDocument(
+        project_name=project_name,
+        cluster_subspace=subspace,
+        prim_specs=prim_specs,
+        data_wrangler=CeDataWrangler(subspace),
+        ce_options=options,
+        supercell_matrices=sc_matrices,
+        compositions=compositions,
+    )
     num_features = len(subspace.external_terms) + subspace.num_corr_functions
     init_ce_document.enumerated_features = np.array([]).reshape((0, num_features))
 

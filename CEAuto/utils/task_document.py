@@ -7,8 +7,7 @@ be extracted.
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 
 from .query import get_property_from_object
-from ..specie_decorators.base import \
-    get_site_property_query_names_from_decorator
+from ..specie_decorators.base import get_site_property_query_names_from_decorator
 
 
 def _merge_computed_structure_entry(entry, structure):
@@ -22,19 +21,19 @@ def _merge_computed_structure_entry(entry, structure):
     Return:
         ComputedStuctureEntry.
     """
-    return ComputedStructureEntry(structure,
-                                  entry.uncorrected_energy,  # Use uncorrected to init.
-                                  entry.correction,
-                                  entry.composition,
-                                  entry.energy_adjustments,
-                                  entry.parameters,
-                                  entry.data,
-                                  entry.entry_id)
+    return ComputedStructureEntry(
+        structure,
+        entry.uncorrected_energy,  # Use uncorrected to init.
+        entry.correction,
+        entry.composition,
+        entry.energy_adjustments,
+        entry.parameters,
+        entry.data,
+        entry.entry_id,
+    )
 
 
-def get_entry_from_taskdoc(taskdoc,
-                           property_and_queries=None,
-                           decorator_names=None):
+def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=None):
     """Get the computed structure entry from taskdoc.
 
     Args:
@@ -70,14 +69,15 @@ def get_entry_from_taskdoc(taskdoc,
             elif isinstance(p, str):
                 prop_dict[p] = get_property_from_object(taskdoc, p)
             else:
-                raise ValueError(f"Property names and their query strings"
-                                 f" must either be in tuples or be in"
-                                 f" strings!")
+                raise ValueError(
+                    f"Property names and their query strings"
+                    f" must either be in tuples or be in"
+                    f" strings!"
+                )
     site_props = {}
     if decorator_names is not None:
         for d in decorator_names:
-            site_property_query_names =\
-                get_site_property_query_names_from_decorator(d)
+            site_property_query_names = get_site_property_query_names_from_decorator(d)
             for sp, query in site_property_query_names:
                 # Total magnetization on each site is already read and added to structure
                 # by atomate2. It should be overwritten.
@@ -85,5 +85,4 @@ def get_entry_from_taskdoc(taskdoc,
                     site_props[sp] = get_property_from_object(taskdoc, query)
     for sp, prop in site_props.items():
         structure.add_site_property(sp, prop)
-    return (_merge_computed_structure_entry(computed_entry, structure),
-            prop_dict)
+    return (_merge_computed_structure_entry(computed_entry, structure), prop_dict)

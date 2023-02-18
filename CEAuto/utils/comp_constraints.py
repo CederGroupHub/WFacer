@@ -28,6 +28,7 @@ def parse_species_constraints(d, bits, sl_sizes):
     Return:
         list, list: constraints in CompSpace readable format.
     """
+
     def recursive_parse(inp):
         p = {}  # Saved keys must not be objects.
         if isinstance(inp, (list, tuple)):
@@ -36,19 +37,25 @@ def parse_species_constraints(d, bits, sl_sizes):
             for key, val in inp.items():
                 if isinstance(val, (list, tuple)):
                     if len(val) != 2:
-                        raise ValueError("Species concentration constraints provided "
-                                         "as tuple, but length of tuple is not 2.")
+                        raise ValueError(
+                            "Species concentration constraints provided "
+                            "as tuple, but length of tuple is not 2."
+                        )
                     if val[1] < val[0]:
-                        raise ValueError("Species concentration constraints provided "
-                                         "as tuple, but lower bound > upper bound.")
+                        raise ValueError(
+                            "Species concentration constraints provided "
+                            "as tuple, but lower bound > upper bound."
+                        )
                     if val[1] < 0 or val[1] > 1 or val[0] < 0 or val[0] > 1:
-                        raise ValueError("Provided species concentration limit must "
-                                         "be in [0, 1]!")
+                        raise ValueError(
+                            "Provided species concentration limit must " "be in [0, 1]!"
+                        )
                     p[get_species(key)] = tuple(val)
                 else:
                     if val < 0 or val > 1:
-                        raise ValueError("Provided species concentration limit must "
-                                         "be in [0, 1]!")
+                        raise ValueError(
+                            "Provided species concentration limit must " "be in [0, 1]!"
+                        )
                     p[get_species(key)] = (0, val)
         return p
 
@@ -58,8 +65,9 @@ def parse_species_constraints(d, bits, sl_sizes):
     constraints_leq = []
     constraints_geq = []
     if isinstance(parsed, list):
-        for sub_parsed, sub_bits, sub_dim_ids, sl_size\
-                in zip(parsed, bits, dim_ids, sl_sizes):
+        for sub_parsed, sub_bits, sub_dim_ids, sl_size in zip(
+            parsed, bits, dim_ids, sl_sizes
+        ):
             for sp in sub_parsed:
                 dim_id = sub_dim_ids[sub_bits.index(sp)]
                 con = [0 for _ in range(n_dims)]
@@ -116,6 +124,7 @@ def parse_generic_constraint(d_left, right, bits):
         tuple(list, int):
            The parsed constraint in CompSpace format.
     """
+
     def recursive_parse(inp):
         p = {}  # Saved keys must not be objects.
         if isinstance(inp, (list, tuple)):
@@ -131,8 +140,7 @@ def parse_generic_constraint(d_left, right, bits):
     n_dims = sum([len(sub_bits) for sub_bits in bits])
     con = [0 for _ in range(n_dims)]
     if isinstance(parsed, list):
-        for sub_parsed, sub_bits, sub_dim_ids\
-                in zip(parsed, bits, dim_ids):
+        for sub_parsed, sub_bits, sub_dim_ids in zip(parsed, bits, dim_ids):
             for sp in sub_parsed:
                 dim_id = sub_dim_ids[sub_bits.index(sp)]
                 con[dim_id] = sub_parsed[sp]

@@ -18,6 +18,7 @@ def clean_up_decoration(s):
         Structure:
             The cleaned up structure containing only Element.
     """
+
     def get_element(p):
         if isinstance(p, Species):
             return p.element
@@ -26,8 +27,9 @@ def clean_up_decoration(s):
         elif isinstance(p, DummySpecies):
             return DummySpecies(p.symbol)
         else:
-            raise ValueError(f"Instance {p} must be a Species,"
-                             f" Element or DummySpecies!")
+            raise ValueError(
+                f"Instance {p} must be a Species," f" Element or DummySpecies!"
+            )
 
     elements = []
     frac_coords = []
@@ -58,8 +60,7 @@ def is_duplicate(s1, s2, remove_decorations=False, matcher=None):
     Returns:
         bool
     """
-    matcher = (matcher or
-               StructureMatcher())
+    matcher = matcher or StructureMatcher()
     # Must attempt primitive cell, and should not skip reduction,
     # otherwise elemental structures with different supercell will
     # not be considered as the same!
@@ -102,8 +103,7 @@ def is_corr_duplicate(s1, proc1, s2=None, proc2=None, features2=None):
     features1 = proc1.compute_feature_vector(occu1) / proc1.size
 
     if (s2 is None or proc2 is None) and features2 is None:
-        raise ValueError("Must either give both s2 and proc2,"
-                         " or give feature2.")
+        raise ValueError("Must either give both s2 and proc2," " or give feature2.")
     if features2 is None:
         occu2 = proc2.occupancy_from_structure(s2)
         features2 = proc2.compute_feature_vector(occu2) / proc2.size

@@ -29,22 +29,24 @@ def query_keypath(obj, keypath):
     if isinstance(obj, (list, tuple)):
         # List needs to be pre-processed.
         if "-" not in k and not k.startswith("^"):
-            log.warning(f"Object {obj} is a list, but the exact index"
-                        f" of the member to refer to is not specified with"
-                        f" id-. Will query the first member in the list.")
+            log.warning(
+                f"Object {obj} is a list, but the exact index"
+                f" of the member to refer to is not specified with"
+                f" id-. Will query the first member in the list."
+            )
             return query_keypath(obj[0], keypath)
         elif "-" in k:
             if len(k.split("-")) != 2:
-                raise ValueError(f"Each level of keypath cannot have more than"
-                                 f" one dash -!")
+                raise ValueError(
+                    f"Each level of keypath cannot have more than" f" one dash -!"
+                )
             ind = int(k.split("-")[0])
             new_k = k.split("-")[1]
             return query_keypath(obj[ind], [new_k] + keypath[1:])
         # Return the corresponding property or all memebers as a list.
         elif k.startswith("^"):
             new_k = k[1:]
-            return [query_keypath(sub, [new_k] + keypath[1:])
-                    for sub in obj]
+            return [query_keypath(sub, [new_k] + keypath[1:]) for sub in obj]
     elif isinstance(obj, set):
         return query_keypath(random.choice(list(obj)), keypath)
 
@@ -59,8 +61,7 @@ def query_keypath(obj, keypath):
     else:
         if hasattr(obj, k):
             return query_keypath(getattr(obj, k), keypath[1:])
-        raise ValueError(f"Object {obj} does not have attribute"
-                         f" {k}")
+        raise ValueError(f"Object {obj} does not have attribute" f" {k}")
 
 
 def query_name_iteratively(obj, name):
@@ -79,8 +80,7 @@ def query_name_iteratively(obj, name):
         if name in obj:
             return obj[name]
         else:
-            queries = [query_name_iteratively(v, name)
-                       for v in obj.values()]
+            queries = [query_name_iteratively(v, name) for v in obj.values()]
             # Return the first result that is not None.
             for query in queries:
                 if query is not None:
@@ -90,8 +90,9 @@ def query_name_iteratively(obj, name):
         if name in obj.__fields__:
             return getattr(obj, name)
         else:
-            queries = [query_name_iteratively(getattr(obj, f), name)
-                       for f in obj.__fields__]
+            queries = [
+                query_name_iteratively(getattr(obj, f), name) for f in obj.__fields__
+            ]
             for query in queries:
                 if query is not None:
                     return query
@@ -169,7 +170,8 @@ def get_property_from_object(obj, query_string):
         queried = query_name_iteratively(obj, query[0])
 
     if queried is None:
-        raise ValueError(f"Cannot find query string {query_string}"
-                         f" in the task document!")
+        raise ValueError(
+            f"Cannot find query string {query_string}" f" in the task document!"
+        )
 
     return queried

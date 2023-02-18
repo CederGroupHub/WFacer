@@ -25,17 +25,21 @@ class McSampleGenerator(metaclass=ABCMeta):
     Each Generator should only handle one composition (canonical) or one set of
     chemical potentials (grand-canonical)!
     """
-    default_anneal_temp_series = [5000, 3200, 1600, 1000,
-                                  800, 600, 400, 200, 100]
+
+    default_anneal_temp_series = [5000, 3200, 1600, 1000, 800, 600, 400, 200, 100]
     default_heat_temp_series = [500, 1500, 5000]
 
-    def __init__(self, ce, sc_matrix,
-                 anneal_temp_series=None,
-                 heat_temp_series=None,
-                 num_steps_anneal=None,
-                 num_steps_heat=None,
-                 duplicacy_criteria="correlations",
-                 remove_decorations_before_duplicacy=False):
+    def __init__(
+        self,
+        ce,
+        sc_matrix,
+        anneal_temp_series=None,
+        heat_temp_series=None,
+        num_steps_anneal=None,
+        num_steps_heat=None,
+        duplicacy_criteria="correlations",
+        remove_decorations_before_duplicacy=False,
+    ):
         """Initialize McSampleGenerator.
 
         Args:
@@ -73,10 +77,8 @@ class McSampleGenerator(metaclass=ABCMeta):
         self.sc_size = int(round(abs(np.linalg.det(sc_matrix))))
         self.prim = self.ce.cluster_subspace.structure
 
-        self.anneal_temp_series = (anneal_temp_series
-                                   or self.default_anneal_temp_series)
-        self.heat_temp_series = (heat_temp_series
-                                 or self.default_heat_temp_series)
+        self.anneal_temp_series = anneal_temp_series or self.default_anneal_temp_series
+        self.heat_temp_series = heat_temp_series or self.default_heat_temp_series
         self._num_steps_anneal = num_steps_anneal
         self._num_steps_heat = num_steps_heat
         self.duplicacy_criteria = duplicacy_criteria
@@ -115,8 +117,12 @@ class McSampleGenerator(metaclass=ABCMeta):
     @property
     def n_steps_per_scan(self):
         """Least number of steps required to span configurations."""
-        return np.sum([len(sublatt.encoding) * len(sublatt.active_sites)
-                       for sublatt in self.sublattices])
+        return np.sum(
+            [
+                len(sublatt.encoding) * len(sublatt.active_sites)
+                for sublatt in self.sublattices
+            ]
+        )
 
     @property
     def num_steps_anneal(self):
@@ -148,15 +154,18 @@ class McSampleGenerator(metaclass=ABCMeta):
         if self._gs_occu is None:
             init_occu = self._get_init_occu()
 
-            self.sampler.anneal(self.anneal_temp_series, self.num_steps_anneal,
-                                initial_occupancies=
-                                np.array([init_occu], dtype=int))
+            self.sampler.anneal(
+                self.anneal_temp_series,
+                self.num_steps_anneal,
+                initial_occupancies=np.array([init_occu], dtype=int),
+            )
 
             # Save updates.
-            self._gs_occu = (self.sampler.samples
-                             .get_minimum_enthalpy_occupancy()
-                             .astype(int)
-                             .tolist())
+            self._gs_occu = (
+                self.sampler.samples.get_minimum_enthalpy_occupancy()
+                .astype(int)
+                .tolist()
+            )
             self.sampler.samples.clear()  # Free-up mem.
 
         return self._gs_occu
@@ -167,8 +176,9 @@ class McSampleGenerator(metaclass=ABCMeta):
         Returns:
             Structure.
         """
-        return self.processor \
-            .structure_from_occupancy(self.get_ground_state_occupancy())
+        return self.processor.structure_from_occupancy(
+            self.get_ground_state_occupancy()
+        )
 
     def get_ground_state_features(self):
         """Get the feature vector of the ground state.
@@ -177,13 +187,17 @@ class McSampleGenerator(metaclass=ABCMeta):
             list[float].
         """
         gs_occu = self.get_ground_state_occupancy()
-        return (self.processor.compute_feature_vector(np.array(gs_occu))
-                / self.processor.size).tolist()
+        return (
+            self.processor.compute_feature_vector(np.array(gs_occu))
+            / self.processor.size
+        ).tolist()
 
-    def get_unfrozen_sample(self,
-                            previous_sampled_structures=None,
-                            previous_sampled_features=None,
-                            num_samples=100):
+    def get_unfrozen_sample(
+        self,
+        previous_sampled_structures=None,
+        previous_sampled_features=None,
+        num_samples=100,
+    ):
         """Generate a sample of structures by heating the ground state.
 
         Args:
@@ -208,12 +222,13 @@ class McSampleGenerator(metaclass=ABCMeta):
         previous_sampled_structures = previous_sampled_structures or []
         previous_sampled_features = previous_sampled_features or []
         if len(previous_sampled_features) != len(previous_sampled_structures):
-            raise ValueError("Must provide a feature vector for each"
-                             " structure passed in!")
+            raise ValueError(
+                "Must provide a feature vector for each" " structure passed in!"
+            )
 
-        thin_by = max(1,
-                      len(self.heat_temp_series) * self.num_steps_heat
-                      // (num_samples * 5))
+        thin_by = max(
+            1, len(self.heat_temp_series) * self.num_steps_heat // (num_samples * 5)
+        )
         # Thin so we don't have to de-duplicate too many structures.
         # Here we leave out 10 * num_samples to compare.
 
@@ -231,44 +246,58 @@ class McSampleGenerator(metaclass=ABCMeta):
             self.sampler.mckernels[0].temperature = T
 
             # Equilibrate and sampling.
-            self.sampler.run(2 * self.num_steps_heat,
-                             initial_occupancies=
-                             np.array([init_occu], dtype=int),
-                             thin_by=thin_by)
+            self.sampler.run(
+                2 * self.num_steps_heat,
+                initial_occupancies=np.array([init_occu], dtype=int),
+                thin_by=thin_by,
+            )
             init_occu = self.sampler.samples.get_occupancies()[-1].astype(int)
             n_samples = self.sampler.samples.num_samples
             # Take the last half as equlibrated, only.
-            rand_occus.extend(self.sampler.samples
-                              .get_occupancies(discard=n_samples // 2)
-                              .astype(int)
-                              .tolist())
+            rand_occus.extend(
+                self.sampler.samples.get_occupancies(discard=n_samples // 2)
+                .astype(int)
+                .tolist()
+            )
 
         # Symmetry deduplication
-        rand_strs = [self.processor.structure_from_occupancy(occu)
-                     for occu in rand_occus]
-        rand_feats = [(self.processor.compute_feature_vector(np.array(occu))
-                       / self.processor.size).tolist()
-                      for occu in rand_occus]
+        rand_strs = [
+            self.processor.structure_from_occupancy(occu) for occu in rand_occus
+        ]
+        rand_feats = [
+            (
+                self.processor.compute_feature_vector(np.array(occu))
+                / self.processor.size
+            ).tolist()
+            for occu in rand_occus
+        ]
         new_ids = []
         for new_id, new_str in enumerate(rand_strs):
             dupe = False
-            old_strs = (previous_sampled_structures + [gs_str] +
-                        [rand_strs[ii] for ii in new_ids])
-            old_feats = (previous_sampled_features + [gs_feature] +
-                         [rand_feats[ii] for ii in new_ids])
-            for old_id, (old_str, old_feat) in enumerate(zip(old_strs,
-                                                             old_feats)):
+            old_strs = (
+                previous_sampled_structures
+                + [gs_str]
+                + [rand_strs[ii] for ii in new_ids]
+            )
+            old_feats = (
+                previous_sampled_features
+                + [gs_feature]
+                + [rand_feats[ii] for ii in new_ids]
+            )
+            for old_id, (old_str, old_feat) in enumerate(zip(old_strs, old_feats)):
                 # Must remove decorations to avoid getting fully duplicate inputs.
                 if self.duplicacy_criteria == "correlations":
-                    dupe = is_corr_duplicate(new_str, self.processor,
-                                             features2=old_feat)
+                    dupe = is_corr_duplicate(
+                        new_str, self.processor, features2=old_feat
+                    )
                 elif self.duplicacy_criteria == "structure":
-                    dupe = is_duplicate(old_str, new_str,
-                                        remove_decorations=
-                                        self.remove_decorations)
+                    dupe = is_duplicate(
+                        old_str, new_str, remove_decorations=self.remove_decorations
+                    )
                 else:
-                    raise ValueError(f"{self.duplicacy_criteria} comparison not"
-                                     f" supported!")
+                    raise ValueError(
+                        f"{self.duplicacy_criteria} comparison not" f" supported!"
+                    )
                 if dupe:
                     break
             if not dupe:
@@ -277,21 +306,28 @@ class McSampleGenerator(metaclass=ABCMeta):
             if len(new_ids) == num_samples:
                 break
 
-        return ([rand_strs[i] for i in new_ids],
-                [rand_occus[i] for i in new_ids],
-                [rand_feats[i] for i in new_ids])
+        return (
+            [rand_strs[i] for i in new_ids],
+            [rand_occus[i] for i in new_ids],
+            [rand_feats[i] for i in new_ids],
+        )
 
 
 class CanonicalSampleGenerator(McSampleGenerator):
     """Sample generator in canonical ensemble."""
 
-    def __init__(self, ce, sc_matrix, counts,
-                 anneal_temp_series=None,
-                 heat_temp_series=None,
-                 num_steps_anneal=None,
-                 num_steps_heat=None,
-                 duplicacy_criteria="correlations",
-                 remove_decorations_before_duplicacy=False):
+    def __init__(
+        self,
+        ce,
+        sc_matrix,
+        counts,
+        anneal_temp_series=None,
+        heat_temp_series=None,
+        num_steps_anneal=None,
+        num_steps_heat=None,
+        duplicacy_criteria="correlations",
+        remove_decorations_before_duplicacy=False,
+    ):
         """Initialize.
 
         Args:
@@ -328,15 +364,16 @@ class CanonicalSampleGenerator(McSampleGenerator):
                 charge and other properties) before comparing duplicacy.
                 Default to false. Only valid when duplicacy_criteria="structure".
         """
-        super(CanonicalSampleGenerator, self) \
-            .__init__(ce, sc_matrix,
-                      anneal_temp_series=anneal_temp_series,
-                      heat_temp_series=heat_temp_series,
-                      num_steps_anneal=num_steps_anneal,
-                      num_steps_heat=num_steps_heat,
-                      duplicacy_criteria=duplicacy_criteria,
-                      remove_decorations_before_duplicacy=
-                      remove_decorations_before_duplicacy)
+        super(CanonicalSampleGenerator, self).__init__(
+            ce,
+            sc_matrix,
+            anneal_temp_series=anneal_temp_series,
+            heat_temp_series=heat_temp_series,
+            num_steps_anneal=num_steps_anneal,
+            num_steps_heat=num_steps_heat,
+            duplicacy_criteria=duplicacy_criteria,
+            remove_decorations_before_duplicacy=remove_decorations_before_duplicacy,
+        )
 
         self.counts = np.round(counts).astype(int)
 
@@ -345,9 +382,9 @@ class CanonicalSampleGenerator(McSampleGenerator):
         """CanonicalEnsemble."""
         # Must use "expansion" as the processor type to give correlation vectors.
         if self._ensemble is None:
-            self._ensemble = (Ensemble.
-                              from_cluster_expansion(self.ce, self.sc_matrix,
-                                                     processor_type="expansion"))
+            self._ensemble = Ensemble.from_cluster_expansion(
+                self.ce, self.sc_matrix, processor_type="expansion"
+            )
         return self._ensemble
 
     @property
@@ -355,10 +392,9 @@ class CanonicalSampleGenerator(McSampleGenerator):
         """A sampler to sample structures."""
         if self._sampler is None:
             # Check if charge balance is needed.
-            self._sampler = Sampler.from_ensemble(self.ensemble,
-                                                  temperature
-                                                  =self.anneal_temp_series[0],
-                                                  nwalkers=1)
+            self._sampler = Sampler.from_ensemble(
+                self.ensemble, temperature=self.anneal_temp_series[0], nwalkers=1
+            )
         return self._sampler
 
     def _get_init_occu(self):
@@ -370,14 +406,18 @@ class CanonicalSampleGenerator(McSampleGenerator):
 class SemigrandSampleGenerator(McSampleGenerator):
     """Sample generator in canonical ensemble."""
 
-    def __init__(self, ce, sc_matrix,
-                 chemical_potentials,
-                 anneal_temp_series=None,
-                 heat_temp_series=None,
-                 num_steps_anneal=None,
-                 num_steps_heat=None,
-                 duplicacy_criteria="correlations",
-                 remove_decorations_before_duplicacy=False):
+    def __init__(
+        self,
+        ce,
+        sc_matrix,
+        chemical_potentials,
+        anneal_temp_series=None,
+        heat_temp_series=None,
+        num_steps_anneal=None,
+        num_steps_heat=None,
+        duplicacy_criteria="correlations",
+        remove_decorations_before_duplicacy=False,
+    ):
         """Initialize.
 
         Args:
@@ -413,15 +453,16 @@ class SemigrandSampleGenerator(McSampleGenerator):
                 charge and other properties) before comparing duplicacy.
                 Default to false. Only valid when duplicacy_criteria="structure".
         """
-        super(SemigrandSampleGenerator, self) \
-            .__init__(ce, sc_matrix,
-                      anneal_temp_series=anneal_temp_series,
-                      heat_temp_series=heat_temp_series,
-                      num_steps_anneal=num_steps_anneal,
-                      num_steps_heat=num_steps_heat,
-                      duplicacy_criteria=duplicacy_criteria,
-                      remove_decorations_before_duplicacy=
-                      remove_decorations_before_duplicacy)
+        super(SemigrandSampleGenerator, self).__init__(
+            ce,
+            sc_matrix,
+            anneal_temp_series=anneal_temp_series,
+            heat_temp_series=heat_temp_series,
+            num_steps_anneal=num_steps_anneal,
+            num_steps_heat=num_steps_heat,
+            duplicacy_criteria=duplicacy_criteria,
+            remove_decorations_before_duplicacy=remove_decorations_before_duplicacy,
+        )
 
         self.chemical_potentials = chemical_potentials
 
@@ -429,12 +470,12 @@ class SemigrandSampleGenerator(McSampleGenerator):
     def ensemble(self):
         """CanonicalEnsemble."""
         if self._ensemble is None:
-            self._ensemble = (Ensemble.
-                              from_cluster_expansion(self.ce,
-                                                     self.sc_matrix,
-                                                     chemical_potentials=
-                                                     self.chemical_potentials,
-                                                     processor_type="expansion"))
+            self._ensemble = Ensemble.from_cluster_expansion(
+                self.ce,
+                self.sc_matrix,
+                chemical_potentials=self.chemical_potentials,
+                processor_type="expansion",
+            )
         return self._ensemble
 
     @property
@@ -445,19 +486,19 @@ class SemigrandSampleGenerator(McSampleGenerator):
             bits = [sl.species for sl in self.sublattices]
             charge_decorated = False
             for sp in itertools.chain(*bits):
-                if (not isinstance(sp, (Vacancy, Element)) and
-                        sp.oxi_state != 0):
+                if not isinstance(sp, (Vacancy, Element)) and sp.oxi_state != 0:
                     charge_decorated = True
                     break
             if charge_decorated:
                 step_type = "table-flip"
             else:
                 step_type = "flip"
-            self._sampler = Sampler.from_ensemble(self.ensemble,
-                                                  temperature
-                                                  =self.anneal_temp_series[0],
-                                                  step_type=step_type,
-                                                  nwalkers=1)
+            self._sampler = Sampler.from_ensemble(
+                self.ensemble,
+                temperature=self.anneal_temp_series[0],
+                step_type=step_type,
+                nwalkers=1,
+            )
         return self._sampler
 
     def _get_init_occu(self):
@@ -467,12 +508,12 @@ class SemigrandSampleGenerator(McSampleGenerator):
         supercell_size = np.gcd.reduce(sublattice_sizes)
         sublattice_sizes = sublattice_sizes / supercell_size
         comp_space = CompositionSpace(bits, sublattice_sizes)
-        center_coords = comp_space.get_centroid_composition(supercell_size=
-                                                            supercell_size)
-        center_counts = comp_space.translate_format(center_coords,
-                                                    supercell_size,
-                                                    from_format="coordinates",
-                                                    to_format="counts")
+        center_coords = comp_space.get_centroid_composition(
+            supercell_size=supercell_size
+        )
+        center_counts = comp_space.translate_format(
+            center_coords, supercell_size, from_format="coordinates", to_format="counts"
+        )
         return get_random_occupancy_from_counts(self.ensemble, center_counts)
 
 
@@ -485,8 +526,10 @@ def mcgenerator_factory(mcgenerator_name, *args, **kwargs):
         *args, **kwargs:
             Arguments used to intialize the class.
     """
-    if ("sample-generator" not in mcgenerator_name
-            and "SampleGenerator" not in mcgenerator_name):
+    if (
+        "sample-generator" not in mcgenerator_name
+        and "SampleGenerator" not in mcgenerator_name
+    ):
         mcgenerator_name += "-sample-generator"
     name = class_name_from_str(mcgenerator_name)
     return derived_class_factory(name, McSampleGenerator, *args, **kwargs)
