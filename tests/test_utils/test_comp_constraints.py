@@ -5,9 +5,10 @@ import numpy as np
 import numpy.testing as npt
 
 from smol.moca.composition import get_dim_ids_by_sublattice
-from CEAuto.utils.comp_constraints\
-    import (parse_species_constraints,
-            parse_generic_constraint)
+from CEAuto.utils.comp_constraints import (
+    parse_species_constraints,
+    parse_generic_constraint,
+)
 
 from tests.utils import assert_array_permuted_equal
 
@@ -30,8 +31,7 @@ def _assert_single_species_d(d, bits, sl_sizes):
     geqs_expected = []
     n_dims = len(list(chain(*bits)))
     for sp in d:
-        dim_ids_sp, sl_ids_sp \
-            = _get_dim_sl_ids_from_specie(bits, sp)
+        dim_ids_sp, sl_ids_sp = _get_dim_sl_ids_from_specie(bits, sp)
         leq_l = np.zeros(n_dims)
         geq_l = np.zeros(n_dims)
         leq_l[dim_ids_sp] = 1
@@ -45,12 +45,9 @@ def _assert_single_species_d(d, bits, sl_sizes):
         leqs_expected.append(np.append(leq_l, leq_r))
         geqs_expected.append(np.append(geq_l, geq_r))
 
-    leqs_gen, geqs_gen = \
-        parse_species_constraints(d, bits, sl_sizes)
-    leqs = [np.append(leq_gl, leq_gr)
-            for leq_gl, leq_gr in leqs_gen]
-    geqs = [np.append(geq_gl, geq_gr)
-            for geq_gl, geq_gr in geqs_gen]
+    leqs_gen, geqs_gen = parse_species_constraints(d, bits, sl_sizes)
+    leqs = [np.append(leq_gl, leq_gr) for leq_gl, leq_gr in leqs_gen]
+    geqs = [np.append(geq_gl, geq_gr) for geq_gl, geq_gr in geqs_gen]
 
     assert_array_permuted_equal(leqs, leqs_expected)
     assert_array_permuted_equal(geqs, geqs_expected)
@@ -76,12 +73,9 @@ def _assert_list_species_d(ds, bits, sl_sizes):
                 leq_r = sl_size * d[bit]
             leqs_expected.append(np.append(leq_l, leq_r))
             geqs_expected.append(np.append(geq_l, geq_r))
-    leqs_gen, geqs_gen = \
-        parse_species_constraints(ds, bits, sl_sizes)
-    leqs = [np.append(leq_gl, leq_gr)
-            for leq_gl, leq_gr in leqs_gen]
-    geqs = [np.append(geq_gl, geq_gr)
-            for geq_gl, geq_gr in geqs_gen]
+    leqs_gen, geqs_gen = parse_species_constraints(ds, bits, sl_sizes)
+    leqs = [np.append(leq_gl, leq_gr) for leq_gl, leq_gr in leqs_gen]
+    geqs = [np.append(geq_gl, geq_gr) for geq_gl, geq_gr in geqs_gen]
 
     assert_array_permuted_equal(leqs, leqs_expected)
     assert_array_permuted_equal(geqs, geqs_expected)
@@ -92,30 +86,34 @@ def test_species_constraints(specs):
     species = set(list(chain(*bits)))
     sl_sizes = np.array([len(s) for s in specs["sublattice_sites"]])
     for _ in range(5):
-        d = {sp: (random.uniform(0, 0.2), random.uniform(0.6, 0.8))
-             for sp in species}
+        d = {sp: (random.uniform(0, 0.2), random.uniform(0.6, 0.8)) for sp in species}
         _assert_single_species_d(d, bits, sl_sizes)
     for _ in range(5):
-        d = {sp: random.uniform(0.3, 0.6)
-             for sp in species}
+        d = {sp: random.uniform(0.3, 0.6) for sp in species}
         _assert_single_species_d(d, bits, sl_sizes)
     for _ in range(5):
         # Half of random species are not constrained.
-        random_missing_sps = random.sample(species,
-                                           len(species) // 2)
-        ds = [{bit: (random.uniform(0, 0.2), random.uniform(0.6, 0.8))
-               for bit in sl_bits
-               if bit not in random_missing_sps
-               } for sl_bits in bits]
+        random_missing_sps = random.sample(species, len(species) // 2)
+        ds = [
+            {
+                bit: (random.uniform(0, 0.2), random.uniform(0.6, 0.8))
+                for bit in sl_bits
+                if bit not in random_missing_sps
+            }
+            for sl_bits in bits
+        ]
         _assert_list_species_d(ds, bits, sl_sizes)
     for _ in range(5):
         # Half of random species are not constrained.
-        random_missing_sps = random.sample(species,
-                                           len(species) // 2)
-        ds = [{bit: random.uniform(0.3, 0.8)
-               for bit in sl_bits
-               if bit not in random_missing_sps
-               } for sl_bits in bits]
+        random_missing_sps = random.sample(species, len(species) // 2)
+        ds = [
+            {
+                bit: random.uniform(0.3, 0.8)
+                for bit in sl_bits
+                if bit not in random_missing_sps
+            }
+            for sl_bits in bits
+        ]
         _assert_list_species_d(ds, bits, sl_sizes)
 
 
@@ -124,8 +122,7 @@ def _assert_single_generic_d(d, bits, right):
     n_dims = len(list(chain(*bits)))
     con_expected = np.zeros(n_dims)
     for sp in d:
-        dim_ids_sp, sl_ids_sp \
-            = _get_dim_sl_ids_from_specie(bits, sp)
+        dim_ids_sp, sl_ids_sp = _get_dim_sl_ids_from_specie(bits, sp)
         con_expected[dim_ids_sp] = d[sp]
     npt.assert_array_almost_equal(con, con_expected)
 
@@ -151,14 +148,13 @@ def test_generic_constraints(specs):
         _assert_single_generic_d(d, bits, sl_sizes)
     for _ in range(5):
         # Half of random species are not constrained.
-        random_missing_sps = random.sample(species,
-                                           len(species) // 2)
-        ds = [{bit: random.randint(0, 10)
-               for bit in sl_bits
-               if bit not in random_missing_sps
-               } for sl_bits in bits]
+        random_missing_sps = random.sample(species, len(species) // 2)
+        ds = [
+            {
+                bit: random.randint(0, 10)
+                for bit in sl_bits
+                if bit not in random_missing_sps
+            }
+            for sl_bits in bits
+        ]
         _assert_list_generic_d(ds, bits, sl_sizes)
-
-
-
-

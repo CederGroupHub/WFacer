@@ -1,5 +1,5 @@
 """Utility functions to manage sparselm estimators."""
-import logging
+from warnings import warn
 
 import numpy as np
 
@@ -8,8 +8,6 @@ from smol.utils import class_name_from_str
 import sparselm
 from sparselm.model import __all__ as all_estimator_names
 from sparselm.model import Lasso, OverlapGroupLasso, StepwiseEstimator
-
-log = logging.getLogger(__name__)
 
 
 def is_subclass(classname, parent_classname):
@@ -125,7 +123,7 @@ def prepare_estimator(
     is_group = is_subclass(est_class_name, "GroupLasso")
     # sparse_bound would also be needed.
     is_subset = is_subclass(est_class_name, "BestSubsetSelection")
-    is_ols = (est_class_name == "OrdinaryLeastSquares")
+    is_ols = est_class_name == "OrdinaryLeastSquares"
 
     if is_l0 or is_group:
         if cluster_subspace.basis_type == "indicator":
@@ -185,7 +183,7 @@ def prepare_estimator(
 
         if is_subset and "sparse_bound" not in estimator_kwargs:
             default_sparse_bound = int(round(0.6 * len(groups)))
-            log.warning(
+            warn(
                 f"Estimator class {est_class_name} is a subclass of"
                 f" BestSubsetSelection, but argument sparse_bound is"
                 f" not specified. Setting to 60% of all available"

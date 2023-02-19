@@ -3,20 +3,21 @@ import numpy as np
 import pytest
 import numpy.testing as npt
 
-from CEAuto.utils.query import (query_keypath,
-                                query_name_iteratively,
-                                get_property_from_object)
+from CEAuto.utils.query import (
+    query_keypath,
+    query_name_iteratively,
+    get_property_from_object,
+)
 
 
 def test_query(single_taskdoc):
-    d_test = {"students":
-                  [{"name": None,
-                    "age": 114514},
-                   {"name": "luis",
-                    "age": 27},
-                   {"name": "whatever",
-                    "age": 1919810,
-                    "test_set": {"a", "major", "failure"}}]}
+    d_test = {
+        "students": [
+            {"name": None, "age": 114514},
+            {"name": "luis", "age": 27},
+            {"name": "whatever", "age": 1919810, "test_set": {"a", "major", "failure"}},
+        ]
+    }
     assert d_test["students"] == query_keypath(d_test, ["students"])
     assert query_keypath(d_test, "students.name".split(".")) is None
     assert query_keypath(d_test, "students.age".split(".")) == 114514
@@ -32,20 +33,19 @@ def test_query(single_taskdoc):
         _ = query_keypath(d_test, "students.test_set".split("."))
     with pytest.raises(ValueError):
         _ = query_keypath(single_taskdoc, ["whatever"])
-    assert isinstance(query_keypath(single_taskdoc,
-                                    "calcs_reversed.0-output.outcar"
-                                    .split(".")),
-                      dict)
-    d_mags = query_keypath(single_taskdoc,
-                           "calcs_reversed.0-output.outcar.magnetization"
-                           .split("."))
+    assert isinstance(
+        query_keypath(single_taskdoc, "calcs_reversed.0-output.outcar".split(".")), dict
+    )
+    d_mags = query_keypath(
+        single_taskdoc, "calcs_reversed.0-output.outcar.magnetization".split(".")
+    )
     assert d_mags is not None
     assert isinstance(d_mags, list)
     assert isinstance(d_mags[0], dict)
     assert "tot" in d_mags[0]
-    mags = query_keypath(single_taskdoc,
-                         "calcs_reversed.0-output.outcar.magnetization.^tot"
-                         .split("."))
+    mags = query_keypath(
+        single_taskdoc, "calcs_reversed.0-output.outcar.magnetization.^tot".split(".")
+    )
     assert isinstance(mags, list)
     assert not isinstance(mags[0], dict)
     npt.assert_array_almost_equal([d["tot"] for d in d_mags], mags)
@@ -73,4 +73,3 @@ def test_get_property(single_taskdoc):
     assert entry is not None
     assert entry.data["aspherical"]
     assert get_property_from_object(single_taskdoc, "aspherical")
-

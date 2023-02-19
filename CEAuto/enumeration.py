@@ -10,7 +10,7 @@ they are not added here. They will be added in the convergence checker
 module.
 """
 
-import logging
+from warnings import warn
 from itertools import chain
 from copy import deepcopy
 from joblib import Parallel, delayed, cpu_count
@@ -21,15 +21,13 @@ import numpy as np
 from pymatgen.core import Lattice
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-from smol.moca import CompositionSpace, Ensemble
+from smol.moca import CompositionSpace
 from smol.cofe import ClusterSubspace
 
 from .utils.supercells import get_three_factors, is_duplicate_sc
 from .utils.selection import select_initial_rows, select_added_rows
 from .sample_generators import CanonicalSampleGenerator
 from .utils.duplicacy import is_duplicate, is_corr_duplicate
-
-log = logging.getLogger(__name__)
 
 
 # TODO: in the future, may employ mcsqs type algos.
@@ -83,7 +81,7 @@ def enumerate_matrices(
     conv_size = cluster_subspace.num_prims_from_matrix(conv_mat)
     if objective_sc_size % conv_size != 0:
         sc_size = objective_sc_size // conv_size * conv_size
-        log.warning(
+        warn(
             f"Supercell size: {objective_sc_size} to enumerate "
             "is not divisible by primitive to conventional matrix"
             f" size {conv_size}."
@@ -173,8 +171,10 @@ def enumerate_matrices(
 
     # Select 1 diagonal, 1 off diagonal.
     # Must return lists for pydantic validation.
-    return [np.round(scs_diagonal[0] @ conv_mat).astype(int).tolist(),
-            np.round(scs_skew[0] @ conv_mat).astype(int).tolist()]
+    return [
+        np.round(scs_diagonal[0] @ conv_mat).astype(int).tolist(),
+        np.round(scs_skew[0] @ conv_mat).astype(int).tolist(),
+    ]
 
 
 def truncate_cluster_subspace(cluster_subspace, sc_matrices):
@@ -203,7 +203,7 @@ def truncate_cluster_subspace(cluster_subspace, sc_matrices):
                 to_remove[key] = to_remove[key].intersection(alias_m[key])
     to_remove = sorted(list(set(chain(*to_remove.values()))))
     if len(to_remove) > 0:
-        log.warning(
+        warn(
             f"Orbit aliasing could not be avoided "
             f"with given supercells: {sc_matrices}!\n"
             f"Removed orbits with indices: {to_remove}"
@@ -265,7 +265,9 @@ def enumerate_compositions_as_counts(
         )
         for x in xs
     ]
-    return np.array(ns).astype(int).tolist()  # Must return a list to correctly validate.
+    return (
+        np.array(ns).astype(int).tolist()
+    )  # Must return a list to correctly validate.
 
 
 def get_num_structs_to_sample(
@@ -305,7 +307,7 @@ def get_num_structs_to_sample(
     num_structs[num_structs < min_n] = min_n
     num_structs[num_structs > min_n] -= deltas
     if np.any(num_structs < min_n):
-        log.warning(
+        warn(
             "Too many compositions enumerated compared to "
             "the number of structures to enumerate. "
             "You may increase comp_enumeration_step, "
@@ -367,7 +369,7 @@ def _sample_single_generator(
         if gs_dupe:
             break
 
-    return (gs_struct, gs_occu, gs_feat, samples, samples_occu, samples_feat, gs_dupe)
+    return gs_struct, gs_occu, gs_feat, samples, samples_occu, samples_feat, gs_dupe
 
 
 # Currently, only supporting canonical sample generator.
@@ -531,8 +533,15 @@ def generate_training_structures(
             **kwargs,
         )
 
-    return (
-        [s for i, s in enumerate(structures) if i in selected_row_ids],
-        [m for i, m in enumerate(sc_matrices) if i in selected_row_ids],
-        femat[selected_row_ids],
-    )
+    # Must sort to ensure the same ordering between feature rows and structures.
+    selected_row_ids = sorted(selected_row_ids)
+    selected_structures = [s for i, s in enumerate(structures) if i in selected_row_ids]
+    selected_matrices = [m for i, m in enumerate(sc_matrices) if i in selected_row_ids]
+    selected_femat = femat[selected_row_ids, :]
+    if len(selected_row_ids) < num_structs:
+        warn(
+            f"Expected to add {num_structs} new structures,"
+            f" but only {len(selected_row_ids)}"
+            f" non duplicate structures could be added."
+        )
+    return selected_structures, selected_matrices, selected_femat

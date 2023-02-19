@@ -17,5 +17,4 @@ def test_random_occu_from_counts(ensemble):
             assert np.all(occu >= 0)
 
             table = get_dim_ids_table(ensemble.sublattices)
-            npt.assert_array_equal(occu_to_counts(occu, len(counts), table),
-                                   counts)
+            npt.assert_array_equal(occu_to_counts(occu, len(counts), table), counts)

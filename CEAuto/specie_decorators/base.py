@@ -10,14 +10,14 @@ be-retrained after each iteration.
 __author__ = "Fengyu Xie, Julia H. Yang"
 
 from abc import ABCMeta, abstractmethod
-import logging
+from warnings import warn
 import numpy as np
 from monty.json import MSONable
 from collections import defaultdict
 from copy import deepcopy
 import functools
 
-from pymatgen.core import Composition, Element, Species, Structure
+from pymatgen.core import Element, Species, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from sklearn.mixture import GaussianMixture
 from skopt import gp_minimize
@@ -25,7 +25,6 @@ from skopt import gp_minimize
 from smol.cofe.space.domain import get_species
 from smol.utils import derived_class_factory, class_name_from_str, get_subclasses
 
-log = logging.getLogger(__name__)
 
 # Add here if you implement more decorators.
 valid_decorator_types = {
@@ -332,7 +331,7 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
         }
         for key in self.labels:
             if key not in gaussian_models:
-                log.warning(
+                warn(
                     f"Gaussian model for {key} is missing! " "Initializing from empty."
                 )
                 gaussian_models[key] = GaussianMixture(
@@ -668,7 +667,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
             if result is not None and result.x is not None:
                 cuts_flatten_opt = result.x
             else:
-                log.warning(
+                warn(
                     "Decorator model can't be optimized properly "
                     "with Bayesian process, use mixture of gaussian "
                     "clustering prediction instead!"

@@ -6,8 +6,7 @@ from jobflow import Response, Job, Flow
 
 from CEAuto.preprocessing import get_prim_specs
 from CEAuto.jobs import initialize_document
-from CEAuto.maker import (ce_step_trigger,
-                          CeAutoMaker)
+from CEAuto.maker import ce_step_trigger, CeAutoMaker
 
 from .utils import execute_job_function
 
@@ -15,15 +14,17 @@ from .utils import execute_job_function
 @pytest.fixture
 def initial_document(prim):
     specs = get_prim_specs(prim)
-    options = {"cutoffs": {2: 7, 3: 4},
-               "comp_enumeration_step": 4,
-               "num_structs_per_iter_init": 50,
-               "num_structs_per_iter_add": 30,
-               "other_properties": ["some_test"],
-               "estimator_type": "lasso",
-               "optimizer_type": "grid-search",
-               "param_grid": {"alpha": 2 ** np.linspace(-25, 3, 15)},
-               "max_iter": 5}
+    options = {
+        "cutoffs": {2: 7, 3: 4},
+        "comp_enumeration_step": 4,
+        "num_structs_per_iter_init": 50,
+        "num_structs_per_iter_add": 30,
+        "other_properties": ["some_test"],
+        "estimator_type": "lasso",
+        "optimizer_type": "grid-search",
+        "param_grid": {"alpha": 2 ** np.linspace(-25, 3, 15)},
+        "max_iter": 5,
+    }
     if specs["charge_decorated"]:
         options["decorator_types"] = ["pmg-guess-charge"]
 
@@ -75,8 +76,3 @@ def test_ceauto_maker(prim, initial_document):
     # Since we restart form a workflow that has not reached max_iter yet,
     # will not update max_iter. So it should still be 5.
     assert initial_document.ce_options["max_iter"] == 5
-
-
-
-
-

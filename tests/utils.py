@@ -9,8 +9,7 @@ from pymatgen.core import Element
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 
 from smol.cofe.space.domain import Vacancy
-from smol.moca.utils.occu import (get_dim_ids_table,
-                                  occu_to_counts)
+from smol.moca.utils.occu import get_dim_ids_table, occu_to_counts
 
 from CEAuto.wrangling import CeDataWrangler
 
@@ -48,8 +47,7 @@ def assert_dict_equal(d1, d2):
             assert_dict_equal(d1[k], d2[k])
         else:
             if d1[k] != d2[k]:
-                print("Difference in key: {}, d1: {}, d2: {}"
-                      .format(k, d1[k], d2[k]))
+                print("Difference in key: {}, d1: {}, d2: {}".format(k, d1[k], d2[k]))
             assert d1[k] == d2[k]
 
 
@@ -171,9 +169,10 @@ def gen_random_occu_from_counts(ensemble, counts):
     n_species = 0
     occu = np.zeros(ensemble.num_sites, dtype=int) - 1
     for sublatt in ensemble.sublattices:
-        n_sublatt = counts[n_species: n_species + len(sublatt.encoding)]
-        occu_sublatt = [code for code, n in zip(sublatt.encoding, n_sublatt)
-                        for _ in range(n)]
+        n_sublatt = counts[n_species : n_species + len(sublatt.encoding)]
+        occu_sublatt = [
+            code for code, n in zip(sublatt.encoding, n_sublatt) for _ in range(n)
+        ]
         np.random.shuffle(occu_sublatt)
         occu[sublatt.sites] = occu_sublatt
         n_species += len(sublatt.encoding)
@@ -202,21 +201,22 @@ def gen_random_wrangler(ensemble, n_entries_per_iter=50, n_iters=8):
             occu = gen_random_neutral_occupancy(sublattices=ensemble.sublattices)
             structures.append(ensemble.processor.structure_from_occupancy(occu))
             specs.append({"iter_id": iter_id, "enum_id": n_enum + s_id})
-            energies.append(ensemble.natural_parameters @
-                            ensemble.compute_feature_vector(occu))
+            energies.append(
+                ensemble.natural_parameters @ ensemble.compute_feature_vector(occu)
+            )
             # print("len:", len(energies))
         n_enum += n_entries_per_iter
-    noise = np.random.normal(loc=0, scale=np.sqrt(np.var(energies)) * 0.0001,
-                             size=(len(energies),))
+    noise = np.random.normal(
+        loc=0, scale=np.sqrt(np.var(energies)) * 0.0001, size=(len(energies),)
+    )
     energies = np.array(energies) + noise
-    entries = [ComputedStructureEntry(s, e)
-               for s, e in zip(structures, energies)]
+    entries = [ComputedStructureEntry(s, e) for s, e in zip(structures, energies)]
     wrangler = CeDataWrangler(ensemble.processor.cluster_subspace)
     # print("Inserting entries.")
     for ent, spec in zip(entries, specs):
-        wrangler.add_entry(ent,
-                           properties={"spec": spec},
-                           supercell_matrix
-                           =ensemble.processor.supercell_matrix,
-                           )
+        wrangler.add_entry(
+            ent,
+            properties={"spec": spec},
+            supercell_matrix=ensemble.processor.supercell_matrix,
+        )
     return wrangler

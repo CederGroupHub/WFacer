@@ -1,5 +1,4 @@
 """Fit ECIs from Wrangler."""
-import logging
 import numpy as np
 from sklearn.model_selection import cross_val_score
 
@@ -12,9 +11,6 @@ from sparselm.model_selection import GridSearchCV, LineSearchCV
 from CEAuto.utils.sparselm_estimators import prepare_estimator
 
 all_optimizers = {"GridSearchCV": GridSearchCV, "LineSearchCV": LineSearchCV}
-
-
-log = logging.getLogger(__name__)
 
 
 # As mentioned in CeDataWrangler, weights does not make much

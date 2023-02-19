@@ -3,6 +3,7 @@ from copy import deepcopy
 import numpy as np
 from jobflow import Response, Flow, job
 import logging
+from warnings import warn
 
 from pymatgen.analysis.elasticity.strain import Deformation
 
@@ -18,7 +19,6 @@ from atomate2.vasp.sets.core import (
 from atomate2.vasp.schemas.calculation import Status
 
 from .schema import CeOutputsDocument
-from .wrangling import CeDataWrangler
 from .preprocessing import (
     reduce_prim,
     get_prim_specs,
@@ -44,6 +44,9 @@ from .fit import fit_ecis_from_wrangler
 from .wrangling import CeDataWrangler
 from .utils.task_document import get_entry_from_taskdoc
 from .specie_decorators import decorator_factory, PmgGuessChargeDecorator
+
+
+log = logging.getLogger(__name__)
 
 
 def _preprocess_options(options):
@@ -154,7 +157,7 @@ def _get_decorators(options, is_charge_decorated):
             "Can not use multiple decorators for decorating" " the same property!!"
         )
     if is_charge_decorated and len(decorators) == 0:
-        logging.warning(
+        warn(
             "Cluster expansion is charge decorated, but"
             " no charge decoration method is specified."
             " Use default PmgGuessCharge at your risk!"
@@ -206,7 +209,7 @@ def enumerate_structures(last_ce_document):
         coefs = np.array(coefs_history[-1])
 
     # Enumerate structures.
-    logging.info("Enumerating new structures.")
+    log.info("Enumerating new structures.")
     new_structures, new_sc_matrices, new_features = _enumerate_structures(
         subspace,
         coefs,
@@ -246,12 +249,12 @@ def calculate_structures(enum_output, last_ce_document):
     options = last_ce_document.ce_options
     relax_maker, static_maker, tight_maker = _get_vasp_makers(options)
 
-    logging.info("Performing ab-initio calculations.")
+    log.info("Performing ab-initio calculations.")
     new_structures = enum_output["new_structures"]
     flows = []
     for i, structure in enumerate(new_structures):
         fid = i + struct_id
-        logging.info(f"Calculating enumerated structure id: {fid}.")
+        log.info(f"Calculating enumerated structure id: {fid}.")
         flow_name = project_name + f"_iter_{iter_id}_enum_{fid}"
         relax_maker.name = flow_name + "_relax"
         tight_maker.name = flow_name + "_tight"
@@ -306,13 +309,15 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
 
     undecorated_entries = deepcopy(last_ce_document.undecorated_entries)
     computed_properties = deepcopy(last_ce_document.computed_properties)
-    logging.info("Loading computations.")
+    log.info("Loading computations.")
 
     n_enum = len(enum_output["new_structures"])
     if len(taskdocs) != n_enum:
-        raise ValueError(f"Number of TaskDocuments: {len(taskdocs)}"
-                         f" does not match with number of newly enumerated"
-                         f" structures: {n_enum}")
+        raise ValueError(
+            f"Number of TaskDocuments: {len(taskdocs)}"
+            f" does not match with number of newly enumerated"
+            f" structures: {n_enum}"
+        )
 
     for doc in taskdocs:
         flow_converged = _check_flow_convergence(doc)
@@ -334,12 +339,12 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
         successful_entries, successful_entry_ids
     )
     n_calc_finished = len(successful_entries)
-    logging.info(
+    log.info(
         f"{n_calc_finished}/{len(undecorated_entries)}"
         f" structures successfully calculated."
     )
 
-    logging.info("Performing site decorations.")
+    log.info("Performing site decorations.")
     for dec, kw in zip(decorators, options["decorator_train_kwargs"]):
         dec.train(successful_entries, **kw)
         # Failed entries will be returned as None, and get filtered out.
@@ -357,14 +362,14 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
     successful_scmatrices = [
         m for i, m in enumerate(sc_matrices) if i in successful_entry_ids
     ]
-    logging.info(
+    log.info(
         f"{len(successful_entries)}/{n_calc_finished}"
         f" structures successfully decorated."
     )
 
     # Wrangler must be cleared and reloaded each time
     # because decorator parameters can change.
-    logging.info("Loading data to wrangler.")
+    log.info("Loading data to wrangler.")
     wrangler = CeDataWrangler(last_ce_document.data_wrangler.cluster_subspace)
     for eid, prop, entry, mat in zip(
         successful_entry_ids,
@@ -376,7 +381,7 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
         # all enumerated structures.
         prop["spec"] = {"iter_id": iter_id, "enum_id": eid}
         wrangler.add_entry(entry, properties=prop, supercell_matrix=mat)
-    logging.info(
+    log.info(
         f"{wrangler.num_structures}/{len(successful_entries)}"
         f" structures successfully mapped."
     )
@@ -435,7 +440,7 @@ def update_document(enum_output, parse_output, fit_output, last_ce_document):
             The updated document.
     """
     ce_document = deepcopy(last_ce_document)
-    ce_document.data_wrangler = parse_output["wrangler"]
+    ce_document.data_wrangler = deepcopy(parse_output["wrangler"])
     ce_document.undecorated_entries = parse_output["undecorated_entries"]
     ce_document.computed_properties = parse_output["computed_properties"]
     ce_document.coefs_history.append(fit_output["coefs"])
@@ -473,7 +478,7 @@ def initialize_document(prim, project_name="ceauto-work", options=None):
     """
     # Pre-process options.
     options = options or {}
-    logging.info("Pre-processing primitive cell and workflow options.")
+    log.info("Pre-processing primitive cell and workflow options.")
     options = _preprocess_options(options)
 
     # Reduce prim and get necessary specs.
@@ -500,7 +505,7 @@ def initialize_document(prim, project_name="ceauto-work", options=None):
     )
 
     # Enumerate supercell matrices, and remove aliased orbits from subspace.
-    logging.info("Enumerating super-cell matrices.")
+    log.info("Enumerating super-cell matrices.")
     objective_sc_size = options["objective_num_sites"] // len(prim)
     sc_matrices = options["sc_matrices"] or enumerate_matrices(
         objective_sc_size,
@@ -524,7 +529,7 @@ def initialize_document(prim, project_name="ceauto-work", options=None):
     subspace = truncate_cluster_subspace(subspace, sc_matrices)
 
     # Enumerate compositions as "counts" format in smol.moca.CompositionSpace.
-    logging.info("Enumerating valid compositions.")
+    log.info("Enumerating valid compositions.")
     # Mute additional constraints if not needed.
     if len(eq_constraints) == 0:
         eq_constraints = None

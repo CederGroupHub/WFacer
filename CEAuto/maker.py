@@ -1,7 +1,7 @@
 """Automatic jobflow maker."""
 from dataclasses import dataclass, field
 from jobflow import Maker, Response, Flow, job
-import logging
+from warnings import warn
 
 from .schema import CeOutputsDocument
 from .jobs import (
@@ -12,8 +12,6 @@ from .jobs import (
     update_document,
     initialize_document,
 )
-
-log = logging.getLogger(__name__)
 
 
 @job
@@ -33,7 +31,7 @@ def ce_step_trigger(last_ce_document):
     max_iter = last_ce_document.ce_options["max_iter"]
     project_name = last_ce_document.project_name
     if iter_id >= max_iter and not last_ce_document.converged:
-        log.warning(
+        warn(
             f"Maximum number of iterations: {max_iter}"
             f" reached, but cluster expansion model is"
             f" still not converged!"

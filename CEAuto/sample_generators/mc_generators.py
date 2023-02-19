@@ -1,7 +1,7 @@
 """Monte-carlo to estimate ground states and sample structures."""
 import itertools
 from abc import ABCMeta, abstractmethod
-
+from warnings import warn
 import numpy as np
 from pymatgen.core import Element
 
@@ -12,6 +12,7 @@ from smol.utils import derived_class_factory, class_name_from_str
 
 from ..utils.duplicacy import is_duplicate, is_corr_duplicate
 from ..utils.occu import get_random_occupancy_from_counts
+
 
 __author__ = "Fengyu Xie"
 
@@ -306,6 +307,12 @@ class McSampleGenerator(metaclass=ABCMeta):
             if len(new_ids) == num_samples:
                 break
 
+        if len(new_ids) < num_samples:
+            warn(
+                f"Expected to enumerate {num_samples} structures,"
+                f" but only {len(new_ids)} un-duplicate structures"
+                f" could be generated!"
+            )
         return (
             [rand_strs[i] for i in new_ids],
             [rand_occus[i] for i in new_ids],

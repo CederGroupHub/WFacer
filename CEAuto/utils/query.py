@@ -1,10 +1,8 @@
 """Define rules to query a nested task documents and dictionaries."""
-import logging
+from warnings import warn
 import random
 
 from pydantic import BaseModel
-
-log = logging.getLogger(__name__)
 
 
 def query_keypath(obj, keypath):
@@ -29,7 +27,7 @@ def query_keypath(obj, keypath):
     if isinstance(obj, (list, tuple)):
         # List needs to be pre-processed.
         if "-" not in k and not k.startswith("^"):
-            log.warning(
+            warn(
                 f"Object {obj} is a list, but the exact index"
                 f" of the member to refer to is not specified with"
                 f" id-. Will query the first member in the list."

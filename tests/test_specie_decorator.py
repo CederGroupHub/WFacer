@@ -9,17 +9,22 @@ from sklearn.mixture import GaussianMixture
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.core import Lattice, Structure
 
-from CEAuto.specie_decorators import (decorator_factory,
-                                      MagneticChargeDecorator,
-                                      PmgGuessChargeDecorator,
-                                      FixedChargeDecorator)
-from CEAuto.specie_decorators.base import (MixtureGaussianDecorator,
-                                           NoTrainDecorator)
+from CEAuto.specie_decorators import (
+    decorator_factory,
+    MagneticChargeDecorator,
+    PmgGuessChargeDecorator,
+    FixedChargeDecorator,
+)
+from CEAuto.specie_decorators.base import MixtureGaussianDecorator, NoTrainDecorator
 
 from .utils import assert_msonable
 
 all_decorator_names = ["magnetic-charge", "pmg-guess-charge", "fixed-charge"]
-all_decorators = [MagneticChargeDecorator, PmgGuessChargeDecorator, FixedChargeDecorator]
+all_decorators = [
+    MagneticChargeDecorator,
+    PmgGuessChargeDecorator,
+    FixedChargeDecorator,
+]
 
 
 @pytest.fixture
@@ -38,23 +43,29 @@ def undecorated_entries_standards():
                 magmoms.append(np.random.normal(dists[0][0], dists[0][1]))
             for _ in range(2):
                 magmoms.append(np.random.normal(dists[2][0], dists[2][1]))
-            standard_decor = ["O2-", "O2-", "O2-", "O2-",
-                              "Ca+", "Ca+", "Ca3+", "Ca3+"]
+            standard_decor = ["O2-", "O2-", "O2-", "O2-", "Ca+", "Ca+", "Ca3+", "Ca3+"]
         if case == 1:
             # +2, +2, +1, +3.
             for _ in range(2):
                 magmoms.append(np.random.normal(dists[1][0], dists[1][1]))
             magmoms.append(np.random.normal(dists[0][0], dists[0][1]))
             magmoms.append(np.random.normal(dists[2][0], dists[2][1]))
-            standard_decor = ["O2-", "O2-", "O2-", "O2-",
-                              "Ca2+", "Ca2+", "Ca+", "Ca3+"]
+            standard_decor = ["O2-", "O2-", "O2-", "O2-", "Ca2+", "Ca2+", "Ca+", "Ca3+"]
 
         if case == 2:
             # +2, +2, +2, +2.
             for _ in range(4):
                 magmoms.append(np.random.normal(dists[1][0], dists[1][1]))
-            standard_decor = ["O2-", "O2-", "O2-", "O2-",
-                              "Ca2+", "Ca2+", "Ca2+", "Ca2+"]
+            standard_decor = [
+                "O2-",
+                "O2-",
+                "O2-",
+                "O2-",
+                "Ca2+",
+                "Ca2+",
+                "Ca2+",
+                "Ca2+",
+            ]
 
         # shuffle structure.
         shuff = list(range(8))
@@ -66,14 +77,10 @@ def undecorated_entries_standards():
         magmoms = magmoms_shuff.copy()
         standard_decor = standard_decor_shuff.copy()
 
-        points = np.array([[0, 0, 0],
-                           [0.5, 0.5, 0],
-                           [0, 0.5, 0.5],
-                           [0.5, 0, 0.5]])
-        s = Structure(Lattice.cubic(4.0),
-                      species,
-                      np.concatenate([points, points + 0.25],
-                                     axis=0))
+        points = np.array([[0, 0, 0], [0.5, 0.5, 0], [0, 0.5, 0.5], [0.5, 0, 0.5]])
+        s = Structure(
+            Lattice.cubic(4.0), species, np.concatenate([points, points + 0.25], axis=0)
+        )
         s.add_site_property("magmom", magmoms)
 
         entries.append(ComputedStructureEntry(s, np.random.random()))
@@ -103,8 +110,9 @@ def decorator(request):
     return request.param(labels=labels)  # Maximum abs charge always 0.
 
 
-@pytest.mark.parametrize("decorator_name, decorator_class",
-                         zip(all_decorator_names, all_decorators))
+@pytest.mark.parametrize(
+    "decorator_name, decorator_class", zip(all_decorator_names, all_decorators)
+)
 def test_decorator_factory(decorator_name, decorator_class):
     labels = {"A": [1, 2, 3, 4]}
     decorator = decorator_factory(decorator_name, labels=labels)
@@ -124,13 +132,12 @@ def test_group_sites(decorator, undecorated_entries_standards):
     for sp in groups:
         for eid, sid in groups[sp]:
             # site.species will give a composition, not a species!
-            assert (undecorated_entries[eid].structure[sid].specie
-                    == sp)
+            assert undecorated_entries[eid].structure[sid].specie == sp
             all_eid_sid.append((eid, sid))
     # All sites in all structures must be included.
-    npt.assert_array_equal(sorted(all_eid_sid),
-                           sorted(list(product(range(n_structs),
-                                               range(n_sites)))))
+    npt.assert_array_equal(
+        sorted(all_eid_sid), sorted(list(product(range(n_structs), range(n_sites))))
+    )
 
 
 def test_train_decorate(decorator, undecorated_entries_standards):
@@ -149,17 +156,17 @@ def test_train_decorate(decorator, undecorated_entries_standards):
         assert num_fails / len(undecorated_entries) <= 0.95
 
     n_match = 0
-    for ent_decor, ent_undecor, standard in zip(entries,
-                                                undecorated_entries,
-                                                standards):
+    for ent_decor, ent_undecor, standard in zip(
+        entries, undecorated_entries, standards
+    ):
         if ent_decor is not None:
             assert np.isclose(ent_decor.structure.charge, 0)
             assert np.isclose(ent_decor.energy, ent_undecor.energy)
             assert ent_decor.data == ent_undecor.data
             match_standard = True
-            for site1, site2, s_str in zip(ent_decor.structure,
-                                           ent_undecor.structure,
-                                           standard):
+            for site1, site2, s_str in zip(
+                ent_decor.structure, ent_undecor.structure, standard
+            ):
                 assert site1.specie.symbol == site2.specie.symbol
                 assert site1.properties == site2.properties
                 if issubclass(decorator.__class__, NoTrainDecorator):
@@ -190,10 +197,14 @@ def test_train_decorate(decorator, undecorated_entries_standards):
 def test_serialize_gaussian():
     model = GaussianMixture(n_components=3)
     assert not MixtureGaussianDecorator.is_trained_gaussian_model(model)
-    data = np.concatenate([np.random.normal(1.0, 0.2, size=(200, 1)),
-                           np.random.normal(2.0, 0.1, size=(150, 1)),
-                           np.random.normal(3.0, 0.15, size=(300, 1))],
-                          axis=0)
+    data = np.concatenate(
+        [
+            np.random.normal(1.0, 0.2, size=(200, 1)),
+            np.random.normal(2.0, 0.1, size=(150, 1)),
+            np.random.normal(3.0, 0.15, size=(300, 1)),
+        ],
+        axis=0,
+    )
 
     model.fit(data)
     labels = model.predict(data)
@@ -213,7 +224,9 @@ def test_gaussian_label_markings():
     std_clusters = np.array([1, 2, 0])
     std_values = np.array([-1, 0, 1])
     for _ in range(100):
-        real_label_inds = np.random.choice(3, size=(100,), p=[0.2, 0.5, 0.3]).astype(int)
+        real_label_inds = np.random.choice(3, size=(100,), p=[0.2, 0.5, 0.3]).astype(
+            int
+        )
         real_labels = labels[real_label_inds]
         real_values = std_values[real_label_inds]
         cluster_inds = std_clusters[real_label_inds]

@@ -1,8 +1,7 @@
 """Provide structure selection methods."""
-import numpy as np
-import logging
+from warnings import warn
 
-log = logging.getLogger(__name__)
+import numpy as np
 
 
 def select_initial_rows(
@@ -40,13 +39,13 @@ def select_initial_rows(
     if n_keep > n:
         raise ValueError("Can not keep more structures than provided!")
     if n_keep > n_select:
-        log.warning(
+        warn(
             "Keeping more structures than to be selected!"
             " Cannot select new structures."
         )
         return keep_indices
     if n_select > n:
-        log.warning(
+        warn(
             "Structures to select more than provided,"
             " will select all provided structures."
         )
@@ -135,13 +134,13 @@ def select_added_rows(
     if n_keep > n:
         raise ValueError("Can not keep more structures than provided!")
     if n_keep > n_select:
-        log.warning(
+        warn(
             "Keeping more structures than to be selected!"
             " Cannot select new structures."
         )
         return keep_indices
     if n_select > n:
-        log.warning(
+        warn(
             "Structures to select more than provided,"
             " will select all provided structures."
         )

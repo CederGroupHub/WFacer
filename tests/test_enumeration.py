@@ -1,10 +1,11 @@
 """Test enumerating functions."""
-from itertools import chain, product
+from itertools import chain
 from collections import defaultdict
 import pytest
 import numpy as np
 import numpy.testing as npt
 import logging
+from warnings import warn
 
 from pymatgen.core import Lattice, Element
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
@@ -12,16 +13,20 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from smol.cofe import ClusterSubspace
 from smol.moca import CompositionSpace, Ensemble
 from smol.cofe.space.domain import Vacancy
-from smol.moca.utils.occu import (get_dim_ids_by_sublattice,
-                                  get_dim_ids_table,
-                                  occu_to_counts)
+from smol.moca.utils.occu import (
+    get_dim_ids_by_sublattice,
+    get_dim_ids_table,
+    occu_to_counts,
+)
 
 from CEAuto.preprocessing import get_prim_specs
-from CEAuto.enumeration import (enumerate_matrices,
-                                truncate_cluster_subspace,
-                                enumerate_compositions_as_counts,
-                                get_num_structs_to_sample,
-                                generate_training_structures, )
+from CEAuto.enumeration import (
+    enumerate_matrices,
+    truncate_cluster_subspace,
+    enumerate_compositions_as_counts,
+    get_num_structs_to_sample,
+    generate_training_structures,
+)
 from CEAuto.utils.duplicacy import is_corr_duplicate
 
 
@@ -32,12 +37,9 @@ def test_enumerate_matrices(subspace):
     t_inv = sa.get_conventional_to_primitive_transformation_matrix()
     conv_mat = np.round(np.linalg.inv(t_inv)).astype(int)
     if np.isclose(abs(np.linalg.det(conv_mat)), 4):
-        npt.assert_array_almost_equal(2 * conv_mat,
-                                      mat_diagonal)
+        npt.assert_array_almost_equal(2 * conv_mat, mat_diagonal)
     elif np.isclose(abs(np.linalg.det(conv_mat)), 2):
-        npt.assert_array_almost_equal(np.diag([4, 2, 2])
-                                      @ conv_mat,
-                                      mat_diagonal)
+        npt.assert_array_almost_equal(np.diag([4, 2, 2]) @ conv_mat, mat_diagonal)
 
     def alias_level(sc):
         return len(list(chain(*subspace.get_aliased_orbits(sc))))
@@ -47,10 +49,19 @@ def test_enumerate_matrices(subspace):
     def cond_and_angle(sc):
         new_mat = np.dot(sc, lat.matrix)
         new_lat = Lattice(new_mat)
-        return (np.linalg.cond(sc),
-                min([new_lat.alpha, new_lat.beta, new_lat.gamma,
-                     180 - new_lat.alpha, 180 - new_lat.beta,
-                     180 - new_lat.gamma]))
+        return (
+            np.linalg.cond(sc),
+            min(
+                [
+                    new_lat.alpha,
+                    new_lat.beta,
+                    new_lat.gamma,
+                    180 - new_lat.alpha,
+                    180 - new_lat.beta,
+                    180 - new_lat.gamma,
+                ]
+            ),
+        )
 
     assert alias_level(mat_diagonal) >= alias_level(mat_skew)
 
@@ -73,8 +84,7 @@ def test_truncate_cluster_space(prim):
 
     assert len(bad_subspace.get_aliased_orbits(sc)) > 0
 
-    good_subspace = truncate_cluster_subspace(bad_subspace,
-                                              [sc])
+    good_subspace = truncate_cluster_subspace(bad_subspace, [sc])
     # No alias should remain, and some clusters must be kept.
     assert len(good_subspace.get_aliased_orbits(sc)) == 0
     assert len(good_subspace.orbits_by_size[2]) > 0
@@ -82,10 +92,10 @@ def test_truncate_cluster_space(prim):
 
 def test_enumerate_compositions(specs):
     bits = specs["bits"]
-    bit_charges = [(0
-                    if isinstance(sp, (Element, Vacancy))
-                    else sp.oxi_state)
-                   for sp in chain(*bits)]
+    bit_charges = [
+        (0 if isinstance(sp, (Element, Vacancy)) else sp.oxi_state)
+        for sp in chain(*bits)
+    ]
     sl_sites = specs["sublattice_sites"]
     sl_sizes = [len(sites) for sites in sl_sites]
     comp_space = CompositionSpace(bits, sl_sizes)
@@ -93,29 +103,27 @@ def test_enumerate_compositions(specs):
     with pytest.raises(ValueError):
         _ = enumerate_compositions_as_counts(32)
 
-    counts = enumerate_compositions_as_counts(32,
-                                              bits=bits,
-                                              sublattice_sizes=sl_sizes,
-                                              comp_enumeration_step=4)
+    counts = enumerate_compositions_as_counts(
+        32, bits=bits, sublattice_sizes=sl_sizes, comp_enumeration_step=4
+    )
     # Check enumerated compositions.
     assert len(counts) > 1
 
-    xs = [comp_space.translate_format(n, 32,
-                                      from_format="counts",
-                                      to_format="coordinates",
-                                      rounding=True)
-          for n in counts]
+    xs = [
+        comp_space.translate_format(
+            n, 32, from_format="counts", to_format="coordinates", rounding=True
+        )
+        for n in counts
+    ]
 
-    xs_std = comp_space.get_composition_grid(supercell_size=32,
-                                             step=4)
+    xs_std = comp_space.get_composition_grid(supercell_size=32, step=4)
     npt.assert_array_almost_equal(xs, xs_std)
 
     bit_inds = get_dim_ids_by_sublattice(bits)
     for n in counts:
         assert np.isclose(np.dot(n, bit_charges), 0)
         for sl_ind, sl_bit_inds in enumerate(bit_inds):
-            assert np.isclose(n[sl_bit_inds].sum(),
-                              sl_sizes[sl_ind] * 32)
+            assert np.isclose(n[sl_bit_inds].sum(), sl_sizes[sl_ind] * 32)
 
     num_structs = get_num_structs_to_sample(counts, 1000)
     assert np.all(num_structs >= 2)
@@ -128,38 +136,40 @@ def test_enumerate_compositions(specs):
 def test_enumerate_structures(single_expansion):
     subspace = single_expansion.cluster_subspace
     supercells = enumerate_matrices(32, subspace)
-    ensembles = [Ensemble.from_cluster_expansion(single_expansion,
-                                                 m,
-                                                 processor_type="expansion")
-                 for m in supercells]
+    ensembles = [
+        Ensemble.from_cluster_expansion(single_expansion, m, processor_type="expansion")
+        for m in supercells
+    ]
     specs = get_prim_specs(subspace.structure)
     sl_sizes = [len(sl) for sl in specs["sublattice_sites"]]
     n_dims = sum(len(sl) for sl in specs["bits"])
-    counts = enumerate_compositions_as_counts(32,
-                                              bits=specs["bits"],
-                                              sublattice_sizes=sl_sizes,
-                                              comp_enumeration_step=16)
+    counts = enumerate_compositions_as_counts(
+        32, bits=specs["bits"], sublattice_sizes=sl_sizes, comp_enumeration_step=16
+    )
 
-    structures, matrices, feature_matrix \
-        = generate_training_structures(single_expansion,
-                                       supercells,
-                                       counts,
-                                       num_structs=50,
-                                       )
+    structures, matrices, feature_matrix = generate_training_structures(
+        single_expansion,
+        supercells,
+        counts,
+        num_structs=50,
+    )
 
     assert len(structures) == len(matrices)
     assert len(structures) == len(feature_matrix)
 
     mids = [0 if np.allclose(m, supercells[0]) else 1 for m in matrices]
-    occus = [single_expansion.cluster_subspace.occupancy_from_structure(s, m,
-                                                                        encode=True)
-             for s, m in zip(structures, matrices)]
-    ns = [tuple(occu_to_counts(occu, n_dims,
-                               get_dim_ids_table(ensembles[mid]
-                                                 .sublattices))
-                .tolist()
-                )
-          for occu, mid in zip(occus, mids)]
+    occus = [
+        single_expansion.cluster_subspace.occupancy_from_structure(s, m, encode=True)
+        for s, m in zip(structures, matrices)
+    ]
+    ns = [
+        tuple(
+            occu_to_counts(
+                occu, n_dims, get_dim_ids_table(ensembles[mid].sublattices)
+            ).tolist()
+        )
+        for occu, mid in zip(occus, mids)
+    ]
     # When keeping the ground states, each composition must have at least 1 state.
     count_occurences = defaultdict(lambda: 0)
     for n in ns:
@@ -169,16 +179,14 @@ def test_enumerate_structures(single_expansion):
     for count in counts:
         assert count_occurences[tuple(count.tolist())] >= 1
 
-    structures_add, matrices_add, feature_matrix_add \
-        = generate_training_structures(single_expansion,
-                                       supercells,
-                                       counts,
-                                       previous_sampled_structures=
-                                       structures,
-                                       previous_feature_matrix=
-                                       feature_matrix,
-                                       num_structs=30,
-                                       )
+    structures_add, matrices_add, feature_matrix_add = generate_training_structures(
+        single_expansion,
+        supercells,
+        counts,
+        previous_sampled_structures=structures,
+        previous_feature_matrix=feature_matrix,
+        num_structs=30,
+    )
     assert len(structures_add) == len(matrices_add)
     assert len(structures_add) == len(feature_matrix_add)
 
@@ -192,20 +200,21 @@ def test_enumerate_structures(single_expansion):
         for j in range(i + 1, len(all_structures)):
             proc1 = ensembles[all_mids[i]].processor
             proc2 = ensembles[all_mids[j]].processor
-            dupe = is_corr_duplicate(all_structures[i],
-                                     proc1,
-                                     all_structures[j],
-                                     proc2)
+            dupe = is_corr_duplicate(all_structures[i], proc1, all_structures[j], proc2)
             if dupe:
                 break
         assert not dupe
 
     # Passed!
     if len(structures) < 50:
-        logging.warning(f"Number of structures in the initial pool is"
-                        f" {len(structures)}, fewer than 50."
-                        f" Your test case might be bad.")
+        warn(
+            f"Number of structures in the initial pool is"
+            f" {len(structures)}, fewer than 50."
+            f" Your test case might be bad."
+        )
     if len(structures_add) < 30:
-        logging.warning(f"Number of structures in the added pool is"
-                        f" {len(structures_add)}, fewer than 30."
-                        f" Your test case might be bad.")
+        warn(
+            f"Number of structures in the added pool is"
+            f" {len(structures_add)}, fewer than 30."
+            f" Your test case might be bad."
+        )
