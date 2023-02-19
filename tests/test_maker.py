@@ -43,7 +43,7 @@ def test_trigger(initial_document):
     assert isinstance(response.replace, Flow)
 
     # Check the structure of a flow.
-    flow = trigger.replace
+    flow = response.replace
     assert flow.name == "ceauto-work_iter_0"
     for job in flow.jobs:
         assert isinstance(job, Job)
@@ -67,12 +67,12 @@ def test_ceauto_maker(prim, initial_document):
     assert len(flow.jobs) == 2
     for job in flow.jobs:
         assert isinstance(job, Job)
-    assert flow.jobs[0].name == "goodluch_initialize"
-    assert flow.jobs[1].name == "goodluch_iter_0_trigger"
+    assert flow.jobs[0].name == "goodluck_initialize"
+    assert flow.jobs[1].name == "goodluck_iter_0_trigger"
 
     flow2 = maker.make(prim, last_document=initial_document)
     assert len(flow2.jobs) == 1
-    assert flow2.jobs[0].name == "goodluch_iter_0_trigger"
+    assert flow2.jobs[0].name == "goodluck_iter_0_trigger"
     # Since we restart form a workflow that has not reached max_iter yet,
     # will not update max_iter. So it should still be 5.
     assert initial_document.ce_options["max_iter"] == 5
