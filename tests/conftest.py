@@ -101,7 +101,7 @@ def single_expansion():
     coefs_[0] = 1.0
     coefs_[len(coefs_)
            - len(space.external_terms):] = 0.3
-    print("Single expansion coefs:", coefs_)
+    # print("Single expansion coefs:", coefs_)
     return ClusterExpansion(space, coefs_)
 
 

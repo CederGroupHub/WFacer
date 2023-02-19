@@ -80,10 +80,9 @@ def fit_ecis_from_wrangler(
             space.num_corr_functions + len(space.external_terms),
         )
     )
-    # Index "0" is always excluded as it will be fitted as intercept.
-    centered_inds = point_func_inds + external_inds
+    centered_inds = [0] + point_func_inds + external_inds
     other_inds = np.setdiff1d(
-        np.arange(1, space.num_corr_functions + len(space.external_terms)),
+        np.arange(space.num_corr_functions + len(space.external_terms)),
         centered_inds,
     )
     if filter_unique_correlations:
@@ -102,10 +101,9 @@ def fit_ecis_from_wrangler(
     optimizer_kwargs = optimizer_kwargs or {}
     # Prepare the optimizer.
     is_stepwise = isinstance(estimator, StepwiseEstimator)
-    is_ols = (isinstance(estimator, OrdinaryLeastSquares)
-              or (is_stepwise
-                  and isinstance(estimator._estimators[-1],
-                                 OrdinaryLeastSquares)))
+    is_ols = isinstance(estimator, OrdinaryLeastSquares) or (
+        is_stepwise and isinstance(estimator._estimators[-1], OrdinaryLeastSquares)
+    )
     if not is_ols:
         if (
             "-cv" not in optimizer_name
@@ -127,17 +125,16 @@ def fit_ecis_from_wrangler(
             elif isinstance(param_grid, list):
                 param_grid = [("main__" + k, v) for k, v in param_grid]
             else:
-                raise ValueError("Parameters grid must either be a dictionary"
-                                 "or a list of tuples!")
+                raise ValueError(
+                    "Parameters grid must either be a dictionary" "or a list of tuples!"
+                )
 
         optimizer = all_optimizers[opt_class_name](
             estimator, param_grid, **optimizer_kwargs
         )
 
         # Perform the optimization and fit.
-        optimizer = optimizer.fit(
-            X=feature_matrix[:, other_inds], y=normalized_energy, **kwargs
-        )
+        optimizer = optimizer.fit(X=feature_matrix, y=normalized_energy, **kwargs)
         best_coef = optimizer.best_estimator_.coef_
         # Add intercept to the first coefficient.
         best_coef[0] += optimizer.best_estimator_.intercept_

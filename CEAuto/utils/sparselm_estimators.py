@@ -125,6 +125,7 @@ def prepare_estimator(
     is_group = is_subclass(est_class_name, "GroupLasso")
     # sparse_bound would also be needed.
     is_subset = is_subclass(est_class_name, "BestSubsetSelection")
+    is_ols = (est_class_name == "OrdinaryLeastSquares")
 
     if is_l0 or is_group:
         if cluster_subspace.basis_type == "indicator":
@@ -138,7 +139,7 @@ def prepare_estimator(
                         for func_id in sub
                         if func_id - num_point_funcs - 1 >= 0
                     ]
-                    for sub in hierarchy[num_point_funcs + 1:]
+                    for sub in hierarchy[num_point_funcs + 1 :]
                 ]
             # groups argument should be a 1d array.
             groups = list(
@@ -162,7 +163,7 @@ def prepare_estimator(
                         for orb_id in sub
                         if orb_id - num_point_orbs - 1 >= 0
                     ]
-                    for sub in hierarchy[num_point_orbs + 1:]
+                    for sub in hierarchy[num_point_orbs + 1 :]
                 ]
             groups = np.append(
                 cluster_subspace.function_orbit_ids,
@@ -173,7 +174,7 @@ def prepare_estimator(
                 groups = [
                     oid - num_point_orbs - 1
                     for oid in cluster_subspace.function_orbit_ids[
-                        num_point_funcs + 1:
+                        num_point_funcs + 1 :
                     ]
                 ]
 
@@ -192,7 +193,8 @@ def prepare_estimator(
                 f" will be: {default_sparse_bound}"
             )
             estimator_kwargs["sparse_bound"] = default_sparse_bound
-    if center_point_external:
+    # OLS does not need centered fit.
+    if center_point_external and not is_ols:
         external_inds = list(
             range(
                 cluster_subspace.num_corr_functions,

@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 import numpy.testing as npt
 
-from sparselm.model import StepwiseEstimator
+from sparselm.model import StepwiseEstimator, OrdinaryLeastSquares
 
 from CEAuto.utils.sparselm_estimators import (unsupported_estimator_names,
                                               is_subclass,
@@ -57,6 +57,10 @@ def test_prepare_estimator(subspace, name):
         # Centered by points and ewald; each func is a group itself
         # Groups should always be a 1d array.
         assert isinstance(estimator, StepwiseEstimator)
+        npt.assert_array_equal(estimator._full_scope, np.arange(total_terms, dtype=int))
+        assert estimator._step_names == ("center", "main")
+        assert [sub.__class__.__name__
+                for sub in estimator._estimators] == ["Lasso", name]
         groups = estimator._estimators[-1].groups
         assert len(np.array(groups).shape) == 1
         assert groups[0] == 0
@@ -96,6 +100,12 @@ def test_prepare_estimator(subspace, name):
             assert estimator.hierarchy == subspace.function_hierarchy()
         assert not estimator.fit_intercept
 
+    # OLS should never be stepwise.
+    if name == "OrdinaryLeastSquares":
+        estimator = prepare_estimator(subspace, name,
+                                      center_point_external=True)
+        assert isinstance(estimator, OrdinaryLeastSquares)
+
 
 @pytest.mark.parametrize("name", supported_estimator_names)
 def test_prepare_estimator_sin(subspace_sin, name):
@@ -108,6 +118,10 @@ def test_prepare_estimator_sin(subspace_sin, name):
         # Centered by points and ewald; each func is a group itself
         # Groups should always be a 1d array.
         assert isinstance(estimator, StepwiseEstimator)
+        npt.assert_array_equal(estimator._full_scope, np.arange(total_terms, dtype=int))
+        assert estimator._step_names == ("center", "main")
+        assert [sub.__class__.__name__
+                for sub in estimator._estimators] == ["Lasso", name]
         groups = estimator._estimators[-1].groups
         assert len(np.array(groups).shape) == 1
         assert groups[0] == 0
@@ -152,3 +166,9 @@ def test_prepare_estimator_sin(subspace_sin, name):
         if is_subclass(name, "MIQP_L0"):
             assert estimator.hierarchy == subspace_sin.orbit_hierarchy()
         assert not estimator.fit_intercept
+
+    # OLS should never be stepwise.
+    if name == "OrdinaryLeastSquares":
+        estimator = prepare_estimator(subspace_sin, name,
+                                      center_point_external=True)
+        assert isinstance(estimator, OrdinaryLeastSquares)
