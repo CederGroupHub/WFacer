@@ -104,12 +104,14 @@ def query_name_iteratively(obj, name):
                 return query
         return None
     else:
-        if hasattr(obj, name):
-            return getattr(obj, name)
         # TODO: This might not be smart enough but should
         #  work for most cases?
-        else:
-            return None
+        if hasattr(obj, name):
+            return getattr(obj, name)
+        # This is to parse entry object.
+        if hasattr(obj, "data"):
+            return query_name_iteratively(obj.data, name)
+        return None
 
 
 def get_property_from_object(obj, query_string):

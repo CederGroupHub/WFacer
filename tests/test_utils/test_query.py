@@ -68,3 +68,9 @@ def test_get_property(single_taskdoc):
     assert np.isclose(energy, single_taskdoc.calcs_reversed[0].output.energy)
     with pytest.raises(ValueError):
         _ = get_property_from_object(single_taskdoc, "whatever")
+    # Should be able to look into entry.data as well. Should give true.
+    entry = get_property_from_object(single_taskdoc, "entry")
+    assert entry is not None
+    assert entry.data["aspherical"]
+    assert get_property_from_object(single_taskdoc, "aspherical")
+

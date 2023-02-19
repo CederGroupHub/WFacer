@@ -172,7 +172,9 @@ def enumerate_matrices(
     scs_skew = sorted(scs_skew, key=skew_sort_key)
 
     # Select 1 diagonal, 1 off diagonal.
-    return scs_diagonal[0] @ conv_mat, scs_skew[0] @ conv_mat
+    # Must return lists for pydantic validation.
+    return [np.round(scs_diagonal[0] @ conv_mat).astype(int).tolist(),
+            np.round(scs_skew[0] @ conv_mat).astype(int).tolist()]
 
 
 def truncate_cluster_subspace(cluster_subspace, sc_matrices):
@@ -207,7 +209,9 @@ def truncate_cluster_subspace(cluster_subspace, sc_matrices):
             f"Removed orbits with indices: {to_remove}"
         )
     cluster_subspace_new = cluster_subspace.copy()
-    cluster_subspace_new.remove_orbits(to_remove)
+    # Cannot call remove_orbit with an empty list.
+    if len(to_remove) > 0:
+        cluster_subspace_new.remove_orbits(to_remove)
     return cluster_subspace_new
 
 
@@ -261,7 +265,7 @@ def enumerate_compositions_as_counts(
         )
         for x in xs
     ]
-    return np.array(ns).astype(int)
+    return np.array(ns).astype(int).tolist()  # Must return a list to correctly validate.
 
 
 def get_num_structs_to_sample(

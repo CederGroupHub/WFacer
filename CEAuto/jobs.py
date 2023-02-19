@@ -165,9 +165,9 @@ def _get_decorators(options, is_charge_decorated):
 
 def _filter_out_failed_entries(entries, entry_ids):
     """Mark failed entries as none and return successful indices."""
-    entry_ids = [eid for eid, ent in zip(entries, entry_ids) if ent is not None]
-    entries = [ent for ent in entries if ent is not None]
-    return entries, entry_ids
+    new_entry_ids = [eid for ent, eid in zip(entries, entry_ids) if ent is not None]
+    new_entries = [ent for ent in entries if ent is not None]
+    return new_entries, new_entry_ids
 
 
 # TODO: jobs with a dict or list as output is still considered unreferenced
@@ -307,6 +307,12 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
     undecorated_entries = deepcopy(last_ce_document.undecorated_entries)
     computed_properties = deepcopy(last_ce_document.computed_properties)
     logging.info("Loading computations.")
+
+    n_enum = len(enum_output["new_structures"])
+    if len(taskdocs) != n_enum:
+        raise ValueError(f"Number of TaskDocuments: {len(taskdocs)}"
+                         f" does not match with number of newly enumerated"
+                         f" structures: {n_enum}")
 
     for doc in taskdocs:
         flow_converged = _check_flow_convergence(doc)
@@ -519,6 +525,13 @@ def initialize_document(prim, project_name="ceauto-work", options=None):
 
     # Enumerate compositions as "counts" format in smol.moca.CompositionSpace.
     logging.info("Enumerating valid compositions.")
+    # Mute additional constraints if not needed.
+    if len(eq_constraints) == 0:
+        eq_constraints = None
+    if len(leq_constraints) == 0:
+        leq_constraints = None
+    if len(geq_constraints) == 0:
+        geq_constraints = None
     comp_space = CompositionSpace(
         bits,
         sublattice_sizes,
@@ -549,6 +562,7 @@ def initialize_document(prim, project_name="ceauto-work", options=None):
         supercell_matrices=sc_matrices,
         compositions=compositions,
     )
+    # Give correct shape to feature matrix.
     num_features = len(subspace.external_terms) + subspace.num_corr_functions
     init_ce_document.enumerated_features = np.array([]).reshape((0, num_features))
 

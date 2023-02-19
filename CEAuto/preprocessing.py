@@ -497,7 +497,7 @@ def process_decorator_options(d):
     # if you have new decorators implemented.
     decorator_types = d.get("decorator_types", [])
     decorator_kwargs = d.get("decorator_kwargs", [])
-    decorator_train_kwargs = d.get("decorator_kwargs", [])
+    decorator_train_kwargs = d.get("decorator_train_kwargs", [])
 
     if len(decorator_kwargs) > 0 and len(decorator_kwargs) != len(decorator_types):
         raise ValueError(

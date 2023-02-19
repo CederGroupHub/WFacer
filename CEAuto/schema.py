@@ -61,7 +61,7 @@ class CeOutputsDocument(BaseModel):
         [], description="Supercell matrices for each" " enumerated structure."
     )
     # Needs to be reshaped when initialized.
-    enumerated_features: list = Field(
+    enumerated_features: np.ndarray = Field(
         np.array([]), description="Feature vectors for each" " enumerated structure."
     )
     undecorated_entries: list = Field(
@@ -78,6 +78,10 @@ class CeOutputsDocument(BaseModel):
         " structure. If failed, will"
         " be None-type.",
     )
+
+    # This is to make feature matrix validated correctly.
+    class Config:
+        arbitrary_types_allowed = True
 
     @property
     def last_iter_id(self):

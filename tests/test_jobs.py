@@ -11,6 +11,7 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 
 from jobflow import Response, Flow, Job
 from atomate2.vasp.schemas.task import TaskDocument
+from atomate2.vasp.schemas.calculation import Calculation
 
 from smol.cofe.space.domain import Vacancy
 
@@ -58,8 +59,14 @@ def gen_fake_taskdoc(structure, energy):
     entry = ComputedEntry(s.composition,
                           energy,
                           data={"some_test": 100})
+    # Need to insert a successful calculation in calcs_reversed as well.
+    fake_calc = Calculation(has_vasp_completed="successful")
 
-    return TaskDocument(structure=s, entry=entry)
+    return TaskDocument(structure=s, entry=entry, calcs_reversed=[fake_calc])
+
+
+# Add more if new tests are required.
+fix_charge_settings = {"Li": 1, "Ca": 1, "Br": -1}
 
 
 @pytest.fixture
@@ -75,7 +82,10 @@ def initial_document(prim):
                "optimizer_type": "grid-search",
                "param_grid": {"alpha": 2 ** np.linspace(-25, 3, 15)}}
     if specs["charge_decorated"]:
-        options["decorator_types"] = ["pmg-guess-charge"]
+        options["decorator_types"] = ["fixed-charge"]
+        elements = [el.symbol for el in prim.composition.element_composition.keys()]
+        options["decorator_kwargs"] = [{"labels": {el: fix_charge_settings[el]
+                                                   for el in elements}}]
 
     init_job = initialize_document(prim, options=options)
     return execute_job_function(init_job)
@@ -187,9 +197,11 @@ def test_calculate_structures(initial_document, enum_output):
 
 
 def test_parse_calculations(enum_output, parse_output):
-    n_enum = enum_output
+    n_enum = len(enum_output["new_structures"])
 
-    # Assert all structures can be correctly mapped.
+    # Assert all structures can be correctly mapped and not duplicated, because
+    # they are all the enumerated result of the first iteration, and are not
+    # supposed to duplicate.
     assert parse_output["wrangler"].num_structures == n_enum
 
     # Assert all structures are properly decorated.
