@@ -2,12 +2,10 @@
 from warnings import warn
 
 import numpy as np
-
-from smol.utils import class_name_from_str
-
 import sparselm
-from sparselm.model import __all__ as all_estimator_names
+from smol.utils import class_name_from_str
 from sparselm.model import Lasso, OverlapGroupLasso, StepwiseEstimator
+from sparselm.model import __all__ as all_estimator_names
 
 
 def is_subclass(classname, parent_classname):

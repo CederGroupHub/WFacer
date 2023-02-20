@@ -1,6 +1,6 @@
 """Test initialization of the CeOutputsDocument schema."""
-import pytest
 import numpy as np
+import pytest
 
 from CEAuto.schema import CeOutputsDocument
 from CEAuto.wrangling import CeDataWrangler

@@ -1,3 +1,5 @@
+"""Utilities to parse composition constraints from input options."""
+
 from smol.cofe.space.domain import get_species
 from smol.moca.utils.occu import get_dim_ids_by_sublattice
 
@@ -92,7 +94,7 @@ def parse_species_constraints(d, bits, sl_sizes):
 
 
 def parse_generic_constraint(d_left, right, bits):
-    """Pase more generic constraint.
+    """Parse more generic constraint.
 
     Parse one constraint at a time.
     Args:

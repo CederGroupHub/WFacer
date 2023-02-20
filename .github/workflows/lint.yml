@@ -1,0 +1,51 @@
+name: lint
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 6
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .[dev]
+      - name: flake8
+        run: |
+            flake8 --version
+            flake8 --count --show-source --statistics CEAuto
+            # exit-zero treats all errors as warnings.
+            flake8 --count --exit-zero --max-complexity=20 --statistics CEAuto
+      - name: black
+        run: |
+          black --version
+          black --check --diff --color CEAuto
+      - name: pydocstyle
+        run: |
+          pydocstyle --version
+          pydocstyle --count CEAuto
+      # Not in shape for this yet
+      # - name: pylint
+      #  run: |
+      #     pylint CEAuto
+      #- name: mypy
+       #   run: |
+        #    mypy --version
+         #   rm -rf .mypy_cache
+          #  mypy CEAuto

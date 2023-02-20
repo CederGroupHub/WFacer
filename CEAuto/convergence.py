@@ -1,8 +1,6 @@
 """Convergence checks."""
 import numpy as np
-
 from pymatgen.analysis.structure_matcher import StructureMatcher
-
 from smol.cofe import ClusterExpansion
 
 from .utils.convex_hull import get_min_energy_structures_by_composition
@@ -53,7 +51,7 @@ def compare_fitted_coefs(cluster_subspace, coefs_prev, coefs_now):
             Cluster coefficients fitted in the previous iteration.
             Not ECIs because not divided by multiplicity!
         coefs_now(1d arrayLike):
-            Cluster coefficeints fitted in the latest iteration.
+            Cluster coefficients fitted in the latest iteration.
     Returns:
         float:
             || ECI' - ECI ||_1 / ||ECI||_1.

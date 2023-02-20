@@ -1,33 +1,29 @@
-__author__ = "Fengyu Xie"
+"""This module implements a StructureEnumerator class for CE sampling.
 
-"""
-This module implements a StructureEnumerator class for CE sampling.
+Algorithm based on:
 
-Algorithm based on: 
-
-Ground state structures will also be added to the structure pool, but 
+Ground state structures will also be added to the structure pool, but
 they are not added here. They will be added in the convergence checker
 module.
 """
 
-from warnings import warn
-from itertools import chain
+__author__ = "Fengyu Xie"
+
 from copy import deepcopy
-from joblib import Parallel, delayed, cpu_count
+from itertools import chain
+from warnings import warn
 
-from scipy.special import gammaln
 import numpy as np
-
+from joblib import Parallel, cpu_count, delayed
 from pymatgen.core import Lattice
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-
+from scipy.special import gammaln
 from smol.moca import CompositionSpace
-from smol.cofe import ClusterSubspace
 
-from .utils.supercells import get_three_factors, is_duplicate_sc
-from .utils.selection import select_initial_rows, select_added_rows
 from .sample_generators import CanonicalSampleGenerator
-from .utils.duplicacy import is_duplicate, is_corr_duplicate
+from .utils.duplicacy import is_corr_duplicate, is_duplicate
+from .utils.selection import select_added_rows, select_initial_rows
+from .utils.supercells import get_three_factors, is_duplicate_sc
 
 
 # TODO: in the future, may employ mcsqs type algos.
@@ -63,7 +59,7 @@ def enumerate_matrices(
             matrices. By default set to 8, to prevent overstretching in one
             direction
         min_sc_angle(float):
-            Minmum allowed angle of the supercell lattice. By default set
+            Minimum allowed angle of the supercell lattice. By default, set
             to 30, to prevent over-skewing.
         kwargs:
             keyword arguments to pass into SpaceGroupAnalyzer.

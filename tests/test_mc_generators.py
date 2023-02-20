@@ -1,15 +1,14 @@
 """Test sample generators."""
-import pytest
-from itertools import chain
 import random
+from itertools import chain
+
 import numpy as np
 import numpy.testing as npt
-
+import pytest
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Element
-
+from smol.cofe.space.domain import Vacancy, get_allowed_species
 from smol.moca import Ensemble
-from smol.cofe.space.domain import get_allowed_species, Vacancy
 
 from CEAuto.sample_generators import CanonicalSampleGenerator, SemigrandSampleGenerator
 

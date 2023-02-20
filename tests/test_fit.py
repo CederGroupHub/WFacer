@@ -49,8 +49,8 @@ def test_fit_ecis_indicator(single_wrangler):
     # print("predicted energy:", e_predict)
     # print("r2 score of prediction:", r2)
 
-    # No centering, L0L2. L0L2 without centering does really bad
-    # as it aggressivly supresses all params to 0.
+    # No centering, L0L2. L0L2 without centering does really awful
+    # as it aggressively suppresses all params to 0.
     grid = [
         ("eta", (2 ** np.linspace(-20, 4, 25)).tolist()),
         ("alpha", [0] + (2 ** np.linspace(-30, 0, 16)).tolist()),

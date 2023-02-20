@@ -1,16 +1,16 @@
 """Automatic jobflow maker."""
 from dataclasses import dataclass, field
-from jobflow import Maker, Response, Flow, job
 from warnings import warn
 
-from .schema import CeOutputsDocument
+from jobflow import Flow, Maker, Response, job
+
 from .jobs import (
-    enumerate_structures,
     calculate_structures,
-    parse_calculations,
+    enumerate_structures,
     fit_calculations,
-    update_document,
     initialize_document,
+    parse_calculations,
+    update_document,
 )
 
 
@@ -47,7 +47,7 @@ def ce_step_trigger(last_ce_document):
         calculation = calculate_structures(enumeration.output, last_ce_document)
         calculation.name = project_name + f"_iter_{iter_id}" + "_calculation"
 
-        # Analyze outputs and wrap up all necessary datas into wrangler.
+        # Analyze outputs and wrap up all necessary data into wrangler.
         parsing = parse_calculations(
             calculation.output, enumeration.output, last_ce_document
         )
@@ -125,7 +125,7 @@ class CeAutoMaker(Maker):
 
             # Enter iteration.
             ce_trigger = ce_step_trigger(initialize.output)
-            ce_trigger.name = self.name + f"_iter_0_trigger"
+            ce_trigger.name = self.name + "_iter_0_trigger"
             return Flow([initialize, ce_trigger], ce_trigger.output, name=self.name)
 
         # Warm restart.

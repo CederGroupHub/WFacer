@@ -1,11 +1,10 @@
 """Defines the data schema for CEAuto jobs."""
 import numpy as np
 from pydantic import BaseModel, Field
-
 from smol.cofe import ClusterSubspace
 
-from .wrangling import CeDataWrangler
 from .convergence import ce_converged
+from .wrangling import CeDataWrangler
 
 
 class CeOutputsDocument(BaseModel):
@@ -73,7 +72,7 @@ class CeOutputsDocument(BaseModel):
     )
     computed_properties: list = Field(
         [],
-        desciption="Other properties extracted"
+        description="Other properties extracted"
         " for each enumerated"
         " structure. If failed, will"
         " be None-type.",
@@ -81,6 +80,8 @@ class CeOutputsDocument(BaseModel):
 
     # This is to make feature matrix validated correctly.
     class Config:
+        """Setting configuration for schema."""
+
         arbitrary_types_allowed = True
 
     @property

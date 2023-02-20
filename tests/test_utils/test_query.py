@@ -1,12 +1,12 @@
 """Test query rules."""
 import numpy as np
-import pytest
 import numpy.testing as npt
+import pytest
 
 from CEAuto.utils.query import (
+    get_property_from_object,
     query_keypath,
     query_name_iteratively,
-    get_property_from_object,
 )
 
 

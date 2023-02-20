@@ -1,32 +1,30 @@
 """Test enumerating functions."""
-from itertools import chain
 from collections import defaultdict
-import pytest
-import numpy as np
-import numpy.testing as npt
-import logging
+from itertools import chain
 from warnings import warn
 
-from pymatgen.core import Lattice, Element
+import numpy as np
+import numpy.testing as npt
+import pytest
+from pymatgen.core import Element, Lattice
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-
 from smol.cofe import ClusterSubspace
-from smol.moca import CompositionSpace, Ensemble
 from smol.cofe.space.domain import Vacancy
+from smol.moca import CompositionSpace, Ensemble
 from smol.moca.utils.occu import (
     get_dim_ids_by_sublattice,
     get_dim_ids_table,
     occu_to_counts,
 )
 
-from CEAuto.preprocessing import get_prim_specs
 from CEAuto.enumeration import (
-    enumerate_matrices,
-    truncate_cluster_subspace,
     enumerate_compositions_as_counts,
-    get_num_structs_to_sample,
+    enumerate_matrices,
     generate_training_structures,
+    get_num_structs_to_sample,
+    truncate_cluster_subspace,
 )
+from CEAuto.preprocessing import get_prim_specs
 from CEAuto.utils.duplicacy import is_corr_duplicate
 
 
@@ -121,6 +119,7 @@ def test_enumerate_compositions(specs):
 
     bit_inds = get_dim_ids_by_sublattice(bits)
     for n in counts:
+        n = np.asarray(n).astype(int)  # counts are lists now.
         assert np.isclose(np.dot(n, bit_charges), 0)
         for sl_ind, sl_bit_inds in enumerate(bit_inds):
             assert np.isclose(n[sl_bit_inds].sum(), sl_sizes[sl_ind] * 32)
@@ -177,7 +176,7 @@ def test_enumerate_structures(single_expansion):
 
     # Must appear at least once since ground states are kept.
     for count in counts:
-        assert count_occurences[tuple(count.tolist())] >= 1
+        assert count_occurences[tuple(count)] >= 1
 
     structures_add, matrices_add, feature_matrix_add = generate_training_structures(
         single_expansion,

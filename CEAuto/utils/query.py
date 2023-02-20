@@ -1,6 +1,6 @@
 """Define rules to query a nested task documents and dictionaries."""
-from warnings import warn
 import random
+from warnings import warn
 
 from pydantic import BaseModel
 
@@ -36,12 +36,12 @@ def query_keypath(obj, keypath):
         elif "-" in k:
             if len(k.split("-")) != 2:
                 raise ValueError(
-                    f"Each level of keypath cannot have more than" f" one dash -!"
+                    "Each level of keypath cannot have more than one dash -!"
                 )
             ind = int(k.split("-")[0])
             new_k = k.split("-")[1]
             return query_keypath(obj[ind], [new_k] + keypath[1:])
-        # Return the corresponding property or all memebers as a list.
+        # Return the corresponding property or all members as a list.
         elif k.startswith("^"):
             new_k = k[1:]
             return [query_keypath(sub, [new_k] + keypath[1:]) for sub in obj]

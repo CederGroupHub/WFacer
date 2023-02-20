@@ -6,8 +6,8 @@ be extracted.
 
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 
-from .query import get_property_from_object
 from ..specie_decorators.base import get_site_property_query_names_from_decorator
+from .query import get_property_from_object
 
 
 def _merge_computed_structure_entry(entry, structure):
@@ -70,19 +70,19 @@ def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=N
                 prop_dict[p] = get_property_from_object(taskdoc, p)
             else:
                 raise ValueError(
-                    f"Property names and their query strings"
-                    f" must either be in tuples or be in"
-                    f" strings!"
+                    "Property names and their query strings"
+                    " must either be in tuples or be in"
+                    " strings!"
                 )
     site_props = {}
     if decorator_names is not None:
         for d in decorator_names:
             site_property_query_names = get_site_property_query_names_from_decorator(d)
             for sp, query in site_property_query_names:
-                # Total magnetization on each site is already read and added to structure
-                # by atomate2. It should be overwritten.
+                # Total magnetization on each site is already read and added to
+                # structure by atomate2. It should be overwritten.
                 if sp != "magmom":
                     site_props[sp] = get_property_from_object(taskdoc, query)
     for sp, prop in site_props.items():
         structure.add_site_property(sp, prop)
-    return (_merge_computed_structure_entry(computed_entry, structure), prop_dict)
+    return _merge_computed_structure_entry(computed_entry, structure), prop_dict

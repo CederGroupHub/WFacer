@@ -1,29 +1,27 @@
 """Test running jobs."""
-import pytest
-import numpy as np
-from itertools import chain
 from copy import deepcopy
+from itertools import chain
+
+import numpy as np
 import numpy.testing as npt
-
-from pymatgen.core import Structure, Element
-from pymatgen.entries.computed_entries import ComputedEntry
-from pymatgen.analysis.structure_matcher import StructureMatcher
-
-from jobflow import Response, Flow, Job
-from atomate2.vasp.schemas.task import TaskDocument
+import pytest
 from atomate2.vasp.schemas.calculation import Calculation
-
+from atomate2.vasp.schemas.task import TaskDocument
+from jobflow import Flow, Job, Response
+from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.core import Element, Structure
+from pymatgen.entries.computed_entries import ComputedEntry
 from smol.cofe.space.domain import Vacancy
 
-from CEAuto.preprocessing import get_prim_specs
 from CEAuto.jobs import (
-    enumerate_structures,
     calculate_structures,
-    parse_calculations,
+    enumerate_structures,
     fit_calculations,
-    update_document,
     initialize_document,
+    parse_calculations,
+    update_document,
 )
+from CEAuto.preprocessing import get_prim_specs
 
 from .utils import execute_job_function
 
@@ -172,6 +170,14 @@ def test_enumerate_structures(initial_document, enum_output):
     ):
         f0 = cluster_subspace.corr_from_structure(s, scmatrix=m)
         npt.assert_array_almost_equal(f, f0)
+    # Enumerated structures printed out and found to be reasonable.
+    from monty.serialization import dumpfn
+
+    structures = enum_output["new_structures"]
+    name = "".join(
+        [el.symbol for el in structures[0].composition.element_composition.keys()]
+    )
+    dumpfn(structures, f"./structures_{name}.json")
 
 
 def test_calculate_structures(initial_document, enum_output):
@@ -199,7 +205,9 @@ def test_calculate_structures(initial_document, enum_output):
 
 def test_parse_calculations(enum_output, parse_output):
     n_enum = len(enum_output["new_structures"])
-    assert 1 <= n_enum <= 50  # Sometimes can't get 50 structures for LiCaBr.
+    assert 1 <= n_enum <= 50
+    # Sometimes can't get 50 structures for LiCaBr. This should be fine because
+    # LiCaBr requires low ewald energy, that greatly restricts its sample space.
 
     # Assert all structures can be correctly mapped and not duplicated, because
     # they are all the enumerated result of the first iteration, and are not

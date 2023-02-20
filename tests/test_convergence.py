@@ -1,14 +1,12 @@
 """Test convergence functions."""
 import numpy as np
-
 from pymatgen.entries.computed_entries import ComputedStructureEntry
-
 from smol.cofe import ClusterExpansion
-from smol.moca import Ensemble, CompositionSpace
+from smol.moca import CompositionSpace, Ensemble
 
 from CEAuto.convergence import ce_converged
-from CEAuto.wrangling import CeDataWrangler
 from CEAuto.preprocessing import get_prim_specs
+from CEAuto.wrangling import CeDataWrangler
 
 from .utils import gen_random_occu_from_counts
 
@@ -62,7 +60,7 @@ def get_one_wrangler(subspace, coefs, bad_wangler=False):
             properties={"spec": spec},
             supercell_matrix=np.eye(3) * 2,
             check_struct_duplicacy=False,
-        )  # Must supress dupe check here.
+        )  # Must suppress dupe check here.
 
     return wrangler
 

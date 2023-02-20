@@ -4,11 +4,10 @@ Notice: when generating and adding training structures, distinguish
 element oxidation states. But when generating hulls for comparing
 convergence, will not distinguish oxidation states.
 """
-import numpy as np
 from collections import defaultdict
 
+import numpy as np
 from pymatgen.core import Composition
-
 from smol.cofe.wrangling.tools import _energies_above_hull
 
 

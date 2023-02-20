@@ -6,17 +6,16 @@ more information that CE might use.
 
 __author__ = "Fengyu Xie"
 
-import numpy as np
 import warnings
 
+import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
-
 from smol.cofe.wrangling.wrangler import StructureWrangler
 
 
 # When using Seko's iterative procedure, it does not make much sense to weight energy.
-# We will not include sample weighting scheme here. You can play with the CeDataWangler.add_weights
-# if you want.
+# We will not include sample weighting scheme here. You can play with the
+# CeDataWangler.add_weights if you want.
 class CeDataWrangler(StructureWrangler):
     """CeDataWrangler class.
 
@@ -71,7 +70,7 @@ class CeDataWrangler(StructureWrangler):
         or unit cell, directly from DFT).
 
         An attempt to compute the correlation vector is made and if successful the
-        structure is succesfully added. Otherwise the structure is ignored.
+        structure is successfully added. Otherwise, the structure is ignored.
         Usually failures are caused by the StructureMatcher in the given
         ClusterSubspace failing to map structures to the primitive structure.
 
@@ -115,8 +114,8 @@ class CeDataWrangler(StructureWrangler):
                 fail for further inspection.
         """
         # Add property "spec" to store iter_id and enum_id to record in which iteration
-        # and when the structure was enumerated for calculation. This helps to reference the
-        # atomate database. Property "spec" should never be extracted!
+        # and when the structure was enumerated for calculation. This helps to
+        # reference the atomate database. Property "spec" should never be extracted!
         if properties is None:
             properties = {"spec": {"iter_id": 0, "enum_id": 0}}
         elif "spec" not in properties:

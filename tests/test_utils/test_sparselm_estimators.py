@@ -1,19 +1,18 @@
 """Test sparselm estimator untilities."""
 from itertools import chain
 
-import pytest
 import numpy as np
 import numpy.testing as npt
-
-from sparselm.model import StepwiseEstimator, OrdinaryLeastSquares
+import pytest
+from sparselm.model import OrdinaryLeastSquares, StepwiseEstimator
 
 from CEAuto.utils.sparselm_estimators import (
-    unsupported_estimator_names,
-    is_subclass,
-    estimator_factory,
-    prepare_estimator,
     all_estimator_names,
+    estimator_factory,
+    is_subclass,
+    prepare_estimator,
     supported_estimator_names,
+    unsupported_estimator_names,
 )
 
 

@@ -3,17 +3,16 @@
 __author__ = "Fengyu Xie"
 
 import itertools
-import numpy as np
 
-from pymatgen.core import Structure, Lattice, Composition
+import numpy as np
+from pymatgen.core import Composition, Structure
 from pymatgen.core.periodic_table import Element
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-
 from smol.cofe import ClusterSubspace
 from smol.cofe.extern import EwaldTerm
-from smol.cofe.space.domain import get_site_spaces, Vacancy, get_allowed_species
+from smol.cofe.space.domain import Vacancy, get_allowed_species, get_site_spaces
 
-from .utils.comp_constraints import parse_species_constraints, parse_generic_constraint
+from .utils.comp_constraints import parse_generic_constraint, parse_species_constraints
 
 
 # Parse and process primitive cell.
@@ -245,6 +244,7 @@ def process_supercell_options(d):
 
 def process_composition_options(d):
     """Get options to enumerate compositions with CompositionSpace.
+
     Args:
         d(dict):
             An input dictionary containing various options in the input file.
@@ -341,6 +341,7 @@ def parse_comp_constraints(options, bits, sublattice_sizes):
 
 def process_structure_options(d):
     """Get options to enumerate structures.
+
     Args:
         d(dict):
             An input dictionary containing various options in the input file.
@@ -396,6 +397,7 @@ def process_structure_options(d):
 
 def process_calculation_options(d):
     """Get options to do vasp calculations in atomate2.
+
     Args:
         d(dict):
             An input dictionary containing various options in the input file.
@@ -477,6 +479,7 @@ def process_calculation_options(d):
 
 def process_decorator_options(d):
     """Get options to decorate species with charge or other properties.
+
     Args:
         d(dict):
             An input dictionary containing various options in the input file.
@@ -558,6 +561,7 @@ def process_subspace_options(d):
 
 def process_fit_options(d):
     """Get options to fit ECIs with sparse-lm.
+
     Args:
         d(dict):
             An input dictionary containing various options in the input file.
@@ -566,7 +570,7 @@ def process_fit_options(d):
             A dict containing fit options, including the following keys:
         estimator_type(str):
             The name of an estimator class in sparce-lm. Default to
-            'L2L0'.
+            'Lasso'.
         use_hierarchy(str):
             Whether to use hierarchy in regularization fitting, when
             estimator type is mixedL0. Default to True.
@@ -597,7 +601,7 @@ def process_fit_options(d):
             See docs of the specific estimator.
     """
     return {
-        "estimator_type": d.get("estimator_type", "l2-l0"),
+        "estimator_type": d.get("estimator_type", "lasso"),
         # Under Seko's iterative procedure, there is not much sense in weighting
         # over energy, because low energy samples are always preferred.
         # We will not include sample weighting scheme here. You can play with the

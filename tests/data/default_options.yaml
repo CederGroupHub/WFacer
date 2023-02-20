@@ -50,6 +50,3 @@ delta_eci_rtol: null
 delta_min_e_rtol: 2
 continue_on_finding_new_gs: false
 max_iter: 10
-
-
-

@@ -2,22 +2,20 @@
 import numpy as np
 import numpy.testing as npt
 import yaml
-from pymatgen.core import Lattice
 from pymatgen.analysis.structure_matcher import StructureMatcher
-
-from smol.cofe.space.domain import get_species
+from pymatgen.core import Lattice
 from smol.cofe.extern import EwaldTerm
-
-from CEAuto.preprocessing import (
-    reduce_prim,
-    construct_prim,
-    get_prim_specs,
-    get_cluster_subspace,
-    get_initial_ce_coefficients,
-    parse_comp_constraints,
-)
+from smol.cofe.space.domain import get_species
 
 from CEAuto.jobs import _preprocess_options
+from CEAuto.preprocessing import (
+    construct_prim,
+    get_cluster_subspace,
+    get_initial_ce_coefficients,
+    get_prim_specs,
+    parse_comp_constraints,
+    reduce_prim,
+)
 
 
 def test_reduce_prim(prim):
@@ -101,7 +99,7 @@ def test_parse_comp_constraints():
 def test_options():
     options = _preprocess_options({})
     # Update this yaml if new options have been implemented!
-    with open("./data/default_options.yaml", "r") as fin:
+    with open("./data/default_options.yaml") as fin:
         default_options = yaml.load(fin, Loader=yaml.SafeLoader)
     assert set(options.keys()) == set(default_options.keys())
     for k in options.keys():

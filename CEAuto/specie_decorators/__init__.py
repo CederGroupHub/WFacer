@@ -1,10 +1,14 @@
+"""Decorators to turn structure of Element into structure of decorated Species."""
+
 from collections import defaultdict
+
 from smol.utils import get_subclasses
+
 from .base import BaseDecorator, decorator_factory
 from .charge import (
+    FixedChargeDecorator,
     MagneticChargeDecorator,
     PmgGuessChargeDecorator,
-    FixedChargeDecorator,
 )
 
 allowed_decorators = defaultdict(lambda: [])

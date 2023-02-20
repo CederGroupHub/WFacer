@@ -1,50 +1,47 @@
 """Unitary jobs used by Maker."""
-from copy import deepcopy
-import numpy as np
-from jobflow import Response, Flow, job
 import logging
+from copy import deepcopy
 from warnings import warn
 
-from pymatgen.analysis.elasticity.strain import Deformation
-
-from smol.cofe import ClusterExpansion
-from smol.moca import CompositionSpace
-
+import numpy as np
 from atomate2.vasp.jobs.core import RelaxMaker, StaticMaker, TightRelaxMaker
+from atomate2.vasp.schemas.calculation import Status
 from atomate2.vasp.sets.core import (
     RelaxSetGenerator,
     StaticSetGenerator,
     TightRelaxSetGenerator,
 )
-from atomate2.vasp.schemas.calculation import Status
+from jobflow import Flow, Response, job
+from pymatgen.analysis.elasticity.strain import Deformation
+from smol.cofe import ClusterExpansion
+from smol.moca import CompositionSpace
 
-from .schema import CeOutputsDocument
-from .preprocessing import (
-    reduce_prim,
-    get_prim_specs,
-    parse_comp_constraints,
-    get_cluster_subspace,
-    get_initial_ce_coefficients,
-    process_supercell_options,
-    process_composition_options,
-    process_structure_options,
-    process_calculation_options,
-    process_decorator_options,
-    process_subspace_options,
-    process_fit_options,
-    process_convergence_options,
-)
 from .enumeration import (
-    enumerate_matrices,
     enumerate_compositions_as_counts,
-    truncate_cluster_subspace,
+    enumerate_matrices,
     generate_training_structures,
+    truncate_cluster_subspace,
 )
 from .fit import fit_ecis_from_wrangler
-from .wrangling import CeDataWrangler
+from .preprocessing import (
+    get_cluster_subspace,
+    get_initial_ce_coefficients,
+    get_prim_specs,
+    parse_comp_constraints,
+    process_calculation_options,
+    process_composition_options,
+    process_convergence_options,
+    process_decorator_options,
+    process_fit_options,
+    process_structure_options,
+    process_subspace_options,
+    process_supercell_options,
+    reduce_prim,
+)
+from .schema import CeOutputsDocument
+from .specie_decorators import PmgGuessChargeDecorator, decorator_factory
 from .utils.task_document import get_entry_from_taskdoc
-from .specie_decorators import decorator_factory, PmgGuessChargeDecorator
-
+from .wrangling import CeDataWrangler
 
 log = logging.getLogger(__name__)
 
@@ -81,7 +78,7 @@ def _enumerate_structures(
     enumerated_features,
     options,
 ):
-    """Enumerate structures in an interation."""
+    """Enumerate structures in an interaction."""
     ce = ClusterExpansion(subspace, coefs)
     keep_ground_states = options["keep_ground_states"]
     num_structs_init = options["num_structs_per_iter_init"]

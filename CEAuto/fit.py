@@ -1,10 +1,8 @@
 """Fit ECIs from Wrangler."""
 import numpy as np
 from sklearn.model_selection import cross_val_score
-
-from smol.utils import class_name_from_str
 from smol.cofe.wrangling.tools import unique_corr_vector_indices
-
+from smol.utils import class_name_from_str
 from sparselm.model import OrdinaryLeastSquares, StepwiseEstimator
 from sparselm.model_selection import GridSearchCV, LineSearchCV
 
@@ -35,7 +33,8 @@ def fit_ecis_from_wrangler(
         wrangler(CeDataWrangler):
             A CeDataWrangler storing all training structures.
         estimator_name(str):
-            The name of estimator, following the rules in smol.utils.class_name_from_str.
+            The name of estimator, following the rules in
+            smol.utils.class_name_from_str.
         optimizer_name(str):
             Name of hyperparameter optimizer. Currently, only supports GridSearch and
             LineSearch.
@@ -69,18 +68,6 @@ def fit_ecis_from_wrangler(
     feature_matrix = wrangler.feature_matrix.copy()
     # Corrected and normalized DFT energy in eV/prim.
     normalized_energy = wrangler.get_property_vector("energy", normalize=True)
-    point_func_inds = space.function_inds_by_size[1]
-    external_inds = list(
-        range(
-            space.num_corr_functions,
-            space.num_corr_functions + len(space.external_terms),
-        )
-    )
-    centered_inds = [0] + point_func_inds + external_inds
-    other_inds = np.setdiff1d(
-        np.arange(space.num_corr_functions + len(space.external_terms)),
-        centered_inds,
-    )
     if filter_unique_correlations:
         unique_inds = unique_corr_vector_indices(wrangler, "energy")
         feature_matrix = feature_matrix[unique_inds, :]

@@ -1,13 +1,12 @@
-from monty.json import MSONable, MontyDecoder
-import json
-import numpy as np
-import numpy.testing as npt
 import builtins
+import json
 import types
 
+import numpy as np
+import numpy.testing as npt
+from monty.json import MontyDecoder, MSONable
 from pymatgen.core import Element
 from pymatgen.entries.computed_entries import ComputedStructureEntry
-
 from smol.cofe.space.domain import Vacancy
 from smol.moca.utils.occu import get_dim_ids_table, occu_to_counts
 
@@ -47,7 +46,7 @@ def assert_dict_equal(d1, d2):
             assert_dict_equal(d1[k], d2[k])
         else:
             if d1[k] != d2[k]:
-                print("Difference in key: {}, d1: {}, d2: {}".format(k, d1[k], d2[k]))
+                print(f"Difference in key: {k}, d1: {d1[k]}, d2: {d2[k]}")
             assert d1[k] == d2[k]
 
 

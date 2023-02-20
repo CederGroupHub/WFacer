@@ -9,22 +9,20 @@ be-retrained after each iteration.
 
 __author__ = "Fengyu Xie, Julia H. Yang"
 
+import functools
 from abc import ABCMeta, abstractmethod
-from warnings import warn
-import numpy as np
-from monty.json import MSONable
 from collections import defaultdict
 from copy import deepcopy
-import functools
+from warnings import warn
 
+import numpy as np
+from monty.json import MSONable
 from pymatgen.core import Element, Species, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from sklearn.mixture import GaussianMixture
 from skopt import gp_minimize
-
 from smol.cofe.space.domain import get_species
-from smol.utils import derived_class_factory, class_name_from_str, get_subclasses
-
+from smol.utils import class_name_from_str, derived_class_factory, get_subclasses
 
 # Add here if you implement more decorators.
 valid_decorator_types = {
@@ -36,9 +34,11 @@ valid_decorator_types = {
 
 
 def _get_required_site_property(entry, site_id, prop_name):
-    """Find required site property."""
+    """Find required site property.
 
-    # Now if prop_name has dot ("."), site property will be treated as a dictionary.
+    If prop_name contains dot ("."), site property will be treated as a dictionary.
+    """
+
     def explore_key_path(path, d):
         d_last = d.copy()
         for k in path:
@@ -261,7 +261,7 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
 
     # Should save and load dicts with Monty.
     def as_dict(self):
-        """Serialization method."""
+        """Serialize the decorator."""
         labels = {str(key): val for key, val in self.labels.items()}
         return {
             "@module": self.__class__.__module__,
@@ -323,7 +323,7 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
            gaussian_models(dict{str|Element|Species:GaussianMixture}):
                Gaussian models corresponding to each key in labels.
         """
-        super(MixtureGaussianDecorator, self).__init__(labels, **kwargs)
+        super().__init__(labels, **kwargs)
         if gaussian_models is None:
             gaussian_models = {}
         gaussian_models = {
@@ -366,6 +366,11 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
 
     @property
     def is_trained(self):
+        """Determine whether the decorator has been trained.
+
+        Returns:
+            bool.
+        """
         return all([self.is_trained_gaussian_model(m) for m in self._gms.values()])
 
     def train(self, entries, reset=False):
@@ -445,7 +450,7 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
 
     def as_dict(self):
         """Serialize to dict."""
-        d = super(MixtureGaussianDecorator, self).as_dict()
+        d = super().as_dict()
         d["models"] = {
             str(species): self.serialize_gaussian_model(model)
             for species, model in self._gms.items()
@@ -511,7 +516,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
                1, Must be monotonically ascending,
                2, Must be len(labels[key]) = len(cuts[key]) + 1 for any key.
         """
-        super(GpOptimizedDecorator, self).__init__(labels, **kwargs)
+        super().__init__(labels, **kwargs)
         if cuts is not None:
             cuts = {get_species(key): val for key, val in cuts.items()}
             for species in self.labels:
@@ -587,7 +592,6 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         cuts_flatten_init = []
         domains_flatten_init = []
         for species in sorted(self.labels.keys()):
-            structure_sites = groups[species]
             # Need some pre-processing to make sure entries data
             # include the required properties, and the properties
             # are in the form of 1D arrayLike per entry.
@@ -701,8 +705,8 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         return self._filter(entries_decorated)
 
     def as_dict(self):
-        """Serialization method."""
-        d = super(GpOptimizedDecorator, self).as_dict()
+        """Serialize the decorator."""
+        d = super().as_dict()
         # Species serialized to string directly. Many other properties
         # might not be supported. Wait for pymatgen update.
         if self.is_trained:
@@ -719,7 +723,30 @@ class NoTrainDecorator(BaseDecorator):
     """Decorators that does not need training."""
 
     def __init__(self, labels, **kwargs):
-        super(NoTrainDecorator, self).__init__(labels)
+        """Initialize.
+
+        Args:
+           labels(dict{str|Species:list}): optional
+               A table of labels to decorate each element with.
+               keys are species symbol, values are possible decorated property
+               values, such as oxidation states, magnetic spin directions.
+               Values are sorted such that the corresponding cluster centers of the
+               required property is increasing. For example, in Mn(2, 3, 4)+
+               (high spin), the magnetic moments is sorted as [Mn4+, Mn3+, Mn2+],
+               thus you should provide labels as {Element("Mn"):[4, 3, 2]}.
+               Keys can be either Element|Species object, or their
+               string representations. Currently, do not support decoration
+               of Vacancy.
+               If you have multiple required properties, or required properties
+               have multiple dimensions, the labels order must match the sort
+               in the order of self.required_properties. Properties are sorted
+               lexicographically.
+               This argument may not be necessary for some decorator, such as
+               GuessChargeDecorator.
+               Be sure to provide labels for all the species you wish to assign
+               a property to, otherwise, you are responsible for your own error!
+        """
+        super().__init__(labels)
 
     @property
     def is_trained(self):

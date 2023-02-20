@@ -1,12 +1,11 @@
 """Test the trigger job and the flow maker."""
-import pytest
 import numpy as np
+import pytest
+from jobflow import Flow, Job, Response
 
-from jobflow import Response, Job, Flow
-
-from CEAuto.preprocessing import get_prim_specs
 from CEAuto.jobs import initialize_document
-from CEAuto.maker import ce_step_trigger, CeAutoMaker
+from CEAuto.maker import CeAutoMaker, ce_step_trigger
+from CEAuto.preprocessing import get_prim_specs
 
 from .utils import execute_job_function
 

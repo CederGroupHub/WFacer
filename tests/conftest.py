@@ -1,15 +1,15 @@
 import os
-import pytest
+
 import numpy as np
+import pytest
+from atomate2.vasp.schemas.task import TaskDocument
 from monty.serialization import loadfn
 from pydantic import parse_file_as
-
-from atomate2.vasp.schemas.task import TaskDocument
-
 from smol.cofe import ClusterExpansion
 from smol.moca import Ensemble
 
-from CEAuto.preprocessing import reduce_prim, get_prim_specs, get_cluster_subspace
+from CEAuto.preprocessing import get_cluster_subspace, get_prim_specs, reduce_prim
+
 from .utils import gen_random_wrangler
 
 # load test data files and set them up as fixtures

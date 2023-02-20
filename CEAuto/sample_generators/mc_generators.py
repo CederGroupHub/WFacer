@@ -2,17 +2,15 @@
 import itertools
 from abc import ABCMeta, abstractmethod
 from warnings import warn
+
 import numpy as np
 from pymatgen.core import Element
-
-from smol.cofe import ClusterExpansion
 from smol.cofe.space.domain import Vacancy
-from smol.moca import Ensemble, Sampler, CompositionSpace
-from smol.utils import derived_class_factory, class_name_from_str
+from smol.moca import CompositionSpace, Ensemble, Sampler
+from smol.utils import class_name_from_str, derived_class_factory
 
-from ..utils.duplicacy import is_duplicate, is_corr_duplicate
+from ..utils.duplicacy import is_corr_duplicate, is_duplicate
 from ..utils.occu import get_random_occupancy_from_counts
-
 
 __author__ = "Fengyu Xie"
 
@@ -28,7 +26,9 @@ class McSampleGenerator(metaclass=ABCMeta):
     """
 
     default_anneal_temp_series = [5000, 3200, 1600, 1000, 800, 600, 400, 200, 100]
-    default_heat_temp_series = [500, 1500, 5000]
+    # Allow up to 1 eV above composition should be reasonable. Would also give us more
+    # choice of sample structures when interactions are high.
+    default_heat_temp_series = [500, 2000, 5000, 12000]
 
     def __init__(
         self,
@@ -371,7 +371,7 @@ class CanonicalSampleGenerator(McSampleGenerator):
                 charge and other properties) before comparing duplicacy.
                 Default to false. Only valid when duplicacy_criteria="structure".
         """
-        super(CanonicalSampleGenerator, self).__init__(
+        super().__init__(
             ce,
             sc_matrix,
             anneal_temp_series=anneal_temp_series,
@@ -460,7 +460,7 @@ class SemigrandSampleGenerator(McSampleGenerator):
                 charge and other properties) before comparing duplicacy.
                 Default to false. Only valid when duplicacy_criteria="structure".
         """
-        super(SemigrandSampleGenerator, self).__init__(
+        super().__init__(
             ce,
             sc_matrix,
             anneal_temp_series=anneal_temp_series,
@@ -531,7 +531,7 @@ def mcgenerator_factory(mcgenerator_name, *args, **kwargs):
         mcgenerator_name(str):
             Name of a McSampleGenerator sub-class.
         *args, **kwargs:
-            Arguments used to intialize the class.
+            Arguments used to initialize the class.
     """
     if (
         "sample-generator" not in mcgenerator_name

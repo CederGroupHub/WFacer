@@ -3,8 +3,9 @@
 Charges will be assigned by magnitudes of magnetic moments.
 """
 
-from .base import BaseDecorator, GpOptimizedDecorator, NoTrainDecorator
 from pymatgen.entries.computed_entries import ComputedStructureEntry
+
+from .base import BaseDecorator, GpOptimizedDecorator, NoTrainDecorator
 
 __author__ = "Fengyu Xie"
 
@@ -44,7 +45,7 @@ class ChargeDecorator(BaseDecorator):
                will be filtered and returned as a NoneType.
                Default to 0, which means we require absolute charge balance.
         """
-        super(ChargeDecorator, self).__init__(labels=labels)
+        super().__init__(labels=labels)
         self.max_allowed_abs_charge = max_allowed_abs_charge
 
     def _filter(self, entries):
@@ -60,7 +61,7 @@ class ChargeDecorator(BaseDecorator):
 
     def as_dict(self):
         """Serialize to dict."""
-        d = super(ChargeDecorator, self).as_dict()
+        d = super().as_dict()
         d["max_allowed_abs_charge"] = self.max_allowed_abs_charge
         return d
 
@@ -211,6 +212,6 @@ class MagneticChargeDecorator(GpOptimizedDecorator, ChargeDecorator):
                will be filtered and returned as a NoneType.
                Default to 0, which means we require absolute charge balance.
         """
-        super(MagneticChargeDecorator, self).__init__(
+        super().__init__(
             labels=labels, cuts=cuts, max_allowed_abs_charge=max_allowed_abs_charge
         )

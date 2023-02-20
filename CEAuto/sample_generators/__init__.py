@@ -1,3 +1,5 @@
+"""Sample generators to enumerate structures from supercell matrices."""
+
 from .mc_generators import (
     CanonicalSampleGenerator,
     SemigrandSampleGenerator,

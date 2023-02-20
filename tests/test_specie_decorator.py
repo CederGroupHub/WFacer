@@ -1,19 +1,18 @@
-import numpy as np
-import numpy.testing as npt
 import random
-import pytest
 from itertools import product
 
+import numpy as np
+import numpy.testing as npt
+import pytest
+from pymatgen.core import Lattice, Structure
+from pymatgen.entries.computed_entries import ComputedStructureEntry
 from sklearn.mixture import GaussianMixture
 
-from pymatgen.entries.computed_entries import ComputedStructureEntry
-from pymatgen.core import Lattice, Structure
-
 from CEAuto.specie_decorators import (
-    decorator_factory,
+    FixedChargeDecorator,
     MagneticChargeDecorator,
     PmgGuessChargeDecorator,
-    FixedChargeDecorator,
+    decorator_factory,
 )
 from CEAuto.specie_decorators.base import MixtureGaussianDecorator, NoTrainDecorator
 

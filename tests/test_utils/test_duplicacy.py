@@ -1,6 +1,5 @@
 import numpy.testing as npt
-
-from pymatgen.core import Element, DummySpecies, Structure, Lattice
+from pymatgen.core import DummySpecies, Element, Lattice, Structure
 
 from CEAuto.utils.duplicacy import clean_up_decoration, is_duplicate
 

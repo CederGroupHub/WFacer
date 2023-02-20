@@ -1,15 +1,15 @@
 """Test composition constraints parsing functions."""
-from itertools import chain
 import random
+from itertools import chain
+
 import numpy as np
 import numpy.testing as npt
-
 from smol.moca.composition import get_dim_ids_by_sublattice
-from CEAuto.utils.comp_constraints import (
-    parse_species_constraints,
-    parse_generic_constraint,
-)
 
+from CEAuto.utils.comp_constraints import (
+    parse_generic_constraint,
+    parse_species_constraints,
+)
 from tests.utils import assert_array_permuted_equal
 
 

@@ -2,11 +2,11 @@
 
 __author__ = "Fengyu Xie"
 
-import numpy as np
-from sympy import factorint
 from itertools import permutations, product
 
+import numpy as np
 from pymatgen.core import Lattice
+from sympy import factorint
 
 
 def get_three_factors(n):
@@ -26,7 +26,7 @@ def get_three_factors(n):
 
     def enumerate_three_summations(c):
         # Yield all (x, y, z) that x + y + z = c.
-        three_nums = set([])
+        three_nums = set()
         for x in range(c + 1):
             for y in range(c + 1 - x):
                 z = c - x - y
@@ -90,7 +90,7 @@ def is_proper_sc(sc_matrix, lat, max_cond=8, min_angle=30):
 
 
 def is_duplicate_sc(m1, m2, prim):
-    """Gives whether two super-cell matrices give identical super-cell.
+    """Give whether two super-cell matrices give identical super-cell.
 
     Args:
         m1(3*3 ArrayLike[int]):
