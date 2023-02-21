@@ -13,7 +13,7 @@ from pymatgen.core import Element, Structure
 from pymatgen.entries.computed_entries import ComputedEntry
 from smol.cofe.space.domain import Vacancy
 
-from CEAuto.jobs import (
+from AceCE.jobs import (
     calculate_structures,
     enumerate_structures,
     fit_calculations,
@@ -21,7 +21,7 @@ from CEAuto.jobs import (
     parse_calculations,
     update_document,
 )
-from CEAuto.preprocessing import get_prim_specs
+from AceCE.preprocessing import get_prim_specs
 
 from .utils import execute_job_function
 
@@ -132,7 +132,7 @@ def fit_output(parse_output, initial_document):
 
 
 def test_initial_document(initial_document):
-    assert initial_document.project_name == "ceauto-work"
+    assert initial_document.project_name == "ace-work"
     assert initial_document.ce_options["cutoffs"] == {2: 7, 3: 4}
 
     option_cutoffs = initial_document.ce_options["cutoffs"]
@@ -188,19 +188,19 @@ def test_calculate_structures(initial_document, enum_output):
     assert isinstance(response, Response)
     assert isinstance(response.replace, Flow)
 
-    assert initial_document.project_name == "ceauto-work"
+    assert initial_document.project_name == "ace-work"
     flow = response.replace
     assert isinstance(flow.output, list)
-    assert flow.name == "ceauto-work_iter_0_calculations"
+    assert flow.name == "ace-work_iter_0_calculations"
     assert len(flow.output) == len(enum_output["new_structures"])
     # Each sub-flow has 3 jobs. (Relax, tight (default) and static.)
     assert len(flow.jobs) == len(enum_output["new_structures"])
     assert isinstance(flow.jobs[0], Flow)
-    assert flow.jobs[0].name == "ceauto-work_iter_0_enum_0"
+    assert flow.jobs[0].name == "ace-work_iter_0_enum_0"
     job = flow.jobs[0].jobs[0]
     assert isinstance(job, Job)
     assert len(flow.jobs[0].jobs) == 3
-    assert job.name == "ceauto-work_iter_0_enum_0_relax"
+    assert job.name == "ace-work_iter_0_enum_0_relax"
 
 
 def test_parse_calculations(enum_output, parse_output):

@@ -4,7 +4,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from CEAuto.utils.selection import select_added_rows, select_initial_rows
+from AceCE.utils.selection import select_added_rows, select_initial_rows
 
 
 def test_initial_selection(subspace):

@@ -1,5 +1,5 @@
 [run]
-source=CEAuto
+source=AceCE
 
 [report]
 exclude_lines =

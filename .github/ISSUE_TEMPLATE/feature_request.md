@@ -6,7 +6,7 @@ labels: enhancement
 ---
 
 <!--
-Thank you for contributing ideas to CEAuto!
+Thank you for contributing ideas to AceCE!
 
 Please fill in as much of the template below as you're able.
 -->

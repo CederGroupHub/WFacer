@@ -4,7 +4,7 @@ import numpy as np
 import numpy.testing as npt
 from pymatgen.core import Lattice, Structure
 
-from CEAuto.utils.supercells import get_three_factors, is_duplicate_sc, is_proper_sc
+from AceCE.utils.supercells import get_three_factors, is_duplicate_sc, is_proper_sc
 
 
 def test_three_factors():

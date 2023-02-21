@@ -1,4 +1,4 @@
-name: CEAuto-env
+name: AceCE-env
 channels:
   - default
   - conda-forge

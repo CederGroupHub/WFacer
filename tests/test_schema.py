@@ -2,8 +2,8 @@
 import numpy as np
 import pytest
 
-from CEAuto.schema import CeOutputsDocument
-from CEAuto.wrangling import CeDataWrangler
+from AceCE.schema import CeOutputsDocument
+from AceCE.wrangling import CeDataWrangler
 
 
 def test_ce_outputs(subspace, data_wrangler):

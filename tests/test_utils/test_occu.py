@@ -3,7 +3,7 @@ import numpy as np
 import numpy.testing as npt
 from smol.moca.utils.occu import get_dim_ids_table, occu_to_counts
 
-from CEAuto.utils.occu import get_random_occupancy_from_counts
+from AceCE.utils.occu import get_random_occupancy_from_counts
 
 from ..utils import gen_random_neutral_counts
 

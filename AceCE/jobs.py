@@ -454,7 +454,7 @@ def update_document(enum_output, parse_output, fit_output, last_ce_document):
 
 
 @job
-def initialize_document(prim, project_name="ceauto-work", options=None):
+def initialize_document(prim, project_name="ace-work", options=None):
     """Initialize an empty cluster expansion document.
 
     In this job, a cluster subspace will be created, super-cells

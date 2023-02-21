@@ -6,7 +6,7 @@ import numpy.testing as npt
 import pytest
 from sparselm.model import OrdinaryLeastSquares, StepwiseEstimator
 
-from CEAuto.utils.sparselm_estimators import (
+from AceCE.utils.sparselm_estimators import (
     all_estimator_names,
     estimator_factory,
     is_subclass,

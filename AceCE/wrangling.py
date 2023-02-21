@@ -19,7 +19,7 @@ from smol.cofe.wrangling.wrangler import StructureWrangler
 class CeDataWrangler(StructureWrangler):
     """CeDataWrangler class.
 
-    Interfaces CEAuto generated data, does insertion and deletion,
+    Interfaces AceCE generated data, does insertion and deletion,
     but will not generate any data.
 
     Note: This DataWrangler is not compatible with legacy version of smol.

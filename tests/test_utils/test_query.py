@@ -3,7 +3,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from CEAuto.utils.query import (
+from AceCE.utils.query import (
     get_property_from_object,
     query_keypath,
     query_name_iteratively,

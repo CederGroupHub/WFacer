@@ -6,7 +6,7 @@ import numpy as np
 import numpy.testing as npt
 from smol.moca.composition import get_dim_ids_by_sublattice
 
-from CEAuto.utils.comp_constraints import (
+from AceCE.utils.comp_constraints import (
     parse_generic_constraint,
     parse_species_constraints,
 )

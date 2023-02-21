@@ -3,9 +3,9 @@ import numpy as np
 import pytest
 from jobflow import Flow, Job, Response
 
-from CEAuto.jobs import initialize_document
-from CEAuto.maker import CeAutoMaker, ce_step_trigger
-from CEAuto.preprocessing import get_prim_specs
+from AceCE.jobs import initialize_document
+from AceCE.maker import AutoClusterExpansionMaker, ce_step_trigger
+from AceCE.preprocessing import get_prim_specs
 
 from .utils import execute_job_function
 
@@ -43,21 +43,21 @@ def test_trigger(initial_document):
 
     # Check the structure of a flow.
     flow = response.replace
-    assert flow.name == "ceauto-work_iter_0"
+    assert flow.name == "ace-work_iter_0"
     for job in flow.jobs:
         assert isinstance(job, Job)
     # enum, calc, parse, fit, update,
     assert len(flow.jobs) == 6
-    assert flow.jobs[0].name == "ceauto-work_iter_0_enumeration"
-    assert flow.jobs[1].name == "ceauto-work_iter_0_calculation"
-    assert flow.jobs[2].name == "ceauto-work_iter_0_parsing"
-    assert flow.jobs[3].name == "ceauto-work_iter_0_fitting"
-    assert flow.jobs[4].name == "ceauto-work_iter_0_updating"
-    assert flow.jobs[5].name == "ceauto-work_iter_1_trigger"
+    assert flow.jobs[0].name == "ace-work_iter_0_enumeration"
+    assert flow.jobs[1].name == "ace-work_iter_0_calculation"
+    assert flow.jobs[2].name == "ace-work_iter_0_parsing"
+    assert flow.jobs[3].name == "ace-work_iter_0_fitting"
+    assert flow.jobs[4].name == "ace-work_iter_0_updating"
+    assert flow.jobs[5].name == "ace-work_iter_1_trigger"
 
 
-def test_ceauto_maker(prim, initial_document):
-    maker = CeAutoMaker(name="goodluck")
+def test_ace_maker(prim, initial_document):
+    maker = AutoClusterExpansionMaker(name="goodluck")
     flow = maker.make(prim)
 
     # Initialize, and the first trigger.

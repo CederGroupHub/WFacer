@@ -78,7 +78,7 @@ def ce_step_trigger(last_ce_document):
 
 
 @dataclass
-class CeAutoMaker(Maker):
+class AutoClusterExpansionMaker(Maker):
     """The cluster expansion automatic workflow maker.
 
     Attributes:
@@ -92,7 +92,7 @@ class CeAutoMaker(Maker):
             For available options, see docs in preprocessing.py.
     """
 
-    name: str = "ceauto-work"
+    name: str = "ace-work"
     options: dict = field(default_factory=dict)
 
     def make(self, prim, last_document=None, add_num_iterations=None):

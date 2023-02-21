@@ -1,4 +1,4 @@
-"""Defines the data schema for CEAuto jobs."""
+"""Defines the data schema for AceCE jobs."""
 import numpy as np
 from pydantic import BaseModel, Field
 from smol.cofe import ClusterSubspace
@@ -11,7 +11,7 @@ class CeOutputsDocument(BaseModel):
     """Summary of cluster expansion workflow as outputs."""
 
     project_name: str = Field(
-        "ceauto-work", description="The name of cluster expansion" " project."
+        "ace-work", description="The name of cluster expansion" " project."
     )
     cluster_subspace: ClusterSubspace = Field(
         None, description="The cluster subspace" " for expansion."

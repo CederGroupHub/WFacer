@@ -8,7 +8,7 @@ from pydantic import parse_file_as
 from smol.cofe import ClusterExpansion
 from smol.moca import Ensemble
 
-from CEAuto.preprocessing import get_cluster_subspace, get_prim_specs, reduce_prim
+from AceCE.preprocessing import get_cluster_subspace, get_prim_specs, reduce_prim
 
 from .utils import gen_random_wrangler
 

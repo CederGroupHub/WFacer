@@ -8,15 +8,15 @@ assignees: lbluque, qchempku2017
 ---
 
 <!--
-Thank you for contributing a src file to CEAuto! You are a sensei dev!
+Thank you for contributing a src file to AceCE! You are a sensei dev!
 Please make sure that a code review issue for the src file you are about to create
 one does not already exist. Please edit this template based on the file you
 are opening this issue for.
 -->
 
-| File Name | Module Path    | Authors|
-|-----------|----------------|--------|
-| latte.py  | CEAuto.oatmilk |Mr. Coder|
+| File Name | Module Path   | Authors|
+|-----------|---------------|--------|
+| latte.py  | AceCE.oatmilk |Mr. Coder|
 
 ## Code Review
 We use *code review* issues to open up a pinned location to discuss a specific

@@ -3,7 +3,7 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Composition
 from smol.cofe.wrangling.tools import _energies_above_hull
 
-from CEAuto.utils.convex_hull import get_hull, get_min_energy_structures_by_composition
+from AceCE.utils.convex_hull import get_hull, get_min_energy_structures_by_composition
 
 
 def _comp_equals(c1, c2):

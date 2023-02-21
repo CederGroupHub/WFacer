@@ -10,7 +10,7 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from smol.cofe.space.domain import Vacancy
 from smol.moca.utils.occu import get_dim_ids_table, occu_to_counts
 
-from CEAuto.wrangling import CeDataWrangler
+from AceCE.wrangling import CeDataWrangler
 
 
 def assert_msonable(obj, test_if_subclass=True):

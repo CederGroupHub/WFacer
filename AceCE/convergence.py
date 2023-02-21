@@ -18,7 +18,7 @@ def compare_min_energy_structures_by_composition(min_e1, min_e2, matcher=None):
             Minimum energies and structures from an earlier iteration.
         min_e2 (defaultdict):
             Minimum energies and structures from a later iteration.
-            See docs in CEAuto.wrangling.
+            See docs in AceCE.wrangling.
         matcher (StructureMatcher): optional
             A StructureMatcher used compare structures.
             wrangler.cluster_subspace._site_matcher is recommended.

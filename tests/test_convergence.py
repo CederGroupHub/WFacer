@@ -4,9 +4,9 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from smol.cofe import ClusterExpansion
 from smol.moca import CompositionSpace, Ensemble
 
-from CEAuto.convergence import ce_converged
-from CEAuto.preprocessing import get_prim_specs
-from CEAuto.wrangling import CeDataWrangler
+from AceCE.convergence import ce_converged
+from AceCE.preprocessing import get_prim_specs
+from AceCE.wrangling import CeDataWrangler
 
 from .utils import gen_random_occu_from_counts
 

@@ -8,13 +8,13 @@ from pymatgen.core import Lattice, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from sklearn.mixture import GaussianMixture
 
-from CEAuto.specie_decorators import (
+from AceCE.specie_decorators import (
     FixedChargeDecorator,
     MagneticChargeDecorator,
     PmgGuessChargeDecorator,
     decorator_factory,
 )
-from CEAuto.specie_decorators.base import MixtureGaussianDecorator, NoTrainDecorator
+from AceCE.specie_decorators.base import MixtureGaussianDecorator, NoTrainDecorator
 
 from .utils import assert_msonable
 

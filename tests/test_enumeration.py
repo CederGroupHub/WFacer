@@ -17,15 +17,15 @@ from smol.moca.utils.occu import (
     occu_to_counts,
 )
 
-from CEAuto.enumeration import (
+from AceCE.enumeration import (
     enumerate_compositions_as_counts,
     enumerate_matrices,
     generate_training_structures,
     get_num_structs_to_sample,
     truncate_cluster_subspace,
 )
-from CEAuto.preprocessing import get_prim_specs
-from CEAuto.utils.duplicacy import is_corr_duplicate
+from AceCE.preprocessing import get_prim_specs
+from AceCE.utils.duplicacy import is_corr_duplicate
 
 
 def test_enumerate_matrices(subspace):

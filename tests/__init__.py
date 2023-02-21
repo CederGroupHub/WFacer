@@ -1,1 +1,1 @@
-# Test various modules of CEAuto.
+# Test various modules of AceCE.

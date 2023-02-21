@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/CEAuto.iml" filepath="$PROJECT_DIR$/.idea/CEAuto.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/AceCE.iml" filepath="$PROJECT_DIR$/.idea/AceCE.iml" />
     </modules>
   </component>
 </project>
