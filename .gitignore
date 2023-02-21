@@ -40,6 +40,7 @@ Thumbs.db
 ##########################
 *.pyc
 *.egg
+*.eggs
 *.egg-info/
 /build
 

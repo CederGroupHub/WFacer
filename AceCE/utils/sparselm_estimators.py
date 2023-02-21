@@ -102,7 +102,7 @@ def prepare_estimator(
         estimator_kwargs(dict): optional
             Other keyword arguments to initialize an estimator.
     Returns:
-        CVXEstimator.
+        CVXEstimator or StepwiseEstimator.
     """
     # Corrected and normalized DFT energy in eV/prim.
     point_func_inds = cluster_subspace.function_inds_by_size[1]

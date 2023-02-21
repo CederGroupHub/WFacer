@@ -1,4 +1,5 @@
 """Test the fitting functions."""
+import cvxpy as cp
 import numpy as np
 
 from AceCE.fit import fit_ecis_from_wrangler
@@ -8,10 +9,19 @@ from AceCE.fit import fit_ecis_from_wrangler
 def test_fit_ecis_indicator(single_wrangler):
     # e = single_wrangler.get_property_vector("energy")
 
+    # TODO: May need to mute L2L0 tests or change to Lasso-only
+    #  because gurobi license is not available in testing suites.
+    #  Do this if github auto test cannot work.
+
     # print("feature matrix:", single_wrangler.feature_matrix)
     # print("energies:", e)
     # Centering, L0L2. Not very good as all the other coefficients
     # can be suppressed to 0.
+    if "GUROBI" in cp.installed_solvers():
+        solver = "GUROBI"  # gurobi might require license to test.
+    else:
+        solver = "ECOS_BB"
+
     grid = [
         ("eta", (2 ** np.linspace(-20, 4, 25)).tolist()),
         ("alpha", [0] + (2 ** np.linspace(-30, 0, 16)).tolist()),
@@ -25,6 +35,7 @@ def test_fit_ecis_indicator(single_wrangler):
             "n_iter": 3,
             "opt_selection_method": ["max_score", "max_score"],
         },
+        estimator_kwargs={"solver": solver},
     )
     assert len(best_coef) == single_wrangler.feature_matrix.shape[1]
     assert best_cv >= -1e-8
@@ -65,6 +76,7 @@ def test_fit_ecis_indicator(single_wrangler):
             "n_iter": 3,
             "opt_selection_method": ["max_score", "max_score"],
         },
+        estimator_kwargs={"solver": solver},
     )
     assert len(best_coef) == single_wrangler.feature_matrix.shape[1]
     e_predict = np.dot(single_wrangler.feature_matrix, best_coef)
@@ -95,6 +107,7 @@ def test_fit_ecis_indicator(single_wrangler):
             "n_iter": 5,
             "opt_selection_method": ["max_score", "max_score"],
         },
+        estimator_kwargs={"solver": solver},
     )
     e_predict = np.dot(single_wrangler.feature_matrix, best_coef)
     e = single_wrangler.get_property_vector("energy")

@@ -15,6 +15,7 @@ dependencies:
   - joblib
   - sympy
   - scikit-learn
+  - scikit-optimize
   - pydantic
   - pip:
     - smol
