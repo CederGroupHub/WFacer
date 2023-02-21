@@ -3,9 +3,9 @@ import numpy as np
 import pytest
 from jobflow import Flow, Job, Response
 
-from AceCE.jobs import initialize_document
-from AceCE.maker import AutoClusterExpansionMaker, ce_step_trigger
-from AceCE.preprocessing import get_prim_specs
+from WFacer.jobs import initialize_document
+from WFacer.maker import AutoClusterExpansionMaker, ce_step_trigger
+from WFacer.preprocessing import get_prim_specs
 
 from .utils import execute_job_function
 

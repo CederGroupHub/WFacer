@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-from AceCE.utils.task_document import get_entry_from_taskdoc
+from WFacer.utils.task_document import get_entry_from_taskdoc
 
 
 def test_get_entry(single_taskdoc):

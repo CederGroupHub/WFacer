@@ -13,7 +13,7 @@ from pymatgen.core import Element, Structure
 from pymatgen.entries.computed_entries import ComputedEntry
 from smol.cofe.space.domain import Vacancy
 
-from AceCE.jobs import (
+from WFacer.jobs import (
     calculate_structures,
     enumerate_structures,
     fit_calculations,
@@ -21,7 +21,7 @@ from AceCE.jobs import (
     parse_calculations,
     update_document,
 )
-from AceCE.preprocessing import get_prim_specs
+from WFacer.preprocessing import get_prim_specs
 
 from .utils import execute_job_function
 

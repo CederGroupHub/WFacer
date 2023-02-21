@@ -1,4 +1,4 @@
-name: AceCE-env
+name: WFacer-env
 channels:
   - default
   - conda-forge

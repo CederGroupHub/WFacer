@@ -6,7 +6,7 @@ from smol.utils import class_name_from_str
 from sparselm.model import OrdinaryLeastSquares, StepwiseEstimator
 from sparselm.model_selection import GridSearchCV, LineSearchCV
 
-from AceCE.utils.sparselm_estimators import prepare_estimator
+from WFacer.utils.sparselm_estimators import prepare_estimator
 
 all_optimizers = {"GridSearchCV": GridSearchCV, "LineSearchCV": LineSearchCV}
 

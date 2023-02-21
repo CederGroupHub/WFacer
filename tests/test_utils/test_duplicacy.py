@@ -1,7 +1,7 @@
 import numpy.testing as npt
 from pymatgen.core import DummySpecies, Element, Lattice, Structure
 
-from AceCE.utils.duplicacy import clean_up_decoration, is_duplicate
+from WFacer.utils.duplicacy import clean_up_decoration, is_duplicate
 
 
 def test_remove_decorations(data_wrangler):

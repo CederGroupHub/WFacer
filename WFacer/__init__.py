@@ -3,7 +3,7 @@
 from importlib.metadata import PackageNotFoundError, version
 
 try:
-    __version__ = version("AceCE")
+    __version__ = version("WFacer")
 except PackageNotFoundError:
     # package is not installed
     pass

@@ -7,8 +7,8 @@ from pymatgen.core import Lattice
 from smol.cofe.extern import EwaldTerm
 from smol.cofe.space.domain import get_species
 
-from AceCE.jobs import _preprocess_options
-from AceCE.preprocessing import (
+from WFacer.jobs import _preprocess_options
+from WFacer.preprocessing import (
     construct_prim,
     get_cluster_subspace,
     get_initial_ce_coefficients,

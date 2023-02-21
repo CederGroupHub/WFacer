@@ -29,23 +29,23 @@ jobs:
       - name: flake8
         run: |
             flake8 --version
-            flake8 --count --show-source --statistics AceCE
+            flake8 --count --show-source --statistics WFacer
             # exit-zero treats all errors as warnings.
-            flake8 --count --exit-zero --max-complexity=20 --statistics AceCE
+            flake8 --count --exit-zero --max-complexity=20 --statistics WFacer
       - name: black
         run: |
           black --version
-          black --check --diff --color AceCE
+          black --check --diff --color WFacer
       - name: pydocstyle
         run: |
           pydocstyle --version
-          pydocstyle --count AceCE
+          pydocstyle --count WFacer
       # Not in shape for this yet
       # - name: pylint
       #  run: |
-      #     pylint AceCE
+      #     pylint WFacer
       #- name: mypy
        #   run: |
         #    mypy --version
          #   rm -rf .mypy_cache
-          #  mypy AceCE
+          #  mypy WFacer

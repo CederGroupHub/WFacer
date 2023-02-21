@@ -6,11 +6,11 @@ import numpy as np
 import numpy.testing as npt
 from smol.moca.composition import get_dim_ids_by_sublattice
 
-from AceCE.utils.comp_constraints import (
+from tests.utils import assert_array_permuted_equal
+from WFacer.utils.comp_constraints import (
     parse_generic_constraint,
     parse_species_constraints,
 )
-from tests.utils import assert_array_permuted_equal
 
 
 def _get_dim_sl_ids_from_specie(bits, sp):

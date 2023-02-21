@@ -10,7 +10,7 @@ from pymatgen.core import Element
 from smol.cofe.space.domain import Vacancy, get_allowed_species
 from smol.moca import Ensemble
 
-from AceCE.sample_generators import CanonicalSampleGenerator, SemigrandSampleGenerator
+from WFacer.sample_generators import CanonicalSampleGenerator, SemigrandSampleGenerator
 
 from .utils import (
     gen_random_neutral_counts,

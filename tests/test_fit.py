@@ -2,7 +2,7 @@
 import cvxpy as cp
 import numpy as np
 
-from AceCE.fit import fit_ecis_from_wrangler
+from WFacer.fit import fit_ecis_from_wrangler
 
 
 # Only test a single small-sized wrangler, because fitting can take long.

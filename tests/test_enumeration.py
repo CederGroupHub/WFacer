@@ -17,15 +17,15 @@ from smol.moca.utils.occu import (
     occu_to_counts,
 )
 
-from AceCE.enumeration import (
+from WFacer.enumeration import (
     enumerate_compositions_as_counts,
     enumerate_matrices,
     generate_training_structures,
     get_num_structs_to_sample,
     truncate_cluster_subspace,
 )
-from AceCE.preprocessing import get_prim_specs
-from AceCE.utils.duplicacy import is_corr_duplicate
+from WFacer.preprocessing import get_prim_specs
+from WFacer.utils.duplicacy import is_corr_duplicate
 
 
 def test_enumerate_matrices(subspace):

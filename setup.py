@@ -1,15 +1,15 @@
 from setuptools import setup
 
 setup(
-    name="AceCE",
+    name="WFacer",
     version="1.0.0",
     packages=[
-        "AceCE",
-        "AceCE.utils",
-        "AceCE.sample_generators",
-        "AceCE.specie_decorators",
+        "WFacer",
+        "WFacer.utils",
+        "WFacer.sample_generators",
+        "WFacer.specie_decorators",
     ],
-    url="https://cedergrouphub.github.io/AceCE",
+    url="https://cedergrouphub.github.io/WFacer",
     license="Modified BSD",
     author="Fengyu Xie",
     author_email="fengyu_xie@berkeley.edu",

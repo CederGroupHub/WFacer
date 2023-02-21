@@ -6,7 +6,7 @@ labels: enhancement
 ---
 
 <!--
-Thank you for contributing ideas to AceCE!
+Thank you for contributing ideas to WFacer!
 
 Please fill in as much of the template below as you're able.
 -->

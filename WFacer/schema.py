@@ -1,4 +1,4 @@
-"""Defines the data schema for AceCE jobs."""
+"""Defines the data schema for WFacer jobs."""
 import numpy as np
 from pydantic import BaseModel, Field
 from smol.cofe import ClusterSubspace
