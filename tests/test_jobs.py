@@ -171,13 +171,13 @@ def test_enumerate_structures(initial_document, enum_output):
         f0 = cluster_subspace.corr_from_structure(s, scmatrix=m)
         npt.assert_array_almost_equal(f, f0)
     # Enumerated structures printed out and found to be reasonable.
-    from monty.serialization import dumpfn
-
-    structures = enum_output["new_structures"]
-    name = "".join(
-        [el.symbol for el in structures[0].composition.element_composition.keys()]
-    )
-    dumpfn(structures, f"./structures_{name}.json")
+    # from monty.serialization import dumpfn
+    #
+    # structures = enum_output["new_structures"]
+    # name = "".join(
+    #     [el.symbol for el in structures[0].composition.element_composition.keys()]
+    # )
+    # dumpfn(structures, f"./structures_{name}.json")
 
 
 def test_calculate_structures(initial_document, enum_output):
