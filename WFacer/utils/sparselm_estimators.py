@@ -4,8 +4,10 @@ from warnings import warn
 import numpy as np
 import sparselm
 from smol.utils import class_name_from_str
-from sparselm.model import Lasso, OverlapGroupLasso, StepwiseEstimator
+from sparselm.model import Lasso, OverlapGroupLasso
 from sparselm.model import __all__ as all_estimator_names
+from sparselm.model_selection import GridSearchCV, LineSearchCV
+from sparselm.stepwise import StepwiseEstimator
 
 
 def is_subclass(classname, parent_classname):
@@ -40,7 +42,7 @@ def is_subclass(classname, parent_classname):
 
 
 # For now, Overlapped group lasso is not supported!
-unsupported_parents = [OverlapGroupLasso, StepwiseEstimator]
+unsupported_parents = [OverlapGroupLasso]
 unsupported_estimator_names = []
 for name in all_estimator_names:
     for parent_class in unsupported_parents:
@@ -75,14 +77,49 @@ def estimator_factory(estimator_name, **kwargs):
     return cls(**kwargs)
 
 
+def optimizer_factory(optimizer_name, estimator, param_grid=None, **kwargs):
+    """Get an optimizer object from class name.
+
+    Args:
+        optimizer_name (str):
+            Name of the optimizer.
+        estimator(CVXEstimator):
+            An estimator used to initialize the optimizer.
+        param_grid(dict|list[tuple]):
+            Parameters grid used to initialize the optimizer. Format
+            depends on the type of optimizer. See sparselm.model_selection.
+        kwargs:
+            Other keyword arguments to initialize an optimizer.
+            Depends on the specific class
+    Returns:
+        GridSearchCV or LineSearchCV.
+    """
+    all_optimizers = {"GridSearchCV": GridSearchCV, "LineSearchCV": LineSearchCV}
+    if (
+        "-cv" not in optimizer_name
+        or "-CV" not in optimizer_name
+        or "-Cv" not in optimizer_name
+    ):
+        optimizer_name += "-CV"
+    opt_class_name = class_name_from_str(optimizer_name)
+    if opt_class_name not in all_optimizers:
+        raise ValueError(
+            f"Hyperparameters optimization method" f" {opt_class_name} not implemented!"
+        )
+    return all_optimizers[opt_class_name](estimator, param_grid, **kwargs)
+
+
 def prepare_estimator(
     cluster_subspace,
     estimator_name,
+    optimizer_name,
+    param_grid=None,
     use_hierarchy=True,
     center_point_external=True,
     estimator_kwargs=None,
+    optimizer_kwargs=None,
 ):
-    """Prepare an estimator for use in fitting.
+    """Prepare an estimator for the direct call of fit.
 
     No weights will be used.
     Args:
@@ -91,6 +128,12 @@ def prepare_estimator(
         estimator_name(str):
             The name of estimator, following the rules in
             smol.utils.class_name_from_str.
+        optimizer_name(str):
+            Name of hyperparameter optimizer. Currently, only supports GridSearch and
+            LineSearch.
+        param_grid(dict|list[tuple]):
+            Parameter grid to initialize the optimizer. See docs of
+            sparselm.model_selection. Not needed for OrdinaryLeastSquares.
         use_hierarchy(bool): optional
             Whether to use cluster hierarchy constraints when available. Default to
             true.
@@ -101,8 +144,11 @@ def prepare_estimator(
             cluster radius.
         estimator_kwargs(dict): optional
             Other keyword arguments to initialize an estimator.
+        optimizer_kwargs(dict): optional
+            Other keyword arguments to initialize an optimizer.
     Returns:
-        CVXEstimator or StepwiseEstimator.
+        GridSearchCV/LineSearchCV, StepwiseEstimator,
+        or OrdinaryLeastSquares.
     """
     # Corrected and normalized DFT energy in eV/prim.
     point_func_inds = cluster_subspace.function_inds_by_size[1]
@@ -114,6 +160,7 @@ def prepare_estimator(
     # for basis other than indicator can be wrong!
     est_class_name = class_name_from_str(estimator_name)
     estimator_kwargs = estimator_kwargs or {}
+    optimizer_kwargs = optimizer_kwargs or {}
 
     # Groups are required, and hierarchy might be as well.
     is_l0 = is_subclass(est_class_name, "MIQP_L0")
@@ -123,6 +170,7 @@ def prepare_estimator(
     is_subset = is_subclass(est_class_name, "BestSubsetSelection")
     is_ols = est_class_name == "OrdinaryLeastSquares"
 
+    # Need argument groups.
     if is_l0 or is_group:
         if cluster_subspace.basis_type == "indicator":
             # Use function hierarchy for indicator.
@@ -165,7 +213,7 @@ def prepare_estimator(
                 cluster_subspace.function_orbit_ids,
                 np.arange(len(cluster_subspace.external_terms), dtype=int)
                 + cluster_subspace.num_orbits,
-            )
+            ).tolist()
             if center_point_external:
                 groups = [
                     oid - num_point_orbs - 1
@@ -189,7 +237,7 @@ def prepare_estimator(
                 f" will be: {default_sparse_bound}"
             )
             estimator_kwargs["sparse_bound"] = default_sparse_bound
-    # OLS does not need centered fit.
+
     if center_point_external and not is_ols:
         external_inds = list(
             range(
@@ -211,13 +259,25 @@ def prepare_estimator(
         center_estimator = Lasso(
             alpha=1e-6, fit_intercept=estimator_kwargs.get("fit_intercept", False)
         )
+        center_optimizer = optimizer_factory(
+            "grid-search", center_estimator, {"alpha": 2 ** np.linspace(-30, 2, 17)}
+        )
         estimator_kwargs["fit_intercept"] = False
         main_estimator = estimator_factory(estimator_name, **estimator_kwargs)
+        main_optimizer = optimizer_factory(
+            optimizer_name, main_estimator, param_grid, **optimizer_kwargs
+        )
 
         stepwise = StepwiseEstimator(
-            [("center", center_estimator), ("main", main_estimator)],
-            [centered_inds, other_inds],
+            [("center", center_optimizer), ("main", main_optimizer)],
+            (tuple(centered_inds), tuple(other_inds)),
         )
         return stepwise
+    elif not is_ols:
+        estimator = estimator_factory(estimator_name, **estimator_kwargs)
+        return optimizer_factory(
+            optimizer_name, estimator, param_grid, **optimizer_kwargs
+        )
+    # OLS does not require optimization and centering.
     else:
         return estimator_factory(estimator_name, **estimator_kwargs)

@@ -1,14 +1,11 @@
 """Fit ECIs from Wrangler."""
 import numpy as np
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import RepeatedKFold, cross_val_score
 from smol.cofe.wrangling.tools import unique_corr_vector_indices
-from smol.utils import class_name_from_str
-from sparselm.model import OrdinaryLeastSquares, StepwiseEstimator
-from sparselm.model_selection import GridSearchCV, LineSearchCV
+from sparselm.model import OrdinaryLeastSquares
+from sparselm.stepwise import StepwiseEstimator
 
-from WFacer.utils.sparselm_estimators import prepare_estimator
-
-all_optimizers = {"GridSearchCV": GridSearchCV, "LineSearchCV": LineSearchCV}
+from .utils.sparselm_estimators import prepare_estimator
 
 
 # As mentioned in CeDataWrangler, weights does not make much
@@ -39,7 +36,8 @@ def fit_ecis_from_wrangler(
             Name of hyperparameter optimizer. Currently, only supports GridSearch and
             LineSearch.
         param_grid(dict|list[tuple]):
-            Parameter grid to initialize the optimizer. See docs of sparselm.optimizer.
+            Parameter grid to initialize the optimizer. See docs of
+            sparselm.model_selection.
         use_hierarchy(bool): optional
             Whether to use cluster hierarchy constraints when available. Default to
             true.
@@ -74,59 +72,47 @@ def fit_ecis_from_wrangler(
         normalized_energy = normalized_energy[unique_inds]
 
     # Prepare the estimator. If do centering, will return a stepwise estimator.
+    estimator_kwargs = estimator_kwargs or {}
+    optimizer_kwargs = optimizer_kwargs or {}
     estimator = prepare_estimator(
         space,
         estimator_name,
+        optimizer_name,
+        param_grid,
         use_hierarchy=use_hierarchy,
         center_point_external=center_point_external,
         estimator_kwargs=estimator_kwargs,
+        optimizer_kwargs=optimizer_kwargs,
     )
-    optimizer_kwargs = optimizer_kwargs or {}
     # Prepare the optimizer.
     is_stepwise = isinstance(estimator, StepwiseEstimator)
-    is_ols = isinstance(estimator, OrdinaryLeastSquares) or (
-        is_stepwise and isinstance(estimator._estimators[-1], OrdinaryLeastSquares)
-    )
+    is_ols = isinstance(estimator, OrdinaryLeastSquares)
+
+    # Perform the optimization and fit.
     if not is_ols:
-        if (
-            "-cv" not in optimizer_name
-            or "-CV" not in optimizer_name
-            or "-Cv" not in optimizer_name
-        ):
-            optimizer_name += "-CV"
-        opt_class_name = class_name_from_str(optimizer_name)
-        if opt_class_name not in all_optimizers:
-            raise ValueError(
-                f"Hyperparameters optimization method"
-                f" {opt_class_name} not implemented!"
-            )
-
-        # Modify the parameters grid to scan only main estimator params.
+        estimator = estimator.fit(X=feature_matrix, y=normalized_energy, **kwargs)
+        # StepwiseEstimator
         if is_stepwise:
-            if isinstance(param_grid, dict):
-                param_grid = {"main__" + k: v for k, v in param_grid.items()}
-            elif isinstance(param_grid, list):
-                param_grid = [("main__" + k, v) for k, v in param_grid]
-            else:
-                raise ValueError(
-                    "Parameters grid must either be a dictionary" "or a list of tuples!"
-                )
-
-        optimizer = all_optimizers[opt_class_name](
-            estimator, param_grid, **optimizer_kwargs
-        )
-
-        # Perform the optimization and fit.
-        optimizer = optimizer.fit(X=feature_matrix, y=normalized_energy, **kwargs)
-        best_coef = optimizer.best_estimator_.coef_
-        # Add intercept to the first coefficient.
-        best_coef[0] += optimizer.best_estimator_.intercept_
-        # Default sparse-lm scoring has changed to "neg_root_mean_square"
-        best_cv = -optimizer.best_score_
-        best_cv_std = optimizer.best_score_std_
-        best_params = optimizer.best_params_
-
+            best_coef = estimator.coef_
+            # Add intercept to the first coefficient.
+            best_coef[0] += estimator.intercept_
+            # Default sparse-lm scoring has changed to "neg_root_mean_square"
+            best_cv = -estimator.steps[-1][1].best_score_
+            best_cv_std = estimator.steps[-1][1].best_score_std_
+            best_params = estimator.steps[-1][1].best_params_
+        # Searcher.
+        else:
+            best_coef = estimator.best_estimator_.coef_
+            # Add intercept to the first coefficient.
+            best_coef[0] += estimator.best_estimator_.intercept_
+            # Default sparse-lm scoring has changed to "neg_root_mean_square"
+            best_cv = -estimator.best_score_
+            best_cv_std = estimator.best_score_std_
+            best_params = estimator.best_params_
     else:
+        # Set default CV splitter.
+        cv = optimizer_kwargs.get("cv") or RepeatedKFold(n_splits=5, n_repeats=3)
+        optimizer_kwargs["cv"] = cv
         cvs = cross_val_score(
             estimator,
             X=feature_matrix,
@@ -140,12 +126,6 @@ def fit_ecis_from_wrangler(
         best_cv = -np.average(cvs)  # negative rmse.
         best_cv_std = np.std(cvs)
         best_params = None
-
-    # reformat best_params.
-    if best_params is not None:
-        # clean up parameter names.
-        if is_stepwise:
-            best_params = {k.split("__", 1)[1]: v for k, v in best_params.items()}
 
     predicted_energy = np.dot(feature_matrix, best_coef)
     rmse = np.sqrt(

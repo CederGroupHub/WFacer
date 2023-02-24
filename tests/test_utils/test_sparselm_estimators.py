@@ -4,7 +4,8 @@ from itertools import chain
 import numpy as np
 import numpy.testing as npt
 import pytest
-from sparselm.model import OrdinaryLeastSquares, StepwiseEstimator
+from sparselm.model import OrdinaryLeastSquares
+from sparselm.stepwise import StepwiseEstimator
 
 from WFacer.utils.sparselm_estimators import (
     all_estimator_names,
@@ -51,25 +52,37 @@ def test_bad_estimator_name():
 @pytest.mark.parametrize("name", supported_estimator_names)
 def test_prepare_estimator(subspace, name):
     if is_subclass(name, "MIQP_L0") or is_subclass(name, "GroupLasso"):
-        estimator = prepare_estimator(subspace, name, center_point_external=True)
+        # eta not scanned.
+        param_grid = {"alpha": [1e-10, 1e-5, 1e-2]}
+        estimator = prepare_estimator(
+            subspace,
+            name,
+            "grid-search",
+            param_grid=param_grid,
+            center_point_external=True,
+        )
         num_point_terms = len(subspace.function_inds_by_size[1])
         total_terms = len(subspace.external_terms) + subspace.num_corr_functions
         # Centered by points and ewald; each func is a group itself
         # Groups should always be a 1d array.
         assert isinstance(estimator, StepwiseEstimator)
-        npt.assert_array_equal(estimator._full_scope, np.arange(total_terms, dtype=int))
-        assert estimator._step_names == ("center", "main")
-        assert [sub.__class__.__name__ for sub in estimator._estimators] == [
-            "Lasso",
-            name,
+        full_scope = sorted(set(chain(*estimator.estimator_feature_indices)))
+        npt.assert_array_equal(full_scope, np.arange(total_terms, dtype=int))
+        assert len(estimator.steps) == 2
+        assert tuple(name for name, _ in estimator.steps) == ("center", "main")
+        assert [sub.__class__.__name__ for _, sub in estimator.steps] == [
+            "GridSearchCV",
+            "GridSearchCV",
         ]
-        groups = estimator._estimators[-1].groups
+        assert estimator.steps[0][1].estimator.__class__.__name__ == "Lasso"
+        assert estimator.steps[1][1].estimator.__class__.__name__ == name
+        groups = estimator.steps[1][1].estimator.groups
         assert len(np.array(groups).shape) == 1
         assert groups[0] == 0
         assert len(groups) == (subspace.num_corr_functions - num_point_terms - 1)
         npt.assert_array_equal(np.arange(len(groups)), groups)
         if is_subclass(name, "MIQP_L0"):
-            hierarchy = estimator._estimators[-1].hierarchy
+            hierarchy = estimator.steps[1][1].estimator.hierarchy
             assert np.all(np.array(list(chain(*hierarchy))) >= 0)
             function_inds = list(
                 range(1 + num_point_terms, subspace.num_corr_functions)
@@ -88,43 +101,61 @@ def test_prepare_estimator(subspace, name):
             # print("reconstructed:", hierarchy_reconstruct)
             # assert False
             assert hierarchy_reconstruct == hierarchy_standard
-        assert not estimator._estimators[0].fit_intercept
-        assert not estimator._estimators[1].fit_intercept
+        assert not estimator.steps[0][1].estimator.fit_intercept
+        assert not estimator.steps[1][1].estimator.fit_intercept
 
         # Not centered.
-        estimator = prepare_estimator(subspace, name, center_point_external=False)
+        estimator = prepare_estimator(
+            subspace,
+            name,
+            "grid-search",
+            param_grid=param_grid,
+            center_point_external=False,
+        )
         assert not isinstance(estimator, StepwiseEstimator)
-        assert len(np.array(estimator.groups).shape) == 1
-        assert estimator.groups[0] == 0
-        assert len(estimator.groups) == total_terms
-        npt.assert_array_equal(np.arange(len(estimator.groups)), estimator.groups)
+        assert estimator.__class__.__name__ == "GridSearchCV"
+        assert len(np.array(estimator.estimator.groups).shape) == 1
+        assert estimator.estimator.groups[0] == 0
+        assert len(estimator.estimator.groups) == total_terms
+        npt.assert_array_equal(
+            np.arange(len(estimator.estimator.groups)), estimator.estimator.groups
+        )
         if is_subclass(name, "MIQP_L0"):
-            assert estimator.hierarchy == subspace.function_hierarchy()
-        assert not estimator.fit_intercept
+            assert estimator.estimator.hierarchy == subspace.function_hierarchy()
+        assert not estimator.estimator.fit_intercept
 
     # OLS should never be stepwise.
     if name == "OrdinaryLeastSquares":
-        estimator = prepare_estimator(subspace, name, center_point_external=True)
+        estimator = prepare_estimator(
+            subspace, name, "what-ever", None, center_point_external=False
+        )
         assert isinstance(estimator, OrdinaryLeastSquares)
 
 
 @pytest.mark.parametrize("name", supported_estimator_names)
 def test_prepare_estimator_sin(subspace_sin, name):
     if is_subclass(name, "MIQP_L0") or is_subclass(name, "GroupLasso"):
-        estimator = prepare_estimator(subspace_sin, name, center_point_external=True)
+        param_grid = {"alpha": [1e-10, 1e-5, 1e-2]}
+        estimator = prepare_estimator(
+            subspace_sin, name, "grid-search", param_grid, center_point_external=True
+        )
         num_point_orbs = len(subspace_sin.orbits_by_size[1])
         num_point_funcs = len(subspace_sin.function_inds_by_size[1])
         total_terms = len(subspace_sin.external_terms) + subspace_sin.num_corr_functions
         # Centered by points and ewald; each func is a group itself
         # Groups should always be a 1d array.
         assert isinstance(estimator, StepwiseEstimator)
-        npt.assert_array_equal(estimator._full_scope, np.arange(total_terms, dtype=int))
-        assert estimator._step_names == ("center", "main")
-        assert [sub.__class__.__name__ for sub in estimator._estimators] == [
-            "Lasso",
-            name,
+        full_scope = sorted(set(chain(*estimator.estimator_feature_indices)))
+        npt.assert_array_equal(full_scope, np.arange(total_terms, dtype=int))
+        assert len(estimator.steps) == 2
+        assert tuple(name for name, _ in estimator.steps) == ("center", "main")
+        assert [sub.__class__.__name__ for _, sub in estimator.steps] == [
+            "GridSearchCV",
+            "GridSearchCV",
         ]
-        groups = estimator._estimators[-1].groups
+        assert estimator.steps[0][1].estimator.__class__.__name__ == "Lasso"
+        assert estimator.steps[1][1].estimator.__class__.__name__ == name
+        groups = estimator.steps[1][1].estimator.groups
         assert len(np.array(groups).shape) == 1
         assert groups[0] == 0
         assert len(groups) == (subspace_sin.num_corr_functions - num_point_funcs - 1)
@@ -138,7 +169,7 @@ def test_prepare_estimator_sin(subspace_sin, name):
             groups,
         )
         if is_subclass(name, "MIQP_L0"):
-            hierarchy = estimator._estimators[-1].hierarchy
+            hierarchy = estimator.steps[1][1].estimator.hierarchy
             assert np.all(np.array(list(chain(*hierarchy))) >= 0)
             orbit_inds = list(range(1 + num_point_orbs, subspace_sin.num_orbits))
             # print("Num orbits:", subspace_sin.num_orbits)
@@ -156,27 +187,32 @@ def test_prepare_estimator_sin(subspace_sin, name):
             # print("reconstructed:", hierarchy_reconstruct)
             # assert False
             assert hierarchy_reconstruct == hierarchy_standard
-        assert not estimator._estimators[0].fit_intercept
-        assert not estimator._estimators[1].fit_intercept
+        assert not estimator.steps[0][1].estimator.fit_intercept
+        assert not estimator.steps[1][1].estimator.fit_intercept
 
         # Not centered.
-        estimator = prepare_estimator(subspace_sin, name, center_point_external=False)
+        estimator = prepare_estimator(
+            subspace_sin, name, "grid-search", param_grid, center_point_external=False
+        )
         assert not isinstance(estimator, StepwiseEstimator)
-        assert len(np.array(estimator.groups).shape) == 1
-        assert estimator.groups[0] == 0
-        assert len(estimator.groups) == total_terms
+        assert estimator.__class__.__name__ == "GridSearchCV"
+        assert len(np.array(estimator.estimator.groups).shape) == 1
+        assert estimator.estimator.groups[0] == 0
+        assert len(estimator.estimator.groups) == total_terms
         npt.assert_array_equal(
             np.append(
                 subspace_sin.function_orbit_ids,
                 np.arange(len(subspace_sin.external_terms)) + subspace_sin.num_orbits,
             ),
-            estimator.groups,
+            estimator.estimator.groups,
         )
         if is_subclass(name, "MIQP_L0"):
-            assert estimator.hierarchy == subspace_sin.orbit_hierarchy()
-        assert not estimator.fit_intercept
+            assert estimator.estimator.hierarchy == subspace_sin.orbit_hierarchy()
+        assert not estimator.estimator.fit_intercept
 
     # OLS should never be stepwise.
     if name == "OrdinaryLeastSquares":
-        estimator = prepare_estimator(subspace_sin, name, center_point_external=True)
+        estimator = prepare_estimator(
+            subspace_sin, name, "what-ever", None, center_point_external=True
+        )
         assert isinstance(estimator, OrdinaryLeastSquares)

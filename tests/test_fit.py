@@ -1,6 +1,7 @@
 """Test the fitting functions."""
 import cvxpy as cp
 import numpy as np
+from sklearn.model_selection import RepeatedKFold
 
 from WFacer.fit import fit_ecis_from_wrangler
 
@@ -34,6 +35,7 @@ def test_fit_ecis_indicator(single_wrangler):
         optimizer_kwargs={
             "n_iter": 3,
             "opt_selection_method": ["max_score", "max_score"],
+            "cv": RepeatedKFold(n_splits=5, n_repeats=1),
         },
         estimator_kwargs={"solver": solver},
     )
@@ -75,6 +77,7 @@ def test_fit_ecis_indicator(single_wrangler):
         optimizer_kwargs={
             "n_iter": 3,
             "opt_selection_method": ["max_score", "max_score"],
+            "cv": RepeatedKFold(n_splits=5, n_repeats=1),
         },
         estimator_kwargs={"solver": solver},
     )
@@ -104,8 +107,9 @@ def test_fit_ecis_indicator(single_wrangler):
         grid,
         filter_unique_correlations=False,
         optimizer_kwargs={
-            "n_iter": 5,
+            "n_iter": 3,
             "opt_selection_method": ["max_score", "max_score"],
+            "cv": RepeatedKFold(n_splits=5, n_repeats=1),
         },
         estimator_kwargs={"solver": solver},
     )
@@ -215,7 +219,10 @@ def test_fit_ecis_sinusoid(single_wrangler_sin):
         "lasso",
         "grid-search",
         grid,
-        optimizer_kwargs={"opt_selection_method": "one_std_score"},
+        optimizer_kwargs={
+            "opt_selection_method": "one_std_score",
+            "cv": RepeatedKFold(n_splits=5, n_repeats=1),
+        },
     )
     assert len(best_coef) == single_wrangler_sin.feature_matrix.shape[1]
     e_predict = np.dot(single_wrangler_sin.feature_matrix, best_coef)
