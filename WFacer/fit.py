@@ -74,6 +74,11 @@ def fit_ecis_from_wrangler(
     # Prepare the estimator. If do centering, will return a stepwise estimator.
     estimator_kwargs = estimator_kwargs or {}
     optimizer_kwargs = optimizer_kwargs or {}
+
+    # Set default cv splitter to shuffle rows.
+    cv = optimizer_kwargs.get("cv") or RepeatedKFold(n_splits=5, n_repeats=3)
+    optimizer_kwargs["cv"] = cv
+
     estimator = prepare_estimator(
         space,
         estimator_name,
@@ -111,8 +116,6 @@ def fit_ecis_from_wrangler(
             best_params = estimator.best_params_
     else:
         # Set default CV splitter.
-        cv = optimizer_kwargs.get("cv") or RepeatedKFold(n_splits=5, n_repeats=3)
-        optimizer_kwargs["cv"] = cv
         cvs = cross_val_score(
             estimator,
             X=feature_matrix,
