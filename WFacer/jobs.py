@@ -491,11 +491,13 @@ def initialize_document(prim, project_name="ace-work", options=None):
     )
 
     # Get the cluster subspace. Other external terms than ewald not supported yet.
+    # Cutoffs keys must be integers while pyyaml may load them as strings.
+    cutoffs = {int(k): float(v) for k, v in options["cutoffs"].items()}
     subspace = get_cluster_subspace(
         prim,
         charge_decorated,
         nn_distance=nn_distance,
-        cutoffs=options["cutoffs"],
+        cutoffs=cutoffs,
         use_ewald=options["use_ewald"],
         ewald_kwargs=options["ewald_kwargs"],
         **options["from_cutoffs_kwargs"],
