@@ -134,6 +134,8 @@ def fit_output(parse_output, initial_document):
 def test_initial_document(initial_document):
     assert initial_document.project_name == "ace-work"
     assert initial_document.ce_options["cutoffs"] == {2: 7, 3: 4}
+    assert initial_document.enumerated_features is None
+    assert initial_document.last_iter_id == -1
 
     option_cutoffs = initial_document.ce_options["cutoffs"]
     generated_cutoffs = initial_document.cluster_subspace.cutoffs

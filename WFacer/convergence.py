@@ -69,7 +69,7 @@ def ce_converged(
     """Check whether the ce workflow has converged.
 
     Args:
-        coefs_history(list[np.ndarray]):
+        coefs_history(list[list[float]]):
             CE coefficients from all past iterations.
         cv_history(list[float]):
             Past cross validation errors.
@@ -88,6 +88,7 @@ def ce_converged(
     """
     # Wrangler is not empty, but its maximum iteration index does not match the
     # last iteration.
+    coefs_history = coefs_history or []
     if len(coefs_history) < 2:
         return False
     iter_id = wrangler.max_iter_id

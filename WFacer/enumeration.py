@@ -429,7 +429,7 @@ def generate_training_structures(
         kwargs:
             Keyword arguments for utils.selection.select_initial_rows.
     Returns:
-        list[Structure], list[3*3 ArrayLike[int]], 2D np.ArrayLike[float]:
+        list[Structure], list[3*3 list[list[int]]], list[list[float]]:
             Initial training structures, super-cell matrices,
             and normalized correlation vectors.
     """
@@ -533,7 +533,7 @@ def generate_training_structures(
     selected_row_ids = sorted(selected_row_ids)
     selected_structures = [s for i, s in enumerate(structures) if i in selected_row_ids]
     selected_matrices = [m for i, m in enumerate(sc_matrices) if i in selected_row_ids]
-    selected_femat = femat[selected_row_ids, :]
+    selected_femat = femat[selected_row_ids, :].tolist()
     if len(selected_row_ids) < num_structs:
         warn(
             f"Expected to add {num_structs} new structures,"

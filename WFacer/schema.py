@@ -1,6 +1,9 @@
 """Defines the data schema for WFacer jobs."""
-import numpy as np
+from typing import Any, Dict, List, Union
+
 from pydantic import BaseModel, Field
+from pymatgen.core import Structure
+from pymatgen.entries.computed_entries import ComputedStructureEntry
 from smol.cofe import ClusterSubspace
 
 from .convergence import ce_converged
@@ -16,8 +19,8 @@ class CeOutputsDocument(BaseModel):
     cluster_subspace: ClusterSubspace = Field(
         None, description="The cluster subspace" " for expansion."
     )
-    prim_specs: dict = Field(
-        {}, description="Computed specifications of the primitive" " cell."
+    prim_specs: Dict[str, Any] = Field(
+        None, description="Computed specifications of the primitive" " cell."
     )
     data_wrangler: CeDataWrangler = Field(
         None,
@@ -27,51 +30,55 @@ class CeOutputsDocument(BaseModel):
         " computed and mapped"
         " structures.",
     )
-    ce_options: dict = Field({}, description="Cluster expansion workflow" " options.")
-    coefs_history: list = Field([], description="All historical coefficients.")
-    cv_history: list = Field(
-        [], description="All historical cross validation" " errors in meV/site."
+    ce_options: Dict[str, Any] = Field(
+        None, description="Cluster expansion workflow options."
     )
-    cv_std_history: list = Field(
-        [],
+    coefs_history: List[List[float]] = Field(
+        None, description="All historical coefficients."
+    )
+    cv_history: List[float] = Field(
+        None, description="All historical cross validation" " errors in meV/site."
+    )
+    cv_std_history: List[float] = Field(
+        None,
         description="All historical cross validation"
         " standard deviations in"
         " meV/site.",
     )
-    rmse_history: list = Field(
-        [], description="All historical cross training" " errors in meV/site."
+    rmse_history: List[float] = Field(
+        None, description="All historical cross training errors in meV/site."
     )
-    params_history: list = Field(
-        [],
-        description="All historical fitting hyper-" "parameters, if needed by model.",
+    params_history: List[Union[Dict[str, Any], None]] = Field(
+        None,
+        description="All historical fitting hyper-parameters, if needed by model.",
     )
 
     # Enumerated data.
-    supercell_matrices: list = Field(
-        [], description="Enumerated supercell" " matrices."
+    supercell_matrices: List[List[List[int]]] = Field(
+        None, description="Enumerated supercell matrices."
     )
-    compositions: list = Field(
-        [], description="Enumerated composition in species" " counts per sub-lattice."
+    compositions: List[List[int]] = Field(
+        None, description="Enumerated composition in species counts per sub-lattice."
     )
-    enumerated_structures: list = Field(
-        [], description="All enumerated structures" " till the last" " iteration."
+    enumerated_structures: List[Structure] = Field(
+        None, description="All enumerated structures till the last" " iteration."
     )
-    enumerated_matrices: list = Field(
-        [], description="Supercell matrices for each" " enumerated structure."
+    enumerated_matrices: List[List[List[int]]] = Field(
+        None, description="Supercell matrices for each enumerated structure."
     )
     # Needs to be reshaped when initialized.
-    enumerated_features: np.ndarray = Field(
-        np.array([]), description="Feature vectors for each" " enumerated structure."
+    enumerated_features: List[List[float]] = Field(
+        None, description="Feature vectors for each enumerated structure."
     )
-    undecorated_entries: list = Field(
-        [],
+    undecorated_entries: List[Union[ComputedStructureEntry, None]] = Field(
+        None,
         description="Computed structure entry"
         " for each enumerated"
         " structure. If failed, will"
         " be None-type.",
     )
-    computed_properties: list = Field(
-        [],
+    computed_properties: List[Union[Dict[str, Any], None]] = Field(
+        None,
         description="Other properties extracted"
         " for each enumerated"
         " structure. If failed, will"
@@ -91,6 +98,25 @@ class CeOutputsDocument(BaseModel):
         Returns:
             int.
         """
+        is_none = [
+            self.coefs_history is None,
+            self.cv_history is None,
+            self.cv_std_history is None,
+            self.params_history is None,
+            self.rmse_history is None,
+        ]
+        all_none = all(is_none)
+        one_none = any(is_none)
+
+        if all_none:
+            return -1
+        if one_none:
+            raise ValueError(
+                "Missing some of the following required history records:"
+                "coefficients, CV, standard error of CV, optimal hyper-parameters,"
+                "and RMSE!"
+            )
+
         if (
             len(self.coefs_history) != len(self.cv_history)
             or len(self.coefs_history) != len(self.cv_std_history)

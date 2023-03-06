@@ -200,6 +200,7 @@ def enumerate_structures(last_ce_document):
 
     # Historical coefs.
     coefs_history = deepcopy(last_ce_document.coefs_history)
+    coefs_history = coefs_history or []
     if len(coefs_history) == 0:
         coefs = get_initial_ce_coefficients(subspace)
     else:
@@ -242,7 +243,10 @@ def calculate_structures(enum_output, last_ce_document):
     """
     project_name = last_ce_document.project_name
     iter_id = last_ce_document.last_iter_id + 1
-    struct_id = len(last_ce_document.enumerated_structures)
+    if last_ce_document.enumerated_structures is None:
+        struct_id = 0
+    else:
+        struct_id = len(last_ce_document.enumerated_structures)
     options = last_ce_document.ce_options
     relax_maker, static_maker, tight_maker = _get_vasp_makers(options)
 
@@ -306,6 +310,10 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
 
     undecorated_entries = deepcopy(last_ce_document.undecorated_entries)
     computed_properties = deepcopy(last_ce_document.computed_properties)
+    enumerated_matrices = deepcopy(last_ce_document.enumerated_matrices)
+    undecorated_entries = undecorated_entries or []
+    computed_properties = computed_properties or []
+    enumerated_matrices = enumerated_matrices or []
     log.info("Loading computations.")
 
     n_enum = len(enum_output["new_structures"])
@@ -353,9 +361,7 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
     successful_properties = [
         p for i, p in enumerate(computed_properties) if i in successful_entry_ids
     ]
-    sc_matrices = (
-        deepcopy(last_ce_document.enumerated_matrices) + enum_output["new_sc_matrices"]
-    )
+    sc_matrices = enumerated_matrices + enum_output["new_sc_matrices"]
     successful_scmatrices = [
         m for i, m in enumerate(sc_matrices) if i in successful_entry_ids
     ]
@@ -440,16 +446,31 @@ def update_document(enum_output, parse_output, fit_output, last_ce_document):
     ce_document.data_wrangler = deepcopy(parse_output["wrangler"])
     ce_document.undecorated_entries = parse_output["undecorated_entries"]
     ce_document.computed_properties = parse_output["computed_properties"]
+    if ce_document.coefs_history is None:
+        ce_document.coefs_history = []
     ce_document.coefs_history.append(fit_output["coefs"])
+    if ce_document.cv_history is None:
+        ce_document.cv_history = []
     ce_document.cv_history.append(fit_output["cv"])
+    if ce_document.cv_std_history is None:
+        ce_document.cv_std_history = []
     ce_document.cv_std_history.append(fit_output["cv_std"])
+    if ce_document.rmse_history is None:
+        ce_document.rmse_history = []
     ce_document.rmse_history.append(fit_output["rmse"])
+    if ce_document.params_history is None:
+        ce_document.params_history = []
     ce_document.params_history.append(fit_output["params"])
+    if ce_document.enumerated_structures is None:
+        ce_document.enumerated_structures = []
     ce_document.enumerated_structures.extend(enum_output["new_structures"])
+    if ce_document.enumerated_matrices is None:
+        ce_document.enumerated_matrices = []
     ce_document.enumerated_matrices.extend(enum_output["new_sc_matrices"])
-    ce_document.enumerated_features = np.concatenate(
-        (ce_document.enumerated_features, enum_output["new_features"]), axis=0
-    )
+    # enumerated_features requires a list.
+    if ce_document.enumerated_features is None:
+        ce_document.enumerated_features = []
+    ce_document.enumerated_features.extend(enum_output["new_features"])
     return ce_document
 
 
@@ -566,8 +587,5 @@ def initialize_document(prim, project_name="ace-work", options=None):
         supercell_matrices=sc_matrices,
         compositions=compositions,
     )
-    # Give correct shape to feature matrix.
-    num_features = len(subspace.external_terms) + subspace.num_corr_functions
-    init_ce_document.enumerated_features = np.array([]).reshape((0, num_features))
 
     return init_ce_document
