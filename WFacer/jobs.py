@@ -198,6 +198,11 @@ def enumerate_structures(last_ce_document):
     sc_matrices = last_ce_document.supercell_matrices
     compositions = last_ce_document.compositions
 
+    if sc_matrices is None or len(sc_matrices) == 0:
+        raise ValueError("No super-cell matrix available!")
+    if compositions is None or len(compositions) == 0:
+        raise ValueError("No composition available!")
+
     # Historical coefs.
     coefs_history = deepcopy(last_ce_document.coefs_history)
     coefs_history = coefs_history or []

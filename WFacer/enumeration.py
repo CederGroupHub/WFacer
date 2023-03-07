@@ -435,6 +435,14 @@ def generate_training_structures(
     """
     mc_generator_args = mc_generator_kwargs or {}
     n_parallel = n_parallel or min(cpu_count() // 4, len(enumerated_counts))
+    if n_parallel == 0:
+        if cpu_count() // 4 == 0:
+            warn(
+                f"Number of CPUs found on the executing environment: {cpu_count()} might"
+                f" not be enough for parallelization! Setting parallel processes to 1."
+            )
+            n_parallel = 1
+
     previous_sampled_structures = previous_sampled_structures or []
     previous_feature_matrix = np.array(previous_feature_matrix).tolist() or []
     if len(previous_feature_matrix) != len(previous_sampled_structures):
