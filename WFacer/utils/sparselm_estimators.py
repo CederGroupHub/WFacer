@@ -83,7 +83,7 @@ def optimizer_factory(optimizer_name, estimator, param_grid=None, **kwargs):
     Args:
         optimizer_name (str):
             Name of the optimizer.
-        estimator(CVXEstimator):
+        estimator(CVXRegressor):
             An estimator used to initialize the optimizer.
         param_grid(dict|list[tuple]):
             Parameters grid used to initialize the optimizer. Format
@@ -163,7 +163,7 @@ def prepare_estimator(
     optimizer_kwargs = optimizer_kwargs or {}
 
     # Groups are required, and hierarchy might be as well.
-    is_l0 = is_subclass(est_class_name, "MIQP_L0")
+    is_l0 = is_subclass(est_class_name, "MIQPl0")
     # Only groups are required.
     is_group = is_subclass(est_class_name, "GroupLasso")
     # sparse_bound would also be needed.

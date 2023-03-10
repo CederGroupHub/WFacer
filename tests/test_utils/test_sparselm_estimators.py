@@ -20,7 +20,7 @@ from WFacer.utils.sparselm_estimators import (
 @pytest.mark.parametrize("name", all_estimator_names)
 def test_estimator_factory(name):
     # Groups are required, and hierarchy might be as well.
-    is_l0 = is_subclass(name, "MIQP_L0")
+    is_l0 = is_subclass(name, "MIQPl0")
     # Only groups are required.
     is_group = is_subclass(name, "GroupLasso")
     # sparse_bound would also be needed.
@@ -51,7 +51,7 @@ def test_bad_estimator_name():
 
 @pytest.mark.parametrize("name", supported_estimator_names)
 def test_prepare_estimator(subspace, name):
-    if is_subclass(name, "MIQP_L0") or is_subclass(name, "GroupLasso"):
+    if is_subclass(name, "MIQPl0") or is_subclass(name, "GroupLasso"):
         # eta not scanned.
         param_grid = {"alpha": [1e-10, 1e-5, 1e-2]}
         estimator = prepare_estimator(
@@ -81,7 +81,7 @@ def test_prepare_estimator(subspace, name):
         assert groups[0] == 0
         assert len(groups) == (subspace.num_corr_functions - num_point_terms - 1)
         npt.assert_array_equal(np.arange(len(groups)), groups)
-        if is_subclass(name, "MIQP_L0"):
+        if is_subclass(name, "MIQPl0"):
             hierarchy = estimator.steps[1][1].estimator.hierarchy
             assert np.all(np.array(list(chain(*hierarchy))) >= 0)
             function_inds = list(
@@ -120,7 +120,7 @@ def test_prepare_estimator(subspace, name):
         npt.assert_array_equal(
             np.arange(len(estimator.estimator.groups)), estimator.estimator.groups
         )
-        if is_subclass(name, "MIQP_L0"):
+        if is_subclass(name, "MIQPl0"):
             assert estimator.estimator.hierarchy == subspace.function_hierarchy()
         assert not estimator.estimator.fit_intercept
 
@@ -134,7 +134,7 @@ def test_prepare_estimator(subspace, name):
 
 @pytest.mark.parametrize("name", supported_estimator_names)
 def test_prepare_estimator_sin(subspace_sin, name):
-    if is_subclass(name, "MIQP_L0") or is_subclass(name, "GroupLasso"):
+    if is_subclass(name, "MIQPl0") or is_subclass(name, "GroupLasso"):
         param_grid = {"alpha": [1e-10, 1e-5, 1e-2]}
         estimator = prepare_estimator(
             subspace_sin, name, "grid-search", param_grid, center_point_external=True
@@ -168,7 +168,7 @@ def test_prepare_estimator_sin(subspace_sin, name):
             ),
             groups,
         )
-        if is_subclass(name, "MIQP_L0"):
+        if is_subclass(name, "MIQPl0"):
             hierarchy = estimator.steps[1][1].estimator.hierarchy
             assert np.all(np.array(list(chain(*hierarchy))) >= 0)
             orbit_inds = list(range(1 + num_point_orbs, subspace_sin.num_orbits))
@@ -206,7 +206,7 @@ def test_prepare_estimator_sin(subspace_sin, name):
             ),
             estimator.estimator.groups,
         )
-        if is_subclass(name, "MIQP_L0"):
+        if is_subclass(name, "MIQPl0"):
             assert estimator.estimator.hierarchy == subspace_sin.orbit_hierarchy()
         assert not estimator.estimator.fit_intercept
 
