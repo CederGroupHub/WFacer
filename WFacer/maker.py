@@ -5,12 +5,12 @@ from warnings import warn
 from jobflow import Flow, Maker, Response, job
 
 from .jobs import (
-    calculate_structures,
-    enumerate_structures,
-    fit_calculations,
-    initialize_document,
-    parse_calculations,
-    update_document,
+    calculate_structures_job,
+    enumerate_structures_job,
+    fit_calculations_job,
+    initialize_document_job,
+    parse_calculations_job,
+    update_document_job,
 )
 
 
@@ -40,25 +40,25 @@ def ce_step_trigger(last_ce_document):
         return last_ce_document
     else:
         # enumerate_new structures.
-        enumeration = enumerate_structures(last_ce_document)
+        enumeration = enumerate_structures_job(last_ce_document)
         enumeration.name = project_name + f"_iter_{iter_id}" + "_enumeration"
 
         # Create calculations for all structures, and extract outputs.
-        calculation = calculate_structures(enumeration.output, last_ce_document)
+        calculation = calculate_structures_job(enumeration.output, last_ce_document)
         calculation.name = project_name + f"_iter_{iter_id}" + "_calculation"
 
         # Analyze outputs and wrap up all necessary data into wrangler.
-        parsing = parse_calculations(
+        parsing = parse_calculations_job(
             calculation.output, enumeration.output, last_ce_document
         )
         parsing.name = project_name + f"_iter_{iter_id}" + "_parsing"
 
         # fit from wrangler.
-        fitting = fit_calculations(parsing.output, last_ce_document)
+        fitting = fit_calculations_job(parsing.output, last_ce_document)
         fitting.name = project_name + f"_iter_{iter_id}" + "_fitting"
 
         # Wrapping up.
-        updating = update_document(
+        updating = update_document_job(
             enumeration.output, parsing.output, fitting.output, last_ce_document
         )
         updating.name = project_name + f"_iter_{iter_id}" + "_updating"
@@ -118,7 +118,7 @@ class AutoClusterExpansionMaker(Maker):
                 The iterative cluster expansion workflow.
         """
         if last_document is None:
-            initialize = initialize_document(
+            initialize = initialize_document_job(
                 prim, project_name=self.name, options=self.options
             )
             initialize.name = self.name + "_initialize"

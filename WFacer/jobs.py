@@ -170,9 +170,6 @@ def _filter_out_failed_entries(entries, entry_ids):
     return new_entries, new_entry_ids
 
 
-# TODO: jobs with a dict or list as output is still considered unreferenced
-#  by pycharm. make sure these jobs actually work.
-@job
 def enumerate_structures(last_ce_document):
     """Enumerate new structures for DFT computation.
 
@@ -237,20 +234,23 @@ def enumerate_structures(last_ce_document):
     }
 
 
-@job
-def calculate_structures(enum_output, last_ce_document):
-    """Calculate newly enumerated structures.
+# Separate job definition from function to enable easier testing and
+# custom flow writing.
+enumerate_structures_job = job(enumerate_structures)
 
-    Note: it will replace itself with workflows to run for
-    each structure.
+
+def get_structure_calculation_flows(enum_output, last_ce_document):
+    """Get workflows for newly enumerated structures.
+
     Args:
         enum_output(dict):
             Output by enumeration job.
         last_ce_document(CeOutputsDocument):
             The last cluster expansion outputs document.
     Returns:
-        list[TaskDocument]:
-            Results of VASP calculations as TaskDocument.
+        list[Flow], list[OutputReference]:
+            Flows for each structure and their output references pointing
+            at the final TaskDocument.
     """
     project_name = last_ce_document.project_name
     iter_id = last_ce_document.last_iter_id + 1
@@ -290,13 +290,35 @@ def calculate_structures(enum_output, last_ce_document):
         flows.append(Flow(jobs, output=jobs[-1].output, name=flow_name))
     outputs = [flow.output for flow in flows]
 
+    return flows, outputs
+
+
+@job
+def calculate_structures_job(enum_output, last_ce_document):
+    """Calculate newly enumerated structures.
+
+    Note: it will replace itself with workflows to run for
+    each structure.
+    Args:
+        enum_output(dict):
+            Output by enumeration job.
+        last_ce_document(CeOutputsDocument):
+            The last cluster expansion outputs document.
+    Returns:
+        list[TaskDocument]:
+            Results of VASP calculations as TaskDocument.
+    """
+    project_name = last_ce_document.project_name
+    iter_id = last_ce_document.last_iter_id + 1
+
+    flows, outputs = get_structure_calculation_flows(enum_output, last_ce_document)
+
     calc_flow = Flow(
         flows, output=outputs, name=project_name + f"_iter_{iter_id}" + "_calculations"
     )
     return Response(replace=calc_flow)
 
 
-@job
 def parse_calculations(taskdocs, enum_output, last_ce_document):
     """Parse finished calculations into CeDataWrangler.
 
@@ -407,7 +429,9 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
     }
 
 
-@job
+parse_calculations_job = job(parse_calculations)
+
+
 def fit_calculations(parse_output, last_ce_document):
     """Fit a new set of coefficients.
 
@@ -436,7 +460,9 @@ def fit_calculations(parse_output, last_ce_document):
     return {"coefs": coefs, "cv": cv, "cv_std": cv_std, "rmse": rmse, "params": params}
 
 
-@job
+fit_calculations_job = job(fit_calculations)
+
+
 def update_document(enum_output, parse_output, fit_output, last_ce_document):
     """Update the document to current iteration.
 
@@ -485,7 +511,9 @@ def update_document(enum_output, parse_output, fit_output, last_ce_document):
     return ce_document
 
 
-@job
+update_document_job = job(update_document)
+
+
 def initialize_document(prim, project_name="ace-work", options=None):
     """Initialize an empty cluster expansion document.
 
@@ -600,3 +628,6 @@ def initialize_document(prim, project_name="ace-work", options=None):
     )
 
     return init_ce_document
+
+
+initialize_document_job = job(initialize_document)

@@ -14,7 +14,7 @@ from pymatgen.entries.computed_entries import ComputedEntry
 from smol.cofe.space.domain import Vacancy
 
 from WFacer.jobs import (
-    calculate_structures,
+    calculate_structures_job,
     enumerate_structures,
     fit_calculations,
     initialize_document,
@@ -86,14 +86,12 @@ def initial_document(prim):
             {"labels": {el: fix_charge_settings[el] for el in elements}}
         ]
 
-    init_job = initialize_document(prim, options=options)
-    return execute_job_function(init_job)
+    return initialize_document(prim, options=options)
 
 
 @pytest.fixture
 def enum_output(initial_document):
-    enum_job = enumerate_structures(initial_document)
-    return execute_job_function(enum_job)
+    return enumerate_structures(initial_document)
 
 
 @pytest.fixture
@@ -121,14 +119,12 @@ def calc_output(coefs_truth, enum_output):
 
 @pytest.fixture
 def parse_output(calc_output, enum_output, initial_document):
-    parse_job = parse_calculations(calc_output, enum_output, initial_document)
-    return execute_job_function(parse_job)
+    return parse_calculations(calc_output, enum_output, initial_document)
 
 
 @pytest.fixture
 def fit_output(parse_output, initial_document):
-    fit_job = fit_calculations(parse_output, initial_document)
-    return execute_job_function(fit_job)
+    return fit_calculations(parse_output, initial_document)
 
 
 def test_initial_document(initial_document):
@@ -183,7 +179,7 @@ def test_enumerate_structures(initial_document, enum_output):
 
 
 def test_calculate_structures(initial_document, enum_output):
-    calc_job = calculate_structures(enum_output, initial_document)
+    calc_job = calculate_structures_job(enum_output, initial_document)
     # Will not perform the actual calculation here, only check flow structure.
     response = execute_job_function(calc_job)
 
@@ -252,10 +248,9 @@ def test_fit_calculations(coefs_truth, parse_output, fit_output):
 
 
 def test_update_document(enum_output, parse_output, fit_output, initial_document):
-    update_job = update_document(
+    new_document = update_document(
         enum_output, parse_output, fit_output, initial_document
     )
-    new_document = execute_job_function(update_job)
     # print("prim:", initial_document.cluster_subspace.structure)
     # print("Num enumeration:", len(enum_output["new_structures"]))
     # print("Num parsed structures:", parse_output["wrangler"].num_structures)

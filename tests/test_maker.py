@@ -27,8 +27,7 @@ def initial_document(prim):
     if specs["charge_decorated"]:
         options["decorator_types"] = ["pmg-guess-charge"]
 
-    init_job = initialize_document(prim, options=options)
-    return execute_job_function(init_job)
+    return initialize_document(prim, options=options)
 
 
 # Test the internal structure of a trigger job.
