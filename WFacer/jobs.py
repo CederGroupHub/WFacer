@@ -115,16 +115,25 @@ def _get_vasp_makers(options):
     relax_gen_kwargs = options["relax_generator_kwargs"]
     relax_generator = RelaxSetGenerator(**relax_gen_kwargs)
     relax_maker_kwargs = options["relax_maker_kwargs"]
+    # Force throwing out an error instead of defusing children, as parsing and
+    # fitting jobs are children of structure jobs and will be defused
+    # as well if not taken care of!
+
+    # Error handling will be taken care of by lost run detection and
+    # fixing functionalities in WFacer.fireworks_patches.
+    relax_maker_kwargs["stop_children_kwargs"] = {"handle_unsuccessful": "error"}
     relax_maker = RelaxMaker(input_set_generator=relax_generator, **relax_maker_kwargs)
     static_gen_kwargs = options["static_generator_kwargs"]
     static_generator = StaticSetGenerator(**static_gen_kwargs)
     static_maker_kwargs = options["static_maker_kwargs"]
+    static_maker_kwargs["stop_children_kwargs"] = {"handle_unsuccessful": "error"}
     static_maker = StaticMaker(
         input_set_generator=static_generator, **static_maker_kwargs
     )
     tight_gen_kwargs = options["tight_generator_kwargs"]
     tight_generator = TightRelaxSetGenerator(**tight_gen_kwargs)
     tight_maker_kwargs = options["tight_maker_kwargs"]
+    tight_maker_kwargs["stop_children_kwargs"] = {"handle_unsuccessful": "error"}
     tight_maker = TightRelaxMaker(
         input_set_generator=tight_generator, **tight_maker_kwargs
     )
@@ -358,6 +367,12 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
         )
 
     for doc in taskdocs:
+        # Handles fizzled structures that will miss reference.
+        if doc is None or doc.structure is None:
+            undecorated_entries.append(None)
+            computed_properties.append(None)
+            continue
+
         flow_converged = _check_flow_convergence(doc)
         if flow_converged:
             undecorated_entry, properties = get_entry_from_taskdoc(

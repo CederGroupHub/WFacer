@@ -2,7 +2,7 @@
 from dataclasses import dataclass, field
 from warnings import warn
 
-from jobflow import Flow, Maker, Response, job
+from jobflow import Flow, Maker, OnMissing, Response, job
 
 from .jobs import (
     calculate_structures_job,
@@ -52,6 +52,13 @@ def ce_step_trigger(last_ce_document):
             calculation.output, enumeration.output, last_ce_document
         )
         parsing.name = project_name + f"_iter_{iter_id}" + "_parsing"
+        # Allow some structures to be fizzled, while parse can still be done.
+        # TODO: check if structure defuse will also defuse parsing. (In jobflow
+        #  it is called defuse children).
+
+        # TODO: write handling of lost runs. Lost structures are allowed to rerun once,
+        #  then get fizzled.
+        parsing.config.on_missing_references = OnMissing.NONE
 
         # fit from wrangler.
         fitting = fit_calculations_job(parsing.output, last_ce_document)
