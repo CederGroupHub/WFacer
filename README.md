@@ -58,6 +58,15 @@ Specific configurations are required before you can properly use **WFacer**.
   [**Atomate**](https://atomate.org/installation.html#configure-database-connections-and-computing-center-parameters)
   installation guides, and run a simple [test workflow](https://materialsproject.github.io/atomate2/user/fireworks.html)
   to see if it is able to run on your queue.
+
+  Important notice: instead of writing in **my_qadapter.yaml**
+  ```commandline
+     rlaunch -c <<INSTALL_DIR>>/config rapidfire
+  ```
+  we suggest using singleshot in rlaunch instead, because by doing this a queue task will
+  be terminated upon one structure is finished, rather than trying to fetch another waiting structure
+  from the launchpad. This will guarantee that each structure to be able to use up the maximum wall-time
+  possible.
 * A mixed integer programming (MIP) solver would be necessary when a MIQP based
   regularization method is used. A list of available MIP solvers can be found in
   [**cvxpy** documentations](https://www.cvxpy.org/tutorial/advanced/index.html#choosing-a-solver).
@@ -66,8 +75,44 @@ Specific configurations are required before you can properly use **WFacer**.
   the users are recommended to install **SCIP** in a dedicated conda environment following
   the installation instructions in [**PySCIPOpt**](https://github.com/scipopt/PySCIPOpt.git).
 
-Quick example
+Quick example for semi-automation using Fireworks
 -------------------------------
+examples/semi_automation_BCC_AlLi shows a use case where you can semi-automate building the cluster expansion for
+the Al-Li system on BCC lattice.
+
+You will need to manually execute **initialize.py** in the first iteration, and then in each of the following iterations,
+execute **generate.py** to enumerate new structures and load their corresponding workflows to fireworks launcpad. Then in
+the command line, call
+
+```commandline
+nohup qlaunch rapidfire -m {n_jobs} --sleep {time} > qlaunch.log
+```
+
+in order to run all workflows. Check the status of the queue until all queue tasks are terminated,
+and no firework on the launchpad is lost (i.e., some firework in the "RUNNING" state but nothing is being run on
+the queue). If lost jobs are found, you may choose to fizzle or rerun them with
+
+```commandline
+lpad detect_lostruns --time 1 --fizzle
+```
+
+or
+
+```commandline
+lpad detect_lostruns --time 1 --rerun
+```
+
+When all structures are finished, call **fit_model.py** to parse calculations and fit ECIs. Start the next iteration
+by enumerating new structures with **generate.py** again.
+
+
+Quick example for full automation[beta]
+-------------------------------
+Notice:
+Since cluster expansion might include structures that takes a long time to compute, or may fail to relax,
+and Jobflow + Fireworks might not always handle these cases properly, the following full automation workflow
+could be flakey.
+
 A simple workflow to run automatic cluster expansion in a Ag-Li alloy on FCC lattice is as follows
 (see other available options in preprocessing documentations.):
 ```python
@@ -103,7 +148,7 @@ launchpad.
 Submit the workflow to queue using the following command after you have correctly configured **Fireworks**
 queue adapter,
 ```bash
-qlaunch rapidfire -m {n_jobs} --sleep {time}
+nohup qlaunch rapidfire -m {n_jobs} --sleep {time} > qlaunch.log
 ```
 where `n_jobs` is the number of jobs you want to keep in queue, and `time` is the amount of sleep
 time between two queue submission attempts. `qlaunch` will keep submitting jobs to the queue until
