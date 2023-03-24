@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import pytest
-from atomate2.vasp.schemas.task import TaskDocument
+from emmet.core.vasp.task_valid import TaskDocument  # atomate2 >= 0.0.11.
 from monty.serialization import loadfn
 from pydantic import parse_file_as
 from smol.cofe import ClusterExpansion

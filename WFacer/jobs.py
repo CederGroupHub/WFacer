@@ -5,12 +5,12 @@ from warnings import warn
 
 import numpy as np
 from atomate2.vasp.jobs.core import RelaxMaker, StaticMaker, TightRelaxMaker
-from atomate2.vasp.schemas.calculation import Status
 from atomate2.vasp.sets.core import (
     RelaxSetGenerator,
     StaticSetGenerator,
     TightRelaxSetGenerator,
 )
+from emmet.core.vasp.task_valid import TaskState  # atomate2 >= 0.0.11
 from jobflow import Flow, Response, job
 from pymatgen.analysis.elasticity.strain import Deformation
 from smol.cofe import ClusterExpansion
@@ -144,7 +144,7 @@ def _check_flow_convergence(taskdoc):
     """Check vasp convergence for a single structure."""
     try:
         status = taskdoc.calcs_reversed[0].has_vasp_completed
-        if status == Status.FAILED:
+        if status == TaskState.FAILED:
             return False
     except AttributeError:
         return False

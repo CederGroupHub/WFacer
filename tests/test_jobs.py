@@ -5,8 +5,8 @@ from itertools import chain
 import numpy as np
 import numpy.testing as npt
 import pytest
-from atomate2.vasp.schemas.calculation import Calculation
-from atomate2.vasp.schemas.task import TaskDocument
+from emmet.core.vasp.calculation import Calculation  # atomate2 >= 0.0.11.
+from emmet.core.vasp.task_valid import TaskDocument  # atomate2 >= 0.0.11.
 from jobflow import Flow, Job, Response
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Element, Structure

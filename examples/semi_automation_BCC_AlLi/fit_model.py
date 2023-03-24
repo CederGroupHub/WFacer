@@ -1,7 +1,7 @@
 """Parse and fit cluster expansion."""
 import json
 
-from atomate2.vasp.schemas.task import TaskDocument
+from emmet.core.vasp.task_valid import TaskDocument  # atomate2 >= 0.0.11
 from jobflow import SETTINGS
 from monty.json import jsanitize
 from monty.serialization import loadfn
