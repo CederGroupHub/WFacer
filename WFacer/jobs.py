@@ -11,7 +11,7 @@ from atomate2.vasp.sets.core import (
     StaticSetGenerator,
     TightRelaxSetGenerator,
 )
-from jobflow import Flow, Response, job
+from jobflow import Flow, OnMissing, Response, job
 from pymatgen.analysis.elasticity.strain import Deformation
 from smol.cofe import ClusterExpansion
 from smol.moca import CompositionSpace
@@ -286,16 +286,18 @@ def get_structure_calculation_flows(enum_output, last_ce_document):
         jobs = list()
         jobs.append(relax_maker.make(def_structure))
         if options["add_tight_relax"]:
-            jobs.append(
-                tight_maker.make(
-                    jobs[-1].output.structure, prev_vasp_dir=jobs[-1].output.dir_name
-                )
-            )
-        jobs.append(
-            static_maker.make(
+            tight_job = tight_maker.make(
                 jobs[-1].output.structure, prev_vasp_dir=jobs[-1].output.dir_name
             )
+            # Allow failure in relaxation.
+            tight_job.config.on_missing_references = OnMissing.NONE
+            jobs.append(tight_job)
+        static_job = static_maker.make(
+            jobs[-1].output.structure, prev_vasp_dir=jobs[-1].output.dir_name
         )
+        # Allow failure in relaxation.
+        static_job.config.on_missing_references = OnMissing.NONE
+        jobs.append(static_job)
         flows.append(Flow(jobs, output=jobs[-1].output, name=flow_name))
     outputs = [flow.output for flow in flows]
 

@@ -67,6 +67,7 @@ Specific configurations are required before you can properly use **WFacer**.
   be terminated upon one structure is finished, rather than trying to fetch another waiting structure
   from the launchpad. This will guarantee that each structure to be able to use up the maximum wall-time
   possible.
+  By switching to singleshot in rlaunch, you will need to qlaunch after every iteration trigger job because for some reason Fireworks sets the enumeration job to ready, but can not continue executing it.
 * A mixed integer programming (MIP) solver would be necessary when a MIQP based
   regularization method is used. A list of available MIP solvers can be found in
   [**cvxpy** documentations](https://www.cvxpy.org/tutorial/advanced/index.html#choosing-a-solver).

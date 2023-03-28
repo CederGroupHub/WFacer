@@ -7,7 +7,7 @@ import numpy.testing as npt
 import pytest
 from atomate2.vasp.schemas.calculation import Calculation
 from atomate2.vasp.schemas.task import TaskDocument
-from jobflow import Flow, Job, Response
+from jobflow import Flow, Job, OnMissing, Response
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Element, Structure
 from pymatgen.entries.computed_entries import ComputedEntry
@@ -195,10 +195,18 @@ def test_calculate_structures(initial_document, enum_output):
     assert len(flow.jobs) == len(enum_output["new_structures"])
     assert isinstance(flow.jobs[0], Flow)
     assert flow.jobs[0].name == "ace-work_iter_0_enum_0"
+    assert isinstance(flow.jobs[0].jobs[0], Job)
+    for jobs in flow.jobs:
+        assert len(jobs.jobs) == 3
+        # Does not allow failure before relaxation.
+        assert jobs.jobs[0].config.on_missing_references == OnMissing.ERROR
+        # Allows failure for relaxation.
+        for job in jobs.jobs[1:]:
+            assert job.config.on_missing_references == OnMissing.NONE
     job = flow.jobs[0].jobs[0]
-    assert isinstance(job, Job)
-    assert len(flow.jobs[0].jobs) == 3
     assert job.name == "ace-work_iter_0_enum_0_relax"
+    job = flow.jobs[0].jobs[-1]
+    assert job.name == "ace-work_iter_0_enum_0_static"
 
 
 def test_parse_calculations(enum_output, parse_output):
