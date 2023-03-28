@@ -3,6 +3,7 @@ from warnings import warn
 
 import numpy as np
 import sparselm
+from sklearn.model_selection import RepeatedKFold
 from smol.utils import class_name_from_str
 from sparselm.model import Lasso, OverlapGroupLasso
 from sparselm.model import __all__ as all_estimator_names
@@ -259,8 +260,12 @@ def prepare_estimator(
         center_estimator = Lasso(
             alpha=1e-6, fit_intercept=estimator_kwargs.get("fit_intercept", False)
         )
+        center_cv = optimizer_kwargs.get("cv", RepeatedKFold(n_splits=5, n_repeats=3))
         center_optimizer = optimizer_factory(
-            "grid-search", center_estimator, {"alpha": 2 ** np.linspace(-30, 2, 17)}
+            "grid-search",
+            center_estimator,
+            {"alpha": 2 ** np.linspace(-30, 2, 17)},
+            cv=center_cv,  # Make sure to shuffle before fit.
         )
         estimator_kwargs["fit_intercept"] = False
         main_estimator = estimator_factory(estimator_name, **estimator_kwargs)

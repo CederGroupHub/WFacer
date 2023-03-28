@@ -36,7 +36,7 @@ ewald_kwargs: {}
 from_cutoffs_kwargs: {}
 estimator_type: "lasso"
 use_hierarchy: true
-center_point_external: true
+center_point_external: null
 filter_unique_correlations: true
 estimator_kwargs: {}
 optimizer_type: "grid-search"

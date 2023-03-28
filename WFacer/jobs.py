@@ -460,7 +460,7 @@ def fit_calculations(parse_output, last_ce_document):
            Dictionary containing fitted CE information.
     """
     options = last_ce_document.ce_options
-    coefs, cv, cv_std, rmse, params = fit_ecis_from_wrangler(
+    _, coefs, cv, cv_std, rmse, params = fit_ecis_from_wrangler(
         parse_output["wrangler"],
         options["estimator_type"],
         options["optimizer_type"],

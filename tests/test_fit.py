@@ -1,7 +1,11 @@
 """Test the fitting functions."""
 import cvxpy as cp
 import numpy as np
+import pytest
+from monty.serialization import loadfn
 from sklearn.model_selection import RepeatedKFold
+from smol.cofe.wrangling.tools import unique_corr_vector_indices
+from sparselm.stepwise import StepwiseEstimator
 
 from WFacer.fit import fit_ecis_from_wrangler
 
@@ -27,7 +31,7 @@ def test_fit_ecis_indicator(single_wrangler):
         ("eta", (2 ** np.linspace(-20, 4, 25)).tolist()),
         ("alpha", [0] + (2 ** np.linspace(-30, 0, 16)).tolist()),
     ]
-    best_coef, best_cv, best_cv_std, rmse, best_params = fit_ecis_from_wrangler(
+    _, best_coef, best_cv, best_cv_std, rmse, best_params = fit_ecis_from_wrangler(
         single_wrangler,
         "l2-l0",
         "line-search",
@@ -68,7 +72,7 @@ def test_fit_ecis_indicator(single_wrangler):
         ("eta", (2 ** np.linspace(-20, 4, 25)).tolist()),
         ("alpha", [0] + (2 ** np.linspace(-30, 0, 16)).tolist()),
     ]
-    best_coef, best_cv, best_cv_std, rmse, best_params = fit_ecis_from_wrangler(
+    _, best_coef, best_cv, best_cv_std, rmse, best_params = fit_ecis_from_wrangler(
         single_wrangler,
         "l2-l0",
         "line-search",
@@ -100,7 +104,7 @@ def test_fit_ecis_indicator(single_wrangler):
         ("eta", (2 ** np.linspace(-20, 4, 25)).tolist()),
         ("alpha", [0] + (2 ** np.linspace(-30, 0, 16)).tolist()),
     ]
-    best_coef, best_cv, best_cv_std, rmse, best_params = fit_ecis_from_wrangler(
+    _, best_coef, best_cv, best_cv_std, rmse, best_params = fit_ecis_from_wrangler(
         single_wrangler,
         "l2-l0",
         "line-search",
@@ -127,7 +131,7 @@ def test_fit_ecis_indicator(single_wrangler):
     # print("r2 score of prediction:", r2)
 
     # Filtered, OLS. (overfit domain so cv >= rmse is correct.)
-    best_coef1, best_cv1, best_cv_std1, rmse1, best_params1 = fit_ecis_from_wrangler(
+    _, best_coef1, best_cv1, best_cv_std1, rmse1, best_params1 = fit_ecis_from_wrangler(
         single_wrangler, "ordinary-least-squares", "what-ever", {}
     )
     assert best_cv >= -1e-8
@@ -148,7 +152,7 @@ def test_fit_ecis_indicator(single_wrangler):
     # print("r2 score of prediction:", r2)
 
     # Not filtered, OLS. Should have larger fitting error than filtered ones.
-    best_coef2, best_cv2, best_cv_std2, rmse2, best_params2 = fit_ecis_from_wrangler(
+    _, best_coef2, best_cv2, best_cv_std2, rmse2, best_params2 = fit_ecis_from_wrangler(
         single_wrangler,
         "ordinary-least-squares",
         "what-ever",
@@ -170,7 +174,7 @@ def test_fit_ecis_indicator(single_wrangler):
     # print("r2 score of prediction:", r2)
 
     # Center or not should not affect OLS greatly?
-    best_coef3, best_cv3, best_cv_std3, rmse3, best_params3 = fit_ecis_from_wrangler(
+    _, best_coef3, best_cv3, best_cv_std3, rmse3, best_params3 = fit_ecis_from_wrangler(
         single_wrangler,
         "ordinary-least-squares",
         "what-ever",
@@ -188,7 +192,7 @@ def test_fit_ecis_indicator(single_wrangler):
 
     # Centering, lasso.
     grid = {"alpha": (2 ** np.linspace(-20, 4, 25)).tolist()}
-    best_coef, best_cv, best_cv_std, rmse, best_params = fit_ecis_from_wrangler(
+    _, best_coef, best_cv, best_cv_std, rmse, best_params = fit_ecis_from_wrangler(
         single_wrangler,
         "lasso",
         "grid-search",
@@ -214,7 +218,7 @@ def test_fit_ecis_indicator(single_wrangler):
 def test_fit_ecis_sinusoid(single_wrangler_sin):
     # Centering, lasso.
     grid = {"alpha": (2 ** np.linspace(-20, 4, 25)).tolist()}
-    best_coef, best_cv, best_cv_std, rmse, best_params = fit_ecis_from_wrangler(
+    _, best_coef, best_cv, best_cv_std, rmse, best_params = fit_ecis_from_wrangler(
         single_wrangler_sin,
         "lasso",
         "grid-search",
@@ -230,3 +234,96 @@ def test_fit_ecis_sinusoid(single_wrangler_sin):
     r2 = 1 - np.sum((e_predict - e) ** 2) / (np.var(e) * len(e))
     # prediction error per atom should not be too large.
     assert r2 >= 0.9
+
+
+@pytest.fixture
+def real_wrangler():
+    return loadfn("./data/agli_bcc_wrangler.json")
+
+
+def test_realistic_centered_fit(real_wrangler):
+    # If not stepwise, we can have CV around 6meV/site, RMSE around 5 meV/site.
+    # Stepwise should not give significantly worse result here.
+    grid = {"alpha": (2 ** np.linspace(-20, 4, 25)).tolist()}
+    (
+        estimator,
+        best_coef,
+        best_cv,
+        best_cv_std,
+        rmse,
+        best_params,
+    ) = fit_ecis_from_wrangler(
+        real_wrangler,
+        "lasso",
+        "grid-search",
+        grid,
+        center_point_external=True,
+        estimator_kwargs={"fit_intercept": False},
+        optimizer_kwargs={
+            "opt_selection_method": "max_score",
+            "cv": RepeatedKFold(n_splits=5, n_repeats=2),
+        },
+    )  # Force stepwise fit.
+
+    assert isinstance(estimator, StepwiseEstimator)
+
+    unique_inds = unique_corr_vector_indices(real_wrangler, "energy")
+    feature_matrix = real_wrangler.feature_matrix.copy()
+    feature_matrix = feature_matrix[unique_inds, :]
+    normalized_energy = real_wrangler.get_property_vector("energy", normalize=True)
+    normalized_energy = normalized_energy[unique_inds]
+    # print("Center step fit result:")
+    # print("center cv:", -estimator.steps[0][1].best_score_ * 1000 / 2)
+    # print("center coef:", estimator.steps[0][1].best_estimator_.coef_)
+    # print("center params:", estimator.steps[0][1].best_params_)
+    # print("center table:", estimator.steps[0][1].cv_results_)
+
+    res = normalized_energy - estimator.steps[0][1].predict(
+        feature_matrix[:, estimator.estimator_feature_indices[0]]
+    )
+    # print("Residuals:", res)
+    assert np.allclose(
+        res,
+        normalized_energy
+        - feature_matrix[:, estimator.estimator_feature_indices[0]]
+        @ estimator.steps[0][1].best_estimator_.coef_,
+    )
+
+    # print("Main step fit result:")
+    # print("main cv:", -estimator.steps[-1][1].best_score_ * 1000 / 2)
+    # print("main coef:", estimator.steps[-1][1].best_estimator_.coef_)
+    # print("main params:", estimator.steps[-1][1].best_params_)
+    # print("main table:", estimator.steps[-1][1].cv_results_)
+
+    res2 = res - estimator.steps[-1][1].predict(
+        feature_matrix[:, estimator.estimator_feature_indices[-1]]
+    )
+    # print("Main Residuals:", res2)
+    assert np.allclose(res2, normalized_energy - estimator.predict(feature_matrix))
+    assert best_params["alpha"] in grid["alpha"]
+
+    # Default fitting, will not use centering when at full rank.
+    (
+        estimator,
+        best_coef,
+        best_cv,
+        best_cv_std,
+        rmse,
+        best_params,
+    ) = fit_ecis_from_wrangler(
+        real_wrangler,
+        "lasso",
+        "grid-search",
+        grid,
+        estimator_kwargs={"fit_intercept": False},
+        optimizer_kwargs={
+            "opt_selection_method": "max_score",
+            "cv": RepeatedKFold(n_splits=5, n_repeats=2),
+        },
+    )  # Force stepwise fit.
+
+    assert not isinstance(estimator, StepwiseEstimator)
+
+    assert best_cv <= 8
+    assert rmse <= 7
+    assert best_params["alpha"] in grid["alpha"]
