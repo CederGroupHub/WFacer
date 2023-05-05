@@ -631,7 +631,7 @@ def process_convergence_options(d):
         cv_tol(float): optional
             Maximum allowed CV value in meV per site (including vacancies).
             (not eV per atom because some CE may contain Vacancies.)
-            Default to 5 meV/site, but better set it manually!
+            Default to None, but better set it manually!
         std_cv_rtol(float): optional
             Maximum standard deviation of CV allowed in cross validations,
             normalized by mean CV value.
@@ -664,7 +664,7 @@ def process_convergence_options(d):
             recommended. Default to 10.
     """
     return {
-        "cv_tol": d.get("cv_tol", 5),
+        "cv_tol": d.get("cv_tol"),
         "std_cv_rtol": d.get("std_cv_rtol"),
         "delta_cv_rtol": d.get("delta_cv_rtol", 0.5),
         "delta_eci_rtol": d.get("delta_eci_rtol"),

@@ -43,7 +43,7 @@ optimizer_type: "grid-search"
 param_grid: null
 optimizer_kwargs: {}
 fit_kwargs: {}
-'cv_tol': 5
+'cv_tol': null
 std_cv_rtol: null
 delta_cv_rtol: 0.5
 delta_eci_rtol: null

@@ -94,7 +94,10 @@ def ce_converged(
     iter_id = wrangler.max_iter_id
 
     cv_converged = (
-        cv_history[-1] <= convergence_options["cv_tol"]
+        (
+            convergence_options["cv_tol"] is None
+            or cv_history[-1] <= convergence_options["cv_tol"]
+        )
         and (
             convergence_options["std_cv_rtol"] is None
             or cv_std_history[-1] / cv_history[-1] <= convergence_options["std_cv_rtol"]
