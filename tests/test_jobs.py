@@ -14,6 +14,7 @@ from pymatgen.entries.computed_entries import ComputedEntry
 from smol.cofe.space.domain import Vacancy
 
 from WFacer.jobs import (
+    _get_iter_id_from_enum_id,
     calculate_structures_job,
     enumerate_structures,
     fit_calculations,
@@ -223,6 +224,7 @@ def test_parse_calculations(enum_output, parse_output):
     # Assert all structures are properly decorated.
     sm = StructureMatcher()
     specs = get_prim_specs(parse_output["wrangler"].cluster_subspace.structure)
+    all_iter_ids = []
     for ent, und in zip(
         parse_output["wrangler"].entries, parse_output["undecorated_entries"]
     ):
@@ -237,6 +239,12 @@ def test_parse_calculations(enum_output, parse_output):
                 for site in ent.structure
             ]
             assert np.any(carry_charge)
+        # Iteration indices are correctly parsed!
+        assert ent.data["properties"]["spec"]["iter_id"] == _get_iter_id_from_enum_id(
+            ent.data["properties"]["spec"]["enum_id"], 50, 30
+        )
+        all_iter_ids.append(ent.data["properties"]["spec"]["iter_id"])
+    assert sorted(set(all_iter_ids)) == list(range(max(all_iter_ids) + 1))
     # Assert other properties are correctly parsed.
     assert len(parse_output["undecorated_entries"]) == n_enum
     assert len(parse_output["computed_properties"]) == n_enum

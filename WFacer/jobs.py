@@ -179,6 +179,17 @@ def _filter_out_failed_entries(entries, entry_ids):
     return new_entries, new_entry_ids
 
 
+def _get_iter_id_from_enum_id(enum_id, num_structs_init, num_structs_add):
+    """Calculate in which iteration this structure was enumerated.
+
+    Iteration index starts from 0.
+    """
+    if enum_id < num_structs_init:
+        return 0
+    else:
+        return (enum_id - num_structs_init) // num_structs_add + 1
+
+
 def enumerate_structures(last_ce_document):
     """Enumerate new structures for DFT computation.
 
@@ -348,7 +359,6 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
             Updated wrangler, all entries before decoration,
             and all computed properties.
     """
-    iter_id = last_ce_document.last_iter_id + 1
     options = last_ce_document.ce_options
     prim_specs = last_ce_document.prim_specs
 
@@ -432,6 +442,11 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
     ):
         # Save iteration index and the structure's index in
         # all enumerated structures.
+        iter_id = _get_iter_id_from_enum_id(
+            eid,
+            options["num_structs_per_iter_init"],
+            options["num_structs_per_iter_add"],
+        )
         prop["spec"] = {"iter_id": iter_id, "enum_id": eid}
         wrangler.add_entry(entry, properties=prop, supercell_matrix=mat)
     log.info(
