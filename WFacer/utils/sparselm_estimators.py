@@ -4,7 +4,7 @@ from warnings import warn
 import numpy as np
 import sparselm
 from sklearn.model_selection import RepeatedKFold
-from smol.utils import class_name_from_str
+from smol.utils.class_utils import class_name_from_str
 from sparselm.model import Lasso, OverlapGroupLasso
 from sparselm.model import __all__ as all_estimator_names
 from sparselm.model_selection import GridSearchCV, LineSearchCV

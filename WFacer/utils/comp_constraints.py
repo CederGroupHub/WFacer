@@ -4,6 +4,7 @@ from smol.cofe.space.domain import get_species
 from smol.moca.utils.occu import get_dim_ids_by_sublattice
 
 
+# TODO: These will be removed after merging gs_solver PR in smol.
 def parse_species_constraints(d, bits, sl_sizes):
     """Parse the constraint to species concentrations.
 

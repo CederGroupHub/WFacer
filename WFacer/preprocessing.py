@@ -691,4 +691,4 @@ def get_initial_ce_coefficients(cluster_subspace):
     return np.array(
         [0 for _ in range(cluster_subspace.num_corr_functions)]
         + [1 for _ in range(len(cluster_subspace.external_terms))]
-    )
+    ).astype(float)
