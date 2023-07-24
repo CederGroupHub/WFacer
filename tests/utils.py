@@ -8,7 +8,7 @@ from monty.json import MontyDecoder, MSONable
 from pymatgen.core import Element
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from smol.cofe.space.domain import Vacancy
-from smol.moca.utils.occu import get_dim_ids_table, occu_to_counts
+from smol.moca.occu_utils import get_dim_ids_table, occu_to_counts
 
 from WFacer.wrangling import CeDataWrangler
 
