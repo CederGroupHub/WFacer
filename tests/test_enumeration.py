@@ -11,7 +11,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from smol.cofe import ClusterSubspace
 from smol.cofe.space.domain import Vacancy
 from smol.moca import CompositionSpace, Ensemble
-from smol.moca.utils.occu import (
+from smol.moca.occu_utils import (
     get_dim_ids_by_sublattice,
     get_dim_ids_table,
     occu_to_counts,

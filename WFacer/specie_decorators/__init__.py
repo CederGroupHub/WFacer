@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 
-from smol.utils import get_subclasses
+from smol.utils.class_utils import get_subclasses
 
 from .base import BaseDecorator, decorator_factory
 from .charge import (

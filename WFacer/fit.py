@@ -1,4 +1,6 @@
 """Fit ECIs from Wrangler."""
+from warnings import warn
+
 import numpy as np
 from sklearn.model_selection import RepeatedKFold, cross_val_score
 from smol.cofe.wrangling.tools import unique_corr_vector_indices
@@ -17,7 +19,7 @@ def fit_ecis_from_wrangler(
     optimizer_name,
     param_grid,
     use_hierarchy=True,
-    center_point_external=True,
+    center_point_external=None,
     filter_unique_correlations=True,
     estimator_kwargs=None,
     optimizer_kwargs=None,
@@ -43,9 +45,11 @@ def fit_ecis_from_wrangler(
             true.
         center_point_external(bool): optional
             Whether to fit the point and external terms with linear regression
-            first, then fit the residue with regressor. Default to true,
-            because this usually greatly improves the decrease of ECI over
-            cluster radius.
+            first, then fit the residue with regressor. Default to None, which means
+            when the feature matrix is full rank, will not use centering, otherwise
+            centers. If set to True, will force centering, but use at your own risk
+            because this may cause very large CV. If set to False, will never use
+            centering.
         filter_unique_correlations(bool):
             If the wrangler have structures with duplicated correlation vectors,
             whether to fit with only the one with the lowest energy.
@@ -57,8 +61,8 @@ def fit_ecis_from_wrangler(
         kwargs:
             Keyword arguments used by estimator._fit. For example, solver arguments.
     Returns:
-        1D np.ndarray, float, float, float, 1D np.ndarray:
-            Fitted coefficients (not ECIs), cross validation error (meV/site),
+        Estimator, 1D np.ndarray, float, float, float, 1D np.ndarray:
+            Fitted estimator, coefficients (not ECIs), cross validation error (meV/site),
             standard deviation of CV (meV/site) , RMSE(meV/site)
             and corresponding best parameters.
     """
@@ -76,8 +80,27 @@ def fit_ecis_from_wrangler(
     optimizer_kwargs = optimizer_kwargs or {}
 
     # Set default cv splitter to shuffle rows.
-    cv = optimizer_kwargs.get("cv") or RepeatedKFold(n_splits=5, n_repeats=3)
+    cv = optimizer_kwargs.get("cv")
+    if cv is None:
+        cv = RepeatedKFold(n_splits=5, n_repeats=3)
+    elif isinstance(cv, int):
+        cv = RepeatedKFold(n_splits=cv)
+
     optimizer_kwargs["cv"] = cv
+
+    # Check if the matrix is full rank. Do not apply centering when doing full-rank.
+    n_features = feature_matrix.shape[1]
+    if wrangler.get_feature_matrix_rank() >= n_features:
+        if center_point_external:
+            warn(
+                "The handled feature matrix is full rank, but center_point_external"
+                " is forced to be true! Use at your own risk as this might result in"
+                " very large fitting error!"
+            )
+        if center_point_external is None:
+            center_point_external = False
+    elif center_point_external is None:
+        center_point_external = True
 
     estimator = prepare_estimator(
         space,
@@ -138,6 +161,7 @@ def fit_ecis_from_wrangler(
     # Convert from eV/prim to meV/site.
     n_sites = len(wrangler.cluster_subspace.structure)
     return (
+        estimator,
         best_coef,
         best_cv * 1000 / n_sites,
         best_cv_std * 1000 / n_sites,

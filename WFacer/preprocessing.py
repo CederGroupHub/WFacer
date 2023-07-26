@@ -574,11 +574,13 @@ def process_fit_options(d):
         use_hierarchy(str):
             Whether to use hierarchy in regularization fitting, when
             estimator type is mixedL0. Default to True.
-        center_point_external(bool):
+        center_point_external(bool): optional
             Whether to fit the point and external terms with linear regression
-            first, then fit the residue with regressor. Default to true,
-            because this usually greatly improves the decrease of ECI over
-            cluster radius.
+            first, then fit the residue with regressor. Default to None, which means
+            when the feature matrix is full rank, will not use centering, otherwise
+            centers. If set to True, will force centering, but use at your own risk
+            because this may cause very large CV. If set to False, will never use
+            centering.
         filter_unique_correlations(bool):
             If the wrangler have structures with duplicated correlation vectors,
             whether to fit with only the one with the lowest energy.
@@ -607,7 +609,7 @@ def process_fit_options(d):
         # We will not include sample weighting scheme here. You can play with the
         # final CeDataWangler if you want.
         "use_hierarchy": d.get("use_hierarchy", True),
-        "center_point_external": d.get("center_point_external", True),
+        "center_point_external": d.get("center_point_external"),
         "filter_unique_correlations": d.get("filter_unique_correlations", True),
         "estimator_kwargs": d.get("estimator_kwargs", {}),
         "optimizer_type": d.get("optimizer_type", "grid-search"),
@@ -631,7 +633,7 @@ def process_convergence_options(d):
         cv_tol(float): optional
             Maximum allowed CV value in meV per site (including vacancies).
             (not eV per atom because some CE may contain Vacancies.)
-            Default to 5 meV/site, but better set it manually!
+            Default to None, but better set it manually!
         std_cv_rtol(float): optional
             Maximum standard deviation of CV allowed in cross validations,
             normalized by mean CV value.
@@ -664,7 +666,7 @@ def process_convergence_options(d):
             recommended. Default to 10.
     """
     return {
-        "cv_tol": d.get("cv_tol", 5),
+        "cv_tol": d.get("cv_tol"),
         "std_cv_rtol": d.get("std_cv_rtol"),
         "delta_cv_rtol": d.get("delta_cv_rtol", 0.5),
         "delta_eci_rtol": d.get("delta_eci_rtol"),
@@ -689,4 +691,4 @@ def get_initial_ce_coefficients(cluster_subspace):
     return np.array(
         [0 for _ in range(cluster_subspace.num_corr_functions)]
         + [1 for _ in range(len(cluster_subspace.external_terms))]
-    )
+    ).astype(float)

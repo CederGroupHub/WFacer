@@ -11,7 +11,7 @@ from atomate2.vasp.sets.core import (
     TightRelaxSetGenerator,
 )
 from emmet.core.vasp.task_valid import TaskState  # atomate2 >= 0.0.11
-from jobflow import Flow, Response, job
+from jobflow import Flow, OnMissing, Response, job
 from pymatgen.analysis.elasticity.strain import Deformation
 from smol.cofe import ClusterExpansion
 from smol.moca import CompositionSpace
@@ -179,6 +179,17 @@ def _filter_out_failed_entries(entries, entry_ids):
     return new_entries, new_entry_ids
 
 
+def _get_iter_id_from_enum_id(enum_id, num_structs_init, num_structs_add):
+    """Calculate in which iteration this structure was enumerated.
+
+    Iteration index starts from 0.
+    """
+    if enum_id < num_structs_init:
+        return 0
+    else:
+        return (enum_id - num_structs_init) // num_structs_add + 1
+
+
 def enumerate_structures(last_ce_document):
     """Enumerate new structures for DFT computation.
 
@@ -286,16 +297,18 @@ def get_structure_calculation_flows(enum_output, last_ce_document):
         jobs = list()
         jobs.append(relax_maker.make(def_structure))
         if options["add_tight_relax"]:
-            jobs.append(
-                tight_maker.make(
-                    jobs[-1].output.structure, prev_vasp_dir=jobs[-1].output.dir_name
-                )
-            )
-        jobs.append(
-            static_maker.make(
+            tight_job = tight_maker.make(
                 jobs[-1].output.structure, prev_vasp_dir=jobs[-1].output.dir_name
             )
+            # Allow failure in relaxation.
+            tight_job.config.on_missing_references = OnMissing.NONE
+            jobs.append(tight_job)
+        static_job = static_maker.make(
+            jobs[-1].output.structure, prev_vasp_dir=jobs[-1].output.dir_name
         )
+        # Allow failure in relaxation.
+        static_job.config.on_missing_references = OnMissing.NONE
+        jobs.append(static_job)
         flows.append(Flow(jobs, output=jobs[-1].output, name=flow_name))
     outputs = [flow.output for flow in flows]
 
@@ -346,7 +359,6 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
             Updated wrangler, all entries before decoration,
             and all computed properties.
     """
-    iter_id = last_ce_document.last_iter_id + 1
     options = last_ce_document.ce_options
     prim_specs = last_ce_document.prim_specs
 
@@ -430,6 +442,11 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
     ):
         # Save iteration index and the structure's index in
         # all enumerated structures.
+        iter_id = _get_iter_id_from_enum_id(
+            eid,
+            options["num_structs_per_iter_init"],
+            options["num_structs_per_iter_add"],
+        )
         prop["spec"] = {"iter_id": iter_id, "enum_id": eid}
         wrangler.add_entry(entry, properties=prop, supercell_matrix=mat)
     log.info(
@@ -460,7 +477,7 @@ def fit_calculations(parse_output, last_ce_document):
            Dictionary containing fitted CE information.
     """
     options = last_ce_document.ce_options
-    coefs, cv, cv_std, rmse, params = fit_ecis_from_wrangler(
+    _, coefs, cv, cv_std, rmse, params = fit_ecis_from_wrangler(
         parse_output["wrangler"],
         options["estimator_type"],
         options["optimizer_type"],

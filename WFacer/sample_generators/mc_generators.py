@@ -7,7 +7,7 @@ import numpy as np
 from pymatgen.core import Element
 from smol.cofe.space.domain import Vacancy
 from smol.moca import CompositionSpace, Ensemble, Sampler
-from smol.utils import class_name_from_str, derived_class_factory
+from smol.utils.class_utils import class_name_from_str, derived_class_factory
 
 from ..utils.duplicacy import is_corr_duplicate, is_duplicate
 from ..utils.occu import get_random_occupancy_from_counts

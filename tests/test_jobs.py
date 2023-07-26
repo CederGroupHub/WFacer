@@ -7,13 +7,14 @@ import numpy.testing as npt
 import pytest
 from emmet.core.vasp.calculation import Calculation  # atomate2 >= 0.0.11.
 from emmet.core.vasp.task_valid import TaskDocument  # atomate2 >= 0.0.11.
-from jobflow import Flow, Job, Response
+from jobflow import Flow, Job, OnMissing, Response
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Element, Structure
 from pymatgen.entries.computed_entries import ComputedEntry
 from smol.cofe.space.domain import Vacancy
 
 from WFacer.jobs import (
+    _get_iter_id_from_enum_id,
     calculate_structures_job,
     enumerate_structures,
     fit_calculations,
@@ -195,10 +196,18 @@ def test_calculate_structures(initial_document, enum_output):
     assert len(flow.jobs) == len(enum_output["new_structures"])
     assert isinstance(flow.jobs[0], Flow)
     assert flow.jobs[0].name == "ace-work_iter_0_enum_0"
+    assert isinstance(flow.jobs[0].jobs[0], Job)
+    for jobs in flow.jobs:
+        assert len(jobs.jobs) == 3
+        # Does not allow failure before relaxation.
+        assert jobs.jobs[0].config.on_missing_references == OnMissing.ERROR
+        # Allows failure for relaxation.
+        for job in jobs.jobs[1:]:
+            assert job.config.on_missing_references == OnMissing.NONE
     job = flow.jobs[0].jobs[0]
-    assert isinstance(job, Job)
-    assert len(flow.jobs[0].jobs) == 3
     assert job.name == "ace-work_iter_0_enum_0_relax"
+    job = flow.jobs[0].jobs[-1]
+    assert job.name == "ace-work_iter_0_enum_0_static"
 
 
 def test_parse_calculations(enum_output, parse_output):
@@ -215,6 +224,7 @@ def test_parse_calculations(enum_output, parse_output):
     # Assert all structures are properly decorated.
     sm = StructureMatcher()
     specs = get_prim_specs(parse_output["wrangler"].cluster_subspace.structure)
+    all_iter_ids = []
     for ent, und in zip(
         parse_output["wrangler"].entries, parse_output["undecorated_entries"]
     ):
@@ -229,6 +239,12 @@ def test_parse_calculations(enum_output, parse_output):
                 for site in ent.structure
             ]
             assert np.any(carry_charge)
+        # Iteration indices are correctly parsed!
+        assert ent.data["properties"]["spec"]["iter_id"] == _get_iter_id_from_enum_id(
+            ent.data["properties"]["spec"]["enum_id"], 50, 30
+        )
+        all_iter_ids.append(ent.data["properties"]["spec"]["iter_id"])
+    assert sorted(set(all_iter_ids)) == list(range(max(all_iter_ids) + 1))
     # Assert other properties are correctly parsed.
     assert len(parse_output["undecorated_entries"]) == n_enum
     assert len(parse_output["computed_properties"]) == n_enum

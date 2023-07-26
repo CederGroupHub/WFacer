@@ -22,7 +22,11 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from sklearn.mixture import GaussianMixture
 from skopt import gp_minimize
 from smol.cofe.space.domain import get_species
-from smol.utils import class_name_from_str, derived_class_factory, get_subclasses
+from smol.utils.class_utils import (
+    class_name_from_str,
+    derived_class_factory,
+    get_subclasses,
+)
 
 # Add here if you implement more decorators.
 valid_decorator_types = {
