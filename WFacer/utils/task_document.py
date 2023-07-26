@@ -37,7 +37,7 @@ def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=N
     """Get the computed structure entry from taskdoc.
 
     Args:
-        taskdoc(TaskDocument):
+        taskdoc(TaskDoc):
             A task document generated as vasp task output by atomate2.
         property_and_queries(list[(str, str)|str]): optional
             A list of property names to be retrieved from taskdoc,
@@ -50,7 +50,7 @@ def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=N
         decorator_names(list[str]): optional
             The name of decorators used in this CE workflow, used to
             determine what site properties to retrieve from
-            TaskDocument and to include in the returned entry.
+            TaskDoc and to include in the returned entry.
     Returns:
         ComputedStructureEntry, dict:
             The computed structure entry, with each site having the site

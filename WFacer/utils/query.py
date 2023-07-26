@@ -146,7 +146,7 @@ def get_property_from_object(obj, query_string):
             For example, "calcs_reversed.0-output.outcar.magnetization.^tot"
             will give you the total magnetization on each site of the structure
             in the final ionic step, if the input object is a valid atomate2
-            TaskDocument.
+            TaskDoc.
 
             If a string with no special character is given, we will iteratively
             search through each level of attributes and dict keys until the

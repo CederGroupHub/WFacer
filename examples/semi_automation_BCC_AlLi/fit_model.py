@@ -1,7 +1,7 @@
 """Parse and fit cluster expansion."""
 import json
 
-from atomate2.vasp.schemas.task import TaskDocument
+from emmet.core.tasks import TaskDoc  # emmet-core >= 0.60.0
 from jobflow import SETTINGS
 from monty.json import jsanitize
 from monty.serialization import loadfn
@@ -20,7 +20,7 @@ def __main__():
 
     enum_output = loadfn(f"enum_iter_{iter_id}.json")
 
-    print("Loading TaskDocuments!")
+    print("Loading TaskDocs!")
     store = SETTINGS.JOB_STORE
     store.connect()
 
@@ -35,7 +35,7 @@ def __main__():
         supposed_name = project_name + f"_iter_{iter_id}_enum_{fid}" + "_static"
         try:
             data = store.query_one({"name": supposed_name}, load=True)
-            doc = parse_obj_as(TaskDocument, data)
+            doc = parse_obj_as(TaskDoc, data)
         except Exception:
             doc = None
         taskdocs.append(doc)
