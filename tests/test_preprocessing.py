@@ -13,7 +13,6 @@ from WFacer.preprocessing import (
     get_cluster_subspace,
     get_initial_ce_coefficients,
     get_prim_specs,
-    parse_comp_constraints,
     reduce_prim,
 )
 
@@ -65,6 +64,7 @@ def test_cluster_subspace(prim):
     assert filtered_orbits == space.orbits
 
 
+# TODO: rewrite this.
 def test_parse_comp_constraints():
     bits = [["Li+", "Mn2+", "Mn3+", "Vacancy"], ["O2-", "F-"]]
     bits = [[get_species(b) for b in sl_bits] for sl_bits in bits]

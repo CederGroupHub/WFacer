@@ -12,8 +12,6 @@ from smol.cofe import ClusterSubspace
 from smol.cofe.extern import EwaldTerm
 from smol.cofe.space.domain import Vacancy, get_allowed_species, get_site_spaces
 
-from .utils.comp_constraints import parse_generic_constraint, parse_species_constraints
-
 
 # Parse and process primitive cell.
 def reduce_prim(prim, **kwargs):
@@ -251,47 +249,54 @@ def process_composition_options(d):
     Returns:
         dict:
             A dict containing composition options, including the following keys:
-        species_concentration_constraints(List[dict]|dict):
-            Restriction to concentrations of species in enumerated
-            structures.
-            Given in the form of a single dict
-                {Species: (min atomic percentage in structure,
-                           max atomic percentage in structure)}
-            or in list of dicts, each constrains a sub-lattice:
-               [{Species: (min atomic percentage in sub-lattice,
-                           max atomic percentage in sub-lattice)},
-                ...]
-            If values in dict are provided as a single float,
-            Note: Species are saved as their __str__ method output.
-            This will have some restriction on the allowed properties,
-            but we have to bear with it until pymatgen is updated.
-        eq_constraints(List[tuple(list[dict]|dict, float)]):
-            Composition constraints with the form as: 1 N_A + 2 N_B = 3,
-            etc. The number of species and the right side of the equation
-            are normalized per primitive cell.
-            Each constraint equation is given as a tuple.
-            The dict (or list[dict]) encodes the left side of the equation.
-            each key is a species or species string, while each value is
-            the factor of the corresponding species in the constraint
-            equation. If given as a list of dictionaries, each dictionary in the
-            list specifically constrains the number of species on its corresponding
-            sub-lattice. The float in the tuple encodes the right side of
-            the equation. Refer to documentation of utils.comp_constraint_utils.
-            For example, if a system contains A and B on sub-lattice 1, B and
-            C on sub-lattice 2. If a constraint is given as:
-            ({"A": 1, "B": 1, "C": 1}, 3), then the corresponding constraint
-            equation should be:
-                1 * N_A_sub1 + 1 * (N_B_sub1 + N_B_sub2) + 1 * N_C_sub2 == 3
-            If the constraints is given as:
-            ([{"A": 1, "B": 1}, {"B": 2, "C": 1}], 3), then the equation should be:
-               1 * N_A_sub1 + 1 * N_B_sub1 + 2 *N_B_sub2 + 1 * N_C_sub2 == 3.
-        leq_constraints(List[tuple(list[dict]|dict, float)]):
-            Composition constraints with the form as: 1 N_A + 2 N_B <= 3.
-            Dict format same as eq_constraints.
-        geq_constraints(List[tuple(list[dict]|dict, float)]):
-            Composition constraints with the form as: 1 N_A + 2 N_B >= 3.
-            Dict format same as eq_constraints.
-        All constraints will be converted into a CompositionSpace format.
+            charge_balanced (bool): optional
+                Whether to add charge balance constraint. Default to true.
+            other_constraints:
+            (list of tuples of (1D arrayLike[float], float, str) or str): optional
+                Other composition constraints to be applied to restrict the
+                enumerated compositions.
+                Allows two formats for each constraint in the list:
+                    1, A string that encodes the constraint equation.
+                    For example: "2 Ag+(0) + Cl-(1) +3 H+(2) <= 3 Mn2+ +4".
+                       A string representation of constraint must satisfy the following
+                       rules,
+                       a, Contains a relation symbol ("==", "<=", ">=" or "=") are
+                       allowed.
+                       The relation symbol must have exactly one space before and one
+                       space after to separate the left and the right sides.
+                       b, Species strings must be readable by get_species in smol.cofe
+                       .space.domain. No space is allowed within a species string.
+                       For the format of a legal species string, refer to
+                       pymatgen.core.species and smol.cofe.
+                       c, You can add a number in brackets following a species string
+                       to specify constraining the amount of species in a particular
+                       sub-lattice. If not given, will apply the constraint to this
+                       species on all sub-lattices.
+                       This sub-lattice index label must not be separated from
+                       the species string with space or any other character.
+                       d, Species strings along with any sub-lattice index label must
+                       be separated from other parts (such as operators and numbers)
+                       with at least one space.
+                       e, The intercept terms (a number with no species that follows)
+                       must always be written at the end on both side of the equation.
+                    2, The equation expression, which is a tuple containing a list of
+                    floats of length self.n_dims to give the left-hand side coefficients
+                    of each component in the composition "counts" format, a float to
+                    give the right-hand side, and a string to specify the comparative
+                    relationship between the left- and right-hand sides. Constrained in
+                    the form of a_left @ n = (or <= or >=) b_right.
+                    The components in the left-hand side are in the same order as in
+                    itertools.chain(*self.bits).
+                Note that all numerical values in the constraints must be set as they are
+                to be satisfied per primitive cell given the sublattice_sizes!
+                For example, if each primitive cell contains 1 site in 1 sub-lattice
+                specified as sublattice_sizes=[1], with the requirement that species
+                A, B and C sum up to occupy less than 0.6 sites per sub-lattice, then
+                you must write: "A + B + C <= 0.6".
+                While if you specify sublattice_sizes=[2] in the same system per
+                primitive cell, to specify the same constraint, write
+                "A + B + C <= 1.2" or "0.5 A + 0.5 B + 0.5 C <= 0.6", etc.
+            See documentation of smol.moca.composition.space.
         comp_enumeration_step (int): optional
             Skip step in returning the enumerated compositions.
             If step > 1, on each dimension of the composition space,
@@ -304,39 +309,10 @@ def process_composition_options(d):
     """
     return {
         "comp_enumeration_step": d.get("comp_enumeration_step", 1),
-        "species_concentration_constraints": d.get(
-            "species_concentration_constraints", []
-        ),
-        "eq_constraints": d.get("eq_constraints", []),
-        "leq_constraints": d.get("leq_constraints", []),
-        "geq_constraints": d.get("geq_constraints", []),
+        "charge_balanced": d.get("charge_balanced", True),
+        "other_constraints": d.get("other_constraints", None),
         "compositions": d.get("compositions", []),
     }
-
-
-def parse_comp_constraints(options, bits, sublattice_sizes):
-    """Parse constraints from composition options.
-
-    Args:
-        options(dict):
-            Input options to containing composition enumeration options.
-        bits(list[list[Species]]):
-            Allowed species on each sub-lattice, as given in specs (sorted).
-        sublattice_sizes(list[int]):
-            Number of sites in each sub-lattice, as given in specs (sorted).
-    Return:
-        list(tuple(arrayLike, float)):
-           Equality constraints, then leq and geq constraints,
-           readable by smol CompositionSpace.
-    """
-    leqs_species, geqs_species = parse_species_constraints(
-        options["species_concentration_constraints"], bits, sublattice_sizes
-    )
-    eqs = [parse_generic_constraint(d, r, bits) for d, r in options["eq_constraints"]]
-    leqs = [parse_generic_constraint(d, r, bits) for d, r in options["leq_constraints"]]
-    geqs = [parse_generic_constraint(d, r, bits) for d, r in options["geq_constraints"]]
-
-    return eqs, leqs + leqs_species, geqs + geqs_species
 
 
 def process_structure_options(d):
