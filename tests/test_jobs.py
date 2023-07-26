@@ -5,8 +5,8 @@ from itertools import chain
 import numpy as np
 import numpy.testing as npt
 import pytest
+from emmet.core.tasks import TaskDoc  # atomate2 >= 0.0.11.
 from emmet.core.vasp.calculation import Calculation  # atomate2 >= 0.0.11.
-from emmet.core.vasp.task_valid import TaskDocument  # atomate2 >= 0.0.11.
 from jobflow import Flow, Job, OnMissing, Response
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Element, Structure
@@ -41,17 +41,17 @@ def get_element_structure(structure):
 
 
 def gen_fake_taskdoc(structure, energy):
-    """Generate a fake TaskDocument from structure.
+    """Generate a fake TaskDoc from structure.
 
     This function only fakes entry and structure! All other fields
-    in TaskDocument will be empty.
+    in TaskDoc will be empty.
     Args:
         structure (Structure):
             A fake structure.
         energy (float):
             A fake energy to assign to the structure.
     Returns:
-        TaskDocument.
+        TaskDoc.
     """
     s = get_element_structure(structure)
 
@@ -59,7 +59,7 @@ def gen_fake_taskdoc(structure, energy):
     # Need to insert a successful calculation in calcs_reversed as well.
     fake_calc = Calculation(has_vasp_completed="successful")
 
-    return TaskDocument(structure=s, entry=entry, calcs_reversed=[fake_calc])
+    return TaskDoc(structure=s, entry=entry, calcs_reversed=[fake_calc])
 
 
 # Add more if new tests are required.
@@ -105,7 +105,7 @@ def coefs_truth(initial_document):
 
 @pytest.fixture
 def calc_output(coefs_truth, enum_output):
-    # Fake TaskDocuments for testing.
+    # Fake TaskDocs for testing.
     num_structures = len(enum_output["new_features"])
     fake_energies = (
         np.dot(enum_output["new_features"], coefs_truth)
