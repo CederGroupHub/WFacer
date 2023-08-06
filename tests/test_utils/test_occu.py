@@ -1,7 +1,7 @@
 """Test occupancy generation."""
 import numpy as np
 import numpy.testing as npt
-from smol.moca.utils.occu import get_dim_ids_table, occu_to_counts
+from smol.moca.occu_utils import get_dim_ids_table, occu_to_counts
 
 from WFacer.utils.occu import get_random_occupancy_from_counts
 

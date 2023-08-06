@@ -5,10 +5,8 @@ max_sc_condition_number: 8
 min_sc_angle: 30
 sc_matrices: null
 comp_enumeration_step: 1
-species_concentration_constraints: []
-eq_constraints: []
-leq_constraints: []
-geq_constraints: []
+charge_balanced: true
+other_constraints: []
 compositions: []
 num_structs_per_iter_init: 60
 num_structs_per_iter_add: 40
