@@ -207,18 +207,22 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
                             sp_decor = deepcopy(sp)
                             sp_decor._oxi_state = label
                     else:
-                        if self.decorated_prop_name not in sp.supported_properties:
+                        # Change to only support spin after pymatgen 2023.07.20.
+                        if self.decorated_prop_name != "spin":
                             raise ValueError(
                                 "Pymatgen Species does not support "
                                 f"property {self.decorated_prop_name}!"
                             )
                         if isinstance(sp, Element):
+                            # Assign element to species with zero charge.
                             sp_decor = Species(
-                                sp.symbol, properties={self.decorated_prop_name: label}
+                                sp.symbol,
+                                oxidation_state=0,
+                                spin=label,
                             )
                         else:
                             sp_decor = deepcopy(sp)
-                            sp_decor._properties[self.decorated_prop_name] = label
+                            sp_decor._spin = label
 
                     species_decor.append(sp_decor)
 
