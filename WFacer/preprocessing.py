@@ -410,18 +410,24 @@ def process_calculation_options(d):
             Default is [1.03, 1.02, 1.01], which means to
             stretch the structure by 3%, 2% and 1% along a, b, and c
             directions, respectively.
+        relax_maker_name(str):
+            Name of relax maker. Default to atomate2.vasp.jobs.core:RelaxMaker.
+            cp2k and forcefields are also supported.
+            Maker module must be specified first, and separated from the maker
+            class name with a quotation mark ":".
         relax_generator_kwargs(dict):
             Additional arguments to pass into an atomate2
             VaspInputGenerator that is used to initialize RelaxMaker.
             This is where the pymatgen vaspset arguments should go.
+            Note that force field makers do not have generator.
         relax_maker_kwargs(dict):
             Additional arguments to initialize an atomate2 RelaxMaker.
             Not frequently used.
-        add_tight_relax(bool):
-            Whether to add a tight relaxation job after a coarse
-            relaxation. Default to True.
-            You may want to disable this if your system has
-            difficulty converging forces or energies.
+        tight_maker_name(str or None):
+            Name of tight relax maker.
+            Default to atomate2.vasp.jobs.core:TightRelaxMaker, setting
+            to None will disable tight relaxation.
+            Note that only vasp supports tight relax.
         tight_generator_kwargs(dict):
             Additional arguments to pass into an atomate2 VaspInputGenerator
             that is used to initialize TightRelaxMaker.
@@ -431,10 +437,15 @@ def process_calculation_options(d):
             TightRelaxMaker. A tight relax is performed after
             relaxation, if add_tight_relax is True.
             Not frequently used.
+        static_maker_name(str):
+            Name of static maker. Default to atomate2.vasp.jobs.core:StaticMaker.
+            Note that only vasp supports tight relax.
+            cp2k and forcefields are also supported.
        static_generator_kwargs(dict):
             Additional arguments to pass into an atomate2
             VaspInputGenerator that is used to initialize StaticMaker.
             This is where the pymatgen vaspset arguments should go.
+            Note that force field makers do not have generator.
         static_maker_kwargs(dict):
             Additional arguments to pass into an atomate2
             StaticMaker.
@@ -466,11 +477,19 @@ def process_calculation_options(d):
 
     return {
         "apply_strain": strain_before_relax.tolist(),
+        "relax_maker_name": d.get(
+            "relax_maker_name", "atomate2.vasp.jobs.core:RelaxMaker"
+        ),
         "relax_generator_kwargs": d.get("relax_generator_kwargs", {}),
         "relax_maker_kwargs": d.get("relax_maker_kwargs", {}),
-        "add_tight_relax": d.get("add_tight_relax", True),
+        "tight_maker_name": d.get(
+            "tight_maker_name", "atomate2.vasp.jobs.core:TightRelaxMaker"
+        ),
         "tight_generator_kwargs": d.get("tight_generator_kwargs", {}),
         "tight_maker_kwargs": d.get("tight_maker_kwargs", {}),
+        "static_maker_name": d.get(
+            "static_maker_name", "atomate2.vasp.jobs.core:StaticMaker"
+        ),
         "static_generator_kwargs": d.get("static_generator_kwargs", {}),
         "static_maker_kwargs": d.get("static_maker_kwargs", {}),
         "other_properties": d.get("other_properties"),

@@ -106,8 +106,8 @@ def _enumerate_structures(
     return new_structures, new_sc_matrices, new_features
 
 
-# TODO: write docs for this.
 def _get_structure_job_maker(maker_name, generator_kwargs=None, maker_kwargs=None):
+    """Get a single job maker from a structure job."""
     # Format for a maker name: module:name-of-maker. module name must be in full path.
     maker_module, maker_name = maker_name.split(":")[:2]
     maker_module = maker_module.lower()
@@ -151,7 +151,7 @@ def _get_structure_job_maker(maker_name, generator_kwargs=None, maker_kwargs=Non
 
 
 def _get_structure_calculation_makers(options):
-    """Get required structure calculation makers."""
+    """Get required calculation makers for a single structure."""
     # Here, the maker names contain module specification.
     relax_maker_name = options["relax_maker_name"]
     relax_gen_kwargs = options["relax_generator_kwargs"]
