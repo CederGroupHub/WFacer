@@ -124,8 +124,12 @@ def _get_structure_job_maker(maker_name, generator_kwargs=None, maker_kwargs=Non
         maker_class = getattr(importlib.import_module(maker_module), maker_name)
     except AttributeError:
         warn(
-            f"Tight relaxation is not supported for atomate module {maker_module}! Skipped."
+            f"Maker {maker_name} is not supported by atomate module {maker_module}!"
+            f" Skipped."
         )
+        return None
+    except ModuleNotFoundError:
+        warn(f"Atomate module {maker_module} not found! Skipped.")
         return None
 
     generator_kwargs = generator_kwargs or {}
