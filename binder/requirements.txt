@@ -1,7 +1,7 @@
 nbgitpuller
 pyyaml>=6.0
 joblib==1.2.0
-monty==2022.9.9
+monty==2023.8.8
 numpy==1.23.5
 pymatgen==2023.2.22
 smol>=0.3.0
