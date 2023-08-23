@@ -621,7 +621,7 @@ def initialize_document(prim, project_name="ace-work", options=None):
     comp_space = CompositionSpace(
         bits,
         sublattice_sizes,
-        charge_balanced=options["charge_balanced"],
+        charge_neutral=options["charge_neutral"],
         other_constraints=options["other_constraints"],
         optimize_basis=False,
         table_ergodic=False,

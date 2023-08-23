@@ -249,7 +249,7 @@ def process_composition_options(d):
     Returns:
         dict:
             A dict containing composition options, including the following keys:
-            charge_balanced (bool): optional
+            charge_neutral (bool): optional
                 Whether to add charge balance constraint. Default to true.
             other_constraints:
             (list of tuples of (1D arrayLike[float], float, str) or str): optional
@@ -309,7 +309,7 @@ def process_composition_options(d):
     """
     return {
         "comp_enumeration_step": d.get("comp_enumeration_step", 1),
-        "charge_balanced": d.get("charge_balanced", True),
+        "charge_neutral": d.get("charge_neutral", True),
         "other_constraints": d.get("other_constraints", None),
         "compositions": d.get("compositions", []),
     }
