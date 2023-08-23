@@ -13,7 +13,6 @@ from WFacer.preprocessing import (
     get_cluster_subspace,
     get_initial_ce_coefficients,
     get_prim_specs,
-    parse_comp_constraints,
     reduce_prim,
 )
 
@@ -63,37 +62,6 @@ def test_cluster_subspace(prim):
     ]
 
     assert filtered_orbits == space.orbits
-
-
-def test_parse_comp_constraints():
-    bits = [["Li+", "Mn2+", "Mn3+", "Vacancy"], ["O2-", "F-"]]
-    bits = [[get_species(b) for b in sl_bits] for sl_bits in bits]
-    sl_sizes = [2, 1]
-    species_constraints = {"Li+": (0.1, 0.2), "Mn2+": (0.3, 0.5), "O2-": 0.8}
-    geq_constraints = [({"Li+": 2, "Mn3+": 1}, 1)]
-    d = {
-        "species_concentration_constraints": species_constraints,
-        "geq_constraints": geq_constraints,
-        "leq_constraints": [],
-        "eq_constraints": [],
-    }
-    eqs, leqs, geqs = parse_comp_constraints(d, bits, sl_sizes)
-    leqs = [np.append(left, right) for left, right in leqs]
-    geqs = [np.append(left, right) for left, right in geqs]
-    leqs_standard = [
-        [1, 0, 0, 0, 0, 0, 0.4],
-        [0, 1, 0, 0, 0, 0, 1.0],
-        [0, 0, 0, 0, 1, 0, 0.8],
-    ]
-    geqs_standard = [
-        [2, 0, 1, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0.2],
-        [0, 1, 0, 0, 0, 0, 0.6],
-        [0, 0, 0, 0, 1, 0, 0],
-    ]
-    assert len(eqs) == 0
-    npt.assert_array_equal(leqs, leqs_standard)
-    npt.assert_array_equal(geqs, geqs_standard)
 
 
 def test_options():

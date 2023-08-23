@@ -27,7 +27,6 @@ from .preprocessing import (
     get_cluster_subspace,
     get_initial_ce_coefficients,
     get_prim_specs,
-    parse_comp_constraints,
     process_calculation_options,
     process_composition_options,
     process_convergence_options,
@@ -578,9 +577,6 @@ def initialize_document(prim, project_name="ace-work", options=None):
     sublattice_sizes = [len(sites) for sites in sublattice_sites]
     charge_decorated = prim_specs["charge_decorated"]
     nn_distance = prim_specs["nn_distance"]
-    eq_constraints, leq_constraints, geq_constraints = parse_comp_constraints(
-        options, bits, sublattice_sizes
-    )
 
     # Get the cluster subspace. Other external terms than ewald not supported yet.
     # Cutoffs keys must be integers while pyyaml may load them as strings.
@@ -622,19 +618,11 @@ def initialize_document(prim, project_name="ace-work", options=None):
     # Enumerate compositions as "counts" format in smol.moca.CompositionSpace.
     log.info("Enumerating valid compositions.")
     # Mute additional constraints if not needed.
-    if len(eq_constraints) == 0:
-        eq_constraints = None
-    if len(leq_constraints) == 0:
-        leq_constraints = None
-    if len(geq_constraints) == 0:
-        geq_constraints = None
     comp_space = CompositionSpace(
         bits,
         sublattice_sizes,
-        charge_balanced=True,
-        other_constraints=eq_constraints,
-        geq_constraints=geq_constraints,
-        leq_constraints=leq_constraints,
+        charge_neutral=options["charge_neutral"],
+        other_constraints=options["other_constraints"],
         optimize_basis=False,
         table_ergodic=False,
     )  # Not doing table flips.
