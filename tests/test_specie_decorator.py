@@ -14,7 +14,11 @@ from WFacer.specie_decorators import (
     PmgGuessChargeDecorator,
     decorator_factory,
 )
-from WFacer.specie_decorators.base import MixtureGaussianDecorator, NoTrainDecorator
+from WFacer.specie_decorators.base import (
+    BaseDecorator,
+    MixtureGaussianDecorator,
+    NoTrainDecorator,
+)
 
 from .utils import assert_msonable
 
@@ -235,3 +239,28 @@ def test_gaussian_label_markings():
         refered_values = std_values[refered_label_inds]
         npt.assert_array_equal(refered_labels, real_labels)
         npt.assert_array_equal(refered_values, real_values)
+
+
+def test_bad_decorator(undecorated_entries_standards):
+    # Test behavior when a species property is not acceptable.
+    class BadDecorator(BaseDecorator):
+        decorated_prop_name = "whatever"
+        required_prop_names = []
+
+        def train(self, entries, reset=False):
+            return None
+
+        def is_trained(self):
+            return True
+
+        def decorate(self, entries):
+            return [0] * len(entries)
+
+        def _filter(self, entries):
+            return entries
+
+        def from_dict(cls, d):
+            return None
+
+    with pytest.raises(ValueError):
+        _ = BadDecorator()._process(undecorated_entries_standards[0], {0: {0: 1}})
