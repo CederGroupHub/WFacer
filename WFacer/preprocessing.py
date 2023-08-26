@@ -175,7 +175,8 @@ def get_cluster_subspace(
     if cutoffs is None:
         d_nn = nn_distance
         cutoffs = {2: 3.5 * d_nn, 3: 2 * d_nn, 4: 2 * d_nn}
-    space = ClusterSubspace.from_cutoffs(prim, cutoffs=cutoffs, **kwargs)
+    # Temporary fix: some machine does not allow openmp multiprocessing.
+    space = ClusterSubspace.from_cutoffs(prim, cutoffs=cutoffs, num_threads=1, **kwargs)
     externals = []
     other_terms = other_terms or []
     if use_ewald and charge_decorated:

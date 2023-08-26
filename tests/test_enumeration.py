@@ -78,7 +78,7 @@ def test_truncate_cluster_space(prim):
     cutoffs = {2: a * 3, 3: a * 2}
 
     sc = np.eye(3) * 2
-    bad_subspace = ClusterSubspace.from_cutoffs(prim, cutoffs)
+    bad_subspace = ClusterSubspace.from_cutoffs(prim, cutoffs, num_threads=1)
 
     assert len(bad_subspace.get_aliased_orbits(sc)) > 0
 
