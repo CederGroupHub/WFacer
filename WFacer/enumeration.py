@@ -204,11 +204,10 @@ def truncate_cluster_subspace(cluster_subspace, sc_matrices):
             f"with given supercells: {sc_matrices}!\n"
             f"Removed orbits with indices: {to_remove}"
         )
-    cluster_subspace_new = cluster_subspace.copy()
     # Cannot call remove_orbit with an empty list.
     if len(to_remove) > 0:
-        cluster_subspace_new.remove_orbits(to_remove)
-    return cluster_subspace_new
+        cluster_subspace.remove_orbits(to_remove)
+    return cluster_subspace
 
 
 def enumerate_compositions_as_counts(
