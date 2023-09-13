@@ -38,7 +38,7 @@ def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=N
 
     Args:
         taskdoc(TaskDoc):
-            A task document generated as vasp task output by atomate2.
+            A task document generated as vasp task output by emmet-core.
         property_and_queries(list[(str, str)|str]): optional
             A list of property names to be retrieved from taskdoc,
             and the query string to retrieve them, paired in tuples.
