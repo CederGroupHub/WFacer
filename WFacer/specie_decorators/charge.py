@@ -101,9 +101,11 @@ class PmgGuessChargeDecorator(ChargeDecorator, NoTrainDecorator):
         Warning: Do not use this with multi-valent
         elements, unless you know what you want
         clearly!!!
+
         Args:
             entries(List[ComputedStructureEntry]):
                 Entries of computed structures.
+
         Returns:
             List[NoneType|ComputedStructureEntry]
         """
@@ -143,9 +145,11 @@ class FixedChargeDecorator(ChargeDecorator, NoTrainDecorator):
         Warning: Do not use this with multi-valent
         elements, unless you know what you want
         clearly!!!
+
         Args:
             entries(List[ComputedStructureEntry]):
                 Entries of computed structures.
+
         Returns:
             List[NoneType|ComputedStructureEntry]
         """

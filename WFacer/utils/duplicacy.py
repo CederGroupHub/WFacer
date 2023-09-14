@@ -9,9 +9,11 @@ def clean_up_decoration(s):
     """Remove all decoration from a structure.
 
     Used before comparing two structures before sending to compute.
+
     Args:
         s(Structure):
             A structure.
+
     Returns:
         Structure:
             The cleaned up structure containing only Element.
@@ -55,6 +57,7 @@ def is_duplicate(s1, s2, remove_decorations=False, matcher=None):
         matcher(StructureMatcher): optional
             A StructureMatcher to compare two structures. Using the same
             _site_matcher as cluster_subspace is highly recommended.
+
     Returns:
         bool
     """
@@ -80,6 +83,7 @@ def is_corr_duplicate(s1, proc1, s2=None, proc2=None, features2=None):
     faster that comparing two structures, because comparing two
     structures might involve reducing them to primitive cells
     in advance, which can occasionally be very slow.
+
     Args:
         s1 (Structure):
            A structure to be checked.

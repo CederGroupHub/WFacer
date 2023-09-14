@@ -18,6 +18,7 @@ def _merge_computed_structure_entry(entry, structure):
             A computed Entry given by taskdoc.
         structure(Structure):
             A structure given by taskdoc.
+
     Return:
         ComputedStuctureEntry.
     """
@@ -51,6 +52,7 @@ def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=N
             The name of decorators used in this CE workflow, used to
             determine what site properties to retrieve from
             TaskDoc and to include in the returned entry.
+
     Returns:
         ComputedStructureEntry, dict:
             The computed structure entry, with each site having the site

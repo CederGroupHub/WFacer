@@ -103,6 +103,7 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         Args:
             entries(List[ComputedStructureEntry]):
                 Entries of computed structures.
+
         Return:
             (Entry index, site index) occupied by each species:
             defaultdict
@@ -125,6 +126,7 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         """Gives whether this decorator is trained before.
 
         If trained, will be blocked from training again.
+
         Returns:
             bool.
         """
@@ -154,9 +156,11 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         If an assigned entry is not valid,
         for example, in charge assignment, if an assigned structure is not
         charge neutral, then this entry will be returned as None.
+
         Args:
             entries(List[ComputedStructureEntry]):
                 Entries of computed structures.
+
         Returns:
             List[NoneType|ComputedStructureEntry]
         """
@@ -422,9 +426,11 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
         If an assigned entry is not valid,
         for example, in charge assignment, if an assigned structure is not
         charge neutral, then this entry will be returned as None.
+
         Args:
             entries(List[ComputedStructureEntry]):
                 Entries of computed structures.
+
         Returns:
             Entries with structures decorated. Returns None if decoration
             failed (not charge balanced, etc.)
@@ -515,7 +521,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
                GuessChargeDecorator.
                Be sure to provide labels for all the species you wish to assign
                a property to, otherwise, you are the cause of your own error!
-            cuts(dict{str|Species: list}): optional
+           cuts(dict{str|Species: list}): optional
                Cuts to divide required property value into sectors, so as
                to decide the label they belong to. Keys are the same
                as argument "labels".
@@ -547,6 +553,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         """Gives whether this decorator is trained before.
 
         If trained, will be blocked from training again.
+
         Returns:
             bool.
         """
@@ -657,6 +664,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
 
         First initialize with mixture of gaussian, then
         optimize some objective function with gaussian process.
+
         Args:
             entries(List[ComputedStructureEntry]):
                 Entries of computed structures.
@@ -707,9 +715,11 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         If an assigned entry is not valid,
         for example, in charge assignment, if an assigned structure is not
         charge neutral, then this entry will be returned as None.
+
         Args:
             entries(List[ComputedStructureEntry]):
                 Entries of computed structures.
+
         Returns:
             List[NoneType|ComputedStructureEntry]
         """
@@ -796,6 +806,7 @@ def get_site_property_query_names_from_decorator(decname):
     Args:
         decname(str):
             Decorator name.
+
     Returns:
         list[str]:
             List of names of required site properties by the

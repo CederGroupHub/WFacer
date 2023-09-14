@@ -22,6 +22,7 @@ def ce_step_trigger(last_ce_document):
         last_ce_document(CeOutputsDocument):
             The cluster expansion outputs document from the
             latest step.
+
     Returns:
         Response:
             Either a CeOutputsDocument if converged, or a
@@ -120,6 +121,7 @@ class AutoClusterExpansionMaker(Maker):
                 number of iterations, add this many more iterations.
                 Default is None. When given None or 0, will simply double
                 max_iter in options.
+
         Returns:
             Flow:
                 The iterative cluster expansion workflow.

@@ -28,6 +28,7 @@ def fit_ecis_from_wrangler(
     """Fit ECIs from a fully processed wrangler.
 
     No weights will be used.
+
     Args:
         wrangler(CeDataWrangler):
             A CeDataWrangler storing all training structures.
@@ -60,6 +61,7 @@ def fit_ecis_from_wrangler(
             Other keyword arguments to initialize an optimizer.
         kwargs:
             Keyword arguments used by estimator._fit. For example, solver arguments.
+
     Returns:
         Estimator, 1D np.ndarray, float, float, float, 1D np.ndarray:
             Fitted estimator, coefficients (not ECIs), cross validation error (meV/site),

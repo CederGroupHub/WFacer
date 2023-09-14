@@ -25,6 +25,7 @@ def get_min_energy_structures_by_composition(wrangler, max_iter_id=None):
         max_iter_id(int): optional
             Maximum iteration index included in the energy comparison.
             If none given, will read existing maximum iteration number.
+
     Returns:
         defaultdict:
             element compositions as keys, energy per site and structure

@@ -195,6 +195,7 @@ def enumerate_structures(last_ce_document):
     Args:
         last_ce_document(CeOutputsDocument):
             The last cluster expansion outputs document.
+
     Returns:
         dict:
            Newly enumerated structures, super-cell matrices
@@ -266,6 +267,7 @@ def get_structure_calculation_flows(enum_output, last_ce_document):
             Output by enumeration job.
         last_ce_document(CeOutputsDocument):
             The last cluster expansion outputs document.
+
     Returns:
         list[Flow], list[OutputReference]:
             Flows for each structure and their output references pointing
@@ -325,6 +327,7 @@ def calculate_structures_job(enum_output, last_ce_document):
             Output by enumeration job.
         last_ce_document(CeOutputsDocument):
             The last cluster expansion outputs document.
+
     Returns:
         list[TaskDoc]:
             Results of VASP calculations as TaskDoc.
@@ -353,6 +356,7 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
             Output by enumeration job.
         last_ce_document(CeOutputsDocument):
             The last cluster expansion outputs document.
+
     Returns:
         dict
             Updated wrangler, all entries before decoration,
@@ -471,6 +475,7 @@ def fit_calculations(parse_output, last_ce_document):
             Output by parse job.
         last_ce_document(CeOutputsDocument):
             The last cluster expansion outputs document.
+
     Returns:
         dict:
            Dictionary containing fitted CE information.
@@ -506,6 +511,7 @@ def update_document(enum_output, parse_output, fit_output, last_ce_document):
             Output by parse job.
         last_ce_document(CeOutputsDocument):
             The last cluster expansion outputs document.
+
     Returns:
         CeOutputDocument:
             The updated document.
@@ -550,6 +556,7 @@ def initialize_document(prim, project_name="ace-work", options=None):
 
     In this job, a cluster subspace will be created, super-cells
     and compositions will also be enumerated.
+
     Args:
         prim(structure):
             A primitive cell structure (no need to be reduced) with

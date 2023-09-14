@@ -72,6 +72,7 @@ def is_proper_sc(sc_matrix, lat, max_cond=8, min_angle=30):
         min_angle(float): optional
             Minimum allowed angle of the supercell lattice. By default, set
             to 30, to prevent over-skewing.
+
     Returns:
        Boolean.
     """
@@ -99,6 +100,7 @@ def is_duplicate_sc(m1, m2, prim):
             Supercell matrices to compare.
         prim(pymatgen.Structure):
             Primitive cell object.
+
     Returns:
         bool.
     """

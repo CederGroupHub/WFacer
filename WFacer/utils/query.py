@@ -13,6 +13,7 @@ def query_keypath(obj, keypath):
             The object to be queried.
         keypath(list[str]):
             A path of attribute names to query.
+
     Returns:
         Any: the queried result.
     """
@@ -70,6 +71,7 @@ def query_name_iteratively(obj, name):
             The object to be queried.
         name(str):
             The attribute name.
+
     Returns:
         Any: the queried result. Will always return the first one
         found at the shallowest reference level.
@@ -156,8 +158,8 @@ def get_property_from_object(obj, query_string):
             If you decide to use special characters, please always make sure you
             have specified the exact full path to retrieve the desired item.
 
-        Returns:
-            any: value of the queried property.
+    Returns:
+        any: value of the queried property.
     """
     # Add more special conversion rules if needed.
     query = query_string.split(".")
