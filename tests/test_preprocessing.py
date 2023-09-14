@@ -1,4 +1,6 @@
 """Test preprocessing functions."""
+import os
+
 import numpy as np
 import numpy.testing as npt
 import yaml
@@ -15,6 +17,8 @@ from WFacer.preprocessing import (
     get_prim_specs,
     reduce_prim,
 )
+
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 
 def test_reduce_prim(prim):
@@ -67,7 +71,7 @@ def test_cluster_subspace(prim):
 def test_options():
     options = _preprocess_options({})
     # Update this yaml if new options have been implemented!
-    with open("./data/default_options.yaml") as fin:
+    with open(os.path.join(DATA_DIR, "default_options.yaml")) as fin:
         default_options = yaml.load(fin, Loader=yaml.SafeLoader)
     assert set(options.keys()) == set(default_options.keys())
     for k in options.keys():
