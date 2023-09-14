@@ -26,6 +26,7 @@ def select_initial_rows(
         keep_indices(list[int]): optional
             Indices of structures that must be selected. Usually
             those of important ground state structures.
+
     Returns:
         List[int]: indices of selected structures.
     """

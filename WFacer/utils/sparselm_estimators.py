@@ -19,6 +19,7 @@ def is_subclass(classname, parent_classname):
             Name of the sparselm estimator class.
         parent_classname(str):
             Name of the parent class. Also in sparselm.model.
+
     Returns:
         bool.
     """
@@ -123,6 +124,7 @@ def prepare_estimator(
     """Prepare an estimator for the direct call of fit.
 
     No weights will be used.
+
     Args:
         cluster_subspace(ClusterSubspace):
             A cluster subspace to expand with.
@@ -147,6 +149,7 @@ def prepare_estimator(
             Other keyword arguments to initialize an estimator.
         optimizer_kwargs(dict): optional
             Other keyword arguments to initialize an optimizer.
+
     Returns:
         GridSearchCV/LineSearchCV, StepwiseEstimator,
         or OrdinaryLeastSquares.

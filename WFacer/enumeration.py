@@ -63,6 +63,7 @@ def enumerate_matrices(
             to 30, to prevent over-skewing.
         kwargs:
             keyword arguments to pass into SpaceGroupAnalyzer.
+
     Returns:
         List of 2D lists.
     """
@@ -222,6 +223,7 @@ def enumerate_compositions_as_counts(
 
     Results will be returned in "counts" format
     (see smol.moca.CompositionSpace).
+
     Args:
         sc_size(int):
             The super-cell size in the number of prim cells.
@@ -239,6 +241,7 @@ def enumerate_compositions_as_counts(
             Default to 1.
         kwargs:
             Other keyword arguments to initialize CompositionSpace.
+
     Returns:
         Enumerated possible compositions in "counts" format, not normalized:
             2D np.ndarray[int]
@@ -427,6 +430,7 @@ def generate_training_structures(
             before matching. It should be used with caution.
         kwargs:
             Keyword arguments for utils.selection.select_initial_rows.
+
     Returns:
         list[Structure], list[3*3 list[list[int]]], list[list[float]]:
             Initial training structures, super-cell matrices,

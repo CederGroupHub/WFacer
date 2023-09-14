@@ -11,6 +11,7 @@ def get_random_occupancy_from_counts(ensemble, counts):
         counts(1D arrayLike):
             Species composition in "counts" format.
             See smol.moca.composition.
+
     Returns:
         np.ndarray:
             An encoded occupancy array.

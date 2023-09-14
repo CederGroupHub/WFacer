@@ -22,6 +22,7 @@ def reduce_prim(prim, **kwargs):
             A primitive cell with partial occupancy to be expanded.
         kwargs:
             Keyword arguments for SpacegroupAnalyzer.
+
     Returns:
         Structure
     """
@@ -168,6 +169,7 @@ def get_cluster_subspace(
             for extensibility.)
         kwargs:
             Other keyword arguments for ClusterSubspace.from_cutoffs.
+
     Returns:
         ClusterSubspace:
             A cluster subspace generated from cutoffs.
@@ -194,6 +196,7 @@ def process_supercell_options(d):
     Args:
         d(dict):
             An input dictionary containing various options in the input file.
+
     Returns:
         dict:
             A dict containing supercell matrix options, including the following keys:
@@ -246,6 +249,7 @@ def process_composition_options(d):
     Args:
         d(dict):
             An input dictionary containing various options in the input file.
+
     Returns:
         dict:
             A dict containing composition options, including the following keys:
@@ -321,6 +325,7 @@ def process_structure_options(d):
     Args:
         d(dict):
             An input dictionary containing various options in the input file.
+
     Returns:
         dict:
             A dict containing structure options, including the following keys:
@@ -377,6 +382,7 @@ def process_calculation_options(d):
     Args:
         d(dict):
             An input dictionary containing various options in the input file.
+
     Returns:
         dict:
             A dict containing calculation options, including the following keys:
@@ -459,6 +465,7 @@ def process_decorator_options(d):
     Args:
         d(dict):
             An input dictionary containing various options in the input file.
+
     Returns:
         dict:
             A dict containing calculation options, including the following keys:
@@ -509,6 +516,7 @@ def process_subspace_options(d):
     Args:
         d(dict):
             An input dictionary containing various options in the input file.
+
     Returns:
         dict:
             A dict containing fit options, including the following keys:
@@ -541,6 +549,7 @@ def process_fit_options(d):
     Args:
         d(dict):
             An input dictionary containing various options in the input file.
+
     Returns:
         dict:
             A dict containing fit options, including the following keys:
@@ -603,6 +612,7 @@ def process_convergence_options(d):
     Args:
         d(dict):
             An input dictionary containing various options in the input file.
+
     Returns:
         dict:
             A dict containing convergence options, including the following keys:
@@ -658,9 +668,11 @@ def get_initial_ce_coefficients(cluster_subspace):
     Any coefficient, except those for external terms, will be initialized to 0.
     This guarantees that for ionic systems, structures with lower ewald energy
     are always selected first.
+
     Args:
         cluster_subspace(ClusterSubspace):
             The initial cluster subspace.
+
     Returns:
         np.ndarray[float].
     """

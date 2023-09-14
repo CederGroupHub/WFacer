@@ -101,9 +101,11 @@ class PmgGuessChargeDecorator(ChargeDecorator, NoTrainDecorator):
         Warning: Do not use this with multi-valent
         elements, unless you know what you want
         clearly!!!
+
         Args:
             entries(List[ComputedStructureEntry]):
                 Entries of computed structures.
+
         Returns:
             List[NoneType|ComputedStructureEntry]
         """
@@ -143,9 +145,11 @@ class FixedChargeDecorator(ChargeDecorator, NoTrainDecorator):
         Warning: Do not use this with multi-valent
         elements, unless you know what you want
         clearly!!!
+
         Args:
             entries(List[ComputedStructureEntry]):
                 Entries of computed structures.
+
         Returns:
             List[NoneType|ComputedStructureEntry]
         """
@@ -178,7 +182,7 @@ class MagneticChargeDecorator(GpOptimizedDecorator, ChargeDecorator):
 
     decorated_prop_name = "oxi_state"
     # [(name of the site property to use in pymatgen.structure,
-    #  the string path used to query TaskDocument)]
+    #  the string path used to query TaskDoc)]
     required_prop_names = [
         ("magmom", "calcs_reversed.0-output" + ".outcar.magnetization.^tot")
     ]

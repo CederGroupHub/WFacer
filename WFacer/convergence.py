@@ -22,6 +22,7 @@ def compare_min_energy_structures_by_composition(min_e1, min_e2, matcher=None):
         matcher (StructureMatcher): optional
             A StructureMatcher used compare structures.
             wrangler.cluster_subspace._site_matcher is recommended.
+
     Return:
         float, bool:
             maximum energy difference in eV/site,
@@ -52,6 +53,7 @@ def compare_fitted_coefs(cluster_subspace, coefs_prev, coefs_now):
             Not ECIs because not divided by multiplicity!
         coefs_now(1d arrayLike):
             Cluster coefficients fitted in the latest iteration.
+
     Returns:
         float:
             || ECI' - ECI ||_1 / ||ECI||_1.
@@ -83,6 +85,7 @@ def ce_converged(
             must be equal to that of current iter_id - 1.
         convergence_options(dict):
             Pre-processed convergence criterion.
+
     Returns:
         bool.
     """
