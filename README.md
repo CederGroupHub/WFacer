@@ -1,19 +1,18 @@
-WorkFlow for Automated Cluster Expansion Regression (WFACER)
+WorkFlow for Automated Cluster Expansion Regression (WFacer)
 ===================================================
 
-*Modulated automation of cluster expansion based on atomate2 and Jobflow*
+*Modulated automation of cluster expansion model construction based on atomate2 and Jobflow*
 
 -----------------------------------------------------------------------------
 
-**WFacer** is a light-weight package based on [**smol**](https://github.com/CederGroupHub/smol.git)
-to automate the building of energy models in crystalline material systems, based on the
-*cluster expansion* method from alloy theory. Beyond metallic alloys, **WFacer** is also designed
-to handle ionic systems through enabling charge **Decorator**s and external **EwaldTerm**. With the
-support of [**Atomate2**](https://github.com/materialsproject/atomate2.git),
-[**Jobflow**](https://github.com/materialsproject/jobflow.git)
-and [**Fireworks**](https://github.com/materialsproject/fireworks.git), **WFacer** is able to fully automate the
+**WFacer** ("Wall"Facer) is a light-weight package based on [smol](https://github.com/CederGroupHub/smol.git)
+to automate the fitting of lattice models in disordered crystalline solids using
+*cluster expansion* method. Beyond metallic alloys, **WFacer** is also designed
+to handle ionic systems through enabling charge **Decorator** and the external **EwaldTerm**. Powered by [Atomate2](https://github.com/materialsproject/atomate2.git),
+[Jobflow](https://github.com/materialsproject/jobflow.git)
+and [Fireworks](https://github.com/materialsproject/fireworks.git), **WFacer** is able to fully automate the
 cluster expansion building process on super-computing clusters, and can easily interface
-with materials-project style MongoDB data storage.
+with MongoDB data storage in the **Materials Project** style .
 
 Functionality
 -------------
@@ -26,10 +25,10 @@ Functionality
 - Computing enumerated structures using **Atomate2** **VASP** interfaces.
 - Extracting and saving relaxed structures information and energy in **Atomate2** schemas.
 - Decorating structures. Currently, supports charge decoration from fixed labels, from Pymatgen guesses,
-  or from [a gaussian process](https://doi.org/10.1038/s41524-022-00818-3) to partition site magnetic moments.
+  or from [a gaussian optimization process](https://doi.org/10.1038/s41524-022-00818-3) based on partitioning site magnetic moments.
 - Fitting effective cluster interactions (ECIs) from structures and energies with sparse linear
   regularization methods and model selection methods provided by
-  [**sparse-lm**](https://github.com/CederGroupHub/sparse-lm.git),
+  [sparse-lm](https://github.com/CederGroupHub/sparse-lm.git),
   except for overlapped group Lasso regularization.
 - Checking convergence of cluster expansion model using the minimum energy convergence per composition,
   the cross validation error, and the difference of ECIs (if needed).
@@ -37,20 +36,17 @@ Functionality
 
 Installation
 ------------
-1. Install the latest [**smol**](https://github.com/CederGroupHub/smol.git)
-   and [**sparse-lm**](https://github.com/CederGroupHub/sparse-lm.git) from repository.
-   (Deprecate after **smol**>=0.3.2 and **sparse-lm**>=0.3.2 update).
-2. Install WFacer:
-    * From pypi: `pip install WFacer`
-    * From source: `Clone` the repository. The latest tag in the `main` branch is the stable version of the
+* From pypi: `pip install WFacer`
+* From source: `Clone` the repository. The latest tag in the `main` branch is the stable version of the
 code. The `main` branch has the newest tested features, but may have more
-lingering bugs. From the top level directory: `pip install .`
+lingering bugs. From the top level directory, do `pip install -r requirements.txt`, then `pip install .` If
+you wish to use **Fireworks** as the workflows manager, do `pip install -r requirements-optional.txt` as well.
 
 Post-installation configuration
 ------------
 Specific configurations are required before you can properly use **WFacer**.
 
-* **Firework** job management is optional but not required.
+* **Fireworks** job management is highly recommended but not required.
   To use job management with **Fireworks** and **Atomate2**,
   configuring **Fireworks** and **Atomate2** with your MongoDB storage is necessary.
   Users are advised to follow the guidance in
@@ -59,63 +55,35 @@ Specific configurations are required before you can properly use **WFacer**.
   installation guides, and run a simple [test workflow](https://materialsproject.github.io/atomate2/user/fireworks.html)
   to see if it is able to run on your queue.
 
-  Important notice: instead of writing in **my_qadapter.yaml**
+  Instead of writing in **my_qadapter.yaml** as
   ```commandline
      rlaunch -c <<INSTALL_DIR>>/config rapidfire
   ```
-  we suggest using singleshot in rlaunch instead, because by doing this a queue task will
-  be terminated upon one structure is finished, rather than trying to fetch another waiting structure
-  from the launchpad. This will guarantee that each structure to be able to use up the maximum wall-time
-  possible.
-  By switching to singleshot in rlaunch, you will need to qlaunch after every iteration trigger job because for some reason Fireworks sets the enumeration job to ready, but can not continue executing it.
+  we suggest using:
+  ```commandline
+     rlaunch -c <<INSTALL_DIR>>/config singleshot
+  ```
+  instead, because by using *singleshot* with rlaunch, a task in the submission queue will
+  be terminated once a structure is finished instead of trying to fetch another structure
+  from the launchpad. This can be used in combination with:
+  ```commandline
+     qlaunch rapidfire -m <number of tasks to keep in queue>
+  ```
+  to guarantee that each structure is able to use up the maximum wall-time in
+  its computation.
+
 * A mixed integer programming (MIP) solver would be necessary when a MIQP based
   regularization method is used. A list of available MIP solvers can be found in
-  [**cvxpy** documentations](https://www.cvxpy.org/tutorial/advanced/index.html#choosing-a-solver).
+  [cvxpy documentations](https://www.cvxpy.org/tutorial/advanced/index.html#choosing-a-solver).
   Commercial solvers such as **Gurobi** and **CPLEX** are typically pre-compiled
   but require specific licenses to run on a super-computing system. For open-source solvers,
   the users are recommended to install **SCIP** in a dedicated conda environment following
-  the installation instructions in [**PySCIPOpt**](https://github.com/scipopt/PySCIPOpt.git).
+  the installation instructions in [PySCIPOpt](https://github.com/scipopt/PySCIPOpt.git).
 
-Quick example for semi-automation using Fireworks
+A quick example for fully automating cluster expansion
 -------------------------------
-examples/semi_automation_BCC_AlLi shows a use case where you can semi-automate building the cluster expansion for
-the Al-Li system on BCC lattice.
-
-You will need to manually execute **initialize.py** in the first iteration, and then in each of the following iterations,
-execute **generate.py** to enumerate new structures and load their corresponding workflows to fireworks launcpad. Then in
-the command line, call
-
-```commandline
-nohup qlaunch rapidfire -m {n_jobs} --sleep {time} > qlaunch.log
-```
-
-in order to run all workflows. Check the status of the queue until all queue tasks are terminated,
-and no firework on the launchpad is lost (i.e., some firework in the "RUNNING" state but nothing is being run on
-the queue). If lost jobs are found, you may choose to fizzle or rerun them with
-
-```commandline
-lpad detect_lostruns --time 1 --fizzle
-```
-
-or
-
-```commandline
-lpad detect_lostruns --time 1 --rerun
-```
-
-When all structures are finished, call **fit_model.py** to parse calculations and fit ECIs. Start the next iteration
-by enumerating new structures with **generate.py** again.
-
-
-Quick example for full automation[beta]
--------------------------------
-Notice:
-Since cluster expansion might include structures that takes a long time to compute, or may fail to relax,
-and Jobflow + Fireworks might not always handle these cases properly, the following full automation workflow
-could be flakey.
-
 A simple workflow to run automatic cluster expansion in a Ag-Li alloy on FCC lattice is as follows
-(see other available options in preprocessing documentations.):
+(see other available options in the documentations of [*preprocessing.py*](WFacer/preprocessing.py).):
 ```python
 
 from fireworks import LaunchPad
@@ -146,7 +114,7 @@ lpad.add_wf(wf)
 After running this script, a workflow with the name *"agli_fcc_ce"* should have been added to **Fireworks**'
 launchpad.
 
-Submit the workflow to queue using the following command after you have correctly configured **Fireworks**
+Submit the workflow to queue using the following command once you have correctly configured **Fireworks**
 queue adapter,
 ```bash
 nohup qlaunch rapidfire -m {n_jobs} --sleep {time} > qlaunch.log
@@ -155,9 +123,11 @@ where `n_jobs` is the number of jobs you want to keep in queue, and `time` is th
 time between two queue submission attempts. `qlaunch` will keep submitting jobs to the queue until
 no unfinished job could be found on launchpad.
 
-After the workflow is finished, use the following codes to retrieve the computed results from MongoDB,
-(Assume you run the workflow generation script and the following dataloading script
-on the same machine, otherwise you will have to figure out which `JOB_STORE` to use!):
+>Note: You may still need to qlaunch manually after every cluster expansion iteration
+ because for Fireworks could occasionally set the enumeration job to the READY state
+ but fails to continue executing the job.
+
+After the workflow is finished, use the following codes to retrieve the computed results from MongoDB:
 ```python
 
 from jobflow import SETTINGS
@@ -181,3 +151,52 @@ print("Cluster subspace:", doc.cluster_subspace)
 print("Wrangler:", doc.data_wrangler)
 print("coefficients:", doc.coefs_history[-1])
 ```
+>Note: Check that the **Jobflow** installations on the computer cluster and the query
+ terminal are configured to use the same **JOB_STORE**.
+
+License
+-------------------------------
+    Workflows For Automated Cluster Expansion Regression (WFACER) Copyright (c) 2023,
+    The Regents of the University of California, through Lawrence Berkeley National
+    Laboratory (subject to receipt of any required approvals from the U.S.
+    Dept. of Energy) and the University of California, Berkeley. All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    (1) Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+
+    (2) Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+
+    (3) Neither the name of the University of California, Lawrence Berkeley
+    National Laboratory, U.S. Dept. of Energy, University of California,
+    Berkeley nor the names of its contributors may be used to endorse or
+    promote products derived from this software without specific prior written
+    permission.
+
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+    ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+    POSSIBILITY OF SUCH DAMAGE.
+
+    You are under no obligation whatsoever to provide any bug fixes, patches,
+    or upgrades to the features, functionality or performance of the source
+    code ("Enhancements") to anyone; however, if you choose to make your
+    Enhancements available either publicly, or directly to Lawrence Berkeley
+    National Laboratory, without imposing a separate written license agreement
+    for such Enhancements, then you hereby grant the following license: a
+    non-exclusive, royalty-free perpetual license to install, use, modify,
+    prepare derivative works, incorporate into other computer software,
+    distribute, and sublicense such enhancements or derivative works thereof,
+    in binary and source code form.
