@@ -136,9 +136,9 @@ def prepare_estimator(
             Name of hyperparameter optimizer.
             Currently, only supports :class:`GridSearch` and :class:`LineSearch`.
         param_grid(dict|list[tuple]):
-            Parameter grid to initialize the optimizer. See docs of
-            :mod:`sparselm.model_selection`.
-             .. note:: Not needed when using :class:`OrdinaryLeastSquares`.
+            Parameter grid to initialize the optimizer. See docs of the
+            :mod:`sparselm.model_selection` module.
+            **Not needed when using** :class:`OrdinaryLeastSquares`.
         use_hierarchy(bool): optional
             Whether to use cluster hierarchy constraints when available. Default to
             true.
@@ -153,8 +153,7 @@ def prepare_estimator(
             Other keyword arguments to initialize an optimizer.
 
     Returns:
-        GridSearchCV, LineSearchCV, StepwiseEstimator,
-        or OrdinaryLeastSquares:
+        Estimator:
             The estimator wrapped up for fitting.
     """
     # Corrected and normalized DFT energy in eV/prim.
