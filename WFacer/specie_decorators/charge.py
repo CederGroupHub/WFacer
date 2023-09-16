@@ -11,7 +11,7 @@ __author__ = "Fengyu Xie"
 
 
 class ChargeDecorator(BaseDecorator):
-    """A type of decorators to assign charge."""
+    """Abstract decorators to assign charge."""
 
     decorated_prop_name = "oxi_state"
     required_prop_names = None
@@ -74,9 +74,9 @@ class ChargeDecorator(BaseDecorator):
 class PmgGuessChargeDecorator(ChargeDecorator, NoTrainDecorator):
     """Assign charges from pymatgen auto guesses.
 
-    Notice: This class does not need labels at all.
-    Warning: This Decorator should not be used with
-    structures that include multi-valent elements!
+    .. note:: This class does not need labels.
+    .. warning:: This Decorator should never be used on
+     structures with multi-valent elements!
     """
 
     decorated_prop_name = "oxi_state"
@@ -97,10 +97,6 @@ class PmgGuessChargeDecorator(ChargeDecorator, NoTrainDecorator):
 
     def decorate(self, entries):
         """Decorate entries by guessed charges.
-
-        Warning: Do not use this with multi-valent
-        elements, unless you know what you want
-        clearly!!!
 
         Args:
             entries(List[ComputedStructureEntry]):
@@ -132,8 +128,8 @@ class PmgGuessChargeDecorator(ChargeDecorator, NoTrainDecorator):
 class FixedChargeDecorator(ChargeDecorator, NoTrainDecorator):
     """Assign fixed charge to each element from setting.
 
-    Warning: This Decorator should not be used with
-    structures that include multi-valent elements!
+    .. warning:: This Decorator should never be used on
+     structures with multi-valent elements!
     """
 
     decorated_prop_name = "oxi_state"
@@ -177,7 +173,7 @@ class FixedChargeDecorator(ChargeDecorator, NoTrainDecorator):
 class MagneticChargeDecorator(GpOptimizedDecorator, ChargeDecorator):
     """Assign charges from magnitudes of total magentic moments on sites.
 
-    Is a sub-class of GPOptimizedDecorator.
+    Uses Gaussian process to optimize charge assignment.
     """
 
     decorated_prop_name = "oxi_state"

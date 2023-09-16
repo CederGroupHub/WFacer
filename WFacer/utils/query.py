@@ -1,4 +1,4 @@
-"""Define rules to query a nested task documents and dictionaries."""
+"""Rules to query nested task documents and dictionaries."""
 import random
 from warnings import warn
 
@@ -15,7 +15,8 @@ def query_keypath(obj, keypath):
             A path of attribute names to query.
 
     Returns:
-        Any: the queried result.
+        Any:
+            The result of query.
     """
     if not isinstance(keypath, (list, tuple)):
         raise ValueError("A key path must be a list or tuple!")
@@ -66,6 +67,9 @@ def query_keypath(obj, keypath):
 def query_name_iteratively(obj, name):
     """Query an attribute from a nested object.
 
+    .. note:: The first match encountered at the lowest search level
+     will always be returned first.
+
     Args:
         obj(Object|dict):
             The object to be queried.
@@ -73,8 +77,8 @@ def query_name_iteratively(obj, name):
             The attribute name.
 
     Returns:
-        Any: the queried result. Will always return the first one
-        found at the shallowest reference level.
+        Any:
+           The result of query.
     """
     if isinstance(obj, dict):
         if name in obj:
@@ -119,8 +123,9 @@ def get_property_from_object(obj, query_string):
 
     Args:
         obj(Object):
-            An object to recursively parse property from.
-            A task document generated as vasp task output by atomate2.
+            An object to recursively parse property from, typically
+            a :class:`emmet-core.TaskDoc` generated as vasp task
+            output by atomate2.
         query_string(str):
             A string that defines the rule to query the object.
             Three special characters are reserved: ".", "-" and "^":
@@ -132,23 +137,22 @@ def get_property_from_object(obj, query_string):
             each level.
 
             If a level of reference is a list or tuple:
-            1, Using f"{some_ind}-" as the prefix to this level will yield
-            the corresponding key/attribute of the "some_ind"'th member
-            in the list.
-            2, Using "^" as the prefix to this level will yield the
-            corresponding key/attribute of all the members in the list and
-            return them as a list in the original order.
-            3, Using f"{some_ind}-" as the prefix to this level will yield
-            the corresponding key/attribute of the first member
-            in the list.
-            Do not use "-" or "^" prefix when the corresponding level is
-            not a list or tuple. If a corresponding level is a set, a random
-            element will be yielded.
+             #. Using f"{some index}-" as the prefix to this level will yield
+                the corresponding key/attribute of the "some_ind"'th member
+                in the list.
+             #. Using "^" as the prefix to this level will yield the
+                corresponding key/attribute of all the members in the list and
+                return them as a list in the original order.
+             #. Using f"{some_ind}-" as the prefix to this level will yield
+                the corresponding key/attribute of the first member in the list.
+             #. Do not use "-" or "^" prefix when the corresponding level is
+                not a list or tuple. If a corresponding level is a set, a random
+                element will be yielded.
 
-            For example, "calcs_reversed.0-output.outcar.magnetization.^tot"
+            For example, *"calcs_reversed.0-output.outcar.magnetization.^tot"*
             will give you the total magnetization on each site of the structure
-            in the final ionic step, if the input object is a valid atomate2
-            TaskDoc.
+            in the final ionic step, if the input object is a valid emmet-core
+            :class:`TaskDoc`.
 
             If a string with no special character is given, we will iteratively
             search through each level of attributes and dict keys until the
@@ -159,7 +163,8 @@ def get_property_from_object(obj, query_string):
             have specified the exact full path to retrieve the desired item.
 
     Returns:
-        any: value of the queried property.
+        Any:
+         The value of queried property.
     """
     # Add more special conversion rules if needed.
     query = query_string.split(".")

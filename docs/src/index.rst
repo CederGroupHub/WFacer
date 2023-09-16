@@ -11,6 +11,7 @@
 
    examples
    contributing
+   api_reference/index
 
 
 =================
@@ -24,7 +25,9 @@ WorkFlow for Automated Cluster Expansion Regression (WFacer)
 WFacer ("Wall"Facer) is a light-weight package based on `smol <https://github.com/CederGroupHub/smol.git>`_
 to automate the fitting of lattice models in disordered crystalline solids using
 *cluster expansion* method. Beyond metallic alloys, **WFacer** is also designed
-to handle ionic systems through enabling charge **Decorator** and the **EwaldTerm**.
+to handle ionic systems through enabling decorators in
+:mod:`WFacer.species_decorators.charge` and the :class:`smol.cofe.extern.ewald.EwaldTerm`.
+
 Powered by `Atomate2 <https://github.com/materialsproject/atomate2.git>`_,
 `Jobflow <https://github.com/materialsproject/jobflow.git>`_
 and `Fireworks <https://github.com/materialsproject/fireworks.git>`_, **WFacer** is able to fully automate the

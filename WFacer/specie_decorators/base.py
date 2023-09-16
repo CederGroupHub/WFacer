@@ -1,10 +1,17 @@
 """Decorate properties to a structure composed of Element.
 
+This module offers generic classes and functions for defining an algorithm
+used to map VASP calculated site properties into the label of species. For
+example, :class:`BaseDecorator`, :class:`MixtureGaussianDecorator`,
+:class:`GpOptimizedDecorator` and :class:`NoTrainDecorator`. These abstract
+classes are meant to be inherited by any decorator class that maps specific
+site properties.
+
 Currently, we can only decorate charge. Plan to allow decorating
 spin in the future updates.
 
-#Note: all entries should be re-decorated and all decorators should be
-be-retrained after each iteration.
+.. note:: All entries should be re-decorated and all decorators
+ should be retrained after an iteration.
 """
 
 __author__ = "Fengyu Xie, Julia H. Yang"
@@ -58,11 +65,12 @@ def _get_required_site_property(entry, site_id, prop_name):
 class BaseDecorator(MSONable, metaclass=ABCMeta):
     """Abstract decorator class.
 
-    1, Each decorator should only be used to decorate one property.
-    2, Currently, only supports assigning labels from one scalar site property,
-    and requires that the site property can be accessed from ComputedStructureEntry,
-    which should be sufficient for most purposes.
-    3, Can not decorate entries with partial disorder.
+    #. Each decorator should only be used to decorate one property.
+    #. Currently, only supports assigning labels from one scalar site property,
+       and requires that the site property can be accessed from
+       :class:`ComputedStructureEntry`, which should be sufficient for most
+       purposes.
+    #. Can not decorate entries with partial disorder.
     """
 
     # Edit this as you implement new child classes.
@@ -105,8 +113,8 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
                 Entries of computed structures.
 
         Return:
-            (Entry index, site index) occupied by each species:
-            defaultdict
+            defaultdict:
+            (Entry index, site index) occupied by each species.
         """
         groups_by_species = defaultdict(lambda: [])
 
@@ -296,9 +304,9 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
 class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
     """Mixture of Gaussians (MoGs) decorator class.
 
-    Uses mixture of gaussian to label each species.
+    Uses mixture of gaussians method to label each species.
 
-    Note: not tested yet.
+    .. note:: No test has been added for this specific class yet.
     """
 
     decorated_prop_name = None
@@ -386,7 +394,7 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
         """Determine whether the decorator has been trained.
 
         Returns:
-            bool.
+            bool
         """
         return all([self.is_trained_gaussian_model(m) for m in self._gms.values()])
 
@@ -432,9 +440,9 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
                 Entries of computed structures.
 
         Returns:
+            List[NoneType|ComputedStructureEntry]:
             Entries with structures decorated. Returns None if decoration
             failed (not charge balanced, etc.)
-            List[NoneType|ComputedStructureEntry]
         """
         if not self.is_trained:
             raise ValueError("Can not make predictions from un-trained" " models!")
@@ -489,9 +497,11 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
 class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
     """Gaussian process decorator class.
 
-    Uses Gaussian optimization process described by J. Yang
-    et.al. Can only handle decoration from a single scalar
-    property up to now.
+    Uses Gaussian optimization process described by `J. H. Yang
+    et al. <https://www.nature.com/articles/s41524-022-00818-3>`_
+
+    Up to now, this class can only take as input a single scalar
+    property per site.
     """
 
     # Edit this as you implement new child classes.
@@ -786,7 +796,7 @@ class NoTrainDecorator(BaseDecorator):
 
 
 def decorator_factory(decorator_type, *args, **kwargs):
-    """Create a species decorator with given name.
+    """Create a :class:`BaseDecorator` with its subclass name.
 
     Args:
         decorator_type(str):
@@ -801,7 +811,7 @@ def decorator_factory(decorator_type, *args, **kwargs):
 
 
 def get_site_property_query_names_from_decorator(decname):
-    """Get the name of required properties from decorator name.
+    """Get the required properties from a decorator name.
 
     Args:
         decname(str):

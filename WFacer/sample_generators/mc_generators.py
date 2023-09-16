@@ -41,7 +41,7 @@ class McSampleGenerator(metaclass=ABCMeta):
         duplicacy_criteria="correlations",
         remove_decorations_before_duplicacy=False,
     ):
-        """Initialize McSampleGenerator.
+        """Initialize.
 
         Args:
             ce(ClusterExpansion):
@@ -109,9 +109,9 @@ class McSampleGenerator(metaclass=ABCMeta):
     def sublattices(self):
         """Get sublattices in ensemble.
 
-        Note: If you wish to do delicate operations such as sub-lattice
-        splitting, please do it on self.ensemble.
-        See docs of smol.moca.ensemble.
+        .. note:: If you wish to do delicate operations such as sub-lattice
+         splitting, please do it on self.ensemble. Refer to
+         :class:`smol.moca.ensemble` for further details.
         """
         return self.ensemble.sublattices
 
@@ -149,8 +149,9 @@ class McSampleGenerator(metaclass=ABCMeta):
         """Use simulated annealing to solve the ground state occupancy.
 
         Returns:
-            ground state in encoded occupancy array:
-                list[int]
+            list[int]:
+            ground state in encoded occupancy array.
+
         """
         if self._gs_occu is None:
             init_occu = self._get_init_occu()
@@ -185,7 +186,7 @@ class McSampleGenerator(metaclass=ABCMeta):
         """Get the feature vector of the ground state.
 
         Returns:
-            list[float].
+            list[float]
         """
         gs_occu = self.get_ground_state_occupancy()
         return (
@@ -321,7 +322,7 @@ class McSampleGenerator(metaclass=ABCMeta):
 
 
 class CanonicalSampleGenerator(McSampleGenerator):
-    """Sample generator in canonical ensemble."""
+    """Sample generator in canonical ensembles."""
 
     def __init__(
         self,
@@ -411,7 +412,7 @@ class CanonicalSampleGenerator(McSampleGenerator):
 
 # Grand-canonical generator will not be used very often.
 class SemigrandSampleGenerator(McSampleGenerator):
-    """Sample generator in canonical ensemble."""
+    """Sample generator in canonical ensembles."""
 
     def __init__(
         self,
@@ -525,7 +526,7 @@ class SemigrandSampleGenerator(McSampleGenerator):
 
 
 def mcgenerator_factory(mcgenerator_name, *args, **kwargs):
-    """Create a MCHandler with given name.
+    """Create a :class:`McSampleGenerator` with its subclass name.
 
     Args:
         mcgenerator_name(str):

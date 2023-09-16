@@ -1,4 +1,4 @@
-"""Utility functions to manage sparselm estimators."""
+"""Utility functions to prepare sparse-lm estimators."""
 from warnings import warn
 
 import numpy as np
@@ -12,7 +12,7 @@ from sparselm.stepwise import StepwiseEstimator
 
 
 def is_subclass(classname, parent_classname):
-    """Check whether an estimator is a subclass of some parent.
+    """Check whether the estimator is a subclass of some parent.
 
     Args:
         classname(str):
@@ -21,7 +21,7 @@ def is_subclass(classname, parent_classname):
             Name of the parent class. Also in sparselm.model.
 
     Returns:
-        bool.
+        bool
     """
     cls = getattr(sparselm.model, classname)
     if hasattr(sparselm.model, parent_classname):
@@ -58,7 +58,7 @@ supported_estimator_names = [
 # smol 0.3.1 cannot correctly identify subclasses in sparse-lm.
 # Temporarily writing as import __all__.
 def estimator_factory(estimator_name, **kwargs):
-    """Get an estimator object from class name.
+    """Get an estimator object from its class name.
 
     Args:
         estimator_name (str):
@@ -66,6 +66,7 @@ def estimator_factory(estimator_name, **kwargs):
         kwargs:
             Other keyword arguments to initialize an estimator.
             Depends on the specific class
+
     Returns:
         Estimator
     """
@@ -80,7 +81,7 @@ def estimator_factory(estimator_name, **kwargs):
 
 
 def optimizer_factory(optimizer_name, estimator, param_grid=None, **kwargs):
-    """Get an optimizer object from class name.
+    """Get an optimizer object from its class name.
 
     Args:
         optimizer_name (str):
@@ -121,22 +122,23 @@ def prepare_estimator(
     estimator_kwargs=None,
     optimizer_kwargs=None,
 ):
-    """Prepare an estimator for the direct call of fit.
+    """Prepare an estimator for fitting.
 
-    No weights will be used.
+    .. note:: Sample weights are not supported yet.
 
     Args:
         cluster_subspace(ClusterSubspace):
-            A cluster subspace to expand with.
+            A :class:`ClusterSubspace` to expand with.
         estimator_name(str):
             The name of estimator, following the rules in
-            smol.utils.class_name_from_str.
+            :mod:`smol.utils`.
         optimizer_name(str):
-            Name of hyperparameter optimizer. Currently, only supports GridSearch and
-            LineSearch.
+            Name of hyperparameter optimizer.
+            Currently, only supports :class:`GridSearch` and :class:`LineSearch`.
         param_grid(dict|list[tuple]):
             Parameter grid to initialize the optimizer. See docs of
-            sparselm.model_selection. Not needed for OrdinaryLeastSquares.
+            :mod:`sparselm.model_selection`.
+             .. note:: Not needed when using :class:`OrdinaryLeastSquares`.
         use_hierarchy(bool): optional
             Whether to use cluster hierarchy constraints when available. Default to
             true.
@@ -151,8 +153,9 @@ def prepare_estimator(
             Other keyword arguments to initialize an optimizer.
 
     Returns:
-        GridSearchCV/LineSearchCV, StepwiseEstimator,
-        or OrdinaryLeastSquares.
+        GridSearchCV, LineSearchCV, StepwiseEstimator,
+        or OrdinaryLeastSquares:
+            The estimator wrapped up for fitting.
     """
     # Corrected and normalized DFT energy in eV/prim.
     point_func_inds = cluster_subspace.function_inds_by_size[1]

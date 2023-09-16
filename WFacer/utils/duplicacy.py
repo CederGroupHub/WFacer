@@ -8,7 +8,7 @@ from smol.cofe.space.domain import Vacancy
 def clean_up_decoration(s):
     """Remove all decoration from a structure.
 
-    Used before comparing two structures before sending to compute.
+    Typically, used before comparing two structures.
 
     Args:
         s(Structure):
@@ -44,7 +44,7 @@ def clean_up_decoration(s):
 
 
 def is_duplicate(s1, s2, remove_decorations=False, matcher=None):
-    """Check duplication between structures.
+    """Check the duplicacy between structures.
 
     Args:
         s1(Structure):
@@ -52,10 +52,10 @@ def is_duplicate(s1, s2, remove_decorations=False, matcher=None):
         s2(Structure):
             Same as s1.
         remove_decorations(bool): optional
-            Whether or not to remove all decorations from species (i.e,
+            Whether to remove all decorations from species (i.e,
             charge and other properties). Default to false.
         matcher(StructureMatcher): optional
-            A StructureMatcher to compare two structures. Using the same
+            A :class:`StructureMatcher` to compare two structures. Using the same
             _site_matcher as cluster_subspace is highly recommended.
 
     Returns:
@@ -74,23 +74,21 @@ def is_duplicate(s1, s2, remove_decorations=False, matcher=None):
 
 
 def is_corr_duplicate(s1, proc1, s2=None, proc2=None, features2=None):
-    """Check whether two structures have the same correlations.
+    """Check whether two structures have the same correlation vectors.
 
-    Note: This is to mostly used criteria for checking structure
-    duplicacy, because two structures with the same correlation
-    vector should typically not be included in the training set
-    together! Also, comparing correlation vectors should be much
-    faster that comparing two structures, because comparing two
-    structures might involve reducing them to primitive cells
-    in advance, which can occasionally be very slow.
+    .. note:: This is the most used criteria for structure duplicacy as
+     two structures with the same correlation vector should in principle
+     not be included in the training set together! Also, comparing
+     correlation vectors can be much faster than comparing two structures
+     with :class:`StructureMatcher`.
 
     Args:
         s1 (Structure):
            A structure to be checked.
         proc1 (CompositeProcessor):
-           A processor established with the super-cell matrix of s1.
-           (Must be ClusterExpansionProcessor rather than
-           ClusterDecompositionProcessor!)
+           A processor established on the super-cell matrix of s1.
+            .. note:: Must use :class:`ClusterExpansionProcessor` instead of
+             :class:`ClusterDecompositionProcessor`.
         s2 (Structure): optional
            Same as s1, but if a feature vector is already given,
            no need to give s2.

@@ -11,13 +11,13 @@ from .query import get_property_from_object
 
 
 def _merge_computed_structure_entry(entry, structure):
-    """Merge structure into ComputedEntry.
+    """Merge a structure into :class:`ComputedEntry`.
 
     Args:
         entry(ComputedEntry):
-            A computed Entry given by taskdoc.
+            A computed Entry extracted from a :class:`TaskDoc`.
         structure(Structure):
-            A structure given by taskdoc.
+            A structure from the same :class:`TaskDoc`.
 
     Return:
         ComputedStuctureEntry.
@@ -35,7 +35,7 @@ def _merge_computed_structure_entry(entry, structure):
 
 
 def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=None):
-    """Get the computed structure entry from taskdoc.
+    """Get the computed structure entry from :class:`TaskDoc`.
 
     Args:
         taskdoc(TaskDoc):
@@ -57,7 +57,7 @@ def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=N
         ComputedStructureEntry, dict:
             The computed structure entry, with each site having the site
             property required by decorator, and the properties
-            dict for insertion into CeDataWangler.
+            dict ready to be inserted into a :class:`CeDataWangler`.
     """
     # Final optimized structure.
     structure = taskdoc.structure
