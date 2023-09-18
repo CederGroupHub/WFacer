@@ -14,9 +14,9 @@
    api_reference/index
 
 
-=================
+============================================================
 WorkFlow for Automated Cluster Expansion Regression (WFacer)
-=================
+============================================================
 
 *Modulated automation of cluster expansion model construction based on atomate2 and Jobflow*
 
@@ -64,7 +64,7 @@ Installation
   you wish to use **Fireworks** as the calculation manager, do :code:`pip install -r requirements-optional.txt` as well.
 
 Post-installation configuration
-------------
+-------------------------------
 Specific configurations are required before you can properly use **WFacer**.
 
 * **Fireworks** job management is highly recommended but not required.

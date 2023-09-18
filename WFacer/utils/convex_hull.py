@@ -23,8 +23,9 @@ def get_min_energy_structures_by_composition(wrangler, max_iter_id=None):
 
     Returns:
         defaultdict:
-            Elemental compositions as keys, energy per site and structure
-            as values.
+            Elemental compositions (:class:`Composition` objects accounting for
+            only the amount of each element instead of species) as keys,
+            energy per site and structure as values.
     """
     min_e = defaultdict(lambda: (np.inf, None))
     prim_size = len(wrangler.cluster_subspace.structure)
@@ -61,8 +62,9 @@ def get_hull(wrangler, max_iter_id=None):
 
     Returns:
         dict:
-            Elemental compositions as keys, energy per site and structure
-            as values.
+            Elemental compositions (:class:`Composition` objects accounting for
+            only the amount of each element instead of species) as keys,
+            energy per site and structure as values.
     """
     if max_iter_id is None:
         max_iter_id = wrangler.max_iter_id

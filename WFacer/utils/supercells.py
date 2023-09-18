@@ -20,7 +20,7 @@ def get_three_factors(n):
             The integer to factorize.
 
     Returns:
-        List[tuple(int)]:
+        list of tuples of int:
          All three-factor decompositions of the input integer.
 
     """
@@ -65,18 +65,20 @@ def is_proper_sc(sc_matrix, lat, max_cond=8, min_angle=30):
     Args:
         sc_matrix(3 * 3 ArrayLike):
             Supercell matrix
-        lat(pymatgen.Lattice):
+        lat(Lattice):
             Lattice of the primitive cell
         max_cond(float): optional
             Maximum conditional number allowed in the supercell lattice
             matrix. This is to avoid overly imbalance in the lengths of
             three lattice vectors. By default, set to 8.
         min_angle(float): optional
-            Minimum allowed angle of the supercell lattice. By default, set
-            to 30, to prevent over-skewing.
+            Minimum allowed angle of the supercell lattice.
+            By default, set to 30 degrees to prevent over-skewing.
 
     Returns:
-       bool
+       bool:
+           Whether the super-cell matrix is proper to be used in structure
+           enumeration.
     """
     new_mat = np.dot(sc_matrix, lat.matrix)
     new_lat = Lattice(new_mat)
@@ -96,15 +98,16 @@ def is_duplicate_sc(m1, m2, prim):
     """Check whether two super-cell matrices are symmetrically identical.
 
     Args:
-        m1(3*3 ArrayLike[int]):
+        m1(3*3 ArrayLike of int):
             Supercell matrices to compare.
-        m2(3*3 ArrayLike[int]):
+        m2(3*3 ArrayLike of int):
             Supercell matrices to compare.
         prim(Structure):
             Primitive cell object.
 
     Returns:
-        bool
+        bool:
+            Whether the two super-cell matrices are symmetrically equivalent.
     """
     s1 = prim.copy()
     s2 = prim.copy()

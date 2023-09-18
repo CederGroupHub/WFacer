@@ -48,7 +48,7 @@ class CeDataWrangler(StructureWrangler):
 
         Returns:
             int:
-                Iteration number (counting from 0).
+                Maximum iteration index (counting from 0).
         """
         return (
             max(entry.data["properties"]["spec"]["iter_id"] for entry in self.entries)
@@ -82,26 +82,26 @@ class CeDataWrangler(StructureWrangler):
         was added.
 
         Args:
-            entry (ComputedStructureEntry):
+            entry(ComputedStructureEntry):
                 A ComputedStructureEntry with a training structure, energy and
                 properties
-            properties (dict):
+            properties(dict):
                 Dictionary with a key describing the property and the target
                 value for the corresponding structure. For example if only a
                 single property {'energy': value} but can also add more than
                 one, i.e. {'total_energy': value1, 'formation_energy': value2}.
                 You are free to make up the keys for each property but make
                 sure you are consistent for all structures that you add.
-            weights (dict):
+            weights(dict):
                 The weight given to the structure when doing the fit. The key
                 must match at least one of the given properties.
-            supercell_matrix (ndarray): optional
+            supercell_matrix(ndarray): optional
                 If the corresponding structure has already been matched to the
                 ClusterSubspace prim structure, passing the supercell_matrix
                 will use that instead of trying to re-match. If using this,
                 the user is responsible for having the correct supercell_matrix.
                 Here you are the cause of your own bugs.
-            site_mapping (list): optional
+            site_mapping(list): optional
                 Site mapping as obtained by
                 function :func:`StructureMatcher.get_mapping` such that the
                 elements of site_mapping represent the indices
@@ -110,12 +110,13 @@ class CeDataWrangler(StructureWrangler):
             check_struct_duplicacy(bool): optional
                 If true, will check structure duplicacy, and skip an entry if it
                 is symmetrically equivalent to an existing one. Default to true.
-            verbose (bool): optional
+            verbose(bool): optional
                 If True, will raise warning regarding  structures that fail in
-                StructureMatcher, and structures that have duplicate corr vectors.
-            raise_failed (bool): optional
+                :class:`StructureMatcher`, and structures that have duplicated
+                correlation vectors.
+            raise_failed(bool): optional
                 If True, will raise the thrown error when adding a structure
-                that  fails. This can be helpful to keep a list of structures that
+                that fails. This can be helpful to keep a list of structures that
                 fail for further inspection.
         """
         # Add property "spec" to store iter_id and enum_id to record in which iteration

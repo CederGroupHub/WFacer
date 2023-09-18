@@ -23,12 +23,12 @@ def select_initial_rows(
         num_external_terms(int): optional
             Number of external terms in cluster subspace. These
             terms should not be compared in a structure selection.
-        keep_indices(list[int]): optional
+        keep_indices(list of int): optional
             Indices of structures that must be selected. Usually
             those of important ground state structures.
 
     Returns:
-        List[int]:
+        list of int:
             Indices of selected rows in the feature matrix,
             corresponding to the selected structures.
     """
@@ -110,7 +110,7 @@ def select_added_rows(
             The method used to select structures. Default is
             by maximizing leverage score reduction ("leverage").
             "random" is also supported.
-        keep_indices(List[int]): optional
+        keep_indices(list of int): optional
             Indices of structures that must be selected. Usually
             those of important ground state structures.
         num_external_terms(int): optional
@@ -121,9 +121,9 @@ def select_added_rows(
             default, we use an identity matrix.
 
     Returns:
-        list of ints:
-         Indices of selected rows in the feature matrix,
-         corresponding to the selected structures.
+        list of int:
+            Indices of selected rows in the feature matrix,
+            corresponding to the selected structures.
     """
     # Leave out external terms.
     a = np.array(femat)[:, : len(femat[0]) - num_external_terms]

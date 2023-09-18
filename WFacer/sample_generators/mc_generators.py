@@ -48,16 +48,16 @@ class McSampleGenerator(metaclass=ABCMeta):
                 A cluster expansion object to enumerate with.
             sc_matrix(3*3 ArrayLike):
                 Supercell matrix to solve on.
-            anneal_temp_series(list[float]): optional
+            anneal_temp_series(list of float): optional
                 A series of temperatures to use in simulated annealing.
-                Must be mono-decreasing.
-            heat_temp_series(list[float]): optional
+                Must be strictly decreasing.
+            heat_temp_series(list of float): optional
                 A series of increasing temperatures to sample on.
-                Must be mono-increasing
+                Must be strictly increasing
             num_steps_anneal(int): optional
-                Number of MC steps to run per annealing temperature step.
+                The number of MC steps to run per annealing temperature.
             num_steps_heat(int): optional
-                Number of MC steps to run per heat temperature step.
+                The number of MC steps to run per heating temperature.
             duplicacy_criteria(str):
                 The criteria when to consider two structures as the same and
                 old to add one of them into the candidate training set.
@@ -149,8 +149,9 @@ class McSampleGenerator(metaclass=ABCMeta):
         """Use simulated annealing to solve the ground state occupancy.
 
         Returns:
-            list[int]:
-            ground state in encoded occupancy array.
+            list of int:
+             The ground-state occupancy string obtained through
+             simulated annealing.
 
         """
         if self._gs_occu is None:
@@ -186,7 +187,7 @@ class McSampleGenerator(metaclass=ABCMeta):
         """Get the feature vector of the ground state.
 
         Returns:
-            list[float]
+            list of float.
         """
         gs_occu = self.get_ground_state_occupancy()
         return (
@@ -203,10 +204,10 @@ class McSampleGenerator(metaclass=ABCMeta):
         """Generate a sample of structures by heating the ground state.
 
         Args:
-            previous_sampled_structures(list[Structure]): optional
+            previous_sampled_structures(list of Structure): optional
                 Sample structures already calculated in past
                 iterations.
-            previous_sampled_features(list[arrayLike]): optional
+            previous_sampled_features(list of ArrayLike): optional
                 Feature vectors of sample structures already
                 calculated in past iterations.
             num_samples(int): optional
@@ -216,7 +217,7 @@ class McSampleGenerator(metaclass=ABCMeta):
                 threshold. Default to 100.
 
         Return:
-            list[Structure], list[list[int]], list[list[float]]:
+            list of Structure, list of lists of int, list of lists of float:
                 New samples structures, NOT including the ground-state,
                 sampled occupancy arrays, and feature vectors of sampled
                 structures.
@@ -343,20 +344,20 @@ class CanonicalSampleGenerator(McSampleGenerator):
                 A cluster expansion object to enumerate with.
             sc_matrix(3*3 ArrayLike):
                 Supercell matrix to solve on.
-            counts(1D ArrayLike[int]):
+            counts(1D ArrayLike of int):
                 Composition in the "counts " format, not normalized by
                 number of primitive cells per super-cell. Refer to
-                smol.moca.Composition space for explanation.
-            anneal_temp_series(list[float]): optional
+                :mod:`smol.moca.composition` for explanation.
+            anneal_temp_series(list of float): optional
                 A series of temperatures to use in simulated annealing.
-                Must be mono-decreasing.
-            heat_temp_series(list[float]): optional
+                Must be strictly decreasing.
+            heat_temp_series(list of float): optional
                 A series of increasing temperatures to sample on.
-                Must be mono-increasing
+                Must be strictly increasing
             num_steps_anneal(int): optional
-                Number of steps to run per simulated annealing temperature.
+                The number of steps to run per simulated annealing temperature.
             num_steps_heat(int): optional
-                Number of steps to run per heat temperature.
+                The number of steps to run per heat temperature.
             duplicacy_criteria(str):
                 The criteria when to consider two structures as the same and
                 old to add one of them into the candidate training set.
@@ -412,7 +413,7 @@ class CanonicalSampleGenerator(McSampleGenerator):
 
 # Grand-canonical generator will not be used very often.
 class SemigrandSampleGenerator(McSampleGenerator):
-    """Sample generator in canonical ensembles."""
+    """Sample generator in semi-grand canonical ensembles."""
 
     def __init__(
         self,
@@ -435,17 +436,17 @@ class SemigrandSampleGenerator(McSampleGenerator):
                 Supercell matrix to solve on.
             chemical_potentials(dict):
                 Chemical potentials of each species. See documentation
-                of smol.moca Ensemble.
-            anneal_temp_series(list[float]): optional
+                of :mod:`smol.moca.ensemble`.
+            anneal_temp_series(list of float): optional
                 A series of temperatures to use in simulated annealing.
-                Must be mono-decreasing.
-            heat_temp_series(list[float]): optional
+                Must be strictly decreasing.
+            heat_temp_series(list of float): optional
                 A series of increasing temperatures to sample on.
-                Must be mono-increasing
+                Must be strictly increasing.
             num_steps_anneal(int): optional
-                Number of steps to run per simulated annealing temperature.
+                The number of steps to run per simulated annealing temperature.
             num_steps_heat(int): optional
-                Number of steps to run per heat temperature.
+                The number of steps to run per heat temperature.
             duplicacy_criteria(str):
                 The criteria when to consider two structures as the same and
                 old to add one of them into the candidate training set.
@@ -526,11 +527,11 @@ class SemigrandSampleGenerator(McSampleGenerator):
 
 
 def mcgenerator_factory(mcgenerator_name, *args, **kwargs):
-    """Create a :class:`McSampleGenerator` with its subclass name.
+    """Create a McSampleGenerator with its subclass name.
 
     Args:
         mcgenerator_name(str):
-            Name of a McSampleGenerator sub-class.
+            The name of a subclass of :class:`McSampleGenerator`.
         *args, **kwargs:
             Arguments used to initialize the class.
     """

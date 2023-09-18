@@ -16,12 +16,14 @@ def is_subclass(classname, parent_classname):
 
     Args:
         classname(str):
-            Name of the sparselm estimator class.
+            Name of the :mod:`sparse-lm` estimator class.
         parent_classname(str):
-            Name of the parent class. Also in sparselm.model.
+            Name of the parent class. Also in :mod:`sparselm.model`.
 
     Returns:
-        bool
+        bool:
+           Whether the given class is a subclass of
+           another given class.
     """
     cls = getattr(sparselm.model, classname)
     if hasattr(sparselm.model, parent_classname):
@@ -62,13 +64,15 @@ def estimator_factory(estimator_name, **kwargs):
 
     Args:
         estimator_name (str):
-            Name of the estimator.
-        kwargs:
+            The name of the estimator.
+        **kwargs:
             Other keyword arguments to initialize an estimator.
             Depends on the specific class
 
     Returns:
-        Estimator
+        Estimator:
+            Packed estimator or stepwise estimator to be used
+            directly for fitting.
     """
     class_name = class_name_from_str(estimator_name)
 
@@ -84,18 +88,19 @@ def optimizer_factory(optimizer_name, estimator, param_grid=None, **kwargs):
     """Get an optimizer object from its class name.
 
     Args:
-        optimizer_name (str):
+        optimizer_name(str):
             Name of the optimizer.
         estimator(CVXRegressor):
             An estimator used to initialize the optimizer.
-        param_grid(dict|list[tuple]):
+        param_grid(dict or list of tuple):
             Parameters grid used to initialize the optimizer. Format
-            depends on the type of optimizer. See sparselm.model_selection.
-        kwargs:
+            depends on the type of optimizer. See :mod:`sparselm.model_selection`.
+        **kwargs:
             Other keyword arguments to initialize an optimizer.
-            Depends on the specific class
+            Depends on the specific class used.
     Returns:
-        GridSearchCV or LineSearchCV.
+        GridSearchCV or LineSearchCV:
+            An initialized model selection object.
     """
     all_optimizers = {"GridSearchCV": GridSearchCV, "LineSearchCV": LineSearchCV}
     if (
@@ -133,15 +138,15 @@ def prepare_estimator(
             The name of estimator, following the rules in
             :mod:`smol.utils`.
         optimizer_name(str):
-            Name of hyperparameter optimizer.
+            The name of the model optimizer.
             Currently, only supports :class:`GridSearch` and :class:`LineSearch`.
         param_grid(dict|list[tuple]):
             Parameter grid to initialize the optimizer. See docs of the
             :mod:`sparselm.model_selection` module.
             **Not needed when using** :class:`OrdinaryLeastSquares`.
         use_hierarchy(bool): optional
-            Whether to use cluster hierarchy constraints when available. Default to
-            true.
+            Whether to use the cluster hierarchy constraints when available.
+            Default to true.
         center_point_external(bool): optional
             Whether to fit the point and external terms with linear regression
             first, then fit the residue with regressor. Default to true,

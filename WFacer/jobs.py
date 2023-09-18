@@ -46,6 +46,7 @@ log = logging.getLogger(__name__)
 
 
 def _preprocess_options(options):
+    """Pre-process and concatenate options."""
     sc_options = process_supercell_options(options)
     comp_options = process_composition_options(options)
     struct_options = process_structure_options(options)
@@ -198,7 +199,7 @@ def enumerate_structures(last_ce_document):
 
     Returns:
         dict:
-           Newly enumerated structures, super-cell matrices
+           The newly enumerated structures with super-cell matrices
            and feature vectors.
 
     """
@@ -264,14 +265,14 @@ def get_structure_calculation_flows(enum_output, last_ce_document):
 
     Args:
         enum_output(dict):
-            Output by enumeration job.
+            Output from the enumeration job.
         last_ce_document(CeOutputsDocument):
-            The last cluster expansion outputs document.
+            The cluster expansion outputs document from the last iteration.
 
     Returns:
-        list[Flow], list[OutputReference]:
+        list of Flow, list of OutputReference:
             Flows for each structure and their output references pointing
-            at the final TaskDoc.
+            at the final :class:`TaskDoc`.
     """
     project_name = last_ce_document.project_name
     iter_id = last_ce_document.last_iter_id + 1
@@ -321,7 +322,8 @@ def calculate_structures_job(enum_output, last_ce_document):
     """Calculate newly enumerated structures.
 
     .. note:: This job will replace itself with the calculation jobs to run for
-    each structure.
+     each structure.
+
     Args:
         enum_output(dict):
             Output by enumeration job.
@@ -329,7 +331,7 @@ def calculate_structures_job(enum_output, last_ce_document):
             The last cluster expansion outputs document.
 
     Returns:
-        list[TaskDoc]:
+        list of TaskDoc:
             Results of VASP calculations, in the form of :class:`emmet.core.TaskDoc`.
     """
     project_name = last_ce_document.project_name
@@ -350,7 +352,7 @@ def parse_calculations(taskdocs, enum_output, last_ce_document):
     will be re-decorated and re-inserted every iteration.
 
     Args:
-        taskdocs(list[TaskDoc]):
+        taskdocs(list of TaskDoc):
             Task documents generated as results of VASP computations.
         enum_output(dict):
             Output by enumeration job.

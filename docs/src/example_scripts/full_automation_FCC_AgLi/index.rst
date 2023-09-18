@@ -1,8 +1,8 @@
 .. _ full_automation :
 
-=================
+==================================
 Fully automate a cluster expansion
-=================
+==================================
 
 We provide a simple example workflow to run automatic cluster expansion in a Ag-Li alloy on FCC lattice
 (see other available options in the documentations of *preprocessing.py*.):

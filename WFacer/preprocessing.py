@@ -21,7 +21,7 @@ def reduce_prim(prim, **kwargs):
         prim(Structure):
             A primitive cell with partial occupancy to be expanded.
         **kwargs:
-            Keyword arguments for :class:`SpacegroupAnalyzer`.
+            Keyword arguments for initializing :class:`SpacegroupAnalyzer`.
 
     Returns:
         Structure:
@@ -41,18 +41,18 @@ def construct_prim(bits, sublattice_sites, lattice, frac_coords, **kwargs):
     Structure object or file.
 
     Args:
-        bits(List[List[Specie]]):
+        bits(list of lists of Species):
             Allowed species on each sublattice. No sorting
             required.
-        sublattice_sites(List[List[int]]):
+        sublattice_sites(list of lists of int):
             Site indices in each sub-lattice of a primitive cell.
             Must include all site indices in range(len(frac_coords))
         lattice(Lattice):
             Lattice of the primitive cell.
-        frac_coords(ArrayLike):
+        frac_coords(2D ArrayLike):
             Fractional coordinates of sites.
         **kwargs:
-            Keyword arguments for :class:`SpacegroupAnalyzer`.
+            Keyword arguments for initializing :class:`SpacegroupAnalyzer`.
 
     Returns:
         Structure:
@@ -97,7 +97,10 @@ def get_prim_specs(prim):
             and species concentrations are considered the same sub-lattice!
     Returns:
         dict:
-           A specification dictionary of the cluster expansion space.
+           A specification dictionary of the cluster expansion space, containing
+           the species on each sub-lattice, the indices of sites belonging to each
+           sub-lattice in a primitive cell, whether the system requires charge
+           decoration and the nearest-neighbor distance.
     """
     unique_spaces = sorted(set(get_site_spaces(prim)))
 
@@ -164,7 +167,7 @@ def get_cluster_subspace(
             Whether to use the EwaldTerm when CE is charge decorated. Default to True.
         ewald_kwargs(dict): optional
             Keyword arguments to initialize EwaldTerm. See docs in smol.cofe.extern.
-        other_terms(list[ExternalTerm]): optional
+        other_terms(list of ExternalTerm): optional
             List of other external terms to be added besides the EwaldTerm. (Reserved
             for extensibility.)
         **kwargs:
@@ -200,38 +203,39 @@ def process_supercell_options(d):
     Returns:
         dict:
             A dict containing supercell matrix options, including the following keys:
-            supercell_from_conventional(bool):
-                Whether to find out primitive cell to conventional
-                standard structure transformation matrix T, and enumerate
-                super-cell matrices in the form of: M = M'T.
-                Default to true. If not, will set T to eye(3).
-            objective_num_sites(int):
-                The Supercel sizes (in number of sites, both active and inactive)
-                to approach.
-                Default to 64. Enumerated super-cell size will be
-                a multiple of det(T) but the closest one to this objective
-                size.
-                Note: since super-cell matrices with too high a conditional
-                number will be dropped, do not use a super-cell size whose
-                decompose to 3 integer factors are different in scale.
-                For example, 17 = 1 * 1 * 17 is the only possible factor
-                decomposition for 17, whose matrix conditional number will
-                always be larger than the cut-off (8).
-                Currently, we only support enumerating super-cells with the
-                same size.
-            spacegroup_kwargs(dict):
-                Keyword arguments used to initialize a SpaceGroupAnalyzer.
-                Will also be used in reducing the primitive cell.
-            max_sc_condition_number(float):
-                Maximum conditional number of the supercell lattice matrix.
-                Default to 8, prevent overly slender super-cells.
-            min_sc_angle(float):
-                Minimum allowed angle of the supercell lattice.
-                Default to 30, prevent overly skewed super-cells.
-            sc_matrices(List[3*3 ArrayLike[int]]):
-                Supercell matrices. Will not enumerate super-cells if this
-                is given. Default to None. Note: if given, all supercell matrices
-                must be of the same size!
+             supercell_from_conventional(bool):
+                 Whether to find out primitive cell to conventional
+                 standard structure transformation matrix T, and enumerate
+                 super-cell matrices in the form of: M = M'T.
+                 Default to true. If not, will set T to eye(3).
+             objective_num_sites(int):
+                 The Supercel sizes (in number of sites, both active and inactive)
+                 to approach.
+                 Default to 64. Enumerated super-cell size will be
+                 a multiple of det(T) but the closest one to this objective
+                 size.
+
+                 .. note:: Since super-cell matrices with too high a conditional
+                  number will be dropped, do not use a super-cell size that could only
+                  be decomposed into three factors largely different in scale.
+                  For example, 17 = 1 * 1 * 17 is the only possible three-factor
+                  decomposition for 17 with a large conditional number of 17.
+
+                 Currently, we only support enumerating super-cells with the
+                 same size.
+             spacegroup_kwargs(dict):
+                 Keyword arguments used to initialize a SpaceGroupAnalyzer.
+                 Will also be used in reducing the primitive cell.
+             max_sc_condition_number(float):
+                 Maximum conditional number of the supercell lattice matrix.
+                 Default to 8, prevent overly slender super-cells.
+             min_sc_angle(float):
+                 Minimum allowed angle of the supercell lattice.
+                 Default to 30, prevent overly skewed super-cells.
+             sc_matrices(list of 3*3 ArrayLike of int):
+                 Supercell matrices. Will not enumerate super-cells if this
+                 is given. Default to None. Note: if given, all supercell matrices
+                 must be of the same size!
     """
     return {
         "supercell_from_conventional": d.get("supercell_from_conventional", True),
@@ -310,7 +314,7 @@ def process_composition_options(d):
                 If step > 1, on each dimension of the composition space,
                 we will only yield one composition in every N compositions.
                 Default to 1.
-             compositions (2D arrayLike[int]): optional
+             compositions (2D ArrayLike of int): optional
                 Fixed compositions with which to enumerate the structures. If
                 given, will not enumerate other compositions.
                 Should be provided as the "species count" format,
@@ -334,40 +338,42 @@ def process_structure_options(d):
     Returns:
         dict:
             A dict containing structure options, including the following keys:
-            num_structs_per_iter_init (int):
-                Number of new structures to enumerate in the first iteration.
-                It is recommended that in each iteration, at least 2~3
-                structures are added for each composition.
-                Default is 60.
-            num_structs_per_iter_add (int):
-                Number of new structures to enumerate in each followed iteration.
-                Default is 40.
-            sample_generator_kwargs(Dict):
-                kwargs of CanonicalSampleGenerator.
-            init_method(str):
-                Structure selection method in the first iteration.
-                Default is "leverage". Allowed options include: "leverage" and
-                "random".
-            add_method(str):
-                Structure selection method in subsequent iterations.
-                Default is 'leverage'. Allowed options are: 'leverage'
-                and 'random'.
-            duplicacy_criteria(str):
-                The criteria when to consider two structures as the same and
-                old to add one of them into the candidate training set.
-                Default is "correlations", which means to assert duplication
-                if two structures have the same correlation vectors. While
-                "structure" means two structures must be symmetrically equivalent
-                after being reduced. No other option is allowed.
-                Note that option "structure" might be significantly slower since
-                it has to attempt reducing every structure to its primitive cell
-                before matching. It should be used with caution.
-            n_parallel(int): optional
-                Number of generators to run in parallel. Default is to use
-                a quarter of cpu count.
-            keep_ground_states(bool):
-                Whether always to add new ground states to the training set.
-                Default to True.
+             num_structs_per_iter_init (int):
+                 Number of new structures to enumerate in the first iteration.
+                 It is recommended that in each iteration, at least 2~3
+                 structures are added for each composition.
+                 Default is 60.
+             num_structs_per_iter_add (int):
+                 Number of new structures to enumerate in each followed iteration.
+                 Default is 40.
+             sample_generator_kwargs(dict):
+                 kwargs of CanonicalSampleGenerator.
+             init_method(str):
+                 Structure selection method in the first iteration.
+                 Default is "leverage". Allowed options include: "leverage" and
+                 "random".
+             add_method(str):
+                 Structure selection method in subsequent iterations.
+                 Default is 'leverage'. Allowed options are: 'leverage'
+                 and 'random'.
+             duplicacy_criteria(str):
+                 The criteria when to consider two structures as the same and
+                 old to add one of them into the candidate training set.
+                 Default is "correlations", which means to assert duplication
+                 if two structures have the same correlation vectors. While
+                 "structure" means two structures must be symmetrically equivalent
+                 after being reduced. No other option is allowed.
+
+                 .. note:: The Option "structure" might be significantly slower since
+                  it has to attempt reducing every structure to its primitive cell
+                  before matching. It should be used with caution.
+
+             n_parallel(int): optional
+                 Number of generators to run in parallel. Default is to use
+                 a quarter of cpu count.
+             keep_ground_states(bool):
+                 Whether always to add new ground states to the training set.
+                 Default to True.
     """
     return {
         "num_structs_per_iter_init": d.get("num_structs_per_iter_init", 60),
@@ -627,42 +633,42 @@ def process_convergence_options(d):
         dict:
             A dict containing convergence options, including the following keys:
              cv_tol(float): optional
-                Maximum allowed CV value in meV per site (including vacancies).
-                (not eV per atom because some CE may contain Vacancies.)
-                Default to None, but better set it manually!
+                 Maximum allowed CV value in meV per site (including vacancies).
+                 (not eV per atom because some CE may contain Vacancies.)
+                 Default to None, but better set it manually!
              std_cv_rtol(float): optional
-                Maximum standard deviation of CV allowed in cross validations,
-                normalized by mean CV value.
-                Dimensionless, default to None, which means this standard deviation
-                of cv will not be checked.
+                 Maximum standard deviation of CV allowed in cross validations,
+                 normalized by mean CV value.
+                 Dimensionless, default to None, which means this standard deviation
+                 of cv will not be checked.
              delta_cv_rtol(float): optional
-                Maximum difference of CV allowed between the last 2 iterations,
-                divided by the standard deviation of CV in cross validation.
-                Dimensionless, default to 0.5.
+                 Maximum difference of CV allowed between the last 2 iterations,
+                 divided by the standard deviation of CV in cross validation.
+                 Dimensionless, default to 0.5.
              delta_eci_rtol(float): optional
-                Maximum allowed mangnitude of change in ECIs, measured by:
+                 Maximum allowed mangnitude of change in ECIs, measured by:
 
-                .. math::
-                    ||J' - J||_1 | / || J' ||_1.
+                 .. math::
+                     ||J' - J||_1 | / || J' ||_1.
 
-                Dimensionless. If not given, will not check ECI values for
-                convergence, because this may significantly increase the
-                number of iterations required to converge.
+                 Dimensionless. If not given, will not check ECI values for
+                 convergence, because this may significantly increase the
+                 number of iterations required to converge.
              delta_min_e_rtol(float): optional
-                Maximum difference allowed to the predicted minimum CE and DFT energy
-                at every composition between the last 2 iterations. Dimensionless,
-                divided by the value of CV.
-                Default set to 2.
+                 Maximum difference allowed to the predicted minimum CE and DFT energy
+                 at every composition between the last 2 iterations. Dimensionless,
+                 divided by the value of CV.
+                 Default set to 2.
              continue_on_finding_new_gs(bool): optional
-                If true, whenever a new ground-state structure is detected (
-                symmetrically distinct), the CE iteration will
-                continue even if all other criterion are satisfied.
-                Default to False because this may also increase the
-                number of iterations.
+                 If true, whenever a new ground-state structure is detected (
+                 symmetrically distinct), the CE iteration will
+                 continue even if all other criterion are satisfied.
+                 Default to False because this may also increase the
+                 number of iterations.
              max_iter(int): optional
-                Maximum number of iterations allowed. Will not limit number
-                of iterations if set to None, but setting one limit is still
-                recommended. Default to 10.
+                 Maximum number of iterations allowed. Will not limit number
+                 of iterations if set to None, but setting one limit is still
+                 recommended. Default to 10.
     """
     return {
         "cv_tol": d.get("cv_tol"),
@@ -681,15 +687,15 @@ def get_initial_ce_coefficients(cluster_subspace):
     Any coefficient, except those for external terms, will be initialized as 0.
     This guarantees that for ionic systems, structures with lower ewald energy
     are always selected first.
-    External term coefficients are initialized as 1.
+    External term coefficients are all initialized as 1.
 
     Args:
         cluster_subspace(ClusterSubspace):
             The initial cluster subspace.
 
     Returns:
-        np.ndarray[float]:
-          Initialized CE coefficients
+        1D np.ndarray of float:
+            Initialized CE coefficients.
     """
     return np.array(
         [0 for _ in range(cluster_subspace.num_corr_functions)]

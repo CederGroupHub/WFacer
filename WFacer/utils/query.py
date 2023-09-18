@@ -9,9 +9,9 @@ def query_keypath(obj, keypath):
     """Query attributes of an object along a path.
 
     Args:
-        obj(Object|dict):
+        obj(Object or dict):
             The object to be queried.
-        keypath(list[str]):
+        keypath(list of str):
             A path of attribute names to query.
 
     Returns:
@@ -71,14 +71,14 @@ def query_name_iteratively(obj, name):
      will always be returned first.
 
     Args:
-        obj(Object|dict):
+        obj(Object or dict):
             The object to be queried.
         name(str):
             The attribute name.
 
     Returns:
         Any:
-           The result of query.
+            The result of query.
     """
     if isinstance(obj, dict):
         if name in obj:
@@ -164,7 +164,7 @@ def get_property_from_object(obj, query_string):
 
     Returns:
         Any:
-         The value of queried property.
+            The result of query.
     """
     # Add more special conversion rules if needed.
     query = query_string.split(".")

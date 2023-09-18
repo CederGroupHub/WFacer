@@ -87,13 +87,16 @@ def ce_step_trigger(last_ce_document):
 
 @dataclass
 class AutoClusterExpansionMaker(Maker):
-    """The cluster expansion automatic workflow maker.
+    """Automatic cluster expansion workflow maker.
 
     Attributes:
         name(str):
-            Name of the cluster expansion project. Since the underscore
-            will be used to separate fields of job names, it should not
-            appear in the project name!
+            The name of the cluster expansion project.
+
+            .. note:: Since the underscore ("_") will be used to separate
+             the fields in job names, it should not appear in the project
+             name here!
+
         options(dict):
             A dictionary including all options to set up the automatic
             workflow.

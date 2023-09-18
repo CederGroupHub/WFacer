@@ -1,8 +1,8 @@
 .. _Semi-automate a basic cluster expansion :
 
-=================
+=================================
 Semi-automate a cluster expansion
-=================
+=================================
 
 .. note:: In the context of **WFacer** documentation, **semi-automation** refers to manual execution of scripts for structural generation
  and model fitting, while Jobflow or Fireworks are allowed to manage merely the computation

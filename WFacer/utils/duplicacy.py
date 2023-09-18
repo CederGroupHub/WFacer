@@ -83,19 +83,21 @@ def is_corr_duplicate(s1, proc1, s2=None, proc2=None, features2=None):
      with :class:`StructureMatcher`.
 
     Args:
-        s1 (Structure):
+        s1(Structure):
            A structure to be checked.
-        proc1 (CompositeProcessor):
+        proc1(CompositeProcessor):
            A processor established on the super-cell matrix of s1.
+
             .. note:: Must use :class:`ClusterExpansionProcessor` instead of
              :class:`ClusterDecompositionProcessor`.
-        s2 (Structure): optional
+
+        s2(Structure): optional
            Same as s1, but if a feature vector is already given,
            no need to give s2.
-        proc2 (CompositeProcessor): optional
+        proc2(CompositeProcessor): optional
            Same as proc1. But if a feature vector is already given,
            no need to give.
-        features2 (1D arrayLike): optional
+        features2(1D arrayLike): optional
            The feature vector of s2. If not given, must give both s2
            and proc2.
     """

@@ -36,8 +36,9 @@ def fit_ecis_from_wrangler(
             The name of estimator, following the rules in
             :mod:`smol.utils.class_name_from_str`.
         optimizer_name(str):
-            The name of hyperparameter optimizer. Currently, only supports
-            :class:`GridSearch` and :class:`LineSearch` from :mod:`sparse-lm`.
+            The name of model optimizer. Currently, only supports
+            :class:`GridSearch` and :class:`LineSearch`
+            from :mod:`sparse-lm.model_selection`.
         param_grid(dict|list[tuple]):
             Parameter grid to initialize the optimizer. See documentation of
             :mod:`sparselm.model_selection`.
@@ -61,13 +62,14 @@ def fit_ecis_from_wrangler(
             Other keyword arguments to initialize an estimator.
         optimizer_kwargs(dict): optional
             Other keyword arguments to initialize an optimizer.
-        **kwargs**:
+        **kwargs:
             Keyword arguments used by the estimator._fit method.
             For example, solver specifications.
 
     Returns:
         Estimator, 1D np.ndarray, float, float, float, 1D np.ndarray:
-            Fitted estimator, coefficients (not ECIs), cross validation error (meV/site),
+            Fitted estimator, coefficients (not ECIs),
+            cross validation error (meV/site),
             standard deviation of CV (meV/site) , RMSE(meV/site)
             and corresponding best parameters.
     """
