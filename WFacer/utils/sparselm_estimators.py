@@ -98,6 +98,7 @@ def optimizer_factory(optimizer_name, estimator, param_grid=None, **kwargs):
         **kwargs:
             Other keyword arguments to initialize an optimizer.
             Depends on the specific class used.
+
     Returns:
         GridSearchCV or LineSearchCV:
             An initialized model selection object.
