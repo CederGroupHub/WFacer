@@ -20,11 +20,12 @@ def reduce_prim(prim, **kwargs):
     Args:
         prim(Structure):
             A primitive cell with partial occupancy to be expanded.
-        kwargs:
-            Keyword arguments for SpacegroupAnalyzer.
+        **kwargs:
+            Keyword arguments for :class:`SpacegroupAnalyzer`.
 
     Returns:
-        Structure
+        Structure:
+          The primitive cell reduced from the input structure.
     """
     sa = SpacegroupAnalyzer(prim, **kwargs)
     # TODO: maybe we can re-define site_properties transformation
@@ -38,6 +39,7 @@ def construct_prim(bits, sublattice_sites, lattice, frac_coords, **kwargs):
     Provides a helper method to initialize a primitive cell. Of
     course, a prim cell can also be parsed directly from a given
     Structure object or file.
+
     Args:
         bits(List[List[Specie]]):
             Allowed species on each sublattice. No sorting
@@ -49,12 +51,12 @@ def construct_prim(bits, sublattice_sites, lattice, frac_coords, **kwargs):
             Lattice of the primitive cell.
         frac_coords(ArrayLike):
             Fractional coordinates of sites.
-        kwargs:
-            Keyword arguments for SpacegroupAnalyzer.
+        **kwargs:
+            Keyword arguments for :class:`SpacegroupAnalyzer`.
 
     Returns:
-        a reduced primitive cell (not necessarily charge neutral):
-            Structure
+        Structure:
+            A reduced primitive cell (not necessarily charge neutral).
     """
     n_sites = len(frac_coords)
     if not np.allclose(
@@ -95,8 +97,7 @@ def get_prim_specs(prim):
             and species concentrations are considered the same sub-lattice!
     Returns:
         dict:
-           a spec dict containing bits, sub-lattice sites,
-           sub-lattice sizes, and more.
+           A specification dictionary of the cluster expansion space.
     """
     unique_spaces = sorted(set(get_site_spaces(prim)))
 
@@ -149,15 +150,14 @@ def get_cluster_subspace(
         prim(Structure):
             Reduced primitive cell.
         charge_decorated(bool):
-            Whether to use a charge deocration in CE.
+            Whether to perform a charge decoration in CE.
         nn_distance(float):
             Nearest neighbor distance in structure, used to guess cluster cutoffs
             if argument "cutoffs" is not given.
         cutoffs(dict): optional
             Cluster cutoff diameters in Angstrom.
-            If cutoff values not given, will use a guessing from the nearest neighbor
-            distance d:
-                pair=3.5d, triplet=2d, quad=2d.
+            If cutoff values not given, will guess based on the nearest neighbor
+            distance d, such as pair=3.5d, triplet=2d, quad=2d.
             This guessing is formed based on empirical cutoffs in DRX, but not always
             good for your system. Setting your own cutoffs is highly recommended.
         use_ewald(bool): optional
@@ -167,8 +167,8 @@ def get_cluster_subspace(
         other_terms(list[ExternalTerm]): optional
             List of other external terms to be added besides the EwaldTerm. (Reserved
             for extensibility.)
-        kwargs:
-            Other keyword arguments for ClusterSubspace.from_cutoffs.
+        **kwargs:
+            Other keyword arguments of :func:`ClusterSubspace.from_cutoffs`.
 
     Returns:
         ClusterSubspace:
@@ -200,38 +200,38 @@ def process_supercell_options(d):
     Returns:
         dict:
             A dict containing supercell matrix options, including the following keys:
-        supercell_from_conventional(bool):
-            Whether to find out primitive cell to conventional
-            standard structure transformation matrix T, and enumerate
-            super-cell matrices in the form of: M = M'T.
-            Default to true. If not, will set T to eye(3).
-        objective_num_sites(int):
-            The Supercel sizes (in number of sites, both active and inactive)
-            to approach.
-            Default to 64. Enumerated super-cell size will be
-            a multiple of det(T) but the closest one to this objective
-            size.
-            Note: since super-cell matrices with too high a conditional
-            number will be dropped, do not use a super-cell size whose
-            decompose to 3 integer factors are different in scale.
-            For example, 17 = 1 * 1 * 17 is the only possible factor
-            decomposition for 17, whose matrix conditional number will
-            always be larger than the cut-off (8).
-            Currently, we only support enumerating super-cells with the
-            same size.
-        spacegroup_kwargs(dict):
-            Keyword arguments used to initialize a SpaceGroupAnalyzer.
-            Will also be used in reducing the primitive cell.
-        max_sc_condition_number(float):
-            Maximum conditional number of the supercell lattice matrix.
-            Default to 8, prevent overly slender super-cells.
-        min_sc_angle(float):
-            Minimum allowed angle of the supercell lattice.
-            Default to 30, prevent overly skewed super-cells.
-        sc_matrices(List[3*3 ArrayLike[int]]):
-            Supercell matrices. Will not enumerate super-cells if this
-            is given. Default to None. Note: if given, all supercell matrices
-            must be of the same size!
+            supercell_from_conventional(bool):
+                Whether to find out primitive cell to conventional
+                standard structure transformation matrix T, and enumerate
+                super-cell matrices in the form of: M = M'T.
+                Default to true. If not, will set T to eye(3).
+            objective_num_sites(int):
+                The Supercel sizes (in number of sites, both active and inactive)
+                to approach.
+                Default to 64. Enumerated super-cell size will be
+                a multiple of det(T) but the closest one to this objective
+                size.
+                Note: since super-cell matrices with too high a conditional
+                number will be dropped, do not use a super-cell size whose
+                decompose to 3 integer factors are different in scale.
+                For example, 17 = 1 * 1 * 17 is the only possible factor
+                decomposition for 17, whose matrix conditional number will
+                always be larger than the cut-off (8).
+                Currently, we only support enumerating super-cells with the
+                same size.
+            spacegroup_kwargs(dict):
+                Keyword arguments used to initialize a SpaceGroupAnalyzer.
+                Will also be used in reducing the primitive cell.
+            max_sc_condition_number(float):
+                Maximum conditional number of the supercell lattice matrix.
+                Default to 8, prevent overly slender super-cells.
+            min_sc_angle(float):
+                Minimum allowed angle of the supercell lattice.
+                Default to 30, prevent overly skewed super-cells.
+            sc_matrices(List[3*3 ArrayLike[int]]):
+                Supercell matrices. Will not enumerate super-cells if this
+                is given. Default to None. Note: if given, all supercell matrices
+                must be of the same size!
     """
     return {
         "supercell_from_conventional": d.get("supercell_from_conventional", True),
@@ -253,63 +253,68 @@ def process_composition_options(d):
     Returns:
         dict:
             A dict containing composition options, including the following keys:
-            charge_neutral (bool): optional
+             charge_neutral (bool): optional
                 Whether to add charge balance constraint. Default to true.
-            other_constraints:
-            (list of tuples of (1D arrayLike[float], float, str) or str): optional
+             other_constraints(list): optional
                 Other composition constraints to be applied to restrict the
-                enumerated compositions.
-                Allows two formats for each constraint in the list:
-                    1, A string that encodes the constraint equation.
-                    For example: "2 Ag+(0) + Cl-(1) +3 H+(2) <= 3 Mn2+ +4".
-                       A string representation of constraint must satisfy the following
-                       rules,
-                       a, Contains a relation symbol ("==", "<=", ">=" or "=") are
-                       allowed.
-                       The relation symbol must have exactly one space before and one
-                       space after to separate the left and the right sides.
-                       b, Species strings must be readable by get_species in smol.cofe
-                       .space.domain. No space is allowed within a species string.
-                       For the format of a legal species string, refer to
-                       pymatgen.core.species and smol.cofe.
-                       c, You can add a number in brackets following a species string
-                       to specify constraining the amount of species in a particular
-                       sub-lattice. If not given, will apply the constraint to this
-                       species on all sub-lattices.
-                       This sub-lattice index label must not be separated from
-                       the species string with space or any other character.
-                       d, Species strings along with any sub-lattice index label must
-                       be separated from other parts (such as operators and numbers)
-                       with at least one space.
-                       e, The intercept terms (a number with no species that follows)
-                       must always be written at the end on both side of the equation.
-                    2, The equation expression, which is a tuple containing a list of
-                    floats of length self.n_dims to give the left-hand side coefficients
-                    of each component in the composition "counts" format, a float to
-                    give the right-hand side, and a string to specify the comparative
-                    relationship between the left- and right-hand sides. Constrained in
-                    the form of a_left @ n = (or <= or >=) b_right.
-                    The components in the left-hand side are in the same order as in
-                    itertools.chain(*self.bits).
-                Note that all numerical values in the constraints must be set as they are
-                to be satisfied per primitive cell given the sublattice_sizes!
-                For example, if each primitive cell contains 1 site in 1 sub-lattice
-                specified as sublattice_sizes=[1], with the requirement that species
-                A, B and C sum up to occupy less than 0.6 sites per sub-lattice, then
-                you must write: "A + B + C <= 0.6".
-                While if you specify sublattice_sizes=[2] in the same system per
-                primitive cell, to specify the same constraint, write
-                "A + B + C <= 1.2" or "0.5 A + 0.5 B + 0.5 C <= 0.6", etc.
-            See documentation of smol.moca.composition.space.
-        comp_enumeration_step (int): optional
-            Skip step in returning the enumerated compositions.
-            If step > 1, on each dimension of the composition space,
-            we will only yield one composition in every N compositions.
-            Default to 1.
-        compositions (2D arrayLike[int]): optional
-            Fixed compositions with which to enumerate the structures. If
-            given, will not enumerate other compositions.
-            Should be provided as the "species count"-format of CompositionSpace.
+                enumerated compositions, each allowing two formats:
+
+                #. A string that encodes the constraint equation.
+                   For example, **"2 Ag+(0) + Cl-(1) +3 H+(2) <= 3 Mn2+ +4"**.
+                   A string representation of constraint must satisfy the following
+                   rules:
+
+                   #. Contains a relation symbol ("==", "<=", ">=" or "=" are
+                      allowed). The relation symbol must have exactly one space before
+                      and one space after to separate the left and the right sides.
+                   #. Species strings must be readable by function :func:`get_species`
+                      in :mod:`smol.cofe .space.domain`.
+                      No space is allowed within a species string.
+                      For the requirements on a legal species string, refer to
+                      the documentation of :mod:`pymatgen.core.species`
+                      and :mod:`smol.cofe`.
+                   #. You can add a number in brackets following a species string
+                      to specify constraining the amount of species in a particular
+                      sub-lattice. If not given, will apply the constraint to this
+                      species on all sub-lattices.
+                      This sub-lattice index label must not be separated from
+                      the species string with space or any other character.
+                   #. Species strings along with any sub-lattice index label must
+                      be separated from other parts (such as operators and numbers)
+                      with at least one space.
+                   #. The intercept terms (a number with no species that follows)
+                      must always be written at the end on both side of the equation.
+
+                #. The equation expression, which is a tuple containing a list of
+                   floats of length self.n_dims to give the left-hand side coefficients
+                   of each component in the composition "counts" format, a float to
+                   give the right-hand side, and a string to specify the comparative
+                   relationship between the left- and right-hand sides. Constrained in
+                   the form of a_left @ n = (or <= or >=) b_right.
+                   The components in the left-hand side are in the same order as
+                   outlined by :func:`itertools.chain`.
+
+                .. note:: All numerical values in the constraints must be set as they are
+                 to be satisfied per primitive cell given the sublattice_sizes!
+                 For example, if each primitive cell contains 1 site in 1 sub-lattice
+                 specified as sublattice_sizes=[1], with the requirement that species
+                 A, B and C sum up to occupy less than 0.6 sites per sub-lattice, then
+                 you must write: "A + B + C <= 0.6".
+                 While if you specify sublattice_sizes=[2] in the same system per
+                 primitive cell, to specify the same constraint, write
+                 "A + B + C <= 1.2" or "0.5 A + 0.5 B + 0.5 C <= 0.6", etc.
+
+                See documentation of :mod:`smol.moca.composition`.
+             comp_enumeration_step (int): optional
+                Skip step in returning the enumerated compositions.
+                If step > 1, on each dimension of the composition space,
+                we will only yield one composition in every N compositions.
+                Default to 1.
+             compositions (2D arrayLike[int]): optional
+                Fixed compositions with which to enumerate the structures. If
+                given, will not enumerate other compositions.
+                Should be provided as the "species count" format,
+                see :mod:`smol.moca.composition`.
     """
     return {
         "comp_enumeration_step": d.get("comp_enumeration_step", 1),
@@ -329,40 +334,40 @@ def process_structure_options(d):
     Returns:
         dict:
             A dict containing structure options, including the following keys:
-        num_structs_per_iter_init (int):
-            Number of new structures to enumerate in the first iteration.
-            It is recommended that in each iteration, at least 2~3
-            structures are added for each composition.
-            Default is 60.
-        num_structs_per_iter_add (int):
-            Number of new structures to enumerate in each followed iteration.
-            Default is 40.
-        sample_generator_kwargs(Dict):
-            kwargs of CanonicalSampleGenerator.
-        init_method(str):
-            Structure selection method in the first iteration.
-            Default is "leverage". Allowed options include: "leverage" and
-            "random".
-        add_method(str):
-            Structure selection method in subsequent iterations.
-            Default is 'leverage'. Allowed options are: 'leverage'
-            and 'random'.
-        duplicacy_criteria(str):
-            The criteria when to consider two structures as the same and
-            old to add one of them into the candidate training set.
-            Default is "correlations", which means to assert duplication
-            if two structures have the same correlation vectors. While
-            "structure" means two structures must be symmetrically equivalent
-            after being reduced. No other option is allowed.
-            Note that option "structure" might be significantly slower since
-            it has to attempt reducing every structure to its primitive cell
-            before matching. It should be used with caution.
-        n_parallel(int): optional
-            Number of generators to run in parallel. Default is to use
-            a quarter of cpu count.
-        keep_ground_states(bool):
-            Whether always to add new ground states to the training set.
-            Default to True.
+            num_structs_per_iter_init (int):
+                Number of new structures to enumerate in the first iteration.
+                It is recommended that in each iteration, at least 2~3
+                structures are added for each composition.
+                Default is 60.
+            num_structs_per_iter_add (int):
+                Number of new structures to enumerate in each followed iteration.
+                Default is 40.
+            sample_generator_kwargs(Dict):
+                kwargs of CanonicalSampleGenerator.
+            init_method(str):
+                Structure selection method in the first iteration.
+                Default is "leverage". Allowed options include: "leverage" and
+                "random".
+            add_method(str):
+                Structure selection method in subsequent iterations.
+                Default is 'leverage'. Allowed options are: 'leverage'
+                and 'random'.
+            duplicacy_criteria(str):
+                The criteria when to consider two structures as the same and
+                old to add one of them into the candidate training set.
+                Default is "correlations", which means to assert duplication
+                if two structures have the same correlation vectors. While
+                "structure" means two structures must be symmetrically equivalent
+                after being reduced. No other option is allowed.
+                Note that option "structure" might be significantly slower since
+                it has to attempt reducing every structure to its primitive cell
+                before matching. It should be used with caution.
+            n_parallel(int): optional
+                Number of generators to run in parallel. Default is to use
+                a quarter of cpu count.
+            keep_ground_states(bool):
+                Whether always to add new ground states to the training set.
+                Default to True.
     """
     return {
         "num_structs_per_iter_init": d.get("num_structs_per_iter_init", 60),
@@ -386,53 +391,55 @@ def process_calculation_options(d):
     Returns:
         dict:
             A dict containing calculation options, including the following keys:
-        apply_strain(3*3 ArrayLike or 1D ArrayLike[float] of 3):
-            Strain matrix to apply to the structure before relaxation,
-            in order to break structural symmetry of forces.
-            Default is [1.03, 1.02, 1.01], which means to
-            stretch the structure by 3%, 2% and 1% along a, b, and c
-            directions, respectively.
-        relax_generator_kwargs(dict):
-            Additional arguments to pass into an atomate2
-            VaspInputGenerator that is used to initialize RelaxMaker.
-            This is where the pymatgen vaspset arguments should go.
-        relax_maker_kwargs(dict):
-            Additional arguments to initialize an atomate2 RelaxMaker.
-            Not frequently used.
-        add_tight_relax(bool):
-            Whether to add a tight relaxation job after a coarse
-            relaxation. Default to True.
-            You may want to disable this if your system has
-            difficulty converging forces or energies.
-        tight_generator_kwargs(dict):
-            Additional arguments to pass into an atomate2 VaspInputGenerator
-            that is used to initialize TightRelaxMaker.
-            This is where the pymatgen vaspset arguments should go.
-        tight_maker_kwargs(dict):
-            Additional arguments to pass into an atomate2
-            TightRelaxMaker. A tight relax is performed after
-            relaxation, if add_tight_relax is True.
-            Not frequently used.
-       static_generator_kwargs(dict):
-            Additional arguments to pass into an atomate2
-            VaspInputGenerator that is used to initialize StaticMaker.
-            This is where the pymatgen vaspset arguments should go.
-        static_maker_kwargs(dict):
-            Additional arguments to pass into an atomate2
-            StaticMaker.
-            Not frequently used.
-        other_properties(list[(str, str)| str]): optional
-            Other property names beyond "energy" and "uncorrected_energy"
-            to be retrieved from taskdoc and recorded into the wrangler,
-             and the query string to retrieve them, paired in tuples.
-            If only strings are given, will also query with the given
-            string.
-            For the rules in writing the query string, refer to utils.query.
-            By default, will not record any other property.
-        Refer to the atomate2 documentation for more information.
-        Note: the default vasp sets in atomate 2 are not specifically
-        chosen for specific systems. Using your own vasp set input
-        settings is highly recommended!
+             apply_strain(3*3 ArrayLike or 1D ArrayLike[float] of three numbers):
+                Strain matrix to apply to the structure before relaxation,
+                in order to break structural symmetry of forces.
+                Default is [1.03, 1.02, 1.01], which means to
+                stretch the structure by 3%, 2% and 1% along a, b, and c
+                directions, respectively.
+             relax_generator_kwargs(dict):
+                Additional arguments to pass into an :mod:`atomate2`
+                class :class:`VaspInputGenerator` that is used to specify
+                a :class:`RelaxMaker`.
+                This is where the :mod:`pymatgen` VASP set arguments should go.
+             relax_maker_kwargs(dict):
+                Additional arguments to initialize an :mod:`atomate2`
+                class :class:`RelaxMaker`. **Not frequently used**.
+             add_tight_relax(bool):
+                Whether to add a tight relaxation job after a coarse
+                relaxation. Default to True.
+                You may want to disable this if your system has
+                difficulty converging forces or energies.
+             tight_generator_kwargs(dict):
+                Additional arguments to pass into an :mod:`atomate2`
+                class :class:`VaspInputGenerator`
+                that is used to initialize a :class:`TightRelaxMaker`.
+                This is where the :mod:`pymatgen` VASP set arguments should go.
+             tight_maker_kwargs(dict):
+                Additional arguments to pass into an :mod:`atomate2`
+                class :class:`TightRelaxMaker`. A tight relax is performed after
+                relaxation, if add_tight_relax is True. **Not frequently used**.
+             static_generator_kwargs(dict):
+                Additional arguments to pass into an :mod:`atomate2`
+                class :class:`VaspInputGenerator` that is used to initialize
+                a :class:`StaticMaker`.
+                This is where the :mod:`pymatgen` VASP set arguments should go.
+             static_maker_kwargs(dict):
+                Additional arguments to pass into an :mod:`atomate2`
+                :class:`StaticMaker`. **Not frequently used**.
+             other_properties(list[(str, str)| str]): optional
+                Other property names beyond "energy" and "uncorrected_energy"
+                to be retrieved from :class:`TaskDoc` and recorded into the wrangler,
+                and the query string to retrieve them, paired in tuples.
+                If only strings are given, will also query with the given
+                string.
+                For the rules in writing the query string, refer
+                to :mod:`WFacer.utils.query`.
+                By default, will not record any other property beyond energy.
+            Refer to :mod:`atomate2` documentation for more information.
+             .. note:: the default VASP sets in :mod:`atomate2` are not specifically
+              chosen for specific systems. Using your own VASP input settings
+              is highly recommended!
     """
     strain_before_relax = d.get("apply_strain", [1.03, 1.02, 1.01])
     strain_before_relax = np.array(strain_before_relax)
@@ -469,15 +476,16 @@ def process_decorator_options(d):
     Returns:
         dict:
             A dict containing calculation options, including the following keys:
-        decorator_types(list(str)): optional
-            Name of decorators to use for each property. If None, will
-            choose the first one in all implemented decorators
-            (see specie_decorators module).
-        decorator_kwargs(list[dict]): optional
-            Arguments to pass into each decorator. See the doc of each specific
-            decorator.
-        decorator_train_kwargs(list[dict]): optional
-            Arguments to pass into each decorator when calling decorator.train.
+             decorator_types(list(str)): optional
+                Name of decorators to use for each property. If None, will
+                choose the first one in all implemented decorators
+                (see :mod:`WFacer.specie_decorators`).
+             decorator_kwargs(list[dict]): optional
+                Arguments to pass into each decorator. See the documentation
+                of each specific decorator for its usage.
+             decorator_train_kwargs(list[dict]): optional
+                Arguments to pass into each decorator when calling
+                the function :func:`decorator.train`.
     """
     # Update these pre-processing rules when necessary,
     # if you have new decorators implemented.
@@ -520,20 +528,21 @@ def process_subspace_options(d):
     Returns:
         dict:
             A dict containing fit options, including the following keys:
-        cutoffs(dict{int: float}):
-            Cluster cutoff diameters of each type of clusters. If not given,
-            will guess with nearest neighbor distance in the structure.
-            Setting your own is highly recommended.
-        use_ewald(bool):
-            Whether to use the EwaldTerm as an ExternalTerm in the cluster
-            space. Only available when the expansion is charge decorated.
-            Default to True.
-        ewald_kwargs(dict):
-            Keyword arguments used to initialize EwaldTerm.
-            Note: Other external terms than ewald term not supported yet.
-        from_cutoffs_kwargs(dict):
-            Other keyword arguments to be used in ClusterSubspace.from_cutoffs,
-            for example, the cluster basis type. Check smol.cofe for detail.
+             cutoffs(dict{int: float}):
+                Cluster cutoff diameters of each type of clusters. If not given,
+                will guess with nearest neighbor distance in the structure.
+                Setting your own is highly recommended.
+             use_ewald(bool):
+                Whether to use the :class:`EwaldTerm` as an external term in the cluster
+                space. Only available when the expansion is charge decorated.
+                Default to True.
+             ewald_kwargs(dict):
+                Keyword arguments used to initialize EwaldTerm.
+                Note: Other external terms than ewald term not supported yet.
+             from_cutoffs_kwargs(dict):
+                Other keyword arguments to be used in
+                the function :func:`ClusterSubspace.from_cutoffs`.
+                For example, the cluster basis type.
     """
     return {
         "cutoffs": d.get("cutoffs", None),
@@ -553,39 +562,40 @@ def process_fit_options(d):
     Returns:
         dict:
             A dict containing fit options, including the following keys:
-        estimator_type(str):
-            The name of an estimator class in sparce-lm. Default to
-            'Lasso'.
-        use_hierarchy(str):
-            Whether to use hierarchy in regularization fitting, when
-            estimator type is mixedL0. Default to True.
-        center_point_external(bool): optional
-            Whether to fit the point and external terms with linear regression
-            first, then fit the residue with regressor. Default to None, which means
-            when the feature matrix is full rank, will not use centering, otherwise
-            centers. If set to True, will force centering, but use at your own risk
-            because this may cause very large CV. If set to False, will never use
-            centering.
-        filter_unique_correlations(bool):
-            If the wrangler have structures with duplicated correlation vectors,
-            whether to fit with only the one with the lowest energy.
-            Default to True.
-        estimator_kwargs(dict):
-            Other keyword arguments to pass in when constructing an
-            estimator. See sparselm.models
-        optimizer_type(str):
-            The name of optimizer class used to optimize model hyperparameters
-            over cross validation. Default is None. Supports "grid-search-CV" and
-            "line-search-CV" optimizers. See sparselm.model_selection.
-        param_grid(dict|list(tuple)):
-            Parameters grid to search for estimator hyperparameters.
-            See sparselm.optimizer.
-        optimizer_kwargs(dict):
-            Keyword arguments when constructing GridSearch or LineSearch class.
-            See sparselm.optimizer.
-        fit_kwargs(dict):
-            Keyword arguments when calling GridSearch/LineSearch/Estimator.fit.
-            See docs of the specific estimator.
+             estimator_type(str):
+                The name of an estimator class in :mod:`sparce-lm`. Default to
+                'Lasso'.
+             use_hierarchy(str):
+                Whether to use hierarchy in regularization fitting, when
+                estimator belongs to :class:`mixedL0`. Default to True.
+             center_point_external(bool): optional
+                Whether to fit the point and external terms with linear regression
+                first, then fit the residue with regressor. Default to None, which means
+                when the feature matrix is full rank, will not use centering, otherwise
+                centers.
+                If set to True, will force centering, but use at your own risk
+                because this may cause very large CV. If set to False, will never use
+                centering.
+             filter_unique_correlations(bool):
+                If the wrangler have structures with duplicated correlation vectors,
+                whether to fit with only the one with the lowest energy.
+                Default to True.
+             estimator_kwargs(dict):
+                Other keyword arguments to pass in when constructing an
+                estimator. See :mod:`sparselm.models`.
+             optimizer_type(str):
+                The name of optimizer class used to optimize model hyperparameters
+                over cross validation. Default is None. Supports :class:`GridSearch` and
+                :class:`LineSearch` optimizers. See :mod:`sparselm.model_selection`.
+             param_grid(dict|list(tuple)):
+                Parameters grid to search for estimator hyperparameters.
+                See :mod:`sparselm.model_selection`.
+             optimizer_kwargs(dict):
+                Keyword arguments when constructing GridSearch or LineSearch class.
+                See :mod:`sparselm.model_selection`.
+             fit_kwargs(dict):
+                Keyword arguments when calling :func:`Estimator.fit`.
+                Refer to the documentation of the specific estimator.
     """
     return {
         "estimator_type": d.get("estimator_type", "lasso"),
@@ -616,40 +626,43 @@ def process_convergence_options(d):
     Returns:
         dict:
             A dict containing convergence options, including the following keys:
-        cv_tol(float): optional
-            Maximum allowed CV value in meV per site (including vacancies).
-            (not eV per atom because some CE may contain Vacancies.)
-            Default to None, but better set it manually!
-        std_cv_rtol(float): optional
-            Maximum standard deviation of CV allowed in cross validations,
-            normalized by mean CV value.
-            Dimensionless, default to None, which means this standard deviation
-            of cv will not be checked.
-        delta_cv_rtol(float): optional
-            Maximum difference of CV allowed between the last 2 iterations,
-            divided by the standard deviation of CV in cross validation.
-            Dimensionless, default to 0.5.
-        delta_eci_rtol(float): optional
-            Maximum allowed mangnitude of change in ECIs, measured by:
-                ||J' - J||_1 | / || J' ||_1. (L1-norms)
-            Dimensionless. If not given, will not check ECI values for
-            convergence, because this may significantly increase the
-            number of iterations.
-        delta_min_e_rtol(float): optional
-            Maximum difference allowed to the predicted minimum CE and DFT energy
-            at every composition between the last 2 iterations. Dimensionless,
-            divided by the value of CV.
-            Default set to 2.
-        continue_on_finding_new_gs(bool): optional
-            If true, whenever a new ground-state structure is detected (
-            symmetrically distinct), the CE iteration will
-            continue even if all other criterion are satisfied.
-            Default to False because this may also increase the
-            number of iterations.
-        max_iter(int): optional
-            Maximum number of iterations allowed. Will not limit number
-            of iterations if set to None, but setting one limit is still
-            recommended. Default to 10.
+             cv_tol(float): optional
+                Maximum allowed CV value in meV per site (including vacancies).
+                (not eV per atom because some CE may contain Vacancies.)
+                Default to None, but better set it manually!
+             std_cv_rtol(float): optional
+                Maximum standard deviation of CV allowed in cross validations,
+                normalized by mean CV value.
+                Dimensionless, default to None, which means this standard deviation
+                of cv will not be checked.
+             delta_cv_rtol(float): optional
+                Maximum difference of CV allowed between the last 2 iterations,
+                divided by the standard deviation of CV in cross validation.
+                Dimensionless, default to 0.5.
+             delta_eci_rtol(float): optional
+                Maximum allowed mangnitude of change in ECIs, measured by:
+
+                .. math::
+                    ||J' - J||_1 | / || J' ||_1.
+
+                Dimensionless. If not given, will not check ECI values for
+                convergence, because this may significantly increase the
+                number of iterations required to converge.
+             delta_min_e_rtol(float): optional
+                Maximum difference allowed to the predicted minimum CE and DFT energy
+                at every composition between the last 2 iterations. Dimensionless,
+                divided by the value of CV.
+                Default set to 2.
+             continue_on_finding_new_gs(bool): optional
+                If true, whenever a new ground-state structure is detected (
+                symmetrically distinct), the CE iteration will
+                continue even if all other criterion are satisfied.
+                Default to False because this may also increase the
+                number of iterations.
+             max_iter(int): optional
+                Maximum number of iterations allowed. Will not limit number
+                of iterations if set to None, but setting one limit is still
+                recommended. Default to 10.
     """
     return {
         "cv_tol": d.get("cv_tol"),
@@ -663,18 +676,20 @@ def process_convergence_options(d):
 
 
 def get_initial_ce_coefficients(cluster_subspace):
-    """Initialize null ce coefficients.
+    """Initialize a set of null CE coefficients.
 
-    Any coefficient, except those for external terms, will be initialized to 0.
+    Any coefficient, except those for external terms, will be initialized as 0.
     This guarantees that for ionic systems, structures with lower ewald energy
     are always selected first.
+    External term coefficients are initialized as 1.
 
     Args:
         cluster_subspace(ClusterSubspace):
             The initial cluster subspace.
 
     Returns:
-        np.ndarray[float].
+        np.ndarray[float]:
+          Initialized CE coefficients
     """
     return np.array(
         [0 for _ in range(cluster_subspace.num_corr_functions)]

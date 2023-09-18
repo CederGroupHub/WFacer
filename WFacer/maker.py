@@ -1,4 +1,4 @@
-"""Automatic jobflow maker."""
+"""Automatic cluster expansion workflow maker."""
 from dataclasses import dataclass, field
 from warnings import warn
 
@@ -16,7 +16,7 @@ from .jobs import (
 
 @job
 def ce_step_trigger(last_ce_document):
-    """Trigger a step in CE iteration.
+    """Triggers a CE iteration.
 
     Args:
         last_ce_document(CeOutputsDocument):
@@ -25,7 +25,7 @@ def ce_step_trigger(last_ce_document):
 
     Returns:
         Response:
-            Either a CeOutputsDocument if converged, or a
+            A :class:`CeOutputsDocument` if converged, or a
             response to replace with another step.
     """
     iter_id = last_ce_document.last_iter_id + 1
@@ -124,7 +124,7 @@ class AutoClusterExpansionMaker(Maker):
 
         Returns:
             Flow:
-                The iterative cluster expansion workflow.
+                The iterative automatic cluster expansion workflow.
         """
         if last_document is None:
             initialize = initialize_document_job(

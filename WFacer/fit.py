@@ -27,30 +27,32 @@ def fit_ecis_from_wrangler(
 ):
     """Fit ECIs from a fully processed wrangler.
 
-    No weights will be used.
+    .. note:: Currently, this function does not support adjusting sample weights.
 
     Args:
         wrangler(CeDataWrangler):
-            A CeDataWrangler storing all training structures.
+            A :class:`CeDataWrangler` to store all training structures.
         estimator_name(str):
             The name of estimator, following the rules in
-            smol.utils.class_name_from_str.
+            :mod:`smol.utils.class_name_from_str`.
         optimizer_name(str):
-            Name of hyperparameter optimizer. Currently, only supports GridSearch and
-            LineSearch.
+            The name of hyperparameter optimizer. Currently, only supports
+            :class:`GridSearch` and :class:`LineSearch` from :mod:`sparse-lm`.
         param_grid(dict|list[tuple]):
-            Parameter grid to initialize the optimizer. See docs of
-            sparselm.model_selection.
+            Parameter grid to initialize the optimizer. See documentation of
+            :mod:`sparselm.model_selection`.
         use_hierarchy(bool): optional
             Whether to use cluster hierarchy constraints when available. Default to
             true.
         center_point_external(bool): optional
-            Whether to fit the point and external terms with linear regression
-            first, then fit the residue with regressor. Default to None, which means
-            when the feature matrix is full rank, will not use centering, otherwise
-            centers. If set to True, will force centering, but use at your own risk
-            because this may cause very large CV. If set to False, will never use
-            centering.
+            Whether to perform centering operation, which means to fit the point and
+            the external terms using linear regression first, then fit the residue
+            with the specified regressor. Default to None, which means
+            when the feature matrix is full-ranked, will not use centering, otherwise
+            will perform centering.
+            If set to True, will always use centering, but use at your own risk
+            because this may cause very large CV when the feature matrix is full rank.
+            If set to False, will never perform centering.
         filter_unique_correlations(bool):
             If the wrangler have structures with duplicated correlation vectors,
             whether to fit with only the one with the lowest energy.
@@ -59,8 +61,9 @@ def fit_ecis_from_wrangler(
             Other keyword arguments to initialize an estimator.
         optimizer_kwargs(dict): optional
             Other keyword arguments to initialize an optimizer.
-        kwargs:
-            Keyword arguments used by estimator._fit. For example, solver arguments.
+        **kwargs**:
+            Keyword arguments used by the estimator._fit method.
+            For example, solver specifications.
 
     Returns:
         Estimator, 1D np.ndarray, float, float, float, 1D np.ndarray:

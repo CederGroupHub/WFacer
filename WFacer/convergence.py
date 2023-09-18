@@ -9,16 +9,16 @@ from .utils.convex_hull import get_min_energy_structures_by_composition
 def compare_min_energy_structures_by_composition(min_e1, min_e2, matcher=None):
     """Compare minimum energy and structure by composition for convergence check.
 
-     We will only compare keys that exist in both older and newer iterations.
-     If one composition appears in the older one but not the newer one, we will not
-     claim convergence.
+    We will only compare keys that exist in both older and newer iterations.
+    If one composition appears in the older one but not the newer one, we will not
+    claim convergence.
 
     Args:
         min_e1 (defaultdict):
             Minimum energies and structures from an earlier iteration.
         min_e2 (defaultdict):
             Minimum energies and structures from a later iteration.
-            See docs in WFacer.wrangling.
+            See documentation of :mod:`WFacer.wrangling`.
         matcher (StructureMatcher): optional
             A StructureMatcher used compare structures.
             wrangler.cluster_subspace._site_matcher is recommended.
@@ -56,7 +56,10 @@ def compare_fitted_coefs(cluster_subspace, coefs_prev, coefs_now):
 
     Returns:
         float:
-            || ECI' - ECI ||_1 / ||ECI||_1.
+            :math:`|| J' - J ||_1 / ||J||_1`,
+            where :math:`J` represents the coefficients from the last
+            iteration and :math:`J'` represents coefficients from the
+            current iteration.
     """
     # Get ECIs from coefficients.
     eci_prev = ClusterExpansion(cluster_subspace, coefficients=coefs_prev).eci
