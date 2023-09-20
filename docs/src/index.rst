@@ -18,9 +18,30 @@
 WorkFlow for Automated Cluster Expansion Regression (WFacer)
 ============================================================
 
-*Modulated automation of cluster expansion model construction based on atomate2 and Jobflow*
+*Modulated automation of cluster expansion model fitting based on atomate2 and Jobflow*
 
 **************
+
+.. |test| image:: https://github.com/CederGroupHub/WFacer/actions/workflows/test.yml/badge.svg
+   :target: https://github.com/CederGroupHub/WFacer/actions/workflows/test.yml
+
+.. |codacy_grade| image:: https://app.codacy.com/project/badge/Grade/3385a15764b144589ef993b942b2a159
+   :target: https://app.codacy.com/gh/CederGroupHub/WFacer/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
+
+.. |codacy_coverage| image:: https://app.codacy.com/project/badge/Coverage/3385a15764b144589ef993b942b2a159
+   :target: https://app.codacy.com/gh/CederGroupHub/WFacer/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage
+
+.. |precommit| image:: https://results.pre-commit.ci/badge/github/CederGroupHub/WFacer/main.svg
+   :target: https://results.pre-commit.ci/latest/github/CederGroupHub/WFacer/main
+
+.. |pypi_version| image:: https://img.shields.io/pypi/v/WFacer?color=blue
+   :target: https://pypi.org/project/WFacer
+
+.. |static_badge| image:: https://img.shields.io/badge/python-3.8%2B-blue
+   :target: https://www.python.org/downloads/
+
+|test| |codacy_grade| |codacy_coverage| |precommit| |pypi_version| |static_badge|
+
 
 WFacer ("Wall"Facer) is a light-weight package based on `smol <https://github.com/CederGroupHub/smol.git>`_
 to automate the fitting of lattice models in disordered crystalline solids using
