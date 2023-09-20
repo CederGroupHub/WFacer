@@ -11,16 +11,18 @@ from .query import get_property_from_object
 
 
 def _merge_computed_structure_entry(entry, structure):
-    """Merge structure into ComputedEntry.
+    """Merge a structure into :class:`ComputedEntry`.
 
     Args:
         entry(ComputedEntry):
-            A computed Entry given by taskdoc.
+            A computed Entry extracted from a :class:`TaskDoc`.
         structure(Structure):
-            A structure given by taskdoc.
+            A structure from the same :class:`TaskDoc`.
 
     Return:
-        ComputedStuctureEntry.
+        ComputedStuctureEntry:
+            A :class:`ComputedStructureEntry` created from
+            class :class:`ComputedEntry`.
     """
     return ComputedStructureEntry(
         structure,
@@ -35,12 +37,12 @@ def _merge_computed_structure_entry(entry, structure):
 
 
 def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=None):
-    """Get the computed structure entry from taskdoc.
+    """Get the computed structure entry from :class:`TaskDoc`.
 
     Args:
         taskdoc(TaskDoc):
             A task document generated as vasp task output by emmet-core.
-        property_and_queries(list[(str, str)|str]): optional
+        property_and_queries(list of (str, str) or str): optional
             A list of property names to be retrieved from taskdoc,
             and the query string to retrieve them, paired in tuples.
             If only strings are given, will also query with the given
@@ -48,7 +50,7 @@ def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=N
             These are properties that you wish to record besides
             "energy" and "uncorrected_energy", etc. By default,
             will not record any other property.
-        decorator_names(list[str]): optional
+        decorator_names(list of str): optional
             The name of decorators used in this CE workflow, used to
             determine what site properties to retrieve from
             TaskDoc and to include in the returned entry.
@@ -57,7 +59,7 @@ def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=N
         ComputedStructureEntry, dict:
             The computed structure entry, with each site having the site
             property required by decorator, and the properties
-            dict for insertion into CeDataWangler.
+            dict ready to be inserted into a :class:`CeDataWangler`.
     """
     # Final optimized structure.
     structure = taskdoc.structure

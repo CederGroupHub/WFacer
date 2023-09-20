@@ -1,10 +1,10 @@
 """This module implements a StructureEnumerator class for CE sampling.
 
-Algorithm based on:
+The algorithm is based on the work of
+`A. Seko et al <https://doi.org/10.1103/PhysRevB.80.165122>`_.
 
-Ground state structures will also be added to the structure pool, but
-they are not added here. They will be added in the convergence checker
-module.
+Ground state structures will also be included in the structure pool if not
+included yet.
 """
 
 __author__ = "Fengyu Xie"
@@ -26,7 +26,7 @@ from .utils.selection import select_added_rows, select_initial_rows
 from .utils.supercells import get_three_factors, is_duplicate_sc
 
 
-# TODO: in the future, may employ mcsqs type algos.
+# TODO: in the future, may employ mcsqs-like algos.
 def enumerate_matrices(
     objective_sc_size,
     cluster_subspace,
@@ -44,12 +44,14 @@ def enumerate_matrices(
         objective_sc_size(int):
             Objective supercell size in the number of primitive cells.
             Better be a multiple of det(conv_mat).
-        cluster_subspace(smol.ClusterSubspace):
+        cluster_subspace(ClusterSubspace):
             The cluster subspace. cluster_subspace.structure must
             be pre-processed such that it is the true primitive cell
             in under its space group symmetry.
-            Note: The cluster_subspace.structure must be reduced to a
-            primitive cell!
+
+            .. note:: The structure of :class:`ClusterSubspace` must be reduced to a
+             primitive cell!
+
         supercell_from_conventional(bool): optional
             Whether to enumerate supercell matrices in the form M@T, where
             M is an integer matrix, T is the primitive to conventional cell
@@ -61,11 +63,12 @@ def enumerate_matrices(
         min_sc_angle(float):
             Minimum allowed angle of the supercell lattice. By default, set
             to 30, to prevent over-skewing.
-        kwargs:
-            keyword arguments to pass into SpaceGroupAnalyzer.
+        **kwargs:
+            keyword arguments to pass into :class:`SpaceGroupAnalyzer`.
 
     Returns:
-        List of 2D lists.
+        list of 2D lists:
+          Enumerated super-cell matrices.
     """
     if not supercell_from_conventional:
         conv_mat = np.eye(3, dtype=int)
@@ -184,7 +187,8 @@ def truncate_cluster_subspace(cluster_subspace, sc_matrices):
             Enumerated super-cell matrices.
 
     Returns:
-        ClusterSubspace: truncated subspace without aliased orbits.
+        ClusterSubspace:
+            The truncated cluster subspace without aliasing orbits.
     """
     alias = []
     for m in sc_matrices:
@@ -221,30 +225,31 @@ def enumerate_compositions_as_counts(
 ):
     """Enumerate compositions in a given supercell size.
 
-    Results will be returned in "counts" format
-    (see smol.moca.CompositionSpace).
+    Results will be returned in "counts" format,
+    see documentation of :mod:`smol.moca.composition` for details.
 
     Args:
         sc_size(int):
             The super-cell size in the number of prim cells.
         comp_space(CompositionSpace): optional
-            Composition space in a primitive cell. If not given,
-            arguments "bits" and "sublattice_sizes" must be given.
-        bits(List[List[Species|DummySpecies|Element|Vacancy]]):
+            Composition space in a primitive cell. If not given, the
+            arguments **bits** and **sublattice_sizes** must be given.
+        bits(list of Lists of Species or DummySpecies or Element or Vacancy):
             Allowed species on each sub-lattice.
-        sublattice_sizes(List[int]):
-            Number of sites in each sub-lattice in a prim cell.
+        sublattice_sizes(list of int):
+            The number of sites in each sub-lattice in a prim cell.
         comp_enumeration_step(int):
             Step in returning the enumerated compositions.
             If step = N > 1, on each dimension of the composition space,
             we will only yield one composition every N compositions.
             Default to 1.
-        kwargs:
-            Other keyword arguments to initialize CompositionSpace.
+        **kwargs:
+            Other keyword arguments used to initialize a :class:`CompositionSpace`.
 
     Returns:
-        Enumerated possible compositions in "counts" format, not normalized:
-            2D np.ndarray[int]
+        2D np.ndarray of int:
+             Enumerated possible compositions in "counts" format
+             (**NOT** normalized by supercell size).
     """
     if comp_space is None:
         if bits is None or sublattice_sizes is None:
@@ -271,7 +276,7 @@ def enumerate_compositions_as_counts(
 def get_num_structs_to_sample(
     all_counts, num_structs_select, scale=3, min_num_per_composition=2
 ):
-    """Get number of structures to sample in each McSampleGenerator.
+    """Get number of structures to sample in each :class:`McSampleGenerator`.
 
     Args:
         all_counts(ArrayLike):
@@ -390,18 +395,18 @@ def generate_training_structures(
         ce(ClusterExpansion):
             ClusterExpansion object initialized as null. If charge decorated,
             will contain an ewald contribution at 100%
-        enumerated_matrices(list[3*3 ArrayLike[int]]):
+        enumerated_matrices(list of 3*3 ArrayLike of int):
             Previously enumerated supercell matrices. Must be the same super-cell
             size.
-        enumerated_counts(list[1D ArrayLike]):
+        enumerated_counts(list of 1D ArrayLike):
             Previously enumerated compositions in "counts" format. Must fit in
             the super-cell size.
             Note: Different super-cell sizes not supported!
-        previous_sampled_structures(list[Structure]): optional
+        previous_sampled_structures(list of Structure): optional
             Sample structures already calculated in past iterations.
             If given, that means you will add structures to an existing
             training set.
-        previous_feature_matrix(list[list[[float]]): optional
+        previous_feature_matrix(list of lists of float): optional
             Correlation vectors of structures already calculated in past iterations.
         keep_ground_states(bool): optional
             Whether always to include the electrostatic ground states.
@@ -421,18 +426,20 @@ def generate_training_structures(
         duplicacy_criteria(str):
             The criteria when to consider two structures as the same and
             old to add one of them into the candidate training set.
-            Default is "correlations", which means to assert duplication
-            if two structures have the same correlation vectors. While
-            "structure" means two structures must be symmetrically equivalent
-            after being reduced. No other option is allowed.
-            Note that option "structure" might be significantly slower since
-            it has to attempt reducing every structure to its primitive cell
-            before matching. It should be used with caution.
-        kwargs:
-            Keyword arguments for utils.selection.select_initial_rows.
+
+            #. (Default) "correlations", which means to assert duplication
+               if two structures have the same correlation vectors.
+            #. "structure" means two structures must be symmetrically equivalent
+               after being reduced. No other option is allowed.
+
+            .. note:: The option "structure" could be considerably slower as
+             it attempts to reduce every structure into a primitive cell
+             before matching. Used with caution!
+        **kwargs:
+            Keyword arguments for :func:`WFacer.utils.selection.select_initial_rows`.
 
     Returns:
-        list[Structure], list[3*3 list[list[int]]], list[list[float]]:
+        list of Structure, list of 3*3 list of lists of int, list of lists of float:
             Initial training structures, super-cell matrices,
             and normalized correlation vectors.
     """

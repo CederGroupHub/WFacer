@@ -9,24 +9,25 @@ from .utils.convex_hull import get_min_energy_structures_by_composition
 def compare_min_energy_structures_by_composition(min_e1, min_e2, matcher=None):
     """Compare minimum energy and structure by composition for convergence check.
 
-     We will only compare keys that exist in both older and newer iterations.
-     If one composition appears in the older one but not the newer one, we will not
-     claim convergence.
+    We will only compare keys that exist in both older and newer iterations.
+    If one composition appears in the older one but not the newer one, we will not
+    claim convergence.
 
     Args:
         min_e1 (defaultdict):
             Minimum energies and structures from an earlier iteration.
         min_e2 (defaultdict):
             Minimum energies and structures from a later iteration.
-            See docs in WFacer.wrangling.
+            See documentation of :mod:`WFacer.wrangling`.
         matcher (StructureMatcher): optional
             A StructureMatcher used compare structures.
             wrangler.cluster_subspace._site_matcher is recommended.
 
-    Return:
+    Returns:
         float, bool:
-            maximum energy difference in eV/site,
-            and whether a new ground state structure appeared.
+            The maximum energy difference compared across compositions
+            (unit: eV/site), and whether a new ground-state structure
+            has appeared.
     """
     diffs = []
     matches = []
@@ -48,15 +49,18 @@ def compare_fitted_coefs(cluster_subspace, coefs_prev, coefs_now):
     Args:
         cluster_subspace(ClusterSubspace):
             The cluster subspace used in fitting.
-        coefs_prev(1d arrayLike):
+        coefs_prev(1D ArrayLike):
             Cluster coefficients fitted in the previous iteration.
-            Not ECIs because not divided by multiplicity!
-        coefs_now(1d arrayLike):
+            They are not ECIs as they are not divided by multiplicity!
+        coefs_now(1D ArrayLike):
             Cluster coefficients fitted in the latest iteration.
 
     Returns:
         float:
-            || ECI' - ECI ||_1 / ||ECI||_1.
+            :math:`|| J' - J ||_1 / ||J||_1`,
+            where :math:`J` represents the coefficients from the last
+            iteration and :math:`J'` represents coefficients from the
+            current iteration.
     """
     # Get ECIs from coefficients.
     eci_prev = ClusterExpansion(cluster_subspace, coefficients=coefs_prev).eci
@@ -71,11 +75,11 @@ def ce_converged(
     """Check whether the ce workflow has converged.
 
     Args:
-        coefs_history(list[list[float]]):
+        coefs_history(list of lists of float):
             CE coefficients from all past iterations.
-        cv_history(list[float]):
+        cv_history(list of float):
             Past cross validation errors.
-        cv_std_history(list[float]):
+        cv_std_history(list of float):
             Past cross validation standard deviations.
             The length of the first three arguments must
             be equal.
@@ -87,7 +91,8 @@ def ce_converged(
             Pre-processed convergence criterion.
 
     Returns:
-        bool.
+        bool:
+            Whether the cluster expansion has converged.
     """
     # Wrangler is not empty, but its maximum iteration index does not match the
     # last iteration.

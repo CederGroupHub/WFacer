@@ -1,4 +1,4 @@
-"""Generate random occupancy."""
+"""Random occupancy generation."""
 import numpy as np
 
 
@@ -7,10 +7,10 @@ def get_random_occupancy_from_counts(ensemble, counts):
 
     Args:
         ensemble(Ensemble):
-            An ensemble object to generate occupancy in.
+            An :class:`Ensemble` object to generate occupancy in.
         counts(1D arrayLike):
             Species composition in "counts" format.
-            See smol.moca.composition.
+            See :mod:`smol.moca.composition`.
 
     Returns:
         np.ndarray:

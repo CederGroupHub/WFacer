@@ -1,10 +1,17 @@
 """Decorate properties to a structure composed of Element.
 
+This module offers generic classes and functions for defining an algorithm
+used to map VASP calculated site properties into the label of species. For
+example, :class:`BaseDecorator`, :class:`MixtureGaussianDecorator`,
+:class:`GpOptimizedDecorator` and :class:`NoTrainDecorator`. These abstract
+classes are meant to be inherited by any decorator class that maps specific
+site properties.
+
 Currently, we can only decorate charge. Plan to allow decorating
 spin in the future updates.
 
-#Note: all entries should be re-decorated and all decorators should be
-be-retrained after each iteration.
+.. note:: All entries should be re-decorated and all decorators
+ should be retrained after an iteration.
 """
 
 __author__ = "Fengyu Xie, Julia H. Yang"
@@ -58,14 +65,15 @@ def _get_required_site_property(entry, site_id, prop_name):
 class BaseDecorator(MSONable, metaclass=ABCMeta):
     """Abstract decorator class.
 
-    1, Each decorator should only be used to decorate one property.
-    2, Currently, only supports assigning labels from one scalar site property,
-    and requires that the site property can be accessed from ComputedStructureEntry,
-    which should be sufficient for most purposes.
-    3, Can not decorate entries with partial disorder.
+    #. Each decorator should only be used to decorate one property.
+    #. Currently, only supports assigning labels from one scalar site property,
+       and requires that the site property can be accessed from
+       :class:`ComputedStructureEntry`, which should be sufficient for most
+       purposes.
+    #. Can not decorate entries with partial disorder.
     """
 
-    # Edit this as you implement new child classes.
+    # Edit these if you implement new child classes.
     decorated_prop_name = None
     required_prop_names = None
 
@@ -73,7 +81,7 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         """Initialize.
 
         Args:
-           labels(dict{str|Species:list}): optional
+           labels(dict of str or Species to list): optional
                A table of labels to decorate each element with.
                keys are species symbol, values are possible decorated property
                values, such as oxidation states, magnetic spin directions.
@@ -101,12 +109,12 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         """Group required properties on sites by species.
 
         Args:
-            entries(List[ComputedStructureEntry]):
+            entries(list of ComputedStructureEntry):
                 Entries of computed structures.
 
         Return:
-            (Entry index, site index) occupied by each species:
-            defaultdict
+            defaultdict:
+               (Entry index, site index) belonging to each species.
         """
         groups_by_species = defaultdict(lambda: [])
 
@@ -128,7 +136,8 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         If trained, will be blocked from training again.
 
         Returns:
-            bool.
+            bool:
+               Whether the model has been trained.
         """
         return
 
@@ -140,12 +149,12 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         object.
 
         Args:
-            entries(List[ComputedStructureEntry]):
+            entries(list of ComputedStructureEntry):
                 Entries of computed structures.
-            reset(Boolean): optional
+            reset(bool): optional
                 If you want to re-train the decorator model, set this value
-                to true. Otherwise, we will skip training if the model is
-                trained before. Default to false.
+                to true. Otherwise, will skip training if the model is
+                trained. Default to false.
         """
         return
 
@@ -154,15 +163,16 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         """Give decoration to entries based on trained model.
 
         If an assigned entry is not valid,
-        for example, in charge assignment, if an assigned structure is not
-        charge neutral, then this entry will be returned as None.
+        for example, in charge assignment, if a decorated structure is not
+        charge neutral, this entry will be returned as None.
 
         Args:
-            entries(List[ComputedStructureEntry]):
-                Entries of computed structures.
+            entries(list of ComputedStructureEntry):
+                Entries of computed, undecorated structures.
 
         Returns:
-            List[NoneType|ComputedStructureEntry]
+            list of NoneType or ComputedStructureEntry:
+               Entries with decorated structures or failed structures.
         """
         return
 
@@ -271,8 +281,8 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
         """Filter out entries by some criteria.
 
         Must be implemented for every decorator class.
-        For entries that does not satisfy criteria, will
-        be replaced with None.
+        The entries that fail to satisfy the specific criteria
+        defined here will be returned as None.
         """
         return entries
 
@@ -296,9 +306,9 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
 class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
     """Mixture of Gaussians (MoGs) decorator class.
 
-    Uses mixture of gaussian to label each species.
+    Uses mixture of Gaussians method to label each species.
 
-    Note: not tested yet.
+    .. note:: No test has been added for this specific class yet.
     """
 
     decorated_prop_name = None
@@ -318,7 +328,7 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
         """Initialize.
 
         Args:
-           labels(dict{str:list}): optional
+           labels(dict of str to list): optional
                A table of labels to decorate each element with.
                keys are species symbol, values are possible decorated property
                values, such as oxidation states, magnetic spin directions.
@@ -337,8 +347,8 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
                GuessChargeDecorator.
                Be sure to provide labels for all the species you wish to assign
                a property to, otherwise, you are the cause of your own error!
-           gaussian_models(dict{str|Element|Species:GaussianMixture}):
-               Gaussian models corresponding to each key in labels.
+           gaussian_models(dict of str or Element or Species to GaussianMixture):
+               Gaussian models corresponding to each key in argument **labels**.
         """
         super().__init__(labels, **kwargs)
         if gaussian_models is None:
@@ -386,7 +396,8 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
         """Determine whether the decorator has been trained.
 
         Returns:
-            bool.
+            bool:
+              Whether the model has been trained.
         """
         return all([self.is_trained_gaussian_model(m) for m in self._gms.values()])
 
@@ -397,9 +408,9 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
         object.
 
         Args:
-            entries(List[ComputedStructureEntry]):
+            entries(list of ComputedStructureEntry):
                 Entries of computed structures.
-            reset(Boolean): optional
+            reset(bool): optional
                 If you want to re-train the decorator model, set this value
                 to true. Otherwise, we will skip training if the model is
                 trained before. Default to false.
@@ -428,13 +439,12 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
         charge neutral, then this entry will be returned as None.
 
         Args:
-            entries(List[ComputedStructureEntry]):
-                Entries of computed structures.
+            entries(list of ComputedStructureEntry):
+                Entries of computed, undecorated structures.
 
         Returns:
-            Entries with structures decorated. Returns None if decoration
-            failed (not charge balanced, etc.)
-            List[NoneType|ComputedStructureEntry]
+            List of NoneType or ComputedStructureEntry:
+                Entries with decorated structures or failed structures.
         """
         if not self.is_trained:
             raise ValueError("Can not make predictions from un-trained" " models!")
@@ -489,9 +499,11 @@ class MixtureGaussianDecorator(BaseDecorator, metaclass=ABCMeta):
 class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
     """Gaussian process decorator class.
 
-    Uses Gaussian optimization process described by J. Yang
-    et.al. Can only handle decoration from a single scalar
-    property up to now.
+    Uses Gaussian optimization process described by `J. H. Yang
+    et al. <https://www.nature.com/articles/s41524-022-00818-3>`_
+
+    Up to now, this class can only take as input a single scalar
+    property per site.
     """
 
     # Edit this as you implement new child classes.
@@ -502,7 +514,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         """Initialize.
 
         Args:
-           labels(dict{str:list}): optional
+           labels(dict of str to list): optional
                A table of labels to decorate each element with.
                keys are species symbol, values are possible decorated property
                values, such as oxidation states, magnetic spin directions.
@@ -510,7 +522,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
                required property is increasing. For example, in Mn(2, 3, 4)+
                all high spin, the magnetic moments is sorted as [Mn4+, Mn3+, Mn2+],
                thus you should provide labels as {Element("Mn"):[4, 3, 2]}.
-               Keys can be either Element|Species object, or their
+               Keys can be either Element and Species object, or their
                string representations. Currently, do not support decoration
                of Vacancy.
                If you have multiple required properties, or required properties
@@ -521,7 +533,7 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
                GuessChargeDecorator.
                Be sure to provide labels for all the species you wish to assign
                a property to, otherwise, you are the cause of your own error!
-           cuts(dict{str|Species: list}): optional
+           cuts(dict of str or Species over list): optional
                Cuts to divide required property value into sectors, so as
                to decide the label they belong to. Keys are the same
                as argument "labels".
@@ -532,8 +544,9 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
                < 1.0 will be assigned label 3, and atoms with magnetic
                moment >= 1.0 will be assigned label 2.
                If provided:
-               1, Must be monotonically ascending,
-               2, Must be len(labels[key]) = len(cuts[key]) + 1 for any key.
+
+               #. Cut values must be monotonically increasing,
+               #. Must satisfy len(labels[key]) = len(cuts[key]) + 1 for any key.
         """
         super().__init__(labels, **kwargs)
         if cuts is not None:
@@ -555,7 +568,8 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         If trained, will be blocked from training again.
 
         Returns:
-            bool.
+            bool:
+                Whether the model is trained.
         """
         return self._cuts is not None
 
@@ -666,14 +680,15 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         optimize some objective function with gaussian process.
 
         Args:
-            entries(List[ComputedStructureEntry]):
+            entries(list of ComputedStructureEntry):
                 Entries of computed structures.
-            reset(Boolean): optional
+            reset(bool): optional
                 If you want to re-train the decorator model, set this value
-                to true. Otherwise, we will skip training if the model is
-                trained before. Default to false.
+                to true. Otherwise, training will be skipped if the model is
+                trained. Default to false.
             n_calls(int): optional
-                Number of iterations used in gp_minimize. Default is 50.
+                The number of iterations to be used by :func:`gp_minimize`.
+                Default is 50.
         """
         if self.is_trained and not reset:
             return
@@ -713,15 +728,16 @@ class GpOptimizedDecorator(BaseDecorator, metaclass=ABCMeta):
         """Give decoration to entries based on trained model.
 
         If an assigned entry is not valid,
-        for example, in charge assignment, if an assigned structure is not
-        charge neutral, then this entry will be returned as None.
+        for example, in charge assignment, if a decorated structure is not
+        charge neutral, then its corresponding entry will be returned as None.
 
         Args:
-            entries(List[ComputedStructureEntry]):
-                Entries of computed structures.
+            entries(list of ComputedStructureEntry):
+                Entries of computed, undecorated structures.
 
         Returns:
-            List[NoneType|ComputedStructureEntry]
+            list of NoneType or ComputedStructureEntry:
+                Entries with decorated structures or failed structures.
         """
         decoration_rules = self._decoration_rules_from_cuts(entries, self._cuts)
         entries_decorated = self._process(entries, decoration_rules)
@@ -749,7 +765,7 @@ class NoTrainDecorator(BaseDecorator):
         """Initialize.
 
         Args:
-           labels(dict{str|Species:list}): optional
+           labels(dict of str or Species to list}): optional
                A table of labels to decorate each element with.
                keys are species symbol, values are possible decorated property
                values, such as oxidation states, magnetic spin directions.
@@ -757,7 +773,7 @@ class NoTrainDecorator(BaseDecorator):
                required property is increasing. For example, in Mn(2, 3, 4)+
                (high spin), the magnetic moments is sorted as [Mn4+, Mn3+, Mn2+],
                thus you should provide labels as {Element("Mn"):[4, 3, 2]}.
-               Keys can be either Element|Species object, or their
+               Keys can be either Element and Species object, or their
                string representations. Currently, do not support decoration
                of Vacancy.
                If you have multiple required properties, or required properties
@@ -786,13 +802,17 @@ class NoTrainDecorator(BaseDecorator):
 
 
 def decorator_factory(decorator_type, *args, **kwargs):
-    """Create a species decorator with given name.
+    """Create a BaseDecorator with its subclass name.
 
     Args:
         decorator_type(str):
-            Name of a BaseDecorator subclass.
-        args, kwargs:
+            The name of a subclass of :class:`BaseDecorator`.
+        *args, **kwargs:
             Arguments used to initialize the class.
+
+    Returns:
+        BaseDecorator:
+            The initialized decorator.
     """
     if "decorator" not in decorator_type and "Decorator" not in decorator_type:
         decorator_type += "-decorator"
@@ -801,15 +821,15 @@ def decorator_factory(decorator_type, *args, **kwargs):
 
 
 def get_site_property_query_names_from_decorator(decname):
-    """Get the name of required properties from decorator name.
+    """Get the required properties from a decorator name.
 
     Args:
         decname(str):
             Decorator name.
 
     Returns:
-        list[str]:
-            List of names of required site properties by the
+        list of str:
+            The list of names of required site properties by the
             decorator.
     """
     if "decorator" not in decname and "decorator" not in decname:
