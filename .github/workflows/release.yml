@@ -27,12 +27,13 @@ jobs:
     needs: test
     uses: ./.github/workflows/build.yml
 
-  release-docs:
+  docs:
     needs: test
     uses: ./.github/workflows/docs.yml
+    secrets: inherit
 
   release-pypi:
-    needs: [build, docs]
+    needs: [build]
     runs-on: ubuntu-latest
     if: github.event.inputs.release-pypi == 'true'
 
