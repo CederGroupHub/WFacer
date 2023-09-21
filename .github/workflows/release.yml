@@ -21,15 +21,15 @@ on:
 
 jobs:
   test:
-    uses: WFacer/WFacer/.github/workflows/test.yml@main
+    uses: ./.github/workflows/test.yml@main
 
   build:
     needs: test
-    uses: WFacer/WFacer/.github/workflows/build.yml@main
+    uses: ./.github/workflows/build.yml@main
 
   release-docs:
     needs: test
-    uses: WFacer/WFacer/.github/workflows/docs.yml@main
+    uses: ./.github/workflows/docs.yml@main
 
   release-pypi:
     needs: [build, docs]
