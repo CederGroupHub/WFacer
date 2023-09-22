@@ -1,0 +1,673 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WFacer.fit &#8212; WFacer 0.1.dev1+g4272e06 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+
+    <script src="../../_static/documentation_options.js?v=0c04da69"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/WFacer/fit';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.14.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.1.dev1+g4272e06';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Sep 22, 2023"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">WFacer 0.1.dev1+g4272e06 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../api_reference/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../api_reference/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">WFacer.fit</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for WFacer.fit</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Fit ECIs from Wrangler.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">RepeatedKFold</span><span class="p">,</span> <span class="n">cross_val_score</span>
+<span class="kn">from</span> <span class="nn">smol.cofe.wrangling.tools</span> <span class="kn">import</span> <span class="n">unique_corr_vector_indices</span>
+<span class="kn">from</span> <span class="nn">sparselm.model</span> <span class="kn">import</span> <span class="n">OrdinaryLeastSquares</span>
+<span class="kn">from</span> <span class="nn">sparselm.stepwise</span> <span class="kn">import</span> <span class="n">StepwiseEstimator</span>
+
+<span class="kn">from</span> <span class="nn">.utils.sparselm_estimators</span> <span class="kn">import</span> <span class="n">prepare_estimator</span>
+
+
+<span class="c1"># As mentioned in CeDataWrangler, weights does not make much</span>
+<span class="c1"># sense and will not be used. Also, only fitting with energy is</span>
+<span class="c1"># supported.</span>
+<div class="viewcode-block" id="fit_ecis_from_wrangler">
+<a class="viewcode-back" href="../../api_reference/WFacer/fit.html#WFacer.fit.fit_ecis_from_wrangler">[docs]</a>
+<span class="k">def</span> <span class="nf">fit_ecis_from_wrangler</span><span class="p">(</span>
+    <span class="n">wrangler</span><span class="p">,</span>
+    <span class="n">estimator_name</span><span class="p">,</span>
+    <span class="n">optimizer_name</span><span class="p">,</span>
+    <span class="n">param_grid</span><span class="p">,</span>
+    <span class="n">use_hierarchy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">center_point_external</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">filter_unique_correlations</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">estimator_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">optimizer_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit ECIs from a fully processed wrangler.</span>
+
+<span class="sd">    .. note:: Currently, this function does not support adjusting sample weights.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        wrangler(CeDataWrangler):</span>
+<span class="sd">            A :class:`CeDataWrangler` to store all training structures.</span>
+<span class="sd">        estimator_name(str):</span>
+<span class="sd">            The name of estimator, following the rules in</span>
+<span class="sd">            :mod:`smol.utils.class_name_from_str`.</span>
+<span class="sd">        optimizer_name(str):</span>
+<span class="sd">            The name of model optimizer. Currently, only supports</span>
+<span class="sd">            :class:`GridSearch` and :class:`LineSearch`</span>
+<span class="sd">            from :mod:`sparse-lm.model_selection`.</span>
+<span class="sd">        param_grid(dict|list[tuple]):</span>
+<span class="sd">            Parameter grid to initialize the optimizer. See documentation of</span>
+<span class="sd">            :mod:`sparselm.model_selection`.</span>
+<span class="sd">        use_hierarchy(bool): optional</span>
+<span class="sd">            Whether to use cluster hierarchy constraints when available. Default to</span>
+<span class="sd">            true.</span>
+<span class="sd">        center_point_external(bool): optional</span>
+<span class="sd">            Whether to perform centering operation, which means to fit the point and</span>
+<span class="sd">            the external terms using linear regression first, then fit the residue</span>
+<span class="sd">            with the specified regressor. Default to None, which means</span>
+<span class="sd">            when the feature matrix is full-ranked, will not use centering, otherwise</span>
+<span class="sd">            will perform centering.</span>
+<span class="sd">            If set to True, will always use centering, but use at your own risk</span>
+<span class="sd">            because this may cause very large CV when the feature matrix is full rank.</span>
+<span class="sd">            If set to False, will never perform centering.</span>
+<span class="sd">        filter_unique_correlations(bool):</span>
+<span class="sd">            If the wrangler have structures with duplicated correlation vectors,</span>
+<span class="sd">            whether to fit with only the one with the lowest energy.</span>
+<span class="sd">            Default to True.</span>
+<span class="sd">        estimator_kwargs(dict): optional</span>
+<span class="sd">            Other keyword arguments to initialize an estimator.</span>
+<span class="sd">        optimizer_kwargs(dict): optional</span>
+<span class="sd">            Other keyword arguments to initialize an optimizer.</span>
+<span class="sd">        **kwargs:</span>
+<span class="sd">            Keyword arguments used by the estimator._fit method.</span>
+<span class="sd">            For example, solver specifications.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Estimator, 1D np.ndarray, float, float, float, 1D np.ndarray:</span>
+<span class="sd">            Fitted estimator, coefficients (not ECIs),</span>
+<span class="sd">            cross validation error (meV/site),</span>
+<span class="sd">            standard deviation of CV (meV/site) , RMSE(meV/site)</span>
+<span class="sd">            and corresponding best parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">space</span> <span class="o">=</span> <span class="n">wrangler</span><span class="o">.</span><span class="n">cluster_subspace</span>
+    <span class="n">feature_matrix</span> <span class="o">=</span> <span class="n">wrangler</span><span class="o">.</span><span class="n">feature_matrix</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="c1"># Corrected and normalized DFT energy in eV/prim.</span>
+    <span class="n">normalized_energy</span> <span class="o">=</span> <span class="n">wrangler</span><span class="o">.</span><span class="n">get_property_vector</span><span class="p">(</span><span class="s2">&quot;energy&quot;</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">filter_unique_correlations</span><span class="p">:</span>
+        <span class="n">unique_inds</span> <span class="o">=</span> <span class="n">unique_corr_vector_indices</span><span class="p">(</span><span class="n">wrangler</span><span class="p">,</span> <span class="s2">&quot;energy&quot;</span><span class="p">)</span>
+        <span class="n">feature_matrix</span> <span class="o">=</span> <span class="n">feature_matrix</span><span class="p">[</span><span class="n">unique_inds</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">normalized_energy</span> <span class="o">=</span> <span class="n">normalized_energy</span><span class="p">[</span><span class="n">unique_inds</span><span class="p">]</span>
+
+    <span class="c1"># Prepare the estimator. If do centering, will return a stepwise estimator.</span>
+    <span class="n">estimator_kwargs</span> <span class="o">=</span> <span class="n">estimator_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">optimizer_kwargs</span> <span class="o">=</span> <span class="n">optimizer_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+
+    <span class="c1"># Set default cv splitter to shuffle rows.</span>
+    <span class="n">cv</span> <span class="o">=</span> <span class="n">optimizer_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cv&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cv</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cv</span> <span class="o">=</span> <span class="n">RepeatedKFold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_repeats</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cv</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">cv</span> <span class="o">=</span> <span class="n">RepeatedKFold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="n">cv</span><span class="p">)</span>
+
+    <span class="n">optimizer_kwargs</span><span class="p">[</span><span class="s2">&quot;cv&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cv</span>
+
+    <span class="c1"># Check if the matrix is full rank. Do not apply centering when doing full-rank.</span>
+    <span class="n">n_features</span> <span class="o">=</span> <span class="n">feature_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">wrangler</span><span class="o">.</span><span class="n">get_feature_matrix_rank</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="n">n_features</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">center_point_external</span><span class="p">:</span>
+            <span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;The handled feature matrix is full rank, but center_point_external&quot;</span>
+                <span class="s2">&quot; is forced to be true! Use at your own risk as this might result in&quot;</span>
+                <span class="s2">&quot; very large fitting error!&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">center_point_external</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">center_point_external</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="n">center_point_external</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">center_point_external</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">estimator</span> <span class="o">=</span> <span class="n">prepare_estimator</span><span class="p">(</span>
+        <span class="n">space</span><span class="p">,</span>
+        <span class="n">estimator_name</span><span class="p">,</span>
+        <span class="n">optimizer_name</span><span class="p">,</span>
+        <span class="n">param_grid</span><span class="p">,</span>
+        <span class="n">use_hierarchy</span><span class="o">=</span><span class="n">use_hierarchy</span><span class="p">,</span>
+        <span class="n">center_point_external</span><span class="o">=</span><span class="n">center_point_external</span><span class="p">,</span>
+        <span class="n">estimator_kwargs</span><span class="o">=</span><span class="n">estimator_kwargs</span><span class="p">,</span>
+        <span class="n">optimizer_kwargs</span><span class="o">=</span><span class="n">optimizer_kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># Prepare the optimizer.</span>
+    <span class="n">is_stepwise</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="n">StepwiseEstimator</span><span class="p">)</span>
+    <span class="n">is_ols</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="n">OrdinaryLeastSquares</span><span class="p">)</span>
+
+    <span class="c1"># Perform the optimization and fit.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_ols</span><span class="p">:</span>
+        <span class="n">estimator</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">feature_matrix</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">normalized_energy</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># StepwiseEstimator</span>
+        <span class="k">if</span> <span class="n">is_stepwise</span><span class="p">:</span>
+            <span class="n">best_coef</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">coef_</span>
+            <span class="c1"># Add intercept to the first coefficient.</span>
+            <span class="n">best_coef</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">intercept_</span>
+            <span class="c1"># Default sparse-lm scoring has changed to &quot;neg_root_mean_square&quot;</span>
+            <span class="n">best_cv</span> <span class="o">=</span> <span class="o">-</span><span class="n">estimator</span><span class="o">.</span><span class="n">steps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">best_score_</span>
+            <span class="n">best_cv_std</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">steps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">best_score_std_</span>
+            <span class="n">best_params</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">steps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">best_params_</span>
+        <span class="c1"># Searcher.</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">best_coef</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">best_estimator_</span><span class="o">.</span><span class="n">coef_</span>
+            <span class="c1"># Add intercept to the first coefficient.</span>
+            <span class="n">best_coef</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">best_estimator_</span><span class="o">.</span><span class="n">intercept_</span>
+            <span class="c1"># Default sparse-lm scoring has changed to &quot;neg_root_mean_square&quot;</span>
+            <span class="n">best_cv</span> <span class="o">=</span> <span class="o">-</span><span class="n">estimator</span><span class="o">.</span><span class="n">best_score_</span>
+            <span class="n">best_cv_std</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">best_score_std_</span>
+            <span class="n">best_params</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">best_params_</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Set default CV splitter.</span>
+        <span class="n">cvs</span> <span class="o">=</span> <span class="n">cross_val_score</span><span class="p">(</span>
+            <span class="n">estimator</span><span class="p">,</span>
+            <span class="n">X</span><span class="o">=</span><span class="n">feature_matrix</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">normalized_energy</span><span class="p">,</span>
+            <span class="n">scoring</span><span class="o">=</span><span class="s2">&quot;neg_root_mean_squared_error&quot;</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">optimizer_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">estimator</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">feature_matrix</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">normalized_energy</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">best_coef</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">coef_</span>
+        <span class="n">best_coef</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">intercept_</span>
+        <span class="n">best_cv</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">cvs</span><span class="p">)</span>  <span class="c1"># negative rmse.</span>
+        <span class="n">best_cv_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">cvs</span><span class="p">)</span>
+        <span class="n">best_params</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">predicted_energy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">feature_matrix</span><span class="p">,</span> <span class="n">best_coef</span><span class="p">)</span>
+    <span class="n">rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">predicted_energy</span> <span class="o">-</span> <span class="n">normalized_energy</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">normalized_energy</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Convert from eV/prim to meV/site.</span>
+    <span class="n">n_sites</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">wrangler</span><span class="o">.</span><span class="n">cluster_subspace</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">estimator</span><span class="p">,</span>
+        <span class="n">best_coef</span><span class="p">,</span>
+        <span class="n">best_cv</span> <span class="o">*</span> <span class="mi">1000</span> <span class="o">/</span> <span class="n">n_sites</span><span class="p">,</span>
+        <span class="n">best_cv_std</span> <span class="o">*</span> <span class="mi">1000</span> <span class="o">/</span> <span class="n">n_sites</span><span class="p">,</span>
+        <span class="n">rmse</span> <span class="o">*</span> <span class="mi">1000</span> <span class="o">/</span> <span class="n">n_sites</span><span class="p">,</span>
+        <span class="n">best_params</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2022-2023, Ceder Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

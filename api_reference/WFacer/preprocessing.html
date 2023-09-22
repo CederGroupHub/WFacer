@@ -1,0 +1,1197 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Preprocess options and inputs &#8212; WFacer 0.1.dev1+g4272e06 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+
+    <script src="../../_static/documentation_options.js?v=0c04da69"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api_reference/WFacer/preprocessing';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.14.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.1.dev1+g4272e06';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="The CeOutputsDocument schema" href="schema.html" />
+    <link rel="prev" title="Cluster expansion workflow maker (Atomate2)" href="maker.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Sep 22, 2023"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">WFacer 0.1.dev1+g4272e06 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../sample_generators/index.html">Structure generators</a><input checked class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../sample_generators/mc_generators.html">Monte-Carlo sample generators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../species_decorators/index.html">Species decorators</a><input checked class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../species_decorators/base.html">Generic decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../species_decorators/charge.html">Charge decorators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../utils/index.html">Miscellaneous utility functions</a><input checked class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../utils/convex_hull.html">Convex hull</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/duplicacy.html">Duplicacy check</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/occu.html">Occupancy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/query.html">Data query</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/selection.html">Structure selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/sparselm.html">Sparse-lm estimator handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/supercells.html">Supercell matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/taskdoc.html">TaskDoc handling</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">WFacer main functionalities</a><input checked class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="convergence.html">Cluster expansion convergence check</a></li>
+<li class="toctree-l2"><a class="reference internal" href="enumeration.html">Structure enumeration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fit.html">Cluster expansion fitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobs.html">Cluster expansion jobs (Atomate2)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="maker.html">Cluster expansion workflow maker (Atomate2)</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Preprocess options and inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="schema.html">The CeOutputsDocument schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wrangling.html">CeDataWrangler (WFacer)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">API Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">WFacer main functionalities</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Preprocess...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="module-WFacer.preprocessing">
+<span id="preprocess-options-and-inputs"></span><h1>Preprocess options and inputs<a class="headerlink" href="#module-WFacer.preprocessing" title="Link to this heading">#</a></h1>
+<p>All preprocessing needed before initializing Makers.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.preprocessing.construct_prim">
+<span class="sig-name descname"><span class="pre">construct_prim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sublattice_sites</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lattice</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frac_coords</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/preprocessing.html#construct_prim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.preprocessing.construct_prim" title="Link to this definition">#</a></dt>
+<dd><p>Construct a primitive cell based on lattice info.</p>
+<p>Provides a helper method to initialize a primitive cell. Of
+course, a prim cell can also be parsed directly from a given
+Structure object or file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bits</strong> (<em>list</em><em> of </em><em>lists</em><em> of </em><em>Species</em>) – Allowed species on each sublattice. No sorting
+required.</p></li>
+<li><p><strong>sublattice_sites</strong> (<em>list</em><em> of </em><em>lists</em><em> of </em><em>int</em>) – Site indices in each sub-lattice of a primitive cell.
+Must include all site indices in range(len(frac_coords))</p></li>
+<li><p><strong>lattice</strong> (<em>Lattice</em>) – Lattice of the primitive cell.</p></li>
+<li><p><strong>frac_coords</strong> (<em>2D ArrayLike</em>) – Fractional coordinates of sites.</p></li>
+<li><p><strong>**kwargs</strong> – Keyword arguments for initializing <code class="xref py py-class docutils literal notranslate"><span class="pre">SpacegroupAnalyzer</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A reduced primitive cell (not necessarily charge neutral).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Structure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.preprocessing.get_cluster_subspace">
+<span class="sig-name descname"><span class="pre">get_cluster_subspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_decorated</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nn_distance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_ewald</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ewald_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_terms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/preprocessing.html#get_cluster_subspace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.preprocessing.get_cluster_subspace" title="Link to this definition">#</a></dt>
+<dd><p>Get cluster subspace from primitive structure and cutoffs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prim</strong> (<em>Structure</em>) – Reduced primitive cell.</p></li>
+<li><p><strong>charge_decorated</strong> (<em>bool</em>) – Whether to perform a charge decoration in CE.</p></li>
+<li><p><strong>nn_distance</strong> (<em>float</em>) – Nearest neighbor distance in structure, used to guess cluster cutoffs
+if argument “cutoffs” is not given.</p></li>
+<li><p><strong>cutoffs</strong> (<em>dict</em>) – optional
+Cluster cutoff diameters in Angstrom.
+If cutoff values not given, will guess based on the nearest neighbor
+distance d, such as pair=3.5d, triplet=2d, quad=2d.
+This guessing is formed based on empirical cutoffs in DRX, but not always
+good for your system. Setting your own cutoffs is highly recommended.</p></li>
+<li><p><strong>use_ewald</strong> (<em>bool</em>) – optional
+Whether to use the EwaldTerm when CE is charge decorated. Default to True.</p></li>
+<li><p><strong>ewald_kwargs</strong> (<em>dict</em>) – optional
+Keyword arguments to initialize EwaldTerm. See docs in smol.cofe.extern.</p></li>
+<li><p><strong>other_terms</strong> (<em>list</em><em> of </em><em>ExternalTerm</em>) – optional
+List of other external terms to be added besides the EwaldTerm. (Reserved
+for extensibility.)</p></li>
+<li><p><strong>**kwargs</strong> – Other keyword arguments of <code class="xref py py-func docutils literal notranslate"><span class="pre">ClusterSubspace.from_cutoffs()</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A cluster subspace generated from cutoffs.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ClusterSubspace</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.preprocessing.get_initial_ce_coefficients">
+<span class="sig-name descname"><span class="pre">get_initial_ce_coefficients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster_subspace</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/preprocessing.html#get_initial_ce_coefficients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.preprocessing.get_initial_ce_coefficients" title="Link to this definition">#</a></dt>
+<dd><p>Initialize a set of null CE coefficients.</p>
+<p>Any coefficient, except those for external terms, will be initialized as 0.
+This guarantees that for ionic systems, structures with lower ewald energy
+are always selected first.
+External term coefficients are all initialized as 1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cluster_subspace</strong> (<em>ClusterSubspace</em>) – The initial cluster subspace.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized CE coefficients.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>1D np.ndarray of float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.preprocessing.get_prim_specs">
+<span class="sig-name descname"><span class="pre">get_prim_specs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/preprocessing.html#get_prim_specs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.preprocessing.get_prim_specs" title="Link to this definition">#</a></dt>
+<dd><p>Get specs of a reduced primitive cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>prim</strong> (<em>Structure</em>) – Reduced primitive cell with partial occupancy to expand.
+If a prim only contains charge neutral atoms, it is your
+responsibility to make sure that all species in prim are
+either Element or Vacancy. No Species or DummySpecies
+with 0+ charge is allowed, otherwise computed structures
+will not map into prim!
+Also notice that only the sites with the same allowed species
+and species concentrations are considered the same sub-lattice!</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A specification dictionary of the cluster expansion space, containing
+the species on each sub-lattice, the indices of sites belonging to each
+sub-lattice in a primitive cell, whether the system requires charge
+decoration and the nearest-neighbor distance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.preprocessing.process_calculation_options">
+<span class="sig-name descname"><span class="pre">process_calculation_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/preprocessing.html#process_calculation_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.preprocessing.process_calculation_options" title="Link to this definition">#</a></dt>
+<dd><p>Get options to do vasp calculations in atomate2.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> (<em>dict</em>) – An input dictionary containing various options in the input file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl>
+<dt>A dict containing calculation options, including the following keys:</dt><dd><dl class="simple">
+<dt>apply_strain(3*3 ArrayLike or 1D ArrayLike[float] of three numbers):</dt><dd><p>Strain matrix to apply to the structure before relaxation,
+in order to break structural symmetry of forces.
+Default is [1.03, 1.02, 1.01], which means to
+stretch the structure by 3%, 2% and 1% along a, b, and c
+directions, respectively.</p>
+</dd>
+<dt>relax_generator_kwargs(dict):</dt><dd><p>Additional arguments to pass into an <code class="xref py py-mod docutils literal notranslate"><span class="pre">atomate2</span></code>
+class <code class="xref py py-class docutils literal notranslate"><span class="pre">VaspInputGenerator</span></code> that is used to specify
+a <code class="xref py py-class docutils literal notranslate"><span class="pre">RelaxMaker</span></code>.
+This is where the <code class="xref py py-mod docutils literal notranslate"><span class="pre">pymatgen</span></code> VASP set arguments should go.</p>
+</dd>
+<dt>relax_maker_kwargs(dict):</dt><dd><p>Additional arguments to initialize an <code class="xref py py-mod docutils literal notranslate"><span class="pre">atomate2</span></code>
+class <code class="xref py py-class docutils literal notranslate"><span class="pre">RelaxMaker</span></code>. <strong>Not frequently used</strong>.</p>
+</dd>
+<dt>add_tight_relax(bool):</dt><dd><p>Whether to add a tight relaxation job after a coarse
+relaxation. Default to True.
+You may want to disable this if your system has
+difficulty converging forces or energies.</p>
+</dd>
+<dt>tight_generator_kwargs(dict):</dt><dd><p>Additional arguments to pass into an <code class="xref py py-mod docutils literal notranslate"><span class="pre">atomate2</span></code>
+class <code class="xref py py-class docutils literal notranslate"><span class="pre">VaspInputGenerator</span></code>
+that is used to initialize a <code class="xref py py-class docutils literal notranslate"><span class="pre">TightRelaxMaker</span></code>.
+This is where the <code class="xref py py-mod docutils literal notranslate"><span class="pre">pymatgen</span></code> VASP set arguments should go.</p>
+</dd>
+<dt>tight_maker_kwargs(dict):</dt><dd><p>Additional arguments to pass into an <code class="xref py py-mod docutils literal notranslate"><span class="pre">atomate2</span></code>
+class <code class="xref py py-class docutils literal notranslate"><span class="pre">TightRelaxMaker</span></code>. A tight relax is performed after
+relaxation, if add_tight_relax is True. <strong>Not frequently used</strong>.</p>
+</dd>
+<dt>static_generator_kwargs(dict):</dt><dd><p>Additional arguments to pass into an <code class="xref py py-mod docutils literal notranslate"><span class="pre">atomate2</span></code>
+class <code class="xref py py-class docutils literal notranslate"><span class="pre">VaspInputGenerator</span></code> that is used to initialize
+a <code class="xref py py-class docutils literal notranslate"><span class="pre">StaticMaker</span></code>.
+This is where the <code class="xref py py-mod docutils literal notranslate"><span class="pre">pymatgen</span></code> VASP set arguments should go.</p>
+</dd>
+<dt>static_maker_kwargs(dict):</dt><dd><p>Additional arguments to pass into an <code class="xref py py-mod docutils literal notranslate"><span class="pre">atomate2</span></code>
+<code class="xref py py-class docutils literal notranslate"><span class="pre">StaticMaker</span></code>. <strong>Not frequently used</strong>.</p>
+</dd>
+<dt>other_properties(list[(str, str)| str]): optional</dt><dd><p>Other property names beyond “energy” and “uncorrected_energy”
+to be retrieved from <code class="xref py py-class docutils literal notranslate"><span class="pre">TaskDoc</span></code> and recorded into the wrangler,
+and the query string to retrieve them, paired in tuples.
+If only strings are given, will also query with the given
+string.
+For the rules in writing the query string, refer
+to <a class="reference internal" href="../utils/query.html#module-WFacer.utils.query" title="WFacer.utils.query"><code class="xref py py-mod docutils literal notranslate"><span class="pre">WFacer.utils.query</span></code></a>.
+By default, will not record any other property beyond energy.</p>
+</dd>
+</dl>
+</dd>
+<dt>Refer to <code class="xref py py-mod docutils literal notranslate"><span class="pre">atomate2</span></code> documentation for more information.</dt><dd><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>the default VASP sets in <code class="xref py py-mod docutils literal notranslate"><span class="pre">atomate2</span></code> are not specifically
+chosen for specific systems. Using your own VASP input settings
+is highly recommended!</p>
+</div>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.preprocessing.process_composition_options">
+<span class="sig-name descname"><span class="pre">process_composition_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/preprocessing.html#process_composition_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.preprocessing.process_composition_options" title="Link to this definition">#</a></dt>
+<dd><p>Get options to enumerate compositions with CompositionSpace.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> (<em>dict</em>) – An input dictionary containing various options in the input file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl>
+<dt>A dict containing composition options, including the following keys:</dt><dd><dl>
+<dt>charge_neutral (bool): optional</dt><dd><p>Whether to add charge balance constraint. Default to true.</p>
+</dd>
+<dt>other_constraints(list): optional</dt><dd><p>Other composition constraints to be applied to restrict the
+enumerated compositions, each allowing two formats:</p>
+<ol class="arabic simple">
+<li><p>A string that encodes the constraint equation.
+For example, <strong>“2 Ag+(0) + Cl-(1) +3 H+(2) &lt;= 3 Mn2+ +4”</strong>.
+A string representation of constraint must satisfy the following
+rules:</p>
+<ol class="arabic simple">
+<li><p>Contains a relation symbol (“==”, “&lt;=”, “&gt;=” or “=” are
+allowed). The relation symbol must have exactly one space before
+and one space after to separate the left and the right sides.</p></li>
+<li><p>Species strings must be readable by function <code class="xref py py-func docutils literal notranslate"><span class="pre">get_species()</span></code>
+in <code class="xref py py-mod docutils literal notranslate"><span class="pre">smol.cofe</span> <span class="pre">.space.domain</span></code>.
+No space is allowed within a species string.
+For the requirements on a legal species string, refer to
+the documentation of <code class="xref py py-mod docutils literal notranslate"><span class="pre">pymatgen.core.species</span></code>
+and <code class="xref py py-mod docutils literal notranslate"><span class="pre">smol.cofe</span></code>.</p></li>
+<li><p>You can add a number in brackets following a species string
+to specify constraining the amount of species in a particular
+sub-lattice. If not given, will apply the constraint to this
+species on all sub-lattices.
+This sub-lattice index label must not be separated from
+the species string with space or any other character.</p></li>
+<li><p>Species strings along with any sub-lattice index label must
+be separated from other parts (such as operators and numbers)
+with at least one space.</p></li>
+<li><p>The intercept terms (a number with no species that follows)
+must always be written at the end on both side of the equation.</p></li>
+</ol>
+</li>
+<li><p>The equation expression, which is a tuple containing a list of
+floats of length self.n_dims to give the left-hand side coefficients
+of each component in the composition “counts” format, a float to
+give the right-hand side, and a string to specify the comparative
+relationship between the left- and right-hand sides. Constrained in
+the form of a_left &#64; n = (or &lt;= or &gt;=) b_right.
+The components in the left-hand side are in the same order as
+outlined by <code class="xref py py-func docutils literal notranslate"><span class="pre">itertools.chain()</span></code>.</p></li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All numerical values in the constraints must be set as they are
+to be satisfied per primitive cell given the sublattice_sizes!
+For example, if each primitive cell contains 1 site in 1 sub-lattice
+specified as sublattice_sizes=[1], with the requirement that species
+A, B and C sum up to occupy less than 0.6 sites per sub-lattice, then
+you must write: “A + B + C &lt;= 0.6”.
+While if you specify sublattice_sizes=[2] in the same system per
+primitive cell, to specify the same constraint, write
+“A + B + C &lt;= 1.2” or “0.5 A + 0.5 B + 0.5 C &lt;= 0.6”, etc.</p>
+</div>
+<p>See documentation of <code class="xref py py-mod docutils literal notranslate"><span class="pre">smol.moca.composition</span></code>.</p>
+</dd>
+<dt>comp_enumeration_step (int): optional</dt><dd><p>Skip step in returning the enumerated compositions.
+If step &gt; 1, on each dimension of the composition space,
+we will only yield one composition in every N compositions.
+Default to 1.</p>
+</dd>
+<dt>compositions (2D ArrayLike of int): optional</dt><dd><p>Fixed compositions with which to enumerate the structures. If
+given, will not enumerate other compositions.
+Should be provided as the “species count” format,
+see <code class="xref py py-mod docutils literal notranslate"><span class="pre">smol.moca.composition</span></code>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.preprocessing.process_convergence_options">
+<span class="sig-name descname"><span class="pre">process_convergence_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/preprocessing.html#process_convergence_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.preprocessing.process_convergence_options" title="Link to this definition">#</a></dt>
+<dd><p>Get convergence check options.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> (<em>dict</em>) – An input dictionary containing various options in the input file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl>
+<dt>A dict containing convergence options, including the following keys:</dt><dd><dl>
+<dt>cv_tol(float): optional</dt><dd><p>Maximum allowed CV value in meV per site (including vacancies).
+(not eV per atom because some CE may contain Vacancies.)
+Default to None, but better set it manually!</p>
+</dd>
+<dt>std_cv_rtol(float): optional</dt><dd><p>Maximum standard deviation of CV allowed in cross validations,
+normalized by mean CV value.
+Dimensionless, default to None, which means this standard deviation
+of cv will not be checked.</p>
+</dd>
+<dt>delta_cv_rtol(float): optional</dt><dd><p>Maximum difference of CV allowed between the last 2 iterations,
+divided by the standard deviation of CV in cross validation.
+Dimensionless, default to 0.5.</p>
+</dd>
+<dt>delta_eci_rtol(float): optional</dt><dd><p>Maximum allowed mangnitude of change in ECIs, measured by:</p>
+<div class="math notranslate nohighlight">
+\[||J' - J||_1 | / || J' ||_1.\]</div>
+<p>Dimensionless. If not given, will not check ECI values for
+convergence, because this may significantly increase the
+number of iterations required to converge.</p>
+</dd>
+<dt>delta_min_e_rtol(float): optional</dt><dd><p>Maximum difference allowed to the predicted minimum CE and DFT energy
+at every composition between the last 2 iterations. Dimensionless,
+divided by the value of CV.
+Default set to 2.</p>
+</dd>
+<dt>continue_on_finding_new_gs(bool): optional</dt><dd><p>If true, whenever a new ground-state structure is detected (
+symmetrically distinct), the CE iteration will
+continue even if all other criterion are satisfied.
+Default to False because this may also increase the
+number of iterations.</p>
+</dd>
+<dt>max_iter(int): optional</dt><dd><p>Maximum number of iterations allowed. Will not limit number
+of iterations if set to None, but setting one limit is still
+recommended. Default to 10.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.preprocessing.process_decorator_options">
+<span class="sig-name descname"><span class="pre">process_decorator_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/preprocessing.html#process_decorator_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.preprocessing.process_decorator_options" title="Link to this definition">#</a></dt>
+<dd><p>Get options to decorate species with charge or other properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> (<em>dict</em>) – An input dictionary containing various options in the input file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A dict containing calculation options, including the following keys:</dt><dd><dl class="simple">
+<dt>decorator_types(list(str)): optional</dt><dd><p>Name of decorators to use for each property. If None, will
+choose the first one in all implemented decorators
+(see <code class="xref py py-mod docutils literal notranslate"><span class="pre">WFacer.specie_decorators</span></code>).</p>
+</dd>
+<dt>decorator_kwargs(list[dict]): optional</dt><dd><p>Arguments to pass into each decorator. See the documentation
+of each specific decorator for its usage.</p>
+</dd>
+<dt>decorator_train_kwargs(list[dict]): optional</dt><dd><p>Arguments to pass into each decorator when calling
+the function <code class="xref py py-func docutils literal notranslate"><span class="pre">decorator.train()</span></code>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.preprocessing.process_fit_options">
+<span class="sig-name descname"><span class="pre">process_fit_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/preprocessing.html#process_fit_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.preprocessing.process_fit_options" title="Link to this definition">#</a></dt>
+<dd><p>Get options to fit ECIs with sparse-lm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> (<em>dict</em>) – An input dictionary containing various options in the input file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A dict containing fit options, including the following keys:</dt><dd><dl class="simple">
+<dt>estimator_type(str):</dt><dd><p>The name of an estimator class in <code class="xref py py-mod docutils literal notranslate"><span class="pre">sparce-lm</span></code>. Default to
+‘Lasso’.</p>
+</dd>
+<dt>use_hierarchy(str):</dt><dd><p>Whether to use hierarchy in regularization fitting, when
+estimator belongs to <code class="xref py py-class docutils literal notranslate"><span class="pre">mixedL0</span></code>. Default to True.</p>
+</dd>
+<dt>center_point_external(bool): optional</dt><dd><p>Whether to fit the point and external terms with linear regression
+first, then fit the residue with regressor. Default to None, which means
+when the feature matrix is full rank, will not use centering, otherwise
+centers.
+If set to True, will force centering, but use at your own risk
+because this may cause very large CV. If set to False, will never use
+centering.</p>
+</dd>
+<dt>filter_unique_correlations(bool):</dt><dd><p>If the wrangler have structures with duplicated correlation vectors,
+whether to fit with only the one with the lowest energy.
+Default to True.</p>
+</dd>
+<dt>estimator_kwargs(dict):</dt><dd><p>Other keyword arguments to pass in when constructing an
+estimator. See <code class="xref py py-mod docutils literal notranslate"><span class="pre">sparselm.models</span></code>.</p>
+</dd>
+<dt>optimizer_type(str):</dt><dd><p>The name of optimizer class used to optimize model hyperparameters
+over cross validation. Default is None. Supports <code class="xref py py-class docutils literal notranslate"><span class="pre">GridSearch</span></code> and
+<code class="xref py py-class docutils literal notranslate"><span class="pre">LineSearch</span></code> optimizers. See <code class="xref py py-mod docutils literal notranslate"><span class="pre">sparselm.model_selection</span></code>.</p>
+</dd>
+<dt>param_grid(dict|list(tuple)):</dt><dd><p>Parameters grid to search for estimator hyperparameters.
+See <code class="xref py py-mod docutils literal notranslate"><span class="pre">sparselm.model_selection</span></code>.</p>
+</dd>
+<dt>optimizer_kwargs(dict):</dt><dd><p>Keyword arguments when constructing GridSearch or LineSearch class.
+See <code class="xref py py-mod docutils literal notranslate"><span class="pre">sparselm.model_selection</span></code>.</p>
+</dd>
+<dt>fit_kwargs(dict):</dt><dd><p>Keyword arguments when calling <code class="xref py py-func docutils literal notranslate"><span class="pre">Estimator.fit()</span></code>.
+Refer to the documentation of the specific estimator.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.preprocessing.process_structure_options">
+<span class="sig-name descname"><span class="pre">process_structure_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/preprocessing.html#process_structure_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.preprocessing.process_structure_options" title="Link to this definition">#</a></dt>
+<dd><p>Get options to enumerate structures.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> (<em>dict</em>) – An input dictionary containing various options in the input file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl>
+<dt>A dict containing structure options, including the following keys:</dt><dd><dl>
+<dt>num_structs_per_iter_init (int):</dt><dd><p>Number of new structures to enumerate in the first iteration.
+It is recommended that in each iteration, at least 2~3
+structures are added for each composition.
+Default is 60.</p>
+</dd>
+<dt>num_structs_per_iter_add (int):</dt><dd><p>Number of new structures to enumerate in each followed iteration.
+Default is 40.</p>
+</dd>
+<dt>sample_generator_kwargs(dict):</dt><dd><p>kwargs of CanonicalSampleGenerator.</p>
+</dd>
+<dt>init_method(str):</dt><dd><p>Structure selection method in the first iteration.
+Default is “leverage”. Allowed options include: “leverage” and
+“random”.</p>
+</dd>
+<dt>add_method(str):</dt><dd><p>Structure selection method in subsequent iterations.
+Default is ‘leverage’. Allowed options are: ‘leverage’
+and ‘random’.</p>
+</dd>
+<dt>duplicacy_criteria(str):</dt><dd><p>The criteria when to consider two structures as the same and
+old to add one of them into the candidate training set.
+Default is “correlations”, which means to assert duplication
+if two structures have the same correlation vectors. While
+“structure” means two structures must be symmetrically equivalent
+after being reduced. No other option is allowed.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Option “structure” might be significantly slower since
+it has to attempt reducing every structure to its primitive cell
+before matching. It should be used with caution.</p>
+</div>
+</dd>
+<dt>n_parallel(int): optional</dt><dd><p>Number of generators to run in parallel. Default is to use
+a quarter of cpu count.</p>
+</dd>
+<dt>keep_ground_states(bool):</dt><dd><p>Whether always to add new ground states to the training set.
+Default to True.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.preprocessing.process_subspace_options">
+<span class="sig-name descname"><span class="pre">process_subspace_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/preprocessing.html#process_subspace_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.preprocessing.process_subspace_options" title="Link to this definition">#</a></dt>
+<dd><p>Get options to create cluster subspace.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> (<em>dict</em>) – An input dictionary containing various options in the input file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A dict containing fit options, including the following keys:</dt><dd><dl class="simple">
+<dt>cutoffs(dict{int: float}):</dt><dd><p>Cluster cutoff diameters of each type of clusters. If not given,
+will guess with nearest neighbor distance in the structure.
+Setting your own is highly recommended.</p>
+</dd>
+<dt>use_ewald(bool):</dt><dd><p>Whether to use the <code class="xref py py-class docutils literal notranslate"><span class="pre">EwaldTerm</span></code> as an external term in the cluster
+space. Only available when the expansion is charge decorated.
+Default to True.</p>
+</dd>
+<dt>ewald_kwargs(dict):</dt><dd><p>Keyword arguments used to initialize EwaldTerm.
+Note: Other external terms than ewald term not supported yet.</p>
+</dd>
+<dt>from_cutoffs_kwargs(dict):</dt><dd><p>Other keyword arguments to be used in
+the function <code class="xref py py-func docutils literal notranslate"><span class="pre">ClusterSubspace.from_cutoffs()</span></code>.
+For example, the cluster basis type.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.preprocessing.process_supercell_options">
+<span class="sig-name descname"><span class="pre">process_supercell_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/preprocessing.html#process_supercell_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.preprocessing.process_supercell_options" title="Link to this definition">#</a></dt>
+<dd><p>Get options to enumerate supercell matrices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> (<em>dict</em>) – An input dictionary containing various options in the input file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl>
+<dt>A dict containing supercell matrix options, including the following keys:</dt><dd><dl>
+<dt>supercell_from_conventional(bool):</dt><dd><p>Whether to find out primitive cell to conventional
+standard structure transformation matrix T, and enumerate
+super-cell matrices in the form of: M = M’T.
+Default to true. If not, will set T to eye(3).</p>
+</dd>
+<dt>objective_num_sites(int):</dt><dd><p>The Supercel sizes (in number of sites, both active and inactive)
+to approach.
+Default to 64. Enumerated super-cell size will be
+a multiple of det(T) but the closest one to this objective
+size.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Since super-cell matrices with too high a conditional
+number will be dropped, do not use a super-cell size that could only
+be decomposed into three factors largely different in scale.
+For example, 17 = 1 * 1 * 17 is the only possible three-factor
+decomposition for 17 with a large conditional number of 17.</p>
+</div>
+<p>Currently, we only support enumerating super-cells with the
+same size.</p>
+</dd>
+<dt>spacegroup_kwargs(dict):</dt><dd><p>Keyword arguments used to initialize a SpaceGroupAnalyzer.
+Will also be used in reducing the primitive cell.</p>
+</dd>
+<dt>max_sc_condition_number(float):</dt><dd><p>Maximum conditional number of the supercell lattice matrix.
+Default to 8, prevent overly slender super-cells.</p>
+</dd>
+<dt>min_sc_angle(float):</dt><dd><p>Minimum allowed angle of the supercell lattice.
+Default to 30, prevent overly skewed super-cells.</p>
+</dd>
+<dt>sc_matrices(list of 3*3 ArrayLike of int):</dt><dd><p>Supercell matrices. Will not enumerate super-cells if this
+is given. Default to None. Note: if given, all supercell matrices
+must be of the same size!</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.preprocessing.reduce_prim">
+<span class="sig-name descname"><span class="pre">reduce_prim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prim</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/preprocessing.html#reduce_prim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.preprocessing.reduce_prim" title="Link to this definition">#</a></dt>
+<dd><p>Reduce given cell to make it real primitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prim</strong> (<em>Structure</em>) – A primitive cell with partial occupancy to be expanded.</p></li>
+<li><p><strong>**kwargs</strong> – Keyword arguments for initializing <code class="xref py py-class docutils literal notranslate"><span class="pre">SpacegroupAnalyzer</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The primitive cell reduced from the input structure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Structure</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="maker.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Cluster expansion workflow maker (Atomate2)</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="schema.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">The CeOutputsDocument schema</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.preprocessing.construct_prim"><code class="docutils literal notranslate"><span class="pre">construct_prim()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.preprocessing.get_cluster_subspace"><code class="docutils literal notranslate"><span class="pre">get_cluster_subspace()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.preprocessing.get_initial_ce_coefficients"><code class="docutils literal notranslate"><span class="pre">get_initial_ce_coefficients()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.preprocessing.get_prim_specs"><code class="docutils literal notranslate"><span class="pre">get_prim_specs()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.preprocessing.process_calculation_options"><code class="docutils literal notranslate"><span class="pre">process_calculation_options()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.preprocessing.process_composition_options"><code class="docutils literal notranslate"><span class="pre">process_composition_options()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.preprocessing.process_convergence_options"><code class="docutils literal notranslate"><span class="pre">process_convergence_options()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.preprocessing.process_decorator_options"><code class="docutils literal notranslate"><span class="pre">process_decorator_options()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.preprocessing.process_fit_options"><code class="docutils literal notranslate"><span class="pre">process_fit_options()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.preprocessing.process_structure_options"><code class="docutils literal notranslate"><span class="pre">process_structure_options()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.preprocessing.process_subspace_options"><code class="docutils literal notranslate"><span class="pre">process_subspace_options()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.preprocessing.process_supercell_options"><code class="docutils literal notranslate"><span class="pre">process_supercell_options()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.preprocessing.reduce_prim"><code class="docutils literal notranslate"><span class="pre">reduce_prim()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/CederGroupHub/WFacer/edit/main/docs/src/api_reference/WFacer/preprocessing.rst">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2022-2023, Ceder Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

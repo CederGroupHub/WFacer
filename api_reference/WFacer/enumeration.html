@@ -1,0 +1,778 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Structure enumeration &#8212; WFacer 0.1.dev1+g4272e06 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+
+    <script src="../../_static/documentation_options.js?v=0c04da69"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api_reference/WFacer/enumeration';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.14.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.1.dev1+g4272e06';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Cluster expansion fitting" href="fit.html" />
+    <link rel="prev" title="Cluster expansion convergence check" href="convergence.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Sep 22, 2023"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">WFacer 0.1.dev1+g4272e06 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../sample_generators/index.html">Structure generators</a><input checked class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../sample_generators/mc_generators.html">Monte-Carlo sample generators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../species_decorators/index.html">Species decorators</a><input checked class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../species_decorators/base.html">Generic decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../species_decorators/charge.html">Charge decorators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../utils/index.html">Miscellaneous utility functions</a><input checked class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../utils/convex_hull.html">Convex hull</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/duplicacy.html">Duplicacy check</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/occu.html">Occupancy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/query.html">Data query</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/selection.html">Structure selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/sparselm.html">Sparse-lm estimator handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/supercells.html">Supercell matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/taskdoc.html">TaskDoc handling</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">WFacer main functionalities</a><input checked class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="convergence.html">Cluster expansion convergence check</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Structure enumeration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fit.html">Cluster expansion fitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobs.html">Cluster expansion jobs (Atomate2)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="maker.html">Cluster expansion workflow maker (Atomate2)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preprocessing.html">Preprocess options and inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="schema.html">The CeOutputsDocument schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wrangling.html">CeDataWrangler (WFacer)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">API Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">WFacer main functionalities</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Structure...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="module-WFacer.enumeration">
+<span id="structure-enumeration"></span><h1>Structure enumeration<a class="headerlink" href="#module-WFacer.enumeration" title="Link to this heading">#</a></h1>
+<p>This module implements a StructureEnumerator class for CE sampling.</p>
+<p>The algorithm is based on the work of
+<a class="reference external" href="https://doi.org/10.1103/PhysRevB.80.165122">A. Seko et al</a>.</p>
+<p>Ground state structures will also be included in the structure pool if not
+included yet.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.enumeration.enumerate_compositions_as_counts">
+<span class="sig-name descname"><span class="pre">enumerate_compositions_as_counts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_space</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sublattice_sizes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_enumeration_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/enumeration.html#enumerate_compositions_as_counts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.enumeration.enumerate_compositions_as_counts" title="Link to this definition">#</a></dt>
+<dd><p>Enumerate compositions in a given supercell size.</p>
+<p>Results will be returned in “counts” format,
+see documentation of <code class="xref py py-mod docutils literal notranslate"><span class="pre">smol.moca.composition</span></code> for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sc_size</strong> (<em>int</em>) – The super-cell size in the number of prim cells.</p></li>
+<li><p><strong>comp_space</strong> (<em>CompositionSpace</em>) – optional
+Composition space in a primitive cell. If not given, the
+arguments <strong>bits</strong> and <strong>sublattice_sizes</strong> must be given.</p></li>
+<li><p><strong>bits</strong> (<em>list</em><em> of </em><em>Lists</em><em> of </em><em>Species</em><em> or </em><em>DummySpecies</em><em> or </em><em>Element</em><em> or </em><em>Vacancy</em>) – Allowed species on each sub-lattice.</p></li>
+<li><p><strong>sublattice_sizes</strong> (<em>list</em><em> of </em><em>int</em>) – The number of sites in each sub-lattice in a prim cell.</p></li>
+<li><p><strong>comp_enumeration_step</strong> (<em>int</em>) – Step in returning the enumerated compositions.
+If step = N &gt; 1, on each dimension of the composition space,
+we will only yield one composition every N compositions.
+Default to 1.</p></li>
+<li><p><strong>**kwargs</strong> – Other keyword arguments used to initialize a <code class="xref py py-class docutils literal notranslate"><span class="pre">CompositionSpace</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Enumerated possible compositions in “counts” format
+(<strong>NOT</strong> normalized by supercell size).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D np.ndarray of int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.enumeration.enumerate_matrices">
+<span class="sig-name descname"><span class="pre">enumerate_matrices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">objective_sc_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_subspace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supercell_from_conventional</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_sc_cond</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_sc_angle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/enumeration.html#enumerate_matrices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.enumeration.enumerate_matrices" title="Link to this definition">#</a></dt>
+<dd><p>Enumerate proper matrices with det size.</p>
+<p>Will give 1 unskewed matrix and 1 skewed matrix.
+Skewed matrix usually helps to avoid aliasing of clusters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>objective_sc_size</strong> (<em>int</em>) – Objective supercell size in the number of primitive cells.
+Better be a multiple of det(conv_mat).</p></li>
+<li><p><strong>cluster_subspace</strong> (<em>ClusterSubspace</em>) – <p>The cluster subspace. cluster_subspace.structure must
+be pre-processed such that it is the true primitive cell
+in under its space group symmetry.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The structure of <code class="xref py py-class docutils literal notranslate"><span class="pre">ClusterSubspace</span></code> must be reduced to a
+primitive cell!</p>
+</div>
+</p></li>
+<li><p><strong>supercell_from_conventional</strong> (<em>bool</em>) – optional
+Whether to enumerate supercell matrices in the form M&#64;T, where
+M is an integer matrix, T is the primitive to conventional cell
+transformation matrix. Default to True.</p></li>
+<li><p><strong>max_sc_cond</strong> (<em>float</em>) – Maximum conditional number allowed of the skewed supercell
+matrices. By default set to 8, to prevent overstretching in one
+direction</p></li>
+<li><p><strong>min_sc_angle</strong> (<em>float</em>) – Minimum allowed angle of the supercell lattice. By default, set
+to 30, to prevent over-skewing.</p></li>
+<li><p><strong>**kwargs</strong> – keyword arguments to pass into <code class="xref py py-class docutils literal notranslate"><span class="pre">SpaceGroupAnalyzer</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Enumerated super-cell matrices.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of 2D lists</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.enumeration.generate_training_structures">
+<span class="sig-name descname"><span class="pre">generate_training_structures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enumerated_matrices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enumerated_counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_sampled_structures</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_feature_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_ground_states</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_structs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mc_generator_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duplicacy_criteria</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'correlations'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/enumeration.html#generate_training_structures"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.enumeration.generate_training_structures" title="Link to this definition">#</a></dt>
+<dd><p>Generate training structures at the first iteration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ce</strong> (<em>ClusterExpansion</em>) – ClusterExpansion object initialized as null. If charge decorated,
+will contain an ewald contribution at 100%</p></li>
+<li><p><strong>enumerated_matrices</strong> (<em>list</em><em> of </em><em>3*3 ArrayLike</em><em> of </em><em>int</em>) – Previously enumerated supercell matrices. Must be the same super-cell
+size.</p></li>
+<li><p><strong>enumerated_counts</strong> (<em>list</em><em> of </em><em>1D ArrayLike</em>) – Previously enumerated compositions in “counts” format. Must fit in
+the super-cell size.
+Note: Different super-cell sizes not supported!</p></li>
+<li><p><strong>previous_sampled_structures</strong> (<em>list</em><em> of </em><em>Structure</em>) – optional
+Sample structures already calculated in past iterations.
+If given, that means you will add structures to an existing
+training set.</p></li>
+<li><p><strong>previous_feature_matrix</strong> (<em>list</em><em> of </em><em>lists</em><em> of </em><em>float</em>) – optional
+Correlation vectors of structures already calculated in past iterations.</p></li>
+<li><p><strong>keep_ground_states</strong> (<em>bool</em>) – optional
+Whether always to include the electrostatic ground states.
+Default to True.</p></li>
+<li><p><strong>num_structs</strong> (<em>int</em>) – optional
+Number of training structures to add at the iteration.
+At least 2~3 structures should be enumerated for each composition.
+And it is recommended that num_structs_init * 10 &gt; 2 *
+len(supercell_and_counts).
+Default is 60.</p></li>
+<li><p><strong>mc_generator_kwargs</strong> (<em>dict</em>) – optional
+Keyword arguments for McSampleGenerator, except num_samples.
+Note: currently only support Canonical.</p></li>
+<li><p><strong>n_parallel</strong> (<em>int</em>) – optional
+Number of generators to run in parallel. Default is to use
+a quarter of cpu count.</p></li>
+<li><p><strong>duplicacy_criteria</strong> (<em>str</em>) – <p>The criteria when to consider two structures as the same and
+old to add one of them into the candidate training set.</p>
+<ol class="arabic simple">
+<li><p>(Default) “correlations”, which means to assert duplication
+if two structures have the same correlation vectors.</p></li>
+<li><p>”structure” means two structures must be symmetrically equivalent
+after being reduced. No other option is allowed.</p></li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The option “structure” could be considerably slower as
+it attempts to reduce every structure into a primitive cell
+before matching. Used with caution!</p>
+</div>
+</p></li>
+<li><p><strong>**kwargs</strong> – Keyword arguments for <a class="reference internal" href="../utils/selection.html#WFacer.utils.selection.select_initial_rows" title="WFacer.utils.selection.select_initial_rows"><code class="xref py py-func docutils literal notranslate"><span class="pre">WFacer.utils.selection.select_initial_rows()</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initial training structures, super-cell matrices,
+and normalized correlation vectors.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of Structure, list of 3*3 list of lists of int, list of lists of float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.enumeration.get_num_structs_to_sample">
+<span class="sig-name descname"><span class="pre">get_num_structs_to_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_structs_select</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_num_per_composition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/enumeration.html#get_num_structs_to_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.enumeration.get_num_structs_to_sample" title="Link to this definition">#</a></dt>
+<dd><p>Get number of structures to sample in each <code class="xref py py-class docutils literal notranslate"><span class="pre">McSampleGenerator</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_counts</strong> (<em>ArrayLike</em>) – All enumerated compositions in “counts” format.</p></li>
+<li><p><strong>num_structs_select</strong> (<em>int</em>) – Number of structures to eventually select.</p></li>
+<li><p><strong>scale</strong> (<em>int</em>) – optional
+How many structures to sample in total, divided by
+num_structs_select. Default is 3.</p></li>
+<li><p><strong>min_num_per_composition</strong> (<em>int</em>) – optional
+Minimum number of structures to sample per composition.
+Default to 2.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.enumeration.truncate_cluster_subspace">
+<span class="sig-name descname"><span class="pre">truncate_cluster_subspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster_subspace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sc_matrices</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/enumeration.html#truncate_cluster_subspace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.enumeration.truncate_cluster_subspace" title="Link to this definition">#</a></dt>
+<dd><p>Given supercell matrices, remove aliased orbits.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cluster_subspace</strong> (<em>ClusterSubspace</em>) – Cluster subspace with aliased orbits.</p></li>
+<li><p><strong>sc_matrices</strong> (<em>3*3 ArrayLike</em>) – Enumerated super-cell matrices.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The truncated cluster subspace without aliasing orbits.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ClusterSubspace</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="convergence.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Cluster expansion convergence check</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="fit.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Cluster expansion fitting</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.enumeration.enumerate_compositions_as_counts"><code class="docutils literal notranslate"><span class="pre">enumerate_compositions_as_counts()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.enumeration.enumerate_matrices"><code class="docutils literal notranslate"><span class="pre">enumerate_matrices()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.enumeration.generate_training_structures"><code class="docutils literal notranslate"><span class="pre">generate_training_structures()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.enumeration.get_num_structs_to_sample"><code class="docutils literal notranslate"><span class="pre">get_num_structs_to_sample()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.enumeration.truncate_cluster_subspace"><code class="docutils literal notranslate"><span class="pre">truncate_cluster_subspace()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/CederGroupHub/WFacer/edit/main/docs/src/api_reference/WFacer/enumeration.rst">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2022-2023, Ceder Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

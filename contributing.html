@@ -1,0 +1,693 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Contributing Guidelines &#8212; WFacer 0.1.dev1+g4272e06 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+
+    <script src="_static/documentation_options.js?v=0c04da69"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'contributing';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.14.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.1.dev1+g4272e06';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api_reference/index.html" />
+    <link rel="prev" title="Fully automate a cluster expansion" href="example_scripts/full_automation_FCC_AgLi/index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Sep 22, 2023"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">WFacer 0.1.dev1+g4272e06 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="#">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="api_reference/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="#">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="api_reference/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Contributing...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="contributing-guidelines">
+<span id="contributing"></span><h1>Contributing Guidelines<a class="headerlink" href="#contributing-guidelines" title="Link to this heading">#</a></h1>
+<p>For optimal teamwork, it’s crucial to set clear and pragmatic guidelines upfront,
+rather than addressing the confusion that arises from overlooking them later.
+If you’re committed to making impactful contributions, please take a moment to
+thoroughly review the following guidelines!</p>
+<section id="bugs-issues-input-questions-etc">
+<h2>Bugs, issues, input, questions, etc<a class="headerlink" href="#bugs-issues-input-questions-etc" title="Link to this heading">#</a></h2>
+<p>Please use the
+<a class="reference external" href="https://github.com/CederGroupHub/WFacer/issues">issue tracker</a> to share any
+of the following:</p>
+<ul class="simple">
+<li><p>Bugs</p></li>
+<li><p>Issues</p></li>
+<li><p>Questions</p></li>
+<li><p>Feature requests</p></li>
+<li><p>Ideas</p></li>
+<li><p>Input</p></li>
+</ul>
+<p>Having these reported and saved in the issue tracker is very helpful to make
+them properly addressed. Please be as descriptive and neat as possible when
+opening up an issue. When available, please also attach your I/O data and the
+full error message.</p>
+</section>
+<section id="developing">
+<h2>Developing<a class="headerlink" href="#developing" title="Link to this heading">#</a></h2>
+<p>Code contributions can be anything from fixing the simplest bugs, to adding new
+extensive features or subpackages. If you have written code or want to start
+writing new code that you think will improve <strong>WFacer</strong> then please follow the
+steps below to make a contribution.</p>
+<section id="guidelines">
+<h3>Guidelines<a class="headerlink" href="#guidelines" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>All code should have unit tests.</p></li>
+<li><p>Code should be well documented following <a class="reference external" href="https://google.github.io/styleguide/pyguide.html">google style</a>  docstrings.</p></li>
+<li><p>All code should pass the pre-commit hook. The code follows the <a class="reference external" href="https://black.readthedocs.io/en/stable/">black code style</a>.</p></li>
+<li><p>Additional dependencies should only be added when they are critical or if they are
+already a <code class="xref py py-mod docutils literal notranslate"><span class="pre">smol</span></code> or a <code class="xref py py-mod docutils literal notranslate"><span class="pre">sparse-lm</span></code> dependency. More often than not it is best to avoid adding
+a new dependency by simply delegating to directly using the external packages rather
+than adding them to the source code.</p></li>
+<li><p>Implementing new features should be more fun than tedious.</p></li>
+</ul>
+</section>
+<section id="installing-a-development-version">
+<h3>Installing a development version<a class="headerlink" href="#installing-a-development-version" title="Link to this heading">#</a></h3>
+<ol class="arabic">
+<li><p><em>Clone</em> the main repository or <em>fork</em> it and <em>clone</em> clone your fork using git.
+If you plan to contribute back to the project, then you should create a fork and
+clone that:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/&lt;</span><span class="n">USER</span><span class="o">&gt;/</span><span class="n">WFacer</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">&lt;USER&gt;</span></code> is your github username, or if you are cloning the main repository
+directly then <code class="docutils literal notranslate"><span class="pre">&lt;USER&gt;</span> <span class="pre">=</span> <span class="pre">CederGroupHub</span></code>.</p>
+</li>
+<li><p>Install Python 3.8 or higher. We recommend using python 3.9 or higher:
+<a class="reference external" href="https://docs.conda.io/en/latest/">conda</a>.</p></li>
+<li><p>We recommend developing using a virtual environment. You can do so using
+<a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html">conda</a>
+or using <a class="reference external" href="https://docs.python.org/3/tutorial/venv.html">virtualenv</a>.</p></li>
+<li><p>Install the development version of <em>WFacer</em> in <em>editable</em> mode:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">verbose</span> <span class="o">--</span><span class="n">editable</span> <span class="o">.</span><span class="p">[</span><span class="n">dev</span><span class="p">,</span><span class="n">test</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>This will install the package in <em>editable</em> mode, meaning that any changes
+you make to the source code will be reflected in the installed package.</p>
+</li>
+</ol>
+</section>
+<section id="adding-code-contributions">
+<h3>Adding code contributions<a class="headerlink" href="#adding-code-contributions" title="Link to this heading">#</a></h3>
+<ol class="arabic">
+<li><p>If you are contributing for the first time:</p>
+<ul>
+<li><p>Install a development version of <em>WFacer</em> in <em>editable</em> mode as described above.</p></li>
+<li><p>Make sure to also add the <em>upstream</em> repository as a remote:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">remote</span> <span class="n">add</span> <span class="n">upstream</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">CederGroupHub</span><span class="o">/</span><span class="n">WFacer</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+</li>
+<li><p>You should always keep your <code class="docutils literal notranslate"><span class="pre">main</span></code> branch or any feature branch up to date
+with the upstream repository <code class="docutils literal notranslate"><span class="pre">main</span></code> branch. Be good about doing <em>fast forward</em>
+merges of the upstream <code class="docutils literal notranslate"><span class="pre">main</span></code> into your fork branches while developing.</p></li>
+</ul>
+</li>
+<li><p>In order to have changes available without having to re-install the package:</p>
+<ul>
+<li><p>Install the package in <em>editable</em> mode:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p>To develop your contributions you are free to do so in your <em>main</em> branch or any feature
+branch in your fork.</p>
+<ul class="simple">
+<li><p>We recommend to only your forks <em>main</em> branch for short/easy fixes and additions.</p></li>
+<li><p>For more complex features, try to use a feature branch with a descriptive name.</p></li>
+<li><p>For very complex feautres feel free to open up a PR even before your contribution is finished with
+[WIP] in its name, and optionally mark it as a <em>draft</em>.</p></li>
+</ul>
+</li>
+<li><p>While developing we recommend you use the pre-commit hook that is setup to ensure that your
+code will satisfy all lint, documentation and black requirements. To do so install pre-commit, and run
+in your clones top directory:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pre</span><span class="o">-</span><span class="n">commit</span> <span class="n">install</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>All code should use <a class="reference external" href="https://google.github.io/styleguide/pyguide.html">google style</a> docstrings
+and <a class="reference external" href="https://black.readthedocs.io/en/stable/?badge=stable">black</a> style formatting.</p></li>
+</ul>
+</li>
+<li><p>Make sure to test your contribution and write unit tests for any new features. All tests should go in the
+<code class="docutils literal notranslate"><span class="pre">WFacer\tests</span></code> directory. The CI will run tests upon opening a PR, but running them locally will help find
+problems before:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pytests</span> <span class="n">tests</span>
+</pre></div>
+</div>
+</li>
+<li><p>To submit a contribution open a <em>pull request</em> to the upstream repository. If your contribution changes
+the API (adds new features, edits or removes existing features). Please add a description to the
+<a class="reference external" href="https://github.com/CederGroupHub/WFacer/blob/main/CHANGES.md">change log</a>.</p></li>
+<li><p>If your contribution includes novel published (or to be published) methodology, you should also edit the
+citing page accordingly.</p></li>
+</ol>
+</section>
+<section id="adding-examples">
+<h3>Adding examples<a class="headerlink" href="#adding-examples" title="Link to this heading">#</a></h3>
+<p>In many occasions novel use of the package does not necessarily require introducing new source code, but rather
+using the existing functionality, and possibly external packages (that are are requirements) for particular or
+advanced calculations.</p>
+<ol class="arabic simple">
+<li><p>Create a sub-directory with a descriptive name in the <code class="docutils literal notranslate"><span class="pre">docs/src/example_scripts</span></code> directory.</p></li>
+<li><p>Implement the functionality with enough sections to carefully describe the background, theory,
+and steps in the index.rst file.</p></li>
+<li><p>Once the script is ready, add an entry to the <a class="reference internal" href="examples.html#examples"><span class="std std-ref">Examples</span></a> page’s rst file so your example shows up in the
+documentation.</p></li>
+</ol>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="example_scripts/full_automation_FCC_AgLi/index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Fully automate a cluster expansion</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="api_reference/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">API Reference</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bugs-issues-input-questions-etc">Bugs, issues, input, questions, etc</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#developing">Developing</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#guidelines">Guidelines</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#installing-a-development-version">Installing a development version</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-code-contributions">Adding code contributions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-examples">Adding examples</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/CederGroupHub/WFacer/edit/main/docs/src/contributing.rst">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2022-2023, Ceder Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

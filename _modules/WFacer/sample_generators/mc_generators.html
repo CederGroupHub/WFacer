@@ -1,0 +1,1061 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WFacer.sample_generators.mc_generators &#8212; WFacer 0.1.dev1+g4272e06 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+
+    <script src="../../../_static/documentation_options.js?v=0c04da69"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/WFacer/sample_generators/mc_generators';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.14.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.1.dev1+g4272e06';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Sep 22, 2023"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">WFacer 0.1.dev1+g4272e06 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../api_reference/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../api_reference/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">WFacer.sampl...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for WFacer.sample_generators.mc_generators</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Monte-carlo to estimate ground states and sample structures.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pymatgen.core</span> <span class="kn">import</span> <span class="n">Element</span>
+<span class="kn">from</span> <span class="nn">smol.cofe.space.domain</span> <span class="kn">import</span> <span class="n">Vacancy</span>
+<span class="kn">from</span> <span class="nn">smol.moca</span> <span class="kn">import</span> <span class="n">CompositionSpace</span><span class="p">,</span> <span class="n">Ensemble</span><span class="p">,</span> <span class="n">Sampler</span>
+<span class="kn">from</span> <span class="nn">smol.utils.class_utils</span> <span class="kn">import</span> <span class="n">class_name_from_str</span><span class="p">,</span> <span class="n">derived_class_factory</span>
+
+<span class="kn">from</span> <span class="nn">..utils.duplicacy</span> <span class="kn">import</span> <span class="n">is_corr_duplicate</span><span class="p">,</span> <span class="n">is_duplicate</span>
+<span class="kn">from</span> <span class="nn">..utils.occu</span> <span class="kn">import</span> <span class="n">get_random_occupancy_from_counts</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Fengyu Xie&quot;</span>
+
+
+<div class="viewcode-block" id="McSampleGenerator">
+<a class="viewcode-back" href="../../../api_reference/sample_generators/mc_generators.html#WFacer.sample_generators.mc_generators.McSampleGenerator">[docs]</a>
+<span class="k">class</span> <span class="nc">McSampleGenerator</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract monte-carlo sampler class.</span>
+
+<span class="sd">    Allows finding the ground state, and then gradually heats up the ground state</span>
+<span class="sd">    to generate an unfrozen sample.</span>
+
+<span class="sd">    Each Generator should only handle one composition (canonical) or one set of</span>
+<span class="sd">    chemical potentials (grand-canonical)!</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">default_anneal_temp_series</span> <span class="o">=</span> <span class="p">[</span><span class="mi">5000</span><span class="p">,</span> <span class="mi">3200</span><span class="p">,</span> <span class="mi">1600</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">800</span><span class="p">,</span> <span class="mi">600</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
+    <span class="c1"># Allow up to 1 eV above composition should be reasonable. Would also give us more</span>
+    <span class="c1"># choice of sample structures when interactions are high.</span>
+    <span class="n">default_heat_temp_series</span> <span class="o">=</span> <span class="p">[</span><span class="mi">500</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">12000</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ce</span><span class="p">,</span>
+        <span class="n">sc_matrix</span><span class="p">,</span>
+        <span class="n">anneal_temp_series</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">heat_temp_series</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_steps_anneal</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_steps_heat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">duplicacy_criteria</span><span class="o">=</span><span class="s2">&quot;correlations&quot;</span><span class="p">,</span>
+        <span class="n">remove_decorations_before_duplicacy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ce(ClusterExpansion):</span>
+<span class="sd">                A cluster expansion object to enumerate with.</span>
+<span class="sd">            sc_matrix(3*3 ArrayLike):</span>
+<span class="sd">                Supercell matrix to solve on.</span>
+<span class="sd">            anneal_temp_series(list of float): optional</span>
+<span class="sd">                A series of temperatures to use in simulated annealing.</span>
+<span class="sd">                Must be strictly decreasing.</span>
+<span class="sd">            heat_temp_series(list of float): optional</span>
+<span class="sd">                A series of increasing temperatures to sample on.</span>
+<span class="sd">                Must be strictly increasing</span>
+<span class="sd">            num_steps_anneal(int): optional</span>
+<span class="sd">                The number of MC steps to run per annealing temperature.</span>
+<span class="sd">            num_steps_heat(int): optional</span>
+<span class="sd">                The number of MC steps to run per heating temperature.</span>
+<span class="sd">            duplicacy_criteria(str):</span>
+<span class="sd">                The criteria when to consider two structures as the same and</span>
+<span class="sd">                old to add one of them into the candidate training set.</span>
+<span class="sd">                Default is &quot;correlations&quot;, which means to assert duplication</span>
+<span class="sd">                if two structures have the same correlation vectors. While</span>
+<span class="sd">                &quot;structure&quot; means two structures must be symmetrically equivalent</span>
+<span class="sd">                after being reduced. No other option is allowed.</span>
+<span class="sd">                Note that option &quot;structure&quot; might be significantly slower since</span>
+<span class="sd">                it has to attempt reducing every structure to its primitive cell</span>
+<span class="sd">                before matching. It should be used with caution.</span>
+<span class="sd">            remove_decorations_before_duplicacy(bool): optional</span>
+<span class="sd">                Whether to remove all decorations from species (i.e,</span>
+<span class="sd">                charge and other properties) before comparing duplicacy.</span>
+<span class="sd">                Default to false. Only valid when duplicacy_criteria=&quot;structure&quot;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ce</span> <span class="o">=</span> <span class="n">ce</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sc_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sc_matrix</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sc_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">sc_matrix</span><span class="p">))))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ce</span><span class="o">.</span><span class="n">cluster_subspace</span><span class="o">.</span><span class="n">structure</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">anneal_temp_series</span> <span class="o">=</span> <span class="n">anneal_temp_series</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_anneal_temp_series</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">heat_temp_series</span> <span class="o">=</span> <span class="n">heat_temp_series</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_heat_temp_series</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_steps_anneal</span> <span class="o">=</span> <span class="n">num_steps_anneal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_steps_heat</span> <span class="o">=</span> <span class="n">num_steps_heat</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">duplicacy_criteria</span> <span class="o">=</span> <span class="n">duplicacy_criteria</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_decorations</span> <span class="o">=</span> <span class="n">remove_decorations_before_duplicacy</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gs_occu</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Cleared per-initialization.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ensemble</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get ensemble to run.&quot;&quot;&quot;</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sampler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sampler to run.&quot;&quot;&quot;</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">processor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Processor.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ensemble</span><span class="o">.</span><span class="n">processor</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sublattices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get sublattices in ensemble.</span>
+
+<span class="sd">        .. note:: If you wish to do delicate operations such as sub-lattice</span>
+<span class="sd">         splitting, please do it on self.ensemble. Refer to</span>
+<span class="sd">         :class:`smol.moca.ensemble` for further details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ensemble</span><span class="o">.</span><span class="n">sublattices</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">n_steps_per_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Least number of steps required to span configurations.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">sublatt</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sublatt</span><span class="o">.</span><span class="n">active_sites</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">sublatt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sublattices</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_steps_anneal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of steps to run at each temperature when annealing.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_steps_anneal</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># By default, run over all configurations for 20 times.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_num_steps_anneal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_steps_per_scan</span> <span class="o">*</span> <span class="mi">20</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_steps_anneal</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_steps_heat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of steps to run at each temperature when annealing.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_steps_heat</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># By default, run over all configurations for 40 times.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_num_steps_heat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_steps_per_scan</span> <span class="o">*</span> <span class="mi">40</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_steps_heat</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_get_init_occu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="McSampleGenerator.get_ground_state_occupancy">
+<a class="viewcode-back" href="../../../api_reference/sample_generators/mc_generators.html#WFacer.sample_generators.mc_generators.McSampleGenerator.get_ground_state_occupancy">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_ground_state_occupancy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use simulated annealing to solve the ground state occupancy.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list of int:</span>
+<span class="sd">             The ground-state occupancy string obtained through</span>
+<span class="sd">             simulated annealing.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gs_occu</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">init_occu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_init_occu</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">anneal</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">anneal_temp_series</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">num_steps_anneal</span><span class="p">,</span>
+                <span class="n">initial_occupancies</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">init_occu</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Save updates.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gs_occu</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">get_minimum_enthalpy_occupancy</span><span class="p">()</span>
+                <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>  <span class="c1"># Free-up mem.</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gs_occu</span></div>
+
+
+<div class="viewcode-block" id="McSampleGenerator.get_ground_state_structure">
+<a class="viewcode-back" href="../../../api_reference/sample_generators/mc_generators.html#WFacer.sample_generators.mc_generators.McSampleGenerator.get_ground_state_structure">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_ground_state_structure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the ground state structure.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Structure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">structure_from_occupancy</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_ground_state_occupancy</span><span class="p">()</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="McSampleGenerator.get_ground_state_features">
+<a class="viewcode-back" href="../../../api_reference/sample_generators/mc_generators.html#WFacer.sample_generators.mc_generators.McSampleGenerator.get_ground_state_features">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_ground_state_features</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the feature vector of the ground state.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list of float.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">gs_occu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ground_state_occupancy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">compute_feature_vector</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">gs_occu</span><span class="p">))</span>
+            <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">size</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="McSampleGenerator.get_unfrozen_sample">
+<a class="viewcode-back" href="../../../api_reference/sample_generators/mc_generators.html#WFacer.sample_generators.mc_generators.McSampleGenerator.get_unfrozen_sample">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_unfrozen_sample</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">previous_sampled_structures</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">previous_sampled_features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a sample of structures by heating the ground state.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            previous_sampled_structures(list of Structure): optional</span>
+<span class="sd">                Sample structures already calculated in past</span>
+<span class="sd">                iterations.</span>
+<span class="sd">            previous_sampled_features(list of ArrayLike): optional</span>
+<span class="sd">                Feature vectors of sample structures already</span>
+<span class="sd">                calculated in past iterations.</span>
+<span class="sd">            num_samples(int): optional</span>
+<span class="sd">                Maximum number of samples to draw per unfreezing</span>
+<span class="sd">                run. Since Structures must be de-duplicated, the actual</span>
+<span class="sd">                number of structures returned might be fewer than this</span>
+<span class="sd">                threshold. Default to 100.</span>
+
+<span class="sd">        Return:</span>
+<span class="sd">            list of Structure, list of lists of int, list of lists of float:</span>
+<span class="sd">                New samples structures, NOT including the ground-state,</span>
+<span class="sd">                sampled occupancy arrays, and feature vectors of sampled</span>
+<span class="sd">                structures.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">previous_sampled_structures</span> <span class="o">=</span> <span class="n">previous_sampled_structures</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="n">previous_sampled_features</span> <span class="o">=</span> <span class="n">previous_sampled_features</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">previous_sampled_features</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">previous_sampled_structures</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Must provide a feature vector for each&quot;</span> <span class="s2">&quot; structure passed in!&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">thin_by</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+            <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">heat_temp_series</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_steps_heat</span> <span class="o">//</span> <span class="p">(</span><span class="n">num_samples</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="c1"># Thin so we don&#39;t have to de-duplicate too many structures.</span>
+        <span class="c1"># Here we leave out 10 * num_samples to compare.</span>
+
+        <span class="n">gs_occu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ground_state_occupancy</span><span class="p">()</span>
+        <span class="n">gs_feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ground_state_features</span><span class="p">()</span>
+        <span class="n">gs_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ground_state_structure</span><span class="p">()</span>
+
+        <span class="c1"># Will always contain GS at the first position in list.</span>
+        <span class="n">rand_occus</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">init_occu</span> <span class="o">=</span> <span class="n">gs_occu</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Sampling temperatures</span>
+        <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">heat_temp_series</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">mckernels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="n">T</span>
+
+            <span class="c1"># Equilibrate and sampling.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_steps_heat</span><span class="p">,</span>
+                <span class="n">initial_occupancies</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">init_occu</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+                <span class="n">thin_by</span><span class="o">=</span><span class="n">thin_by</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">init_occu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">get_occupancies</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">n_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">num_samples</span>
+            <span class="c1"># Take the last half as equlibrated, only.</span>
+            <span class="n">rand_occus</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">get_occupancies</span><span class="p">(</span><span class="n">discard</span><span class="o">=</span><span class="n">n_samples</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Symmetry deduplication</span>
+        <span class="n">rand_strs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">structure_from_occupancy</span><span class="p">(</span><span class="n">occu</span><span class="p">)</span> <span class="k">for</span> <span class="n">occu</span> <span class="ow">in</span> <span class="n">rand_occus</span>
+        <span class="p">]</span>
+        <span class="n">rand_feats</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">compute_feature_vector</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">occu</span><span class="p">))</span>
+                <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">size</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">occu</span> <span class="ow">in</span> <span class="n">rand_occus</span>
+        <span class="p">]</span>
+        <span class="n">new_ids</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">new_id</span><span class="p">,</span> <span class="n">new_str</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rand_strs</span><span class="p">):</span>
+            <span class="n">dupe</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">old_strs</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">previous_sampled_structures</span>
+                <span class="o">+</span> <span class="p">[</span><span class="n">gs_str</span><span class="p">]</span>
+                <span class="o">+</span> <span class="p">[</span><span class="n">rand_strs</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">new_ids</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">old_feats</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">previous_sampled_features</span>
+                <span class="o">+</span> <span class="p">[</span><span class="n">gs_feature</span><span class="p">]</span>
+                <span class="o">+</span> <span class="p">[</span><span class="n">rand_feats</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">new_ids</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">old_id</span><span class="p">,</span> <span class="p">(</span><span class="n">old_str</span><span class="p">,</span> <span class="n">old_feat</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">old_strs</span><span class="p">,</span> <span class="n">old_feats</span><span class="p">)):</span>
+                <span class="c1"># Must remove decorations to avoid getting fully duplicate inputs.</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">duplicacy_criteria</span> <span class="o">==</span> <span class="s2">&quot;correlations&quot;</span><span class="p">:</span>
+                    <span class="n">dupe</span> <span class="o">=</span> <span class="n">is_corr_duplicate</span><span class="p">(</span>
+                        <span class="n">new_str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">,</span> <span class="n">features2</span><span class="o">=</span><span class="n">old_feat</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">duplicacy_criteria</span> <span class="o">==</span> <span class="s2">&quot;structure&quot;</span><span class="p">:</span>
+                    <span class="n">dupe</span> <span class="o">=</span> <span class="n">is_duplicate</span><span class="p">(</span>
+                        <span class="n">old_str</span><span class="p">,</span> <span class="n">new_str</span><span class="p">,</span> <span class="n">remove_decorations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">remove_decorations</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">duplicacy_criteria</span><span class="si">}</span><span class="s2"> comparison not&quot;</span> <span class="sa">f</span><span class="s2">&quot; supported!&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="n">dupe</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dupe</span><span class="p">:</span>
+                <span class="n">new_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_id</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_ids</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_samples</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_ids</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">num_samples</span><span class="p">:</span>
+            <span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected to enumerate </span><span class="si">{</span><span class="n">num_samples</span><span class="si">}</span><span class="s2"> structures,&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; but only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">new_ids</span><span class="p">)</span><span class="si">}</span><span class="s2"> un-duplicate structures&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; could be generated!&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="p">[</span><span class="n">rand_strs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">new_ids</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">rand_occus</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">new_ids</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">rand_feats</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">new_ids</span><span class="p">],</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CanonicalSampleGenerator">
+<a class="viewcode-back" href="../../../api_reference/sample_generators/mc_generators.html#WFacer.sample_generators.mc_generators.CanonicalSampleGenerator">[docs]</a>
+<span class="k">class</span> <span class="nc">CanonicalSampleGenerator</span><span class="p">(</span><span class="n">McSampleGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample generator in canonical ensembles.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ce</span><span class="p">,</span>
+        <span class="n">sc_matrix</span><span class="p">,</span>
+        <span class="n">counts</span><span class="p">,</span>
+        <span class="n">anneal_temp_series</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">heat_temp_series</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_steps_anneal</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_steps_heat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">duplicacy_criteria</span><span class="o">=</span><span class="s2">&quot;correlations&quot;</span><span class="p">,</span>
+        <span class="n">remove_decorations_before_duplicacy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ce(ClusterExpansion):</span>
+<span class="sd">                A cluster expansion object to enumerate with.</span>
+<span class="sd">            sc_matrix(3*3 ArrayLike):</span>
+<span class="sd">                Supercell matrix to solve on.</span>
+<span class="sd">            counts(1D ArrayLike of int):</span>
+<span class="sd">                Composition in the &quot;counts &quot; format, not normalized by</span>
+<span class="sd">                number of primitive cells per super-cell. Refer to</span>
+<span class="sd">                :mod:`smol.moca.composition` for explanation.</span>
+<span class="sd">            anneal_temp_series(list of float): optional</span>
+<span class="sd">                A series of temperatures to use in simulated annealing.</span>
+<span class="sd">                Must be strictly decreasing.</span>
+<span class="sd">            heat_temp_series(list of float): optional</span>
+<span class="sd">                A series of increasing temperatures to sample on.</span>
+<span class="sd">                Must be strictly increasing</span>
+<span class="sd">            num_steps_anneal(int): optional</span>
+<span class="sd">                The number of steps to run per simulated annealing temperature.</span>
+<span class="sd">            num_steps_heat(int): optional</span>
+<span class="sd">                The number of steps to run per heat temperature.</span>
+<span class="sd">            duplicacy_criteria(str):</span>
+<span class="sd">                The criteria when to consider two structures as the same and</span>
+<span class="sd">                old to add one of them into the candidate training set.</span>
+<span class="sd">                Default is &quot;correlations&quot;, which means to assert duplication</span>
+<span class="sd">                if two structures have the same correlation vectors. While</span>
+<span class="sd">                &quot;structure&quot; means two structures must be symmetrically equivalent</span>
+<span class="sd">                after being reduced. No other option is allowed.</span>
+<span class="sd">                Note that option &quot;structure&quot; might be significantly slower since</span>
+<span class="sd">                it has to attempt reducing every structure to its primitive cell</span>
+<span class="sd">                before matching. It should be used with caution.</span>
+<span class="sd">            remove_decorations_before_duplicacy(bool): optional</span>
+<span class="sd">                Whether to remove all decorations from species (i.e,</span>
+<span class="sd">                charge and other properties) before comparing duplicacy.</span>
+<span class="sd">                Default to false. Only valid when duplicacy_criteria=&quot;structure&quot;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">ce</span><span class="p">,</span>
+            <span class="n">sc_matrix</span><span class="p">,</span>
+            <span class="n">anneal_temp_series</span><span class="o">=</span><span class="n">anneal_temp_series</span><span class="p">,</span>
+            <span class="n">heat_temp_series</span><span class="o">=</span><span class="n">heat_temp_series</span><span class="p">,</span>
+            <span class="n">num_steps_anneal</span><span class="o">=</span><span class="n">num_steps_anneal</span><span class="p">,</span>
+            <span class="n">num_steps_heat</span><span class="o">=</span><span class="n">num_steps_heat</span><span class="p">,</span>
+            <span class="n">duplicacy_criteria</span><span class="o">=</span><span class="n">duplicacy_criteria</span><span class="p">,</span>
+            <span class="n">remove_decorations_before_duplicacy</span><span class="o">=</span><span class="n">remove_decorations_before_duplicacy</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;CanonicalEnsemble.&quot;&quot;&quot;</span>
+        <span class="c1"># Must use &quot;expansion&quot; as the processor type to give correlation vectors.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ensemble</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ensemble</span> <span class="o">=</span> <span class="n">Ensemble</span><span class="o">.</span><span class="n">from_cluster_expansion</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ce</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sc_matrix</span><span class="p">,</span> <span class="n">processor_type</span><span class="o">=</span><span class="s2">&quot;expansion&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ensemble</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sampler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A sampler to sample structures.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Check if charge balance is needed.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="n">Sampler</span><span class="o">.</span><span class="n">from_ensemble</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ensemble</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">anneal_temp_series</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nwalkers</span><span class="o">=</span><span class="mi">1</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span>
+
+    <span class="k">def</span> <span class="nf">_get_init_occu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get an initial occupancy for MC run.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">get_random_occupancy_from_counts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ensemble</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Grand-canonical generator will not be used very often.</span>
+<div class="viewcode-block" id="SemigrandSampleGenerator">
+<a class="viewcode-back" href="../../../api_reference/sample_generators/mc_generators.html#WFacer.sample_generators.mc_generators.SemigrandSampleGenerator">[docs]</a>
+<span class="k">class</span> <span class="nc">SemigrandSampleGenerator</span><span class="p">(</span><span class="n">McSampleGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample generator in semi-grand canonical ensembles.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ce</span><span class="p">,</span>
+        <span class="n">sc_matrix</span><span class="p">,</span>
+        <span class="n">chemical_potentials</span><span class="p">,</span>
+        <span class="n">anneal_temp_series</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">heat_temp_series</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_steps_anneal</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_steps_heat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">duplicacy_criteria</span><span class="o">=</span><span class="s2">&quot;correlations&quot;</span><span class="p">,</span>
+        <span class="n">remove_decorations_before_duplicacy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ce(ClusterExpansion):</span>
+<span class="sd">                A cluster expansion object to enumerate with.</span>
+<span class="sd">            sc_matrix(3*3 ArrayLike):</span>
+<span class="sd">                Supercell matrix to solve on.</span>
+<span class="sd">            chemical_potentials(dict):</span>
+<span class="sd">                Chemical potentials of each species. See documentation</span>
+<span class="sd">                of :mod:`smol.moca.ensemble`.</span>
+<span class="sd">            anneal_temp_series(list of float): optional</span>
+<span class="sd">                A series of temperatures to use in simulated annealing.</span>
+<span class="sd">                Must be strictly decreasing.</span>
+<span class="sd">            heat_temp_series(list of float): optional</span>
+<span class="sd">                A series of increasing temperatures to sample on.</span>
+<span class="sd">                Must be strictly increasing.</span>
+<span class="sd">            num_steps_anneal(int): optional</span>
+<span class="sd">                The number of steps to run per simulated annealing temperature.</span>
+<span class="sd">            num_steps_heat(int): optional</span>
+<span class="sd">                The number of steps to run per heat temperature.</span>
+<span class="sd">            duplicacy_criteria(str):</span>
+<span class="sd">                The criteria when to consider two structures as the same and</span>
+<span class="sd">                old to add one of them into the candidate training set.</span>
+<span class="sd">                Default is &quot;correlations&quot;, which means to assert duplication</span>
+<span class="sd">                if two structures have the same correlation vectors. While</span>
+<span class="sd">                &quot;structure&quot; means two structures must be symmetrically equivalent</span>
+<span class="sd">                after being reduced. No other option is allowed.</span>
+<span class="sd">                Note that option &quot;structure&quot; might be significantly slower since</span>
+<span class="sd">                it has to attempt reducing every structure to its primitive cell</span>
+<span class="sd">                before matching. It should be used with caution.</span>
+<span class="sd">            remove_decorations_before_duplicacy(bool): optional</span>
+<span class="sd">                Whether to remove all decorations from species (i.e,</span>
+<span class="sd">                charge and other properties) before comparing duplicacy.</span>
+<span class="sd">                Default to false. Only valid when duplicacy_criteria=&quot;structure&quot;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">ce</span><span class="p">,</span>
+            <span class="n">sc_matrix</span><span class="p">,</span>
+            <span class="n">anneal_temp_series</span><span class="o">=</span><span class="n">anneal_temp_series</span><span class="p">,</span>
+            <span class="n">heat_temp_series</span><span class="o">=</span><span class="n">heat_temp_series</span><span class="p">,</span>
+            <span class="n">num_steps_anneal</span><span class="o">=</span><span class="n">num_steps_anneal</span><span class="p">,</span>
+            <span class="n">num_steps_heat</span><span class="o">=</span><span class="n">num_steps_heat</span><span class="p">,</span>
+            <span class="n">duplicacy_criteria</span><span class="o">=</span><span class="n">duplicacy_criteria</span><span class="p">,</span>
+            <span class="n">remove_decorations_before_duplicacy</span><span class="o">=</span><span class="n">remove_decorations_before_duplicacy</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">chemical_potentials</span> <span class="o">=</span> <span class="n">chemical_potentials</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;CanonicalEnsemble.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ensemble</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ensemble</span> <span class="o">=</span> <span class="n">Ensemble</span><span class="o">.</span><span class="n">from_cluster_expansion</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ce</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sc_matrix</span><span class="p">,</span>
+                <span class="n">chemical_potentials</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chemical_potentials</span><span class="p">,</span>
+                <span class="n">processor_type</span><span class="o">=</span><span class="s2">&quot;expansion&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ensemble</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sampler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A sampler to sample structures.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Check if charge balance is needed.</span>
+            <span class="n">bits</span> <span class="o">=</span> <span class="p">[</span><span class="n">sl</span><span class="o">.</span><span class="n">species</span> <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sublattices</span><span class="p">]</span>
+            <span class="n">charge_decorated</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">bits</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="p">(</span><span class="n">Vacancy</span><span class="p">,</span> <span class="n">Element</span><span class="p">))</span> <span class="ow">and</span> <span class="n">sp</span><span class="o">.</span><span class="n">oxi_state</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">charge_decorated</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+            <span class="k">if</span> <span class="n">charge_decorated</span><span class="p">:</span>
+                <span class="n">step_type</span> <span class="o">=</span> <span class="s2">&quot;table-flip&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">step_type</span> <span class="o">=</span> <span class="s2">&quot;flip&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="n">Sampler</span><span class="o">.</span><span class="n">from_ensemble</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ensemble</span><span class="p">,</span>
+                <span class="n">temperature</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">anneal_temp_series</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">step_type</span><span class="o">=</span><span class="n">step_type</span><span class="p">,</span>
+                <span class="n">nwalkers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span>
+
+    <span class="k">def</span> <span class="nf">_get_init_occu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get an initial occupancy for MC run.&quot;&quot;&quot;</span>
+        <span class="n">bits</span> <span class="o">=</span> <span class="p">[</span><span class="n">sl</span><span class="o">.</span><span class="n">species</span> <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sublattices</span><span class="p">]</span>
+        <span class="n">sublattice_sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">sl</span><span class="o">.</span><span class="n">sites</span><span class="p">)</span> <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sublattices</span><span class="p">])</span>
+        <span class="n">supercell_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">gcd</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">sublattice_sizes</span><span class="p">)</span>
+        <span class="n">sublattice_sizes</span> <span class="o">=</span> <span class="n">sublattice_sizes</span> <span class="o">/</span> <span class="n">supercell_size</span>
+        <span class="n">comp_space</span> <span class="o">=</span> <span class="n">CompositionSpace</span><span class="p">(</span><span class="n">bits</span><span class="p">,</span> <span class="n">sublattice_sizes</span><span class="p">)</span>
+        <span class="n">center_coords</span> <span class="o">=</span> <span class="n">comp_space</span><span class="o">.</span><span class="n">get_centroid_composition</span><span class="p">(</span>
+            <span class="n">supercell_size</span><span class="o">=</span><span class="n">supercell_size</span>
+        <span class="p">)</span>
+        <span class="n">center_counts</span> <span class="o">=</span> <span class="n">comp_space</span><span class="o">.</span><span class="n">translate_format</span><span class="p">(</span>
+            <span class="n">center_coords</span><span class="p">,</span> <span class="n">supercell_size</span><span class="p">,</span> <span class="n">from_format</span><span class="o">=</span><span class="s2">&quot;coordinates&quot;</span><span class="p">,</span> <span class="n">to_format</span><span class="o">=</span><span class="s2">&quot;counts&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">get_random_occupancy_from_counts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ensemble</span><span class="p">,</span> <span class="n">center_counts</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="mcgenerator_factory">
+<a class="viewcode-back" href="../../../api_reference/sample_generators/mc_generators.html#WFacer.sample_generators.mc_generators.mcgenerator_factory">[docs]</a>
+<span class="k">def</span> <span class="nf">mcgenerator_factory</span><span class="p">(</span><span class="n">mcgenerator_name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a McSampleGenerator with its subclass name.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mcgenerator_name(str):</span>
+<span class="sd">            The name of a subclass of :class:`McSampleGenerator`.</span>
+<span class="sd">        *args, **kwargs:</span>
+<span class="sd">            Arguments used to initialize the class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="s2">&quot;sample-generator&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mcgenerator_name</span>
+        <span class="ow">and</span> <span class="s2">&quot;SampleGenerator&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mcgenerator_name</span>
+    <span class="p">):</span>
+        <span class="n">mcgenerator_name</span> <span class="o">+=</span> <span class="s2">&quot;-sample-generator&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">class_name_from_str</span><span class="p">(</span><span class="n">mcgenerator_name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">derived_class_factory</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">McSampleGenerator</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2022-2023, Ceder Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

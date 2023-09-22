@@ -1,0 +1,917 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Monte-Carlo sample generators &#8212; WFacer 0.1.dev1+g4272e06 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+
+    <script src="../../_static/documentation_options.js?v=0c04da69"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api_reference/sample_generators/mc_generators';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.14.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.1.dev1+g4272e06';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Species decorators" href="../species_decorators/index.html" />
+    <link rel="prev" title="Structure generators" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Sep 22, 2023"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">WFacer 0.1.dev1+g4272e06 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Structure generators</a><input checked class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Monte-Carlo sample generators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../species_decorators/index.html">Species decorators</a><input checked class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../species_decorators/base.html">Generic decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../species_decorators/charge.html">Charge decorators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../utils/index.html">Miscellaneous utility functions</a><input checked class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../utils/convex_hull.html">Convex hull</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/duplicacy.html">Duplicacy check</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/occu.html">Occupancy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/query.html">Data query</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/selection.html">Structure selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/sparselm.html">Sparse-lm estimator handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/supercells.html">Supercell matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/taskdoc.html">TaskDoc handling</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../WFacer/index.html">WFacer main functionalities</a><input checked class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/convergence.html">Cluster expansion convergence check</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/enumeration.html">Structure enumeration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/fit.html">Cluster expansion fitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/jobs.html">Cluster expansion jobs (Atomate2)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/maker.html">Cluster expansion workflow maker (Atomate2)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/preprocessing.html">Preprocess options and inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/schema.html">The CeOutputsDocument schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/wrangling.html">CeDataWrangler (WFacer)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">API Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Structure generators</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Monte-Carlo...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="monte-carlo-sample-generators">
+<span id="monte-carlo-generators"></span><h1>Monte-Carlo sample generators<a class="headerlink" href="#monte-carlo-sample-generators" title="Link to this heading">#</a></h1>
+<p>This module contains classes and functions to sample training
+structures using Monte-Carlo at an increasing series of temperatures,
+given a specific supercell matrix and a constant composition or
+chemical potentials.</p>
+<p>Class are implemented with <code class="xref py py-class docutils literal notranslate"><span class="pre">smol.moca</span></code>.</p>
+<p id="module-WFacer.sample_generators.mc_generators">Monte-carlo to estimate ground states and sample structures.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.CanonicalSampleGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CanonicalSampleGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sc_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anneal_temp_series</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heat_temp_series</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps_anneal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps_heat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duplicacy_criteria</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'correlations'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_decorations_before_duplicacy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/sample_generators/mc_generators.html#CanonicalSampleGenerator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.sample_generators.mc_generators.CanonicalSampleGenerator" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#WFacer.sample_generators.mc_generators.McSampleGenerator" title="WFacer.sample_generators.mc_generators.McSampleGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">McSampleGenerator</span></code></a></p>
+<p>Sample generator in canonical ensembles.</p>
+<p>Initialize.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ce</strong> (<em>ClusterExpansion</em>) – A cluster expansion object to enumerate with.</p></li>
+<li><p><strong>sc_matrix</strong> (<em>3*3 ArrayLike</em>) – Supercell matrix to solve on.</p></li>
+<li><p><strong>counts</strong> (<em>1D ArrayLike</em><em> of </em><em>int</em>) – Composition in the “counts “ format, not normalized by
+number of primitive cells per super-cell. Refer to
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">smol.moca.composition</span></code> for explanation.</p></li>
+<li><p><strong>anneal_temp_series</strong> (<em>list</em><em> of </em><em>float</em>) – optional
+A series of temperatures to use in simulated annealing.
+Must be strictly decreasing.</p></li>
+<li><p><strong>heat_temp_series</strong> (<em>list</em><em> of </em><em>float</em>) – optional
+A series of increasing temperatures to sample on.
+Must be strictly increasing</p></li>
+<li><p><strong>num_steps_anneal</strong> (<em>int</em>) – optional
+The number of steps to run per simulated annealing temperature.</p></li>
+<li><p><strong>num_steps_heat</strong> (<em>int</em>) – optional
+The number of steps to run per heat temperature.</p></li>
+<li><p><strong>duplicacy_criteria</strong> (<em>str</em>) – The criteria when to consider two structures as the same and
+old to add one of them into the candidate training set.
+Default is “correlations”, which means to assert duplication
+if two structures have the same correlation vectors. While
+“structure” means two structures must be symmetrically equivalent
+after being reduced. No other option is allowed.
+Note that option “structure” might be significantly slower since
+it has to attempt reducing every structure to its primitive cell
+before matching. It should be used with caution.</p></li>
+<li><p><strong>remove_decorations_before_duplicacy</strong> (<em>bool</em>) – optional
+Whether to remove all decorations from species (i.e,
+charge and other properties) before comparing duplicacy.
+Default to false. Only valid when duplicacy_criteria=”structure”.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.CanonicalSampleGenerator.ensemble">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ensemble</span></span><a class="headerlink" href="#WFacer.sample_generators.mc_generators.CanonicalSampleGenerator.ensemble" title="Link to this definition">#</a></dt>
+<dd><p>CanonicalEnsemble.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.CanonicalSampleGenerator.sampler">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sampler</span></span><a class="headerlink" href="#WFacer.sample_generators.mc_generators.CanonicalSampleGenerator.sampler" title="Link to this definition">#</a></dt>
+<dd><p>A sampler to sample structures.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">McSampleGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sc_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anneal_temp_series</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heat_temp_series</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps_anneal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps_heat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duplicacy_criteria</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'correlations'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_decorations_before_duplicacy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/sample_generators/mc_generators.html#McSampleGenerator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Abstract monte-carlo sampler class.</p>
+<p>Allows finding the ground state, and then gradually heats up the ground state
+to generate an unfrozen sample.</p>
+<p>Each Generator should only handle one composition (canonical) or one set of
+chemical potentials (grand-canonical)!</p>
+<p>Initialize.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ce</strong> (<em>ClusterExpansion</em>) – A cluster expansion object to enumerate with.</p></li>
+<li><p><strong>sc_matrix</strong> (<em>3*3 ArrayLike</em>) – Supercell matrix to solve on.</p></li>
+<li><p><strong>anneal_temp_series</strong> (<em>list</em><em> of </em><em>float</em>) – optional
+A series of temperatures to use in simulated annealing.
+Must be strictly decreasing.</p></li>
+<li><p><strong>heat_temp_series</strong> (<em>list</em><em> of </em><em>float</em>) – optional
+A series of increasing temperatures to sample on.
+Must be strictly increasing</p></li>
+<li><p><strong>num_steps_anneal</strong> (<em>int</em>) – optional
+The number of MC steps to run per annealing temperature.</p></li>
+<li><p><strong>num_steps_heat</strong> (<em>int</em>) – optional
+The number of MC steps to run per heating temperature.</p></li>
+<li><p><strong>duplicacy_criteria</strong> (<em>str</em>) – The criteria when to consider two structures as the same and
+old to add one of them into the candidate training set.
+Default is “correlations”, which means to assert duplication
+if two structures have the same correlation vectors. While
+“structure” means two structures must be symmetrically equivalent
+after being reduced. No other option is allowed.
+Note that option “structure” might be significantly slower since
+it has to attempt reducing every structure to its primitive cell
+before matching. It should be used with caution.</p></li>
+<li><p><strong>remove_decorations_before_duplicacy</strong> (<em>bool</em>) – optional
+Whether to remove all decorations from species (i.e,
+charge and other properties) before comparing duplicacy.
+Default to false. Only valid when duplicacy_criteria=”structure”.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator.default_anneal_temp_series">
+<span class="sig-name descname"><span class="pre">default_anneal_temp_series</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[5000,</span> <span class="pre">3200,</span> <span class="pre">1600,</span> <span class="pre">1000,</span> <span class="pre">800,</span> <span class="pre">600,</span> <span class="pre">400,</span> <span class="pre">200,</span> <span class="pre">100]</span></em><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.default_anneal_temp_series" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator.default_heat_temp_series">
+<span class="sig-name descname"><span class="pre">default_heat_temp_series</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[500,</span> <span class="pre">2000,</span> <span class="pre">5000,</span> <span class="pre">12000]</span></em><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.default_heat_temp_series" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator.ensemble">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ensemble</span></span><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.ensemble" title="Link to this definition">#</a></dt>
+<dd><p>Get ensemble to run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator.get_ground_state_features">
+<span class="sig-name descname"><span class="pre">get_ground_state_features</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/sample_generators/mc_generators.html#McSampleGenerator.get_ground_state_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.get_ground_state_features" title="Link to this definition">#</a></dt>
+<dd><p>Get the feature vector of the ground state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of float.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator.get_ground_state_occupancy">
+<span class="sig-name descname"><span class="pre">get_ground_state_occupancy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/sample_generators/mc_generators.html#McSampleGenerator.get_ground_state_occupancy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.get_ground_state_occupancy" title="Link to this definition">#</a></dt>
+<dd><p>Use simulated annealing to solve the ground state occupancy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The ground-state occupancy string obtained through
+simulated annealing.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator.get_ground_state_structure">
+<span class="sig-name descname"><span class="pre">get_ground_state_structure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/sample_generators/mc_generators.html#McSampleGenerator.get_ground_state_structure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.get_ground_state_structure" title="Link to this definition">#</a></dt>
+<dd><p>Get the ground state structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Structure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator.get_unfrozen_sample">
+<span class="sig-name descname"><span class="pre">get_unfrozen_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous_sampled_structures</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_sampled_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/sample_generators/mc_generators.html#McSampleGenerator.get_unfrozen_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.get_unfrozen_sample" title="Link to this definition">#</a></dt>
+<dd><p>Generate a sample of structures by heating the ground state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>previous_sampled_structures</strong> (<em>list</em><em> of </em><em>Structure</em>) – optional
+Sample structures already calculated in past
+iterations.</p></li>
+<li><p><strong>previous_sampled_features</strong> (<em>list</em><em> of </em><em>ArrayLike</em>) – optional
+Feature vectors of sample structures already
+calculated in past iterations.</p></li>
+<li><p><strong>num_samples</strong> (<em>int</em>) – optional
+Maximum number of samples to draw per unfreezing
+run. Since Structures must be de-duplicated, the actual
+number of structures returned might be fewer than this
+threshold. Default to 100.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New samples structures, NOT including the ground-state,
+sampled occupancy arrays, and feature vectors of sampled
+structures.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of Structure, list of lists of int, list of lists of float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator.n_steps_per_scan">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">n_steps_per_scan</span></span><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.n_steps_per_scan" title="Link to this definition">#</a></dt>
+<dd><p>Least number of steps required to span configurations.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator.num_steps_anneal">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_steps_anneal</span></span><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.num_steps_anneal" title="Link to this definition">#</a></dt>
+<dd><p>Number of steps to run at each temperature when annealing.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator.num_steps_heat">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_steps_heat</span></span><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.num_steps_heat" title="Link to this definition">#</a></dt>
+<dd><p>Number of steps to run at each temperature when annealing.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator.processor">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">processor</span></span><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.processor" title="Link to this definition">#</a></dt>
+<dd><p>Get Processor.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator.sampler">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sampler</span></span><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.sampler" title="Link to this definition">#</a></dt>
+<dd><p>Sampler to run.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.McSampleGenerator.sublattices">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sublattices</span></span><a class="headerlink" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.sublattices" title="Link to this definition">#</a></dt>
+<dd><p>Get sublattices in ensemble.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you wish to do delicate operations such as sub-lattice
+splitting, please do it on self.ensemble. Refer to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">smol.moca.ensemble</span></code> for further details.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.SemigrandSampleGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SemigrandSampleGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sc_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chemical_potentials</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anneal_temp_series</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heat_temp_series</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps_anneal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps_heat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duplicacy_criteria</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'correlations'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_decorations_before_duplicacy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/sample_generators/mc_generators.html#SemigrandSampleGenerator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.sample_generators.mc_generators.SemigrandSampleGenerator" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#WFacer.sample_generators.mc_generators.McSampleGenerator" title="WFacer.sample_generators.mc_generators.McSampleGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">McSampleGenerator</span></code></a></p>
+<p>Sample generator in semi-grand canonical ensembles.</p>
+<p>Initialize.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ce</strong> (<em>ClusterExpansion</em>) – A cluster expansion object to enumerate with.</p></li>
+<li><p><strong>sc_matrix</strong> (<em>3*3 ArrayLike</em>) – Supercell matrix to solve on.</p></li>
+<li><p><strong>chemical_potentials</strong> (<em>dict</em>) – Chemical potentials of each species. See documentation
+of <code class="xref py py-mod docutils literal notranslate"><span class="pre">smol.moca.ensemble</span></code>.</p></li>
+<li><p><strong>anneal_temp_series</strong> (<em>list</em><em> of </em><em>float</em>) – optional
+A series of temperatures to use in simulated annealing.
+Must be strictly decreasing.</p></li>
+<li><p><strong>heat_temp_series</strong> (<em>list</em><em> of </em><em>float</em>) – optional
+A series of increasing temperatures to sample on.
+Must be strictly increasing.</p></li>
+<li><p><strong>num_steps_anneal</strong> (<em>int</em>) – optional
+The number of steps to run per simulated annealing temperature.</p></li>
+<li><p><strong>num_steps_heat</strong> (<em>int</em>) – optional
+The number of steps to run per heat temperature.</p></li>
+<li><p><strong>duplicacy_criteria</strong> (<em>str</em>) – The criteria when to consider two structures as the same and
+old to add one of them into the candidate training set.
+Default is “correlations”, which means to assert duplication
+if two structures have the same correlation vectors. While
+“structure” means two structures must be symmetrically equivalent
+after being reduced. No other option is allowed.
+Note that option “structure” might be significantly slower since
+it has to attempt reducing every structure to its primitive cell
+before matching. It should be used with caution.</p></li>
+<li><p><strong>remove_decorations_before_duplicacy</strong> (<em>bool</em>) – optional
+Whether to remove all decorations from species (i.e,
+charge and other properties) before comparing duplicacy.
+Default to false. Only valid when duplicacy_criteria=”structure”.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.SemigrandSampleGenerator.ensemble">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ensemble</span></span><a class="headerlink" href="#WFacer.sample_generators.mc_generators.SemigrandSampleGenerator.ensemble" title="Link to this definition">#</a></dt>
+<dd><p>CanonicalEnsemble.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.SemigrandSampleGenerator.sampler">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sampler</span></span><a class="headerlink" href="#WFacer.sample_generators.mc_generators.SemigrandSampleGenerator.sampler" title="Link to this definition">#</a></dt>
+<dd><p>A sampler to sample structures.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="WFacer.sample_generators.mc_generators.mcgenerator_factory">
+<span class="sig-name descname"><span class="pre">mcgenerator_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mcgenerator_name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/sample_generators/mc_generators.html#mcgenerator_factory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.sample_generators.mc_generators.mcgenerator_factory" title="Link to this definition">#</a></dt>
+<dd><p>Create a McSampleGenerator with its subclass name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mcgenerator_name</strong> (<em>str</em>) – The name of a subclass of <a class="reference internal" href="#WFacer.sample_generators.mc_generators.McSampleGenerator" title="WFacer.sample_generators.mc_generators.McSampleGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">McSampleGenerator</span></code></a>.</p></li>
+<li><p><strong>*args</strong> – Arguments used to initialize the class.</p></li>
+<li><p><strong>**kwargs</strong> – <p>Arguments used to initialize the class.</p>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Structure generators</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../species_decorators/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Species decorators</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.CanonicalSampleGenerator"><code class="docutils literal notranslate"><span class="pre">CanonicalSampleGenerator</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.CanonicalSampleGenerator.ensemble"><code class="docutils literal notranslate"><span class="pre">CanonicalSampleGenerator.ensemble</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.CanonicalSampleGenerator.sampler"><code class="docutils literal notranslate"><span class="pre">CanonicalSampleGenerator.sampler</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.default_anneal_temp_series"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator.default_anneal_temp_series</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.default_heat_temp_series"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator.default_heat_temp_series</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.ensemble"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator.ensemble</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.get_ground_state_features"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator.get_ground_state_features()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.get_ground_state_occupancy"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator.get_ground_state_occupancy()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.get_ground_state_structure"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator.get_ground_state_structure()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.get_unfrozen_sample"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator.get_unfrozen_sample()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.n_steps_per_scan"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator.n_steps_per_scan</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.num_steps_anneal"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator.num_steps_anneal</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.num_steps_heat"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator.num_steps_heat</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.processor"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator.processor</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.sampler"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator.sampler</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.McSampleGenerator.sublattices"><code class="docutils literal notranslate"><span class="pre">McSampleGenerator.sublattices</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.SemigrandSampleGenerator"><code class="docutils literal notranslate"><span class="pre">SemigrandSampleGenerator</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.SemigrandSampleGenerator.ensemble"><code class="docutils literal notranslate"><span class="pre">SemigrandSampleGenerator.ensemble</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.SemigrandSampleGenerator.sampler"><code class="docutils literal notranslate"><span class="pre">SemigrandSampleGenerator.sampler</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.sample_generators.mc_generators.mcgenerator_factory"><code class="docutils literal notranslate"><span class="pre">mcgenerator_factory()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/CederGroupHub/WFacer/edit/main/docs/src/api_reference/sample_generators/mc_generators.rst">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2022-2023, Ceder Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

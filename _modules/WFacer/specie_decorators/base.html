@@ -1,0 +1,1403 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WFacer.specie_decorators.base &#8212; WFacer 0.1.dev1+g4272e06 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+
+    <script src="../../../_static/documentation_options.js?v=0c04da69"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/WFacer/specie_decorators/base';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.14.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.1.dev1+g4272e06';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Sep 22, 2023"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">WFacer 0.1.dev1+g4272e06 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../api_reference/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../api_reference/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">WFacer.speci...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for WFacer.specie_decorators.base</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Decorate properties to a structure composed of Element.</span>
+
+<span class="sd">This module offers generic classes and functions for defining an algorithm</span>
+<span class="sd">used to map VASP calculated site properties into the label of species. For</span>
+<span class="sd">example, :class:`BaseDecorator`, :class:`MixtureGaussianDecorator`,</span>
+<span class="sd">:class:`GpOptimizedDecorator` and :class:`NoTrainDecorator`. These abstract</span>
+<span class="sd">classes are meant to be inherited by any decorator class that maps specific</span>
+<span class="sd">site properties.</span>
+
+<span class="sd">Currently, we can only decorate charge. Plan to allow decorating</span>
+<span class="sd">spin in the future updates.</span>
+
+<span class="sd">.. note:: All entries should be re-decorated and all decorators</span>
+<span class="sd"> should be retrained after an iteration.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Fengyu Xie, Julia H. Yang&quot;</span>
+
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">monty.json</span> <span class="kn">import</span> <span class="n">MSONable</span>
+<span class="kn">from</span> <span class="nn">pymatgen.core</span> <span class="kn">import</span> <span class="n">Element</span><span class="p">,</span> <span class="n">Species</span><span class="p">,</span> <span class="n">Structure</span>
+<span class="kn">from</span> <span class="nn">pymatgen.entries.computed_entries</span> <span class="kn">import</span> <span class="n">ComputedStructureEntry</span>
+<span class="kn">from</span> <span class="nn">sklearn.mixture</span> <span class="kn">import</span> <span class="n">GaussianMixture</span>
+<span class="kn">from</span> <span class="nn">skopt</span> <span class="kn">import</span> <span class="n">gp_minimize</span>
+<span class="kn">from</span> <span class="nn">smol.cofe.space.domain</span> <span class="kn">import</span> <span class="n">get_species</span>
+<span class="kn">from</span> <span class="nn">smol.utils.class_utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">class_name_from_str</span><span class="p">,</span>
+    <span class="n">derived_class_factory</span><span class="p">,</span>
+    <span class="n">get_subclasses</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Add here if you implement more decorators.</span>
+<span class="n">valid_decorator_types</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;oxi_state&quot;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;pmg-guess-charge&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;magnetic-charge&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_get_required_site_property</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">site_id</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find required site property.</span>
+
+<span class="sd">    If prop_name contains dot (&quot;.&quot;), site property will be treated as a dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">explore_key_path</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="n">d_last</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
+            <span class="n">d_last</span> <span class="o">=</span> <span class="n">d_last</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d_last</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">d_last</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">d_last</span>
+
+    <span class="n">key_path</span> <span class="o">=</span> <span class="n">prop_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">explore_key_path</span><span class="p">(</span><span class="n">key_path</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">structure</span><span class="p">[</span><span class="n">site_id</span><span class="p">]</span><span class="o">.</span><span class="n">properties</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="BaseDecorator">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.BaseDecorator">[docs]</a>
+<span class="k">class</span> <span class="nc">BaseDecorator</span><span class="p">(</span><span class="n">MSONable</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract decorator class.</span>
+
+<span class="sd">    #. Each decorator should only be used to decorate one property.</span>
+<span class="sd">    #. Currently, only supports assigning labels from one scalar site property,</span>
+<span class="sd">       and requires that the site property can be accessed from</span>
+<span class="sd">       :class:`ComputedStructureEntry`, which should be sufficient for most</span>
+<span class="sd">       purposes.</span>
+<span class="sd">    #. Can not decorate entries with partial disorder.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Edit these if you implement new child classes.</span>
+    <span class="n">decorated_prop_name</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">required_prop_names</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">           labels(dict of str or Species to list): optional</span>
+<span class="sd">               A table of labels to decorate each element with.</span>
+<span class="sd">               keys are species symbol, values are possible decorated property</span>
+<span class="sd">               values, such as oxidation states, magnetic spin directions.</span>
+<span class="sd">               Values are sorted such that the corresponding cluster centers of the</span>
+<span class="sd">               required property is increasing. For example, in Mn(2, 3, 4)+</span>
+<span class="sd">               (high spin), the magnetic moments is sorted as [Mn4+, Mn3+, Mn2+],</span>
+<span class="sd">               thus you should provide labels as {Element(&quot;Mn&quot;):[4, 3, 2]}.</span>
+<span class="sd">               Keys can be either Element|Species object, or their</span>
+<span class="sd">               string representations. Currently, do not support decoration</span>
+<span class="sd">               of Vacancy.</span>
+<span class="sd">               If you have multiple required properties, or required properties</span>
+<span class="sd">               have multiple dimensions, the labels order must match the sort</span>
+<span class="sd">               in the order of self.required_properties. Properties are sorted</span>
+<span class="sd">               lexicographically.</span>
+<span class="sd">               This argument may not be necessary for some decorator, such as</span>
+<span class="sd">               GuessChargeDecorator.</span>
+<span class="sd">               Be sure to provide labels for all the species you wish to assign</span>
+<span class="sd">               a property to, otherwise, you are responsible for your own error!</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="p">{</span><span class="n">get_species</span><span class="p">(</span><span class="n">key</span><span class="p">):</span> <span class="n">val</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">labels</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+<div class="viewcode-block" id="BaseDecorator.group_site_by_species">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.BaseDecorator.group_site_by_species">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">group_site_by_species</span><span class="p">(</span><span class="n">entries</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Group required properties on sites by species.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entries(list of ComputedStructureEntry):</span>
+<span class="sd">                Entries of computed structures.</span>
+
+<span class="sd">        Return:</span>
+<span class="sd">            defaultdict:</span>
+<span class="sd">               (Entry index, site index) belonging to each species.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">groups_by_species</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[])</span>
+
+        <span class="c1"># These entries should not contain Vacancy.</span>
+        <span class="k">for</span> <span class="n">e_id</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">entries</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">s_id</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">structure</span><span class="p">):</span>
+                <span class="c1"># site.species is always a Composition object.</span>
+                <span class="c1"># site.specie is an Element or Species.</span>
+                <span class="n">sp</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">specie</span>
+                <span class="n">groups_by_species</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[(</span><span class="n">e_id</span><span class="p">,</span> <span class="n">s_id</span><span class="p">)]</span>
+
+        <span class="k">return</span> <span class="n">groups_by_species</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">is_trained</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gives whether this decorator is trained before.</span>
+
+<span class="sd">        If trained, will be blocked from training again.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool:</span>
+<span class="sd">               Whether the model has been trained.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="BaseDecorator.train">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.BaseDecorator.train">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Train the decoration model.</span>
+
+<span class="sd">        Model or model parameters should be stored in a property of the</span>
+<span class="sd">        object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entries(list of ComputedStructureEntry):</span>
+<span class="sd">                Entries of computed structures.</span>
+<span class="sd">            reset(bool): optional</span>
+<span class="sd">                If you want to re-train the decorator model, set this value</span>
+<span class="sd">                to true. Otherwise, will skip training if the model is</span>
+<span class="sd">                trained. Default to false.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="BaseDecorator.decorate">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.BaseDecorator.decorate">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">decorate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Give decoration to entries based on trained model.</span>
+
+<span class="sd">        If an assigned entry is not valid,</span>
+<span class="sd">        for example, in charge assignment, if a decorated structure is not</span>
+<span class="sd">        charge neutral, this entry will be returned as None.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entries(list of ComputedStructureEntry):</span>
+<span class="sd">                Entries of computed, undecorated structures.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list of NoneType or ComputedStructureEntry:</span>
+<span class="sd">               Entries with decorated structures or failed structures.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_load_props</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">entries</span><span class="p">,</span> <span class="n">groups</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load required properties from entries.&quot;&quot;&quot;</span>
+        <span class="c1"># If required_prop_name can be parsed by emmet into</span>
+        <span class="c1"># the structure of ComputedStructureEntry. Otherwise,</span>
+        <span class="c1"># need some pre-processing to make sure entry data</span>
+        <span class="c1"># include the required properties, and the properties</span>
+        <span class="c1"># should be in the form of 1D arrayLike per entry.</span>
+        <span class="c1"># Properties are concatenated in the order given by</span>
+        <span class="c1"># cls.required_properties.</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">structure_sites</span> <span class="o">=</span> <span class="n">groups</span><span class="p">[</span><span class="n">species</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">struct_id</span><span class="p">,</span> <span class="n">site_id</span> <span class="ow">in</span> <span class="n">structure_sites</span><span class="p">:</span>
+            <span class="n">site_props</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">prop_name</span><span class="p">,</span> <span class="n">taskdoc_query</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">required_prop_names</span><span class="p">:</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">_get_required_site_property</span><span class="p">(</span><span class="n">entries</span><span class="p">[</span><span class="n">struct_id</span><span class="p">],</span> <span class="n">site_id</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Cannot train assignment on non-scalar&quot;</span> <span class="s2">&quot; property.&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">site_props</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            <span class="n">props</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site_props</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="k">def</span> <span class="nf">_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="p">,</span> <span class="n">decorate_rules</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decorate entries with rules.&quot;&quot;&quot;</span>
+        <span class="n">entries_decor</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">struct_id</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">entries</span><span class="p">):</span>
+            <span class="n">s_undecor</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">structure</span>
+            <span class="n">species_decor</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">site_id</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">s_undecor</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="s2">&quot;specie&quot;</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Can not decorate partially disordered site: &quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">site</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="n">sp</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">specie</span>
+                <span class="k">if</span> <span class="n">struct_id</span> <span class="ow">in</span> <span class="n">decorate_rules</span> <span class="ow">and</span> <span class="n">site_id</span> <span class="ow">in</span> <span class="n">decorate_rules</span><span class="p">[</span><span class="n">struct_id</span><span class="p">]:</span>
+                    <span class="n">label</span> <span class="o">=</span> <span class="n">decorate_rules</span><span class="p">[</span><span class="n">struct_id</span><span class="p">][</span><span class="n">site_id</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">decorated_prop_name</span> <span class="o">==</span> <span class="s2">&quot;oxi_state&quot;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">Element</span><span class="p">):</span>
+                            <span class="n">sp_decor</span> <span class="o">=</span> <span class="n">Species</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="n">oxidation_state</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">sp_decor</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span>
+                            <span class="n">sp_decor</span><span class="o">.</span><span class="n">_oxi_state</span> <span class="o">=</span> <span class="n">label</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># After pymatgen 2023.07.20, properties dictionary is deprecated.</span>
+                        <span class="c1"># Only spin will be supported.</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">decorated_prop_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">&quot;spin&quot;</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                                <span class="s2">&quot;Pymatgen Species does not support &quot;</span>
+                                <span class="sa">f</span><span class="s2">&quot;property </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">decorated_prop_name</span><span class="si">}</span><span class="s2">!&quot;</span>
+                            <span class="p">)</span>
+
+                        <span class="c1"># Atomic species with spin is treated as zero oxidation state.</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">Element</span><span class="p">):</span>
+                            <span class="n">sp_decor</span> <span class="o">=</span> <span class="n">Species</span><span class="p">(</span>
+                                <span class="n">sp</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span>
+                                <span class="n">oxidation_state</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                <span class="n">spin</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
+                            <span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">sp_decor</span> <span class="o">=</span> <span class="n">Species</span><span class="p">(</span>
+                                <span class="n">sp</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span>
+                                <span class="n">oxidation_state</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">oxi_state</span><span class="p">,</span>
+                                <span class="n">spin</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
+                            <span class="p">)</span>
+
+                    <span class="n">species_decor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp_decor</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>  <span class="c1"># Undecorated sites might continue to be Element.</span>
+                    <span class="n">species_decor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span>
+
+            <span class="c1"># Preserve all information.</span>
+            <span class="n">site_properties</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[])</span>
+            <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">s_undecor</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">site</span><span class="o">.</span><span class="n">properties</span><span class="p">:</span>
+                    <span class="n">site_properties</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">p</span><span class="p">])</span>
+            <span class="n">s_decor</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span><span class="n">s_undecor</span><span class="o">.</span><span class="n">lattice</span><span class="p">,</span> <span class="n">species_decor</span><span class="p">,</span> <span class="n">s_undecor</span><span class="o">.</span><span class="n">frac_coords</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">prop</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">site_properties</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">s_decor</span><span class="o">.</span><span class="n">add_site_property</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+            <span class="n">energy_adjustments</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">energy_adjustments</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">energy_adjustments</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
+                    <span class="ow">and</span> <span class="n">entry</span><span class="o">.</span><span class="n">energy_adjustments</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="p">)</span>
+                <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="c1"># Constant energy adjustment is set as a manual class object.</span>
+            <span class="n">entry_decor</span> <span class="o">=</span> <span class="n">ComputedStructureEntry</span><span class="p">(</span>
+                <span class="n">s_decor</span><span class="p">,</span>
+                <span class="n">energy</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">uncorrected_energy</span><span class="p">,</span>
+                <span class="n">energy_adjustments</span><span class="o">=</span><span class="n">energy_adjustments</span><span class="p">,</span>
+                <span class="n">parameters</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                <span class="n">entry_id</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">entry_id</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">entries_decor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry_decor</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">entries_decor</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Filter out entries by some criteria.</span>
+
+<span class="sd">        Must be implemented for every decorator class.</span>
+<span class="sd">        The entries that fail to satisfy the specific criteria</span>
+<span class="sd">        defined here will be returned as None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">entries</span>
+
+    <span class="c1"># Should save and load dicts with Monty.</span>
+<div class="viewcode-block" id="BaseDecorator.as_dict">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.BaseDecorator.as_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the decorator.&quot;&quot;&quot;</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">):</span> <span class="n">val</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;@module&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
+            <span class="s2">&quot;@class&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="s2">&quot;labels&quot;</span><span class="p">:</span> <span class="n">labels</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="BaseDecorator.from_dict">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.BaseDecorator.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialization.&quot;&quot;&quot;</span>
+        <span class="k">return</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MixtureGaussianDecorator">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.MixtureGaussianDecorator">[docs]</a>
+<span class="k">class</span> <span class="nc">MixtureGaussianDecorator</span><span class="p">(</span><span class="n">BaseDecorator</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mixture of Gaussians (MoGs) decorator class.</span>
+
+<span class="sd">    Uses mixture of Gaussians method to label each species.</span>
+
+<span class="sd">    .. note:: No test has been added for this specific class yet.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">decorated_prop_name</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">required_prop_names</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">gaussian_model_keys</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;weights_&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;means_&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;covariances_&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;precisions_&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;precisions_cholesky_&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;converged_&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;n_iter_&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;lower_bound_&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">gaussian_models</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">           labels(dict of str to list): optional</span>
+<span class="sd">               A table of labels to decorate each element with.</span>
+<span class="sd">               keys are species symbol, values are possible decorated property</span>
+<span class="sd">               values, such as oxidation states, magnetic spin directions.</span>
+<span class="sd">               Values are sorted such that the cluster centers in the</span>
+<span class="sd">               required property is increasing. For example, in Mn(2, 3, 4)+</span>
+<span class="sd">               all high spin, the magnetic moments is sorted as [Mn4+, Mn3+, Mn2+],</span>
+<span class="sd">               thus you should provide labels as {Element(&quot;Mn&quot;):[4, 3, 2]}.</span>
+<span class="sd">               If you have multiple required properties, or required properties</span>
+<span class="sd">               have multiple dimensions, the labels order must match the sort</span>
+<span class="sd">               in the order of self.required_properties. Properties are sorted</span>
+<span class="sd">               lexicographically.</span>
+<span class="sd">               Keys can be either Element|Species object, or their</span>
+<span class="sd">               string representations. Currently, do not support decoration</span>
+<span class="sd">               of Vacancy.</span>
+<span class="sd">               This argument may not be necessary for some sub-classes, such as:</span>
+<span class="sd">               GuessChargeDecorator.</span>
+<span class="sd">               Be sure to provide labels for all the species you wish to assign</span>
+<span class="sd">               a property to, otherwise, you are the cause of your own error!</span>
+<span class="sd">           gaussian_models(dict of str or Element or Species to GaussianMixture):</span>
+<span class="sd">               Gaussian models corresponding to each key in argument **labels**.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">gaussian_models</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">gaussian_models</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">gaussian_models</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">get_species</span><span class="p">(</span><span class="n">key</span><span class="p">):</span> <span class="n">val</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">gaussian_models</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">gaussian_models</span><span class="p">:</span>
+                <span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Gaussian model for </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> is missing! &quot;</span> <span class="s2">&quot;Initializing from empty.&quot;</span>
+                <span class="p">)</span>
+                <span class="n">gaussian_models</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">GaussianMixture</span><span class="p">(</span>
+                    <span class="n">n_components</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gms</span> <span class="o">=</span> <span class="n">gaussian_models</span>
+
+<div class="viewcode-block" id="MixtureGaussianDecorator.serialize_gaussian_model">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.MixtureGaussianDecorator.serialize_gaussian_model">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">serialize_gaussian_model</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize gaussian model into dict.&quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;init_params&quot;</span><span class="p">:</span> <span class="n">model</span><span class="o">.</span><span class="n">get_params</span><span class="p">(),</span> <span class="s2">&quot;model_params&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">MixtureGaussianDecorator</span><span class="o">.</span><span class="n">gaussian_model_keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;model_params&quot;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+            <span class="c1"># Contains np.array, not directly json.dump-able. Use monty.</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="MixtureGaussianDecorator.deserialize_gaussian_model">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.MixtureGaussianDecorator.deserialize_gaussian_model">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">deserialize_gaussian_model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Recover gaussian model from dict.&quot;&quot;&quot;</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">GaussianMixture</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;init_params&quot;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;model_params&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">model</span></div>
+
+
+<div class="viewcode-block" id="MixtureGaussianDecorator.is_trained_gaussian_model">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.MixtureGaussianDecorator.is_trained_gaussian_model">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">is_trained_gaussian_model</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether a gaussian model is trained.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">k</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="vm">__dict__</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">MixtureGaussianDecorator</span><span class="o">.</span><span class="n">gaussian_model_keys</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_trained</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine whether the decorator has been trained.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool:</span>
+<span class="sd">              Whether the model has been trained.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">is_trained_gaussian_model</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gms</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+
+<div class="viewcode-block" id="MixtureGaussianDecorator.train">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.MixtureGaussianDecorator.train">[docs]</a>
+    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Train the decoration model.</span>
+
+<span class="sd">        Model or model parameters should be stored in a property of the</span>
+<span class="sd">        object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entries(list of ComputedStructureEntry):</span>
+<span class="sd">                Entries of computed structures.</span>
+<span class="sd">            reset(bool): optional</span>
+<span class="sd">                If you want to re-train the decorator model, set this value</span>
+<span class="sd">                to true. Otherwise, we will skip training if the model is</span>
+<span class="sd">                trained before. Default to false.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_trained</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">reset</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_site_by_species</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span>
+            <span class="c1"># Train model for each species in the labels dict.</span>
+            <span class="k">for</span> <span class="n">species</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">:</span>
+                <span class="n">props</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_props</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">entries</span><span class="p">,</span> <span class="n">groups</span><span class="p">)</span>
+                <span class="n">props</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">props</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">props</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Can not train on tensor properties! &quot;</span>
+                        <span class="s2">&quot;Convert to scalar or vector before &quot;</span>
+                        <span class="s2">&quot;training!&quot;</span>
+                    <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_gms</span><span class="p">[</span><span class="n">species</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gms</span><span class="p">[</span><span class="n">species</span><span class="p">]</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">props</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MixtureGaussianDecorator.decorate">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.MixtureGaussianDecorator.decorate">[docs]</a>
+    <span class="k">def</span> <span class="nf">decorate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Give decoration to entries based on trained model.</span>
+
+<span class="sd">        If an assigned entry is not valid,</span>
+<span class="sd">        for example, in charge assignment, if an assigned structure is not</span>
+<span class="sd">        charge neutral, then this entry will be returned as None.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entries(list of ComputedStructureEntry):</span>
+<span class="sd">                Entries of computed, undecorated structures.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of NoneType or ComputedStructureEntry:</span>
+<span class="sd">                Entries with decorated structures or failed structures.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_trained</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can not make predictions from un-trained&quot;</span> <span class="s2">&quot; models!&quot;</span><span class="p">)</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_site_by_species</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span>
+        <span class="n">decoration_rule</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">species</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>
+            <span class="n">structure_sites</span> <span class="o">=</span> <span class="n">groups</span><span class="p">[</span><span class="n">species</span><span class="p">]</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gms</span><span class="p">[</span><span class="n">species</span><span class="p">]</span>
+            <span class="n">centers</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;means_&quot;</span><span class="p">)</span>
+            <span class="c1"># Lex sort on dimensions,</span>
+            <span class="c1"># flip to make sure that first dim sorted first.</span>
+            <span class="n">marks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">centers</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">centers_argsort</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lexsort</span><span class="p">(</span><span class="n">marks</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">props</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_props</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">entries</span><span class="p">,</span> <span class="n">groups</span><span class="p">)</span>
+            <span class="n">props</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">props</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">props</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Can not train on tensor properties! &quot;</span>
+                    <span class="s2">&quot;Convert to scalar or vector before &quot;</span>
+                    <span class="s2">&quot;training!&quot;</span>
+                <span class="p">)</span>
+            <span class="n">cluster_ids</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">props</span><span class="p">)</span>
+            <span class="n">label_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">centers_argsort</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cluster_ids</span><span class="p">]</span>
+            <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">species</span><span class="p">])</span>
+            <span class="n">assigned_labels</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">label_ids</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">struct_id</span><span class="p">,</span> <span class="n">site_id</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">structure_sites</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">struct_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">decoration_rule</span><span class="p">:</span>
+                    <span class="n">decoration_rule</span><span class="p">[</span><span class="n">struct_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">decoration_rule</span><span class="p">[</span><span class="n">struct_id</span><span class="p">][</span><span class="n">site_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">assigned_labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">entries_processed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">decoration_rule</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="p">(</span><span class="n">entries_processed</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MixtureGaussianDecorator.as_dict">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.MixtureGaussianDecorator.as_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize to dict.&quot;&quot;&quot;</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
+        <span class="n">d</span><span class="p">[</span><span class="s2">&quot;models&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">species</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialize_gaussian_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">species</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gms</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">d</span></div>
+
+
+<div class="viewcode-block" id="MixtureGaussianDecorator.from_dict">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.MixtureGaussianDecorator.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load from dict.&quot;&quot;&quot;</span>
+        <span class="c1"># Please load dict with monty.</span>
+        <span class="n">models</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;models&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">models</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">models</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">deserialize_gaussian_model</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">models</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">],</span> <span class="n">models</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="GpOptimizedDecorator">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.GpOptimizedDecorator">[docs]</a>
+<span class="k">class</span> <span class="nc">GpOptimizedDecorator</span><span class="p">(</span><span class="n">BaseDecorator</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gaussian process decorator class.</span>
+
+<span class="sd">    Uses Gaussian optimization process described by `J. H. Yang</span>
+<span class="sd">    et al. &lt;https://www.nature.com/articles/s41524-022-00818-3&gt;`_</span>
+
+<span class="sd">    Up to now, this class can only take as input a single scalar</span>
+<span class="sd">    property per site.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Edit this as you implement new child classes.</span>
+    <span class="n">decorated_prop_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">required_prop_names</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">cuts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">           labels(dict of str to list): optional</span>
+<span class="sd">               A table of labels to decorate each element with.</span>
+<span class="sd">               keys are species symbol, values are possible decorated property</span>
+<span class="sd">               values, such as oxidation states, magnetic spin directions.</span>
+<span class="sd">               Values are sorted such that the cluster centers in the</span>
+<span class="sd">               required property is increasing. For example, in Mn(2, 3, 4)+</span>
+<span class="sd">               all high spin, the magnetic moments is sorted as [Mn4+, Mn3+, Mn2+],</span>
+<span class="sd">               thus you should provide labels as {Element(&quot;Mn&quot;):[4, 3, 2]}.</span>
+<span class="sd">               Keys can be either Element and Species object, or their</span>
+<span class="sd">               string representations. Currently, do not support decoration</span>
+<span class="sd">               of Vacancy.</span>
+<span class="sd">               If you have multiple required properties, or required properties</span>
+<span class="sd">               have multiple dimensions, the labels order must match the sort</span>
+<span class="sd">               in the order of self.required_properties. Properties are sorted</span>
+<span class="sd">               lexicographically.</span>
+<span class="sd">               This argument may not be necessary for some sub-classes, such as:</span>
+<span class="sd">               GuessChargeDecorator.</span>
+<span class="sd">               Be sure to provide labels for all the species you wish to assign</span>
+<span class="sd">               a property to, otherwise, you are the cause of your own error!</span>
+<span class="sd">           cuts(dict of str or Species over list): optional</span>
+<span class="sd">               Cuts to divide required property value into sectors, so as</span>
+<span class="sd">               to decide the label they belong to. Keys are the same</span>
+<span class="sd">               as argument &quot;labels&quot;.</span>
+<span class="sd">               For example, if labels={Element(&quot;Mn&quot;):[4, 3, 2]} and</span>
+<span class="sd">               cuts={Element(&quot;Mn&quot;):[0.5, 1.0]}, and the required property</span>
+<span class="sd">               is &quot;total_magmom&quot;, then Mn atoms with magnetic moment &lt; 0.5</span>
+<span class="sd">               will be assigned label 4, atoms with 0.5 &lt;= magnetic moment</span>
+<span class="sd">               &lt; 1.0 will be assigned label 3, and atoms with magnetic</span>
+<span class="sd">               moment &gt;= 1.0 will be assigned label 2.</span>
+<span class="sd">               If provided:</span>
+
+<span class="sd">               #. Cut values must be monotonically increasing,</span>
+<span class="sd">               #. Must satisfy len(labels[key]) = len(cuts[key]) + 1 for any key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cuts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cuts</span> <span class="o">=</span> <span class="p">{</span><span class="n">get_species</span><span class="p">(</span><span class="n">key</span><span class="p">):</span> <span class="n">val</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cuts</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="k">for</span> <span class="n">species</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">species</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cuts</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cuts not provided for species </span><span class="si">{</span><span class="n">species</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cuts</span><span class="p">[</span><span class="n">species</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">species</span><span class="p">]):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Number of cuts for species </span><span class="si">{</span><span class="n">species</span><span class="si">}</span><span class="s2"> &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;does not match the number of its labels!&quot;</span>
+                    <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cuts</span> <span class="o">=</span> <span class="n">cuts</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_trained</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gives whether this decorator is trained before.</span>
+
+<span class="sd">        If trained, will be blocked from training again.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool:</span>
+<span class="sd">                Whether the model is trained.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cuts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_decoration_rules_from_cuts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="p">,</span> <span class="n">cuts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get decoration rules from cuts.&quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">get_sector_id</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sector_cuts</span><span class="p">):</span>
+            <span class="c1"># sector_cuts must be ascending.</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sector_cuts</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">yid</span><span class="p">,</span> <span class="n">yy</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">yy</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">yid</span>
+
+        <span class="n">groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_site_by_species</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span>
+        <span class="n">decoration_rule</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">species</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>
+            <span class="n">structure_sites</span> <span class="o">=</span> <span class="n">groups</span><span class="p">[</span><span class="n">species</span><span class="p">]</span>
+            <span class="n">props</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_props</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">entries</span><span class="p">,</span> <span class="n">groups</span><span class="p">)</span>
+            <span class="n">props</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">props</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">props</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;GpOptimizedDecorator can only be trained &quot;</span>
+                    <span class="s2">&quot;on one scalar property!&quot;</span>
+                <span class="p">)</span>
+            <span class="n">props</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="n">label_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">get_sector_id</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">cuts</span><span class="p">[</span><span class="n">species</span><span class="p">])</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">props</span><span class="p">]</span>
+            <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">species</span><span class="p">])</span>
+            <span class="n">assigned_labels</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">label_ids</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">struct_id</span><span class="p">,</span> <span class="n">site_id</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">structure_sites</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">struct_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">decoration_rule</span><span class="p">:</span>
+                    <span class="n">decoration_rule</span><span class="p">[</span><span class="n">struct_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">decoration_rule</span><span class="p">[</span><span class="n">struct_id</span><span class="p">][</span><span class="n">site_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">assigned_labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">decoration_rule</span>
+
+    <span class="k">def</span> <span class="nf">_evaluate_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="p">,</span> <span class="n">cuts_flatten</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate the objective function as count of filtered entries.&quot;&quot;&quot;</span>
+        <span class="c1"># De-flatten.</span>
+        <span class="n">cuts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">n_cuts</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">species</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">cuts</span><span class="p">[</span><span class="n">species</span><span class="p">]</span> <span class="o">=</span> <span class="n">cuts_flatten</span><span class="p">[</span>
+                <span class="n">n_cuts</span> <span class="p">:</span> <span class="n">n_cuts</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">species</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="p">]</span>
+            <span class="n">n_cuts</span> <span class="o">=</span> <span class="n">n_cuts</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">species</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">decoration_rules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decoration_rules_from_cuts</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">cuts</span><span class="p">)</span>
+        <span class="n">entries_processed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">decoration_rules</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">entry</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="p">(</span><span class="n">entries_processed</span><span class="p">)</span> <span class="k">if</span> <span class="n">entry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="p">)</span>  <span class="c1"># To be minimized.</span>
+
+    <span class="k">def</span> <span class="nf">_form_initial_guesses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Form initial guesses (flatten).&quot;&quot;&quot;</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_site_by_species</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span>
+        <span class="n">cuts_flatten_init</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">domains_flatten_init</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">species</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="c1"># Need some pre-processing to make sure entries data</span>
+            <span class="c1"># include the required properties, and the properties</span>
+            <span class="c1"># are in the form of 1D arrayLike per entry.</span>
+            <span class="n">props</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_props</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">entries</span><span class="p">,</span> <span class="n">groups</span><span class="p">)</span>
+            <span class="n">props</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">props</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">props</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;GpOptimizedDecorator can only be used &quot;</span> <span class="s2">&quot;on scalar properties!&quot;</span>
+                <span class="p">)</span>
+            <span class="n">props</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">GaussianMixture</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">species</span><span class="p">]))</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">props</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">centers</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;means_&quot;</span><span class="p">)</span>
+            <span class="c1"># Lex sort on dimensions,</span>
+            <span class="c1"># flip to make sure that first dim sorted first.</span>
+            <span class="n">marks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">centers</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">centers_argsort</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lexsort</span><span class="p">(</span><span class="n">marks</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">lin_space</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">props</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">props</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)</span>
+            <span class="n">cluster_ids</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">lin_space</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">label_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">centers_argsort</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cluster_ids</span><span class="p">]</span>
+            <span class="n">cuts_species</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">last_label_id</span> <span class="o">=</span> <span class="n">label_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">label_id</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">label_ids</span><span class="p">,</span> <span class="n">lin_space</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">label_id</span> <span class="o">!=</span> <span class="n">last_label_id</span><span class="p">:</span>
+                    <span class="c1"># assert label_id == last_label_id + 1</span>
+                    <span class="n">cuts_species</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+                    <span class="n">last_label_id</span> <span class="o">=</span> <span class="n">label_id</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cuts_species</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">delta</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">cuts_species</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">cuts_species</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">cuts_species</span><span class="p">))</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="o">*</span> <span class="mf">0.3</span>
+                <span class="p">)</span>
+                <span class="c1"># Only allow a small amount of tuning with gp-minimize.</span>
+                <span class="c1"># This also keeps ascending order between cutting points.</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">delta</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">props</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">props</span><span class="p">))</span> <span class="o">*</span> <span class="mf">0.2</span>
+            <span class="n">domains_species</span> <span class="o">=</span> <span class="p">[(</span><span class="n">c</span> <span class="o">-</span> <span class="n">delta</span><span class="p">,</span> <span class="n">c</span> <span class="o">+</span> <span class="n">delta</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cuts_species</span><span class="p">]</span>
+            <span class="n">cuts_flatten_init</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">cuts_species</span><span class="p">)</span>
+            <span class="n">domains_flatten_init</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">domains_species</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cuts_flatten_init</span><span class="p">,</span> <span class="n">domains_flatten_init</span>
+
+<div class="viewcode-block" id="GpOptimizedDecorator.train">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.GpOptimizedDecorator.train">[docs]</a>
+    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Train the decoration model.</span>
+
+<span class="sd">        First initialize with mixture of gaussian, then</span>
+<span class="sd">        optimize some objective function with gaussian process.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entries(list of ComputedStructureEntry):</span>
+<span class="sd">                Entries of computed structures.</span>
+<span class="sd">            reset(bool): optional</span>
+<span class="sd">                If you want to re-train the decorator model, set this value</span>
+<span class="sd">                to true. Otherwise, training will be skipped if the model is</span>
+<span class="sd">                trained. Default to false.</span>
+<span class="sd">            n_calls(int): optional</span>
+<span class="sd">                The number of iterations to be used by :func:`gp_minimize`.</span>
+<span class="sd">                Default is 50.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_trained</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">reset</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cuts_flatten_init</span><span class="p">,</span> <span class="n">domains_flatten_init</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_form_initial_guesses</span><span class="p">(</span>
+                <span class="n">entries</span>
+            <span class="p">)</span>
+            <span class="n">objective</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_evaluate_objective</span><span class="p">,</span> <span class="n">entries</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">gp_minimize</span><span class="p">(</span>
+                <span class="n">objective</span><span class="p">,</span>
+                <span class="n">domains_flatten_init</span><span class="p">,</span>
+                <span class="n">n_calls</span><span class="o">=</span><span class="n">n_calls</span><span class="p">,</span>
+                <span class="n">acq_optimizer</span><span class="o">=</span><span class="s2">&quot;sampling&quot;</span><span class="p">,</span>
+                <span class="n">noise</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">result</span><span class="o">.</span><span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">cuts_flatten_opt</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">x</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;Decorator model can&#39;t be optimized properly &quot;</span>
+                    <span class="s2">&quot;with Bayesian process, use mixture of gaussian &quot;</span>
+                    <span class="s2">&quot;clustering prediction instead!&quot;</span>
+                <span class="p">)</span>
+                <span class="n">cuts_flatten_opt</span> <span class="o">=</span> <span class="n">cuts_flatten_init</span>
+            <span class="c1"># De-flatten.</span>
+            <span class="n">cuts</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">n_cuts</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">species</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                <span class="n">cuts</span><span class="p">[</span><span class="n">species</span><span class="p">]</span> <span class="o">=</span> <span class="n">cuts_flatten_opt</span><span class="p">[</span>
+                    <span class="n">n_cuts</span> <span class="p">:</span> <span class="n">n_cuts</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">species</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="p">]</span>
+                <span class="n">cuts</span><span class="p">[</span><span class="n">species</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cuts</span><span class="p">[</span><span class="n">species</span><span class="p">])</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">n_cuts</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">species</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cuts</span> <span class="o">=</span> <span class="n">cuts</span></div>
+
+
+<div class="viewcode-block" id="GpOptimizedDecorator.decorate">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.GpOptimizedDecorator.decorate">[docs]</a>
+    <span class="k">def</span> <span class="nf">decorate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Give decoration to entries based on trained model.</span>
+
+<span class="sd">        If an assigned entry is not valid,</span>
+<span class="sd">        for example, in charge assignment, if a decorated structure is not</span>
+<span class="sd">        charge neutral, then its corresponding entry will be returned as None.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entries(list of ComputedStructureEntry):</span>
+<span class="sd">                Entries of computed, undecorated structures.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list of NoneType or ComputedStructureEntry:</span>
+<span class="sd">                Entries with decorated structures or failed structures.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">decoration_rules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decoration_rules_from_cuts</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cuts</span><span class="p">)</span>
+        <span class="n">entries_decorated</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">decoration_rules</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="p">(</span><span class="n">entries_decorated</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GpOptimizedDecorator.as_dict">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.GpOptimizedDecorator.as_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the decorator.&quot;&quot;&quot;</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
+        <span class="c1"># Species serialized to string directly. Many other properties</span>
+        <span class="c1"># might not be supported. Wait for pymatgen update.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_trained</span><span class="p">:</span>
+            <span class="n">d</span><span class="p">[</span><span class="s2">&quot;cuts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">):</span> <span class="n">val</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cuts</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">return</span> <span class="n">d</span></div>
+
+
+<div class="viewcode-block" id="GpOptimizedDecorator.from_dict">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.GpOptimizedDecorator.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialization.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">],</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cuts&quot;</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="NoTrainDecorator">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.NoTrainDecorator">[docs]</a>
+<span class="k">class</span> <span class="nc">NoTrainDecorator</span><span class="p">(</span><span class="n">BaseDecorator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorators that does not need training.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">           labels(dict of str or Species to list}): optional</span>
+<span class="sd">               A table of labels to decorate each element with.</span>
+<span class="sd">               keys are species symbol, values are possible decorated property</span>
+<span class="sd">               values, such as oxidation states, magnetic spin directions.</span>
+<span class="sd">               Values are sorted such that the corresponding cluster centers of the</span>
+<span class="sd">               required property is increasing. For example, in Mn(2, 3, 4)+</span>
+<span class="sd">               (high spin), the magnetic moments is sorted as [Mn4+, Mn3+, Mn2+],</span>
+<span class="sd">               thus you should provide labels as {Element(&quot;Mn&quot;):[4, 3, 2]}.</span>
+<span class="sd">               Keys can be either Element and Species object, or their</span>
+<span class="sd">               string representations. Currently, do not support decoration</span>
+<span class="sd">               of Vacancy.</span>
+<span class="sd">               If you have multiple required properties, or required properties</span>
+<span class="sd">               have multiple dimensions, the labels order must match the sort</span>
+<span class="sd">               in the order of self.required_properties. Properties are sorted</span>
+<span class="sd">               lexicographically.</span>
+<span class="sd">               This argument may not be necessary for some decorator, such as</span>
+<span class="sd">               GuessChargeDecorator.</span>
+<span class="sd">               Be sure to provide labels for all the species you wish to assign</span>
+<span class="sd">               a property to, otherwise, you are responsible for your own error!</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_trained</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Always considered trained.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="NoTrainDecorator.train">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.NoTrainDecorator.train">[docs]</a>
+    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Train the model.</span>
+
+<span class="sd">        This decorator does not require training at all. Keep</span>
+<span class="sd">        this method just for consistency.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="decorator_factory">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.decorator_factory">[docs]</a>
+<span class="k">def</span> <span class="nf">decorator_factory</span><span class="p">(</span><span class="n">decorator_type</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a BaseDecorator with its subclass name.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        decorator_type(str):</span>
+<span class="sd">            The name of a subclass of :class:`BaseDecorator`.</span>
+<span class="sd">        *args, **kwargs:</span>
+<span class="sd">            Arguments used to initialize the class.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        BaseDecorator:</span>
+<span class="sd">            The initialized decorator.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;decorator&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">decorator_type</span> <span class="ow">and</span> <span class="s2">&quot;Decorator&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">decorator_type</span><span class="p">:</span>
+        <span class="n">decorator_type</span> <span class="o">+=</span> <span class="s2">&quot;-decorator&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">class_name_from_str</span><span class="p">(</span><span class="n">decorator_type</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">derived_class_factory</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">BaseDecorator</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_site_property_query_names_from_decorator">
+<a class="viewcode-back" href="../../../api_reference/species_decorators/base.html#WFacer.specie_decorators.base.get_site_property_query_names_from_decorator">[docs]</a>
+<span class="k">def</span> <span class="nf">get_site_property_query_names_from_decorator</span><span class="p">(</span><span class="n">decname</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the required properties from a decorator name.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        decname(str):</span>
+<span class="sd">            Decorator name.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list of str:</span>
+<span class="sd">            The list of names of required site properties by the</span>
+<span class="sd">            decorator.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;decorator&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">decname</span> <span class="ow">and</span> <span class="s2">&quot;decorator&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">decname</span><span class="p">:</span>
+        <span class="n">decname</span> <span class="o">+=</span> <span class="s2">&quot;-decorator&quot;</span>
+    <span class="n">clsname</span> <span class="o">=</span> <span class="n">class_name_from_str</span><span class="p">(</span><span class="n">decname</span><span class="p">)</span>
+    <span class="n">dec_class</span> <span class="o">=</span> <span class="n">get_subclasses</span><span class="p">(</span><span class="n">BaseDecorator</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">clsname</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dec_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;required decorator </span><span class="si">{</span><span class="n">clsname</span><span class="si">}</span><span class="s2"> is not implemented!&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dec_class</span><span class="o">.</span><span class="n">required_prop_names</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2022-2023, Ceder Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

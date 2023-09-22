@@ -1,0 +1,1181 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WFacer.jobs &#8212; WFacer 0.1.dev1+g4272e06 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+
+    <script src="../../_static/documentation_options.js?v=0c04da69"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/WFacer/jobs';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.14.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.1.dev1+g4272e06';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Sep 22, 2023"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">WFacer 0.1.dev1+g4272e06 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../api_reference/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../api_reference/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">WFacer.jobs</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for WFacer.jobs</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Unitary jobs used by an atomate2 workflow.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">atomate2.vasp.jobs.core</span> <span class="kn">import</span> <span class="n">RelaxMaker</span><span class="p">,</span> <span class="n">StaticMaker</span><span class="p">,</span> <span class="n">TightRelaxMaker</span>
+<span class="kn">from</span> <span class="nn">atomate2.vasp.sets.core</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">RelaxSetGenerator</span><span class="p">,</span>
+    <span class="n">StaticSetGenerator</span><span class="p">,</span>
+    <span class="n">TightRelaxSetGenerator</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">emmet.core.vasp.task_valid</span> <span class="kn">import</span> <span class="n">TaskState</span>  <span class="c1"># atomate2 &gt;= 0.0.11</span>
+<span class="kn">from</span> <span class="nn">jobflow</span> <span class="kn">import</span> <span class="n">Flow</span><span class="p">,</span> <span class="n">OnMissing</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">job</span>
+<span class="kn">from</span> <span class="nn">pymatgen.analysis.elasticity.strain</span> <span class="kn">import</span> <span class="n">Deformation</span>
+<span class="kn">from</span> <span class="nn">smol.cofe</span> <span class="kn">import</span> <span class="n">ClusterExpansion</span>
+<span class="kn">from</span> <span class="nn">smol.moca</span> <span class="kn">import</span> <span class="n">CompositionSpace</span>
+
+<span class="kn">from</span> <span class="nn">.enumeration</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">enumerate_compositions_as_counts</span><span class="p">,</span>
+    <span class="n">enumerate_matrices</span><span class="p">,</span>
+    <span class="n">generate_training_structures</span><span class="p">,</span>
+    <span class="n">truncate_cluster_subspace</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.fit</span> <span class="kn">import</span> <span class="n">fit_ecis_from_wrangler</span>
+<span class="kn">from</span> <span class="nn">.preprocessing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">get_cluster_subspace</span><span class="p">,</span>
+    <span class="n">get_initial_ce_coefficients</span><span class="p">,</span>
+    <span class="n">get_prim_specs</span><span class="p">,</span>
+    <span class="n">process_calculation_options</span><span class="p">,</span>
+    <span class="n">process_composition_options</span><span class="p">,</span>
+    <span class="n">process_convergence_options</span><span class="p">,</span>
+    <span class="n">process_decorator_options</span><span class="p">,</span>
+    <span class="n">process_fit_options</span><span class="p">,</span>
+    <span class="n">process_structure_options</span><span class="p">,</span>
+    <span class="n">process_subspace_options</span><span class="p">,</span>
+    <span class="n">process_supercell_options</span><span class="p">,</span>
+    <span class="n">reduce_prim</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.schema</span> <span class="kn">import</span> <span class="n">CeOutputsDocument</span>
+<span class="kn">from</span> <span class="nn">.specie_decorators</span> <span class="kn">import</span> <span class="n">PmgGuessChargeDecorator</span><span class="p">,</span> <span class="n">decorator_factory</span>
+<span class="kn">from</span> <span class="nn">.utils.task_document</span> <span class="kn">import</span> <span class="n">get_entry_from_taskdoc</span>
+<span class="kn">from</span> <span class="nn">.wrangling</span> <span class="kn">import</span> <span class="n">CeDataWrangler</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_preprocess_options</span><span class="p">(</span><span class="n">options</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pre-process and concatenate options.&quot;&quot;&quot;</span>
+    <span class="n">sc_options</span> <span class="o">=</span> <span class="n">process_supercell_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+    <span class="n">comp_options</span> <span class="o">=</span> <span class="n">process_composition_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+    <span class="n">struct_options</span> <span class="o">=</span> <span class="n">process_structure_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+    <span class="n">calc_options</span> <span class="o">=</span> <span class="n">process_calculation_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+    <span class="n">decor_options</span> <span class="o">=</span> <span class="n">process_decorator_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+    <span class="n">space_options</span> <span class="o">=</span> <span class="n">process_subspace_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+    <span class="n">fit_options</span> <span class="o">=</span> <span class="n">process_fit_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+    <span class="n">conv_options</span> <span class="o">=</span> <span class="n">process_convergence_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+    <span class="n">options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sc_options</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">comp_options</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">struct_options</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">calc_options</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">decor_options</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">space_options</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fit_options</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">conv_options</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">options</span>
+
+
+<span class="k">def</span> <span class="nf">_enumerate_structures</span><span class="p">(</span>
+    <span class="n">subspace</span><span class="p">,</span>
+    <span class="n">coefs</span><span class="p">,</span>
+    <span class="n">iter_id</span><span class="p">,</span>
+    <span class="n">sc_matrices</span><span class="p">,</span>
+    <span class="n">compositions</span><span class="p">,</span>
+    <span class="n">enumerated_structures</span><span class="p">,</span>
+    <span class="n">enumerated_features</span><span class="p">,</span>
+    <span class="n">options</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enumerate structures in an interaction.&quot;&quot;&quot;</span>
+    <span class="n">ce</span> <span class="o">=</span> <span class="n">ClusterExpansion</span><span class="p">(</span><span class="n">subspace</span><span class="p">,</span> <span class="n">coefs</span><span class="p">)</span>
+    <span class="n">keep_ground_states</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;keep_ground_states&quot;</span><span class="p">]</span>
+    <span class="n">num_structs_init</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;num_structs_per_iter_init&quot;</span><span class="p">]</span>
+    <span class="n">num_structs_add</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;num_structs_per_iter_add&quot;</span><span class="p">]</span>
+    <span class="n">mc_generator_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;sample_generator_kwargs&quot;</span><span class="p">]</span>
+    <span class="n">init_method</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;init_method&quot;</span><span class="p">]</span>
+    <span class="n">add_method</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;add_method&quot;</span><span class="p">]</span>
+    <span class="n">n_parallel</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;n_parallel&quot;</span><span class="p">]</span>
+    <span class="n">duplicacy_criteria</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;duplicacy_criteria&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">iter_id</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="n">init_method</span>
+        <span class="n">n_select</span> <span class="o">=</span> <span class="n">num_structs_init</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="n">add_method</span>
+        <span class="n">n_select</span> <span class="o">=</span> <span class="n">num_structs_add</span>
+    <span class="n">new_structures</span><span class="p">,</span> <span class="n">new_sc_matrices</span><span class="p">,</span> <span class="n">new_features</span> <span class="o">=</span> <span class="n">generate_training_structures</span><span class="p">(</span>
+        <span class="n">ce</span><span class="p">,</span>
+        <span class="n">sc_matrices</span><span class="p">,</span>
+        <span class="n">compositions</span><span class="p">,</span>
+        <span class="n">enumerated_structures</span><span class="p">,</span>
+        <span class="n">enumerated_features</span><span class="p">,</span>
+        <span class="n">keep_ground_states</span><span class="p">,</span>
+        <span class="n">n_select</span><span class="p">,</span>
+        <span class="n">mc_generator_kwargs</span><span class="p">,</span>
+        <span class="n">n_parallel</span><span class="p">,</span>
+        <span class="n">duplicacy_criteria</span><span class="o">=</span><span class="n">duplicacy_criteria</span><span class="p">,</span>
+        <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">new_structures</span><span class="p">,</span> <span class="n">new_sc_matrices</span><span class="p">,</span> <span class="n">new_features</span>
+
+
+<span class="k">def</span> <span class="nf">_get_vasp_makers</span><span class="p">(</span><span class="n">options</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the required VASP makers.&quot;&quot;&quot;</span>
+    <span class="n">relax_gen_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;relax_generator_kwargs&quot;</span><span class="p">]</span>
+    <span class="n">relax_generator</span> <span class="o">=</span> <span class="n">RelaxSetGenerator</span><span class="p">(</span><span class="o">**</span><span class="n">relax_gen_kwargs</span><span class="p">)</span>
+    <span class="n">relax_maker_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;relax_maker_kwargs&quot;</span><span class="p">]</span>
+    <span class="c1"># Force throwing out an error instead of defusing children, as parsing and</span>
+    <span class="c1"># fitting jobs are children of structure jobs and will be defused</span>
+    <span class="c1"># as well if not taken care of!</span>
+
+    <span class="c1"># Error handling will be taken care of by lost run detection and</span>
+    <span class="c1"># fixing functionalities in WFacer.fireworks_patches.</span>
+    <span class="n">relax_maker_kwargs</span><span class="p">[</span><span class="s2">&quot;stop_children_kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;handle_unsuccessful&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">}</span>
+    <span class="n">relax_maker</span> <span class="o">=</span> <span class="n">RelaxMaker</span><span class="p">(</span><span class="n">input_set_generator</span><span class="o">=</span><span class="n">relax_generator</span><span class="p">,</span> <span class="o">**</span><span class="n">relax_maker_kwargs</span><span class="p">)</span>
+    <span class="n">static_gen_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;static_generator_kwargs&quot;</span><span class="p">]</span>
+    <span class="n">static_generator</span> <span class="o">=</span> <span class="n">StaticSetGenerator</span><span class="p">(</span><span class="o">**</span><span class="n">static_gen_kwargs</span><span class="p">)</span>
+    <span class="n">static_maker_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;static_maker_kwargs&quot;</span><span class="p">]</span>
+    <span class="n">static_maker_kwargs</span><span class="p">[</span><span class="s2">&quot;stop_children_kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;handle_unsuccessful&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">}</span>
+    <span class="n">static_maker</span> <span class="o">=</span> <span class="n">StaticMaker</span><span class="p">(</span>
+        <span class="n">input_set_generator</span><span class="o">=</span><span class="n">static_generator</span><span class="p">,</span> <span class="o">**</span><span class="n">static_maker_kwargs</span>
+    <span class="p">)</span>
+    <span class="n">tight_gen_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;tight_generator_kwargs&quot;</span><span class="p">]</span>
+    <span class="n">tight_generator</span> <span class="o">=</span> <span class="n">TightRelaxSetGenerator</span><span class="p">(</span><span class="o">**</span><span class="n">tight_gen_kwargs</span><span class="p">)</span>
+    <span class="n">tight_maker_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;tight_maker_kwargs&quot;</span><span class="p">]</span>
+    <span class="n">tight_maker_kwargs</span><span class="p">[</span><span class="s2">&quot;stop_children_kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;handle_unsuccessful&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">}</span>
+    <span class="n">tight_maker</span> <span class="o">=</span> <span class="n">TightRelaxMaker</span><span class="p">(</span>
+        <span class="n">input_set_generator</span><span class="o">=</span><span class="n">tight_generator</span><span class="p">,</span> <span class="o">**</span><span class="n">tight_maker_kwargs</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">relax_maker</span><span class="p">,</span> <span class="n">static_maker</span><span class="p">,</span> <span class="n">tight_maker</span>
+
+
+<span class="k">def</span> <span class="nf">_check_flow_convergence</span><span class="p">(</span><span class="n">taskdoc</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check VASP convergence for a single structure.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">taskdoc</span><span class="o">.</span><span class="n">calcs_reversed</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">has_vasp_completed</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="n">TaskState</span><span class="o">.</span><span class="n">FAILED</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="k">def</span> <span class="nf">_get_decorators</span><span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">is_charge_decorated</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get required decorators.&quot;&quot;&quot;</span>
+    <span class="n">decorators</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">decorator_factory</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">dt</span><span class="p">,</span> <span class="n">kw</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;decorator_types&quot;</span><span class="p">],</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;decorator_kwargs&quot;</span><span class="p">])</span>
+    <span class="p">]</span>
+    <span class="n">decorated_properties</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">decorated_prop_name</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">decorators</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">decorated_properties</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">decorated_properties</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Can not use multiple decorators for decorating&quot;</span> <span class="s2">&quot; the same property!!&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_charge_decorated</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">decorators</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;Cluster expansion is charge decorated, but&quot;</span>
+            <span class="s2">&quot; no charge decoration method is specified.&quot;</span>
+            <span class="s2">&quot; Use default PmgGuessCharge at your risk!&quot;</span>
+        <span class="p">)</span>
+        <span class="n">decorators</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PmgGuessChargeDecorator</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">decorators</span>
+
+
+<span class="k">def</span> <span class="nf">_filter_out_failed_entries</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">entry_ids</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark failed entries as none and return successful indices.&quot;&quot;&quot;</span>
+    <span class="n">new_entry_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">eid</span> <span class="k">for</span> <span class="n">ent</span><span class="p">,</span> <span class="n">eid</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">entry_ids</span><span class="p">)</span> <span class="k">if</span> <span class="n">ent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">new_entries</span> <span class="o">=</span> <span class="p">[</span><span class="n">ent</span> <span class="k">for</span> <span class="n">ent</span> <span class="ow">in</span> <span class="n">entries</span> <span class="k">if</span> <span class="n">ent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">new_entries</span><span class="p">,</span> <span class="n">new_entry_ids</span>
+
+
+<span class="k">def</span> <span class="nf">_get_iter_id_from_enum_id</span><span class="p">(</span><span class="n">enum_id</span><span class="p">,</span> <span class="n">num_structs_init</span><span class="p">,</span> <span class="n">num_structs_add</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate in which iteration this structure was enumerated.</span>
+
+<span class="sd">    Iteration index starts from 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">enum_id</span> <span class="o">&lt;</span> <span class="n">num_structs_init</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">enum_id</span> <span class="o">-</span> <span class="n">num_structs_init</span><span class="p">)</span> <span class="o">//</span> <span class="n">num_structs_add</span> <span class="o">+</span> <span class="mi">1</span>
+
+
+<div class="viewcode-block" id="enumerate_structures">
+<a class="viewcode-back" href="../../api_reference/WFacer/jobs.html#WFacer.jobs.enumerate_structures">[docs]</a>
+<span class="k">def</span> <span class="nf">enumerate_structures</span><span class="p">(</span><span class="n">last_ce_document</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enumerate new structures for DFT computation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        last_ce_document(CeOutputsDocument):</span>
+<span class="sd">            The last cluster expansion outputs document.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">           The newly enumerated structures with super-cell matrices</span>
+<span class="sd">           and feature vectors.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Current iteration index. If starting from scratch,</span>
+    <span class="c1"># last_iter_id will be -1.</span>
+    <span class="n">iter_id</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">last_iter_id</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="c1"># Must be pre-processed options.</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">ce_options</span>
+
+    <span class="n">enumerated_structures</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">last_ce_document</span><span class="o">.</span><span class="n">enumerated_structures</span><span class="p">)</span>
+    <span class="n">enumerated_features</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">last_ce_document</span><span class="o">.</span><span class="n">enumerated_features</span><span class="p">)</span>
+
+    <span class="n">subspace</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">cluster_subspace</span>
+    <span class="n">sc_matrices</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">supercell_matrices</span>
+    <span class="n">compositions</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">compositions</span>
+
+    <span class="k">if</span> <span class="n">sc_matrices</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">sc_matrices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;No super-cell matrix available!&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; Loaded document:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">last_ce_document</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">compositions</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">compositions</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;No composition available!&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; Loaded document:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">last_ce_document</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Historical coefs.</span>
+    <span class="n">coefs_history</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">last_ce_document</span><span class="o">.</span><span class="n">coefs_history</span><span class="p">)</span>
+    <span class="n">coefs_history</span> <span class="o">=</span> <span class="n">coefs_history</span> <span class="ow">or</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coefs_history</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">coefs</span> <span class="o">=</span> <span class="n">get_initial_ce_coefficients</span><span class="p">(</span><span class="n">subspace</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">coefs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coefs_history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># Enumerate structures.</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Enumerating new structures.&quot;</span><span class="p">)</span>
+    <span class="n">new_structures</span><span class="p">,</span> <span class="n">new_sc_matrices</span><span class="p">,</span> <span class="n">new_features</span> <span class="o">=</span> <span class="n">_enumerate_structures</span><span class="p">(</span>
+        <span class="n">subspace</span><span class="p">,</span>
+        <span class="n">coefs</span><span class="p">,</span>
+        <span class="n">iter_id</span><span class="p">,</span>
+        <span class="n">sc_matrices</span><span class="p">,</span>
+        <span class="n">compositions</span><span class="p">,</span>
+        <span class="n">enumerated_structures</span><span class="p">,</span>
+        <span class="n">enumerated_features</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;new_structures&quot;</span><span class="p">:</span> <span class="n">new_structures</span><span class="p">,</span>
+        <span class="s2">&quot;new_sc_matrices&quot;</span><span class="p">:</span> <span class="n">new_sc_matrices</span><span class="p">,</span>
+        <span class="s2">&quot;new_features&quot;</span><span class="p">:</span> <span class="n">new_features</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<span class="c1"># Separate job definition from function to enable easier testing and</span>
+<span class="c1"># custom flow writing.</span>
+<span class="n">enumerate_structures_job</span> <span class="o">=</span> <span class="n">job</span><span class="p">(</span><span class="n">enumerate_structures</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_structure_calculation_flows">
+<a class="viewcode-back" href="../../api_reference/WFacer/jobs.html#WFacer.jobs.get_structure_calculation_flows">[docs]</a>
+<span class="k">def</span> <span class="nf">get_structure_calculation_flows</span><span class="p">(</span><span class="n">enum_output</span><span class="p">,</span> <span class="n">last_ce_document</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get workflows for newly enumerated structures.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        enum_output(dict):</span>
+<span class="sd">            Output from the enumeration job.</span>
+<span class="sd">        last_ce_document(CeOutputsDocument):</span>
+<span class="sd">            The cluster expansion outputs document from the last iteration.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list of Flow, list of OutputReference:</span>
+<span class="sd">            Flows for each structure and their output references pointing</span>
+<span class="sd">            at the final :class:`TaskDoc`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">project_name</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">project_name</span>
+    <span class="n">iter_id</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">last_iter_id</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">enumerated_structures</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">struct_id</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">struct_id</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">last_ce_document</span><span class="o">.</span><span class="n">enumerated_structures</span><span class="p">)</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">ce_options</span>
+    <span class="n">relax_maker</span><span class="p">,</span> <span class="n">static_maker</span><span class="p">,</span> <span class="n">tight_maker</span> <span class="o">=</span> <span class="n">_get_vasp_makers</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Performing ab-initio calculations.&quot;</span><span class="p">)</span>
+    <span class="n">new_structures</span> <span class="o">=</span> <span class="n">enum_output</span><span class="p">[</span><span class="s2">&quot;new_structures&quot;</span><span class="p">]</span>
+    <span class="n">flows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">structure</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_structures</span><span class="p">):</span>
+        <span class="n">fid</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">struct_id</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calculating enumerated structure id: </span><span class="si">{</span><span class="n">fid</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="n">flow_name</span> <span class="o">=</span> <span class="n">project_name</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;_iter_</span><span class="si">{</span><span class="n">iter_id</span><span class="si">}</span><span class="s2">_enum_</span><span class="si">{</span><span class="n">fid</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">relax_maker</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">flow_name</span> <span class="o">+</span> <span class="s2">&quot;_relax&quot;</span>
+        <span class="n">tight_maker</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">flow_name</span> <span class="o">+</span> <span class="s2">&quot;_tight&quot;</span>
+        <span class="n">static_maker</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">flow_name</span> <span class="o">+</span> <span class="s2">&quot;_static&quot;</span>
+        <span class="n">deformation</span> <span class="o">=</span> <span class="n">Deformation</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;apply_strain&quot;</span><span class="p">])</span>
+        <span class="n">def_structure</span> <span class="o">=</span> <span class="n">deformation</span><span class="o">.</span><span class="n">apply_to_structure</span><span class="p">(</span><span class="n">structure</span><span class="p">)</span>
+
+        <span class="n">jobs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">jobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">relax_maker</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="n">def_structure</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;add_tight_relax&quot;</span><span class="p">]:</span>
+            <span class="n">tight_job</span> <span class="o">=</span> <span class="n">tight_maker</span><span class="o">.</span><span class="n">make</span><span class="p">(</span>
+                <span class="n">jobs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">structure</span><span class="p">,</span> <span class="n">prev_vasp_dir</span><span class="o">=</span><span class="n">jobs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">dir_name</span>
+            <span class="p">)</span>
+            <span class="c1"># Allow failure in relaxation.</span>
+            <span class="n">tight_job</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">on_missing_references</span> <span class="o">=</span> <span class="n">OnMissing</span><span class="o">.</span><span class="n">NONE</span>
+            <span class="n">jobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tight_job</span><span class="p">)</span>
+        <span class="n">static_job</span> <span class="o">=</span> <span class="n">static_maker</span><span class="o">.</span><span class="n">make</span><span class="p">(</span>
+            <span class="n">jobs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">structure</span><span class="p">,</span> <span class="n">prev_vasp_dir</span><span class="o">=</span><span class="n">jobs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">dir_name</span>
+        <span class="p">)</span>
+        <span class="c1"># Allow failure in relaxation.</span>
+        <span class="n">static_job</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">on_missing_references</span> <span class="o">=</span> <span class="n">OnMissing</span><span class="o">.</span><span class="n">NONE</span>
+        <span class="n">jobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">static_job</span><span class="p">)</span>
+        <span class="n">flows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Flow</span><span class="p">(</span><span class="n">jobs</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">jobs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">flow_name</span><span class="p">))</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">flow</span><span class="o">.</span><span class="n">output</span> <span class="k">for</span> <span class="n">flow</span> <span class="ow">in</span> <span class="n">flows</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">flows</span><span class="p">,</span> <span class="n">outputs</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_structures_job">
+<a class="viewcode-back" href="../../api_reference/WFacer/jobs.html#WFacer.jobs.calculate_structures_job">[docs]</a>
+<span class="nd">@job</span>
+<span class="k">def</span> <span class="nf">calculate_structures_job</span><span class="p">(</span><span class="n">enum_output</span><span class="p">,</span> <span class="n">last_ce_document</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate newly enumerated structures.</span>
+
+<span class="sd">    .. note:: This job will replace itself with the calculation jobs to run for</span>
+<span class="sd">     each structure.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        enum_output(dict):</span>
+<span class="sd">            Output by enumeration job.</span>
+<span class="sd">        last_ce_document(CeOutputsDocument):</span>
+<span class="sd">            The last cluster expansion outputs document.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list of TaskDoc:</span>
+<span class="sd">            Results of VASP calculations, in the form of :class:`emmet.core.TaskDoc`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">project_name</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">project_name</span>
+    <span class="n">iter_id</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">last_iter_id</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">flows</span><span class="p">,</span> <span class="n">outputs</span> <span class="o">=</span> <span class="n">get_structure_calculation_flows</span><span class="p">(</span><span class="n">enum_output</span><span class="p">,</span> <span class="n">last_ce_document</span><span class="p">)</span>
+
+    <span class="n">calc_flow</span> <span class="o">=</span> <span class="n">Flow</span><span class="p">(</span>
+        <span class="n">flows</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">outputs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">project_name</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;_iter_</span><span class="si">{</span><span class="n">iter_id</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;_calculations&quot;</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">replace</span><span class="o">=</span><span class="n">calc_flow</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="parse_calculations">
+<a class="viewcode-back" href="../../api_reference/WFacer/jobs.html#WFacer.jobs.parse_calculations">[docs]</a>
+<span class="k">def</span> <span class="nf">parse_calculations</span><span class="p">(</span><span class="n">taskdocs</span><span class="p">,</span> <span class="n">enum_output</span><span class="p">,</span> <span class="n">last_ce_document</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse finished calculations into :class:`CeDataWrangler`.</span>
+
+<span class="sd">    Gives CeDataEntry with full decoration. Each computed structure</span>
+<span class="sd">    will be re-decorated and re-inserted every iteration.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        taskdocs(list of TaskDoc):</span>
+<span class="sd">            Task documents generated as results of VASP computations.</span>
+<span class="sd">        enum_output(dict):</span>
+<span class="sd">            Output by enumeration job.</span>
+<span class="sd">        last_ce_document(CeOutputsDocument):</span>
+<span class="sd">            The last cluster expansion outputs document.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">            A dictionary containing the updated wrangler with successfully decorated</span>
+<span class="sd">            and mapped calculations, the computed structure entries of all structures</span>
+<span class="sd">            before decoration, and the computed properties for all structures.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">ce_options</span>
+    <span class="n">prim_specs</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">prim_specs</span>
+
+    <span class="n">undecorated_entries</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">last_ce_document</span><span class="o">.</span><span class="n">undecorated_entries</span><span class="p">)</span>
+    <span class="n">computed_properties</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">last_ce_document</span><span class="o">.</span><span class="n">computed_properties</span><span class="p">)</span>
+    <span class="n">enumerated_matrices</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">last_ce_document</span><span class="o">.</span><span class="n">enumerated_matrices</span><span class="p">)</span>
+    <span class="n">undecorated_entries</span> <span class="o">=</span> <span class="n">undecorated_entries</span> <span class="ow">or</span> <span class="p">[]</span>
+    <span class="n">computed_properties</span> <span class="o">=</span> <span class="n">computed_properties</span> <span class="ow">or</span> <span class="p">[]</span>
+    <span class="n">enumerated_matrices</span> <span class="o">=</span> <span class="n">enumerated_matrices</span> <span class="ow">or</span> <span class="p">[]</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading computations.&quot;</span><span class="p">)</span>
+
+    <span class="n">n_enum</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">enum_output</span><span class="p">[</span><span class="s2">&quot;new_structures&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">taskdocs</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_enum</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Number of TaskDocs: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">taskdocs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; does not match with number of newly enumerated&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; structures: </span><span class="si">{</span><span class="n">n_enum</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">taskdocs</span><span class="p">:</span>
+        <span class="c1"># Handles fizzled structures that will miss reference.</span>
+        <span class="k">if</span> <span class="n">doc</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">doc</span><span class="o">.</span><span class="n">structure</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">undecorated_entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="n">computed_properties</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="n">flow_converged</span> <span class="o">=</span> <span class="n">_check_flow_convergence</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flow_converged</span><span class="p">:</span>
+            <span class="n">undecorated_entry</span><span class="p">,</span> <span class="n">properties</span> <span class="o">=</span> <span class="n">get_entry_from_taskdoc</span><span class="p">(</span>
+                <span class="n">doc</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;other_properties&quot;</span><span class="p">],</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;decorator_types&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">undecorated_entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">undecorated_entry</span><span class="p">)</span>
+            <span class="n">computed_properties</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">properties</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Calculations failed.</span>
+            <span class="n">undecorated_entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="n">computed_properties</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">decorators</span> <span class="o">=</span> <span class="n">_get_decorators</span><span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">prim_specs</span><span class="p">[</span><span class="s2">&quot;charge_decorated&quot;</span><span class="p">])</span>
+    <span class="n">successful_entries</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">undecorated_entries</span><span class="p">)</span>
+    <span class="n">successful_entry_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">undecorated_entries</span><span class="p">)))</span>
+    <span class="n">successful_entries</span><span class="p">,</span> <span class="n">successful_entry_ids</span> <span class="o">=</span> <span class="n">_filter_out_failed_entries</span><span class="p">(</span>
+        <span class="n">successful_entries</span><span class="p">,</span> <span class="n">successful_entry_ids</span>
+    <span class="p">)</span>
+    <span class="n">n_calc_finished</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">successful_entries</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n_calc_finished</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">undecorated_entries</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot; structures successfully calculated.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Performing site decorations.&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">dec</span><span class="p">,</span> <span class="n">kw</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">decorators</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;decorator_train_kwargs&quot;</span><span class="p">]):</span>
+        <span class="n">dec</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">successful_entries</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        <span class="c1"># Failed entries will be returned as None, and get filtered out.</span>
+        <span class="n">successful_entries</span> <span class="o">=</span> <span class="n">dec</span><span class="o">.</span><span class="n">decorate</span><span class="p">(</span><span class="n">successful_entries</span><span class="p">)</span>
+        <span class="n">successful_entries</span><span class="p">,</span> <span class="n">successful_entry_ids</span> <span class="o">=</span> <span class="n">_filter_out_failed_entries</span><span class="p">(</span>
+            <span class="n">successful_entries</span><span class="p">,</span> <span class="n">successful_entry_ids</span>
+        <span class="p">)</span>
+
+    <span class="n">successful_properties</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">p</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">computed_properties</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">successful_entry_ids</span>
+    <span class="p">]</span>
+    <span class="n">sc_matrices</span> <span class="o">=</span> <span class="n">enumerated_matrices</span> <span class="o">+</span> <span class="n">enum_output</span><span class="p">[</span><span class="s2">&quot;new_sc_matrices&quot;</span><span class="p">]</span>
+    <span class="n">successful_scmatrices</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">m</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sc_matrices</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">successful_entry_ids</span>
+    <span class="p">]</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">successful_entries</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_calc_finished</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot; structures successfully decorated.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Wrangler must be cleared and reloaded each time</span>
+    <span class="c1"># because decorator parameters can change.</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading data to wrangler.&quot;</span><span class="p">)</span>
+    <span class="n">wrangler</span> <span class="o">=</span> <span class="n">CeDataWrangler</span><span class="p">(</span><span class="n">last_ce_document</span><span class="o">.</span><span class="n">data_wrangler</span><span class="o">.</span><span class="n">cluster_subspace</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">eid</span><span class="p">,</span> <span class="n">prop</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">mat</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+        <span class="n">successful_entry_ids</span><span class="p">,</span>
+        <span class="n">successful_properties</span><span class="p">,</span>
+        <span class="n">successful_entries</span><span class="p">,</span>
+        <span class="n">successful_scmatrices</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="c1"># Save iteration index and the structure&#39;s index in</span>
+        <span class="c1"># all enumerated structures.</span>
+        <span class="n">iter_id</span> <span class="o">=</span> <span class="n">_get_iter_id_from_enum_id</span><span class="p">(</span>
+            <span class="n">eid</span><span class="p">,</span>
+            <span class="n">options</span><span class="p">[</span><span class="s2">&quot;num_structs_per_iter_init&quot;</span><span class="p">],</span>
+            <span class="n">options</span><span class="p">[</span><span class="s2">&quot;num_structs_per_iter_add&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">prop</span><span class="p">[</span><span class="s2">&quot;spec&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;iter_id&quot;</span><span class="p">:</span> <span class="n">iter_id</span><span class="p">,</span> <span class="s2">&quot;enum_id&quot;</span><span class="p">:</span> <span class="n">eid</span><span class="p">}</span>
+        <span class="n">wrangler</span><span class="o">.</span><span class="n">add_entry</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">properties</span><span class="o">=</span><span class="n">prop</span><span class="p">,</span> <span class="n">supercell_matrix</span><span class="o">=</span><span class="n">mat</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">wrangler</span><span class="o">.</span><span class="n">num_structures</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">successful_entries</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot; structures successfully mapped.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;wrangler&quot;</span><span class="p">:</span> <span class="n">wrangler</span><span class="p">,</span>
+        <span class="s2">&quot;undecorated_entries&quot;</span><span class="p">:</span> <span class="n">undecorated_entries</span><span class="p">,</span>
+        <span class="s2">&quot;computed_properties&quot;</span><span class="p">:</span> <span class="n">computed_properties</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<span class="n">parse_calculations_job</span> <span class="o">=</span> <span class="n">job</span><span class="p">(</span><span class="n">parse_calculations</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="fit_calculations">
+<a class="viewcode-back" href="../../api_reference/WFacer/jobs.html#WFacer.jobs.fit_calculations">[docs]</a>
+<span class="k">def</span> <span class="nf">fit_calculations</span><span class="p">(</span><span class="n">parse_output</span><span class="p">,</span> <span class="n">last_ce_document</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit a new set of coefficients.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parse_output(dict):</span>
+<span class="sd">            Output by parse job.</span>
+<span class="sd">        last_ce_document(CeOutputsDocument):</span>
+<span class="sd">            The last cluster expansion outputs document.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">           A dictionary containing the CE coefficients, the cross-validation error,</span>
+<span class="sd">           the RMSE, and the optimal hyperparameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">ce_options</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">coefs</span><span class="p">,</span> <span class="n">cv</span><span class="p">,</span> <span class="n">cv_std</span><span class="p">,</span> <span class="n">rmse</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">fit_ecis_from_wrangler</span><span class="p">(</span>
+        <span class="n">parse_output</span><span class="p">[</span><span class="s2">&quot;wrangler&quot;</span><span class="p">],</span>
+        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;estimator_type&quot;</span><span class="p">],</span>
+        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;optimizer_type&quot;</span><span class="p">],</span>
+        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;param_grid&quot;</span><span class="p">],</span>
+        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;use_hierarchy&quot;</span><span class="p">],</span>
+        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;center_point_external&quot;</span><span class="p">],</span>
+        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;filter_unique_correlations&quot;</span><span class="p">],</span>
+        <span class="n">estimator_kwargs</span><span class="o">=</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;estimator_kwargs&quot;</span><span class="p">],</span>
+        <span class="n">optimizer_kwargs</span><span class="o">=</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;optimizer_kwargs&quot;</span><span class="p">],</span>
+        <span class="o">**</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;fit_kwargs&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;coefs&quot;</span><span class="p">:</span> <span class="n">coefs</span><span class="p">,</span> <span class="s2">&quot;cv&quot;</span><span class="p">:</span> <span class="n">cv</span><span class="p">,</span> <span class="s2">&quot;cv_std&quot;</span><span class="p">:</span> <span class="n">cv_std</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">:</span> <span class="n">rmse</span><span class="p">,</span> <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">}</span></div>
+
+
+
+<span class="n">fit_calculations_job</span> <span class="o">=</span> <span class="n">job</span><span class="p">(</span><span class="n">fit_calculations</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="update_document">
+<a class="viewcode-back" href="../../api_reference/WFacer/jobs.html#WFacer.jobs.update_document">[docs]</a>
+<span class="k">def</span> <span class="nf">update_document</span><span class="p">(</span><span class="n">enum_output</span><span class="p">,</span> <span class="n">parse_output</span><span class="p">,</span> <span class="n">fit_output</span><span class="p">,</span> <span class="n">last_ce_document</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the document to current iteration.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        enum_output(dict):</span>
+<span class="sd">            Output by enumeration job.</span>
+<span class="sd">        fit_output(dict):</span>
+<span class="sd">            Output by fit job.</span>
+<span class="sd">        parse_output(dict):</span>
+<span class="sd">            Output by parse job.</span>
+<span class="sd">        last_ce_document(CeOutputsDocument):</span>
+<span class="sd">            The last cluster expansion outputs document.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        CeOutputDocument:</span>
+<span class="sd">            The updated :class:`CeOutputDocument` upon finishing the current</span>
+<span class="sd">            iteration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ce_document</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">last_ce_document</span><span class="p">)</span>
+    <span class="n">ce_document</span><span class="o">.</span><span class="n">data_wrangler</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">parse_output</span><span class="p">[</span><span class="s2">&quot;wrangler&quot;</span><span class="p">])</span>
+    <span class="n">ce_document</span><span class="o">.</span><span class="n">undecorated_entries</span> <span class="o">=</span> <span class="n">parse_output</span><span class="p">[</span><span class="s2">&quot;undecorated_entries&quot;</span><span class="p">]</span>
+    <span class="n">ce_document</span><span class="o">.</span><span class="n">computed_properties</span> <span class="o">=</span> <span class="n">parse_output</span><span class="p">[</span><span class="s2">&quot;computed_properties&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">ce_document</span><span class="o">.</span><span class="n">coefs_history</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ce_document</span><span class="o">.</span><span class="n">coefs_history</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ce_document</span><span class="o">.</span><span class="n">coefs_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fit_output</span><span class="p">[</span><span class="s2">&quot;coefs&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">ce_document</span><span class="o">.</span><span class="n">cv_history</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ce_document</span><span class="o">.</span><span class="n">cv_history</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ce_document</span><span class="o">.</span><span class="n">cv_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fit_output</span><span class="p">[</span><span class="s2">&quot;cv&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">ce_document</span><span class="o">.</span><span class="n">cv_std_history</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ce_document</span><span class="o">.</span><span class="n">cv_std_history</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ce_document</span><span class="o">.</span><span class="n">cv_std_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fit_output</span><span class="p">[</span><span class="s2">&quot;cv_std&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">ce_document</span><span class="o">.</span><span class="n">rmse_history</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ce_document</span><span class="o">.</span><span class="n">rmse_history</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ce_document</span><span class="o">.</span><span class="n">rmse_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fit_output</span><span class="p">[</span><span class="s2">&quot;rmse&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">ce_document</span><span class="o">.</span><span class="n">params_history</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ce_document</span><span class="o">.</span><span class="n">params_history</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ce_document</span><span class="o">.</span><span class="n">params_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fit_output</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">ce_document</span><span class="o">.</span><span class="n">enumerated_structures</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ce_document</span><span class="o">.</span><span class="n">enumerated_structures</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ce_document</span><span class="o">.</span><span class="n">enumerated_structures</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">enum_output</span><span class="p">[</span><span class="s2">&quot;new_structures&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">ce_document</span><span class="o">.</span><span class="n">enumerated_matrices</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ce_document</span><span class="o">.</span><span class="n">enumerated_matrices</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ce_document</span><span class="o">.</span><span class="n">enumerated_matrices</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">enum_output</span><span class="p">[</span><span class="s2">&quot;new_sc_matrices&quot;</span><span class="p">])</span>
+    <span class="c1"># enumerated_features requires a list.</span>
+    <span class="k">if</span> <span class="n">ce_document</span><span class="o">.</span><span class="n">enumerated_features</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ce_document</span><span class="o">.</span><span class="n">enumerated_features</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ce_document</span><span class="o">.</span><span class="n">enumerated_features</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">enum_output</span><span class="p">[</span><span class="s2">&quot;new_features&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">ce_document</span></div>
+
+
+
+<span class="n">update_document_job</span> <span class="o">=</span> <span class="n">job</span><span class="p">(</span><span class="n">update_document</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="initialize_document">
+<a class="viewcode-back" href="../../api_reference/WFacer/jobs.html#WFacer.jobs.initialize_document">[docs]</a>
+<span class="k">def</span> <span class="nf">initialize_document</span><span class="p">(</span><span class="n">prim</span><span class="p">,</span> <span class="n">project_name</span><span class="o">=</span><span class="s2">&quot;ace-work&quot;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize an empty cluster expansion document.</span>
+
+<span class="sd">    A :class:`ClusterSubspace` instance will be created and trimmed out of duplicacy</span>
+<span class="sd">    in this job, the supercell matrices and compositions to be used for structure</span>
+<span class="sd">    generation will also be enumerated.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        prim(structure):</span>
+<span class="sd">            A primitive cell structure (no need to be reduced) with</span>
+<span class="sd">            partial occupancy on some sub-lattice. This defines the</span>
+<span class="sd">            lattice model of your cluster expansion.</span>
+<span class="sd">        project_name(str): optional</span>
+<span class="sd">            Name of the cluster expansion project. Since the underscore</span>
+<span class="sd">            will be used to separate fields of job names, it should not</span>
+<span class="sd">            appear in the project name!</span>
+<span class="sd">        options(dict): optional</span>
+<span class="sd">            A dictionary including all options to set up the automatic</span>
+<span class="sd">            workflow.</span>
+<span class="sd">            For available options, see documentation of</span>
+<span class="sd">            :mod:&#39;WFacer.preprocessing&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Pre-process options.</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">options</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Pre-processing primitive cell and workflow options.&quot;</span><span class="p">)</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">_preprocess_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+    <span class="c1"># Reduce prim and get necessary specs.</span>
+    <span class="n">prim</span> <span class="o">=</span> <span class="n">reduce_prim</span><span class="p">(</span><span class="n">prim</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;spacegroup_kwargs&quot;</span><span class="p">])</span>
+    <span class="n">prim_specs</span> <span class="o">=</span> <span class="n">get_prim_specs</span><span class="p">(</span><span class="n">prim</span><span class="p">)</span>
+    <span class="n">bits</span> <span class="o">=</span> <span class="n">prim_specs</span><span class="p">[</span><span class="s2">&quot;bits&quot;</span><span class="p">]</span>
+    <span class="n">sublattice_sites</span> <span class="o">=</span> <span class="n">prim_specs</span><span class="p">[</span><span class="s2">&quot;sublattice_sites&quot;</span><span class="p">]</span>
+    <span class="n">sublattice_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">sites</span><span class="p">)</span> <span class="k">for</span> <span class="n">sites</span> <span class="ow">in</span> <span class="n">sublattice_sites</span><span class="p">]</span>
+    <span class="n">charge_decorated</span> <span class="o">=</span> <span class="n">prim_specs</span><span class="p">[</span><span class="s2">&quot;charge_decorated&quot;</span><span class="p">]</span>
+    <span class="n">nn_distance</span> <span class="o">=</span> <span class="n">prim_specs</span><span class="p">[</span><span class="s2">&quot;nn_distance&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Get the cluster subspace. Other external terms than ewald not supported yet.</span>
+    <span class="c1"># Cutoffs keys must be integers while pyyaml may load them as strings.</span>
+    <span class="n">cutoffs</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;cutoffs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="n">subspace</span> <span class="o">=</span> <span class="n">get_cluster_subspace</span><span class="p">(</span>
+        <span class="n">prim</span><span class="p">,</span>
+        <span class="n">charge_decorated</span><span class="p">,</span>
+        <span class="n">nn_distance</span><span class="o">=</span><span class="n">nn_distance</span><span class="p">,</span>
+        <span class="n">cutoffs</span><span class="o">=</span><span class="n">cutoffs</span><span class="p">,</span>
+        <span class="n">use_ewald</span><span class="o">=</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;use_ewald&quot;</span><span class="p">],</span>
+        <span class="n">ewald_kwargs</span><span class="o">=</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;ewald_kwargs&quot;</span><span class="p">],</span>
+        <span class="o">**</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;from_cutoffs_kwargs&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Enumerate supercell matrices, and remove aliased orbits from subspace.</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Enumerating super-cell matrices.&quot;</span><span class="p">)</span>
+    <span class="n">objective_sc_size</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;objective_num_sites&quot;</span><span class="p">]</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">prim</span><span class="p">)</span>
+    <span class="n">sc_matrices</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;sc_matrices&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">enumerate_matrices</span><span class="p">(</span>
+        <span class="n">objective_sc_size</span><span class="p">,</span>
+        <span class="n">subspace</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;supercell_from_conventional&quot;</span><span class="p">],</span>
+        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;max_sc_condition_number&quot;</span><span class="p">],</span>
+        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;min_sc_angle&quot;</span><span class="p">],</span>
+        <span class="o">**</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;spacegroup_kwargs&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Not necessarily the same as the objective size.</span>
+    <span class="n">sc_size</span> <span class="o">=</span> <span class="n">subspace</span><span class="o">.</span><span class="n">num_prims_from_matrix</span><span class="p">(</span><span class="n">sc_matrices</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="c1"># Supercells must be the same size</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">subspace</span><span class="o">.</span><span class="n">num_prims_from_matrix</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">sc_matrices</span><span class="p">],</span> <span class="n">sc_size</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Provided super-cell matrices </span><span class="si">{</span><span class="n">sc_matrices</span><span class="si">}</span><span class="s2"> does&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; not have the same size! This is not allowed!&quot;</span>
+        <span class="p">)</span>
+    <span class="n">subspace</span> <span class="o">=</span> <span class="n">truncate_cluster_subspace</span><span class="p">(</span><span class="n">subspace</span><span class="p">,</span> <span class="n">sc_matrices</span><span class="p">)</span>
+
+    <span class="c1"># Enumerate compositions as &quot;counts&quot; format in smol.moca.CompositionSpace.</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Enumerating valid compositions.&quot;</span><span class="p">)</span>
+    <span class="c1"># Mute additional constraints if not needed.</span>
+    <span class="n">comp_space</span> <span class="o">=</span> <span class="n">CompositionSpace</span><span class="p">(</span>
+        <span class="n">bits</span><span class="p">,</span>
+        <span class="n">sublattice_sizes</span><span class="p">,</span>
+        <span class="n">charge_neutral</span><span class="o">=</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;charge_neutral&quot;</span><span class="p">],</span>
+        <span class="n">other_constraints</span><span class="o">=</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;other_constraints&quot;</span><span class="p">],</span>
+        <span class="n">optimize_basis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">table_ergodic</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>  <span class="c1"># Not doing table flips.</span>
+    <span class="n">compositions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;compositions&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+        <span class="nb">int</span>
+    <span class="p">)</span> <span class="ow">or</span> <span class="n">enumerate_compositions_as_counts</span><span class="p">(</span>
+        <span class="n">sc_size</span><span class="p">,</span>
+        <span class="n">comp_space</span><span class="o">=</span><span class="n">comp_space</span><span class="p">,</span>
+        <span class="n">bits</span><span class="o">=</span><span class="n">bits</span><span class="p">,</span>
+        <span class="n">sublattice_sizes</span><span class="o">=</span><span class="n">sublattice_sizes</span><span class="p">,</span>
+        <span class="n">comp_enumeration_step</span><span class="o">=</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;comp_enumeration_step&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Set up the initial document.</span>
+    <span class="n">init_ce_document</span> <span class="o">=</span> <span class="n">CeOutputsDocument</span><span class="p">(</span>
+        <span class="n">project_name</span><span class="o">=</span><span class="n">project_name</span><span class="p">,</span>
+        <span class="n">cluster_subspace</span><span class="o">=</span><span class="n">subspace</span><span class="p">,</span>
+        <span class="n">prim_specs</span><span class="o">=</span><span class="n">prim_specs</span><span class="p">,</span>
+        <span class="n">data_wrangler</span><span class="o">=</span><span class="n">CeDataWrangler</span><span class="p">(</span><span class="n">subspace</span><span class="p">),</span>
+        <span class="n">ce_options</span><span class="o">=</span><span class="n">options</span><span class="p">,</span>
+        <span class="n">supercell_matrices</span><span class="o">=</span><span class="n">sc_matrices</span><span class="p">,</span>
+        <span class="n">compositions</span><span class="o">=</span><span class="n">compositions</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">init_ce_document</span></div>
+
+
+
+<span class="n">initialize_document_job</span> <span class="o">=</span> <span class="n">job</span><span class="p">(</span><span class="n">initialize_document</span><span class="p">)</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2022-2023, Ceder Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

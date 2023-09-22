@@ -1,0 +1,1235 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WFacer.preprocessing &#8212; WFacer 0.1.dev1+g4272e06 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+
+    <script src="../../_static/documentation_options.js?v=0c04da69"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/WFacer/preprocessing';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.14.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.1.dev1+g4272e06';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Sep 22, 2023"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">WFacer 0.1.dev1+g4272e06 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../api_reference/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../api_reference/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">WFacer.preprocessing</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for WFacer.preprocessing</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;All preprocessing needed before initializing Makers.&quot;&quot;&quot;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Fengyu Xie&quot;</span>
+
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pymatgen.core</span> <span class="kn">import</span> <span class="n">Composition</span><span class="p">,</span> <span class="n">Structure</span>
+<span class="kn">from</span> <span class="nn">pymatgen.core.periodic_table</span> <span class="kn">import</span> <span class="n">Element</span>
+<span class="kn">from</span> <span class="nn">pymatgen.symmetry.analyzer</span> <span class="kn">import</span> <span class="n">SpacegroupAnalyzer</span>
+<span class="kn">from</span> <span class="nn">smol.cofe</span> <span class="kn">import</span> <span class="n">ClusterSubspace</span>
+<span class="kn">from</span> <span class="nn">smol.cofe.extern</span> <span class="kn">import</span> <span class="n">EwaldTerm</span>
+<span class="kn">from</span> <span class="nn">smol.cofe.space.domain</span> <span class="kn">import</span> <span class="n">Vacancy</span><span class="p">,</span> <span class="n">get_allowed_species</span><span class="p">,</span> <span class="n">get_site_spaces</span>
+
+
+<span class="c1"># Parse and process primitive cell.</span>
+<div class="viewcode-block" id="reduce_prim">
+<a class="viewcode-back" href="../../api_reference/WFacer/preprocessing.html#WFacer.preprocessing.reduce_prim">[docs]</a>
+<span class="k">def</span> <span class="nf">reduce_prim</span><span class="p">(</span><span class="n">prim</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reduce given cell to make it real primitive.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        prim(Structure):</span>
+<span class="sd">            A primitive cell with partial occupancy to be expanded.</span>
+<span class="sd">        **kwargs:</span>
+<span class="sd">            Keyword arguments for initializing :class:`SpacegroupAnalyzer`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Structure:</span>
+<span class="sd">          The primitive cell reduced from the input structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sa</span> <span class="o">=</span> <span class="n">SpacegroupAnalyzer</span><span class="p">(</span><span class="n">prim</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="c1"># TODO: maybe we can re-define site_properties transformation</span>
+    <span class="c1">#  in the future.</span>
+    <span class="k">return</span> <span class="n">sa</span><span class="o">.</span><span class="n">find_primitive</span><span class="p">(</span><span class="n">keep_site_properties</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="construct_prim">
+<a class="viewcode-back" href="../../api_reference/WFacer/preprocessing.html#WFacer.preprocessing.construct_prim">[docs]</a>
+<span class="k">def</span> <span class="nf">construct_prim</span><span class="p">(</span><span class="n">bits</span><span class="p">,</span> <span class="n">sublattice_sites</span><span class="p">,</span> <span class="n">lattice</span><span class="p">,</span> <span class="n">frac_coords</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct a primitive cell based on lattice info.</span>
+
+<span class="sd">    Provides a helper method to initialize a primitive cell. Of</span>
+<span class="sd">    course, a prim cell can also be parsed directly from a given</span>
+<span class="sd">    Structure object or file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bits(list of lists of Species):</span>
+<span class="sd">            Allowed species on each sublattice. No sorting</span>
+<span class="sd">            required.</span>
+<span class="sd">        sublattice_sites(list of lists of int):</span>
+<span class="sd">            Site indices in each sub-lattice of a primitive cell.</span>
+<span class="sd">            Must include all site indices in range(len(frac_coords))</span>
+<span class="sd">        lattice(Lattice):</span>
+<span class="sd">            Lattice of the primitive cell.</span>
+<span class="sd">        frac_coords(2D ArrayLike):</span>
+<span class="sd">            Fractional coordinates of sites.</span>
+<span class="sd">        **kwargs:</span>
+<span class="sd">            Keyword arguments for initializing :class:`SpacegroupAnalyzer`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Structure:</span>
+<span class="sd">            A reduced primitive cell (not necessarily charge neutral).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_sites</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">frac_coords</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_sites</span><span class="p">),</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">sublattice_sites</span><span class="p">)))</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Provided site indices: </span><span class="si">{</span><span class="n">sublattice_sites</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;does not include all </span><span class="si">{</span><span class="n">n_sites</span><span class="si">}</span><span class="s2"> sites!&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">site_comps</span> <span class="o">=</span> <span class="p">[{}</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sites</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">sublatt_id</span><span class="p">,</span> <span class="n">sublatt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sublattice_sites</span><span class="p">):</span>
+        <span class="n">comp</span> <span class="o">=</span> <span class="n">Composition</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="n">sp</span><span class="p">:</span> <span class="mi">1</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">bits</span><span class="p">[</span><span class="n">sublatt_id</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="n">bits</span><span class="p">[</span><span class="n">sublatt_id</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">Vacancy</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sublatt</span><span class="p">:</span>
+            <span class="n">site_comps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">comp</span>
+
+    <span class="k">return</span> <span class="n">reduce_prim</span><span class="p">(</span><span class="n">Structure</span><span class="p">(</span><span class="n">lattice</span><span class="p">,</span> <span class="n">site_comps</span><span class="p">,</span> <span class="n">frac_coords</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_prim_specs">
+<a class="viewcode-back" href="../../api_reference/WFacer/preprocessing.html#WFacer.preprocessing.get_prim_specs">[docs]</a>
+<span class="k">def</span> <span class="nf">get_prim_specs</span><span class="p">(</span><span class="n">prim</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get specs of a reduced primitive cell.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        prim(Structure):</span>
+<span class="sd">            Reduced primitive cell with partial occupancy to expand.</span>
+<span class="sd">            If a prim only contains charge neutral atoms, it is your</span>
+<span class="sd">            responsibility to make sure that all species in prim are</span>
+<span class="sd">            either Element or Vacancy. No Species or DummySpecies</span>
+<span class="sd">            with 0+ charge is allowed, otherwise computed structures</span>
+<span class="sd">            will not map into prim!</span>
+<span class="sd">            Also notice that only the sites with the same allowed species</span>
+<span class="sd">            and species concentrations are considered the same sub-lattice!</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">           A specification dictionary of the cluster expansion space, containing</span>
+<span class="sd">           the species on each sub-lattice, the indices of sites belonging to each</span>
+<span class="sd">           sub-lattice in a primitive cell, whether the system requires charge</span>
+<span class="sd">           decoration and the nearest-neighbor distance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">unique_spaces</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">get_site_spaces</span><span class="p">(</span><span class="n">prim</span><span class="p">)))</span>
+
+    <span class="c1"># Same order as smol.moca.Sublattice in processor.</span>
+    <span class="c1"># Ordering between species in a sub-lattice is fixed.</span>
+    <span class="n">bits</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">for</span> <span class="n">space</span> <span class="ow">in</span> <span class="n">unique_spaces</span><span class="p">]</span>
+    <span class="n">allowed_species</span> <span class="o">=</span> <span class="n">get_allowed_species</span><span class="p">(</span><span class="n">prim</span><span class="p">)</span>
+    <span class="n">sublattice_sites</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">allowed_species</span><span class="p">)</span> <span class="k">if</span> <span class="n">sp</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
+        <span class="k">for</span> <span class="n">space</span> <span class="ow">in</span> <span class="n">unique_spaces</span>
+    <span class="p">]</span>
+
+    <span class="n">charge_decorated</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">bits</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="p">(</span><span class="n">Vacancy</span><span class="p">,</span> <span class="n">Element</span><span class="p">))</span> <span class="ow">and</span> <span class="n">sp</span><span class="o">.</span><span class="n">oxi_state</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">charge_decorated</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">break</span>
+
+    <span class="n">d_nns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">site1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prim</span><span class="p">):</span>
+        <span class="n">d_ij</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">site2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prim</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">j</span> <span class="o">&gt;</span> <span class="n">i</span><span class="p">:</span>
+                <span class="n">d_ij</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site1</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">site2</span><span class="p">))</span>
+        <span class="n">d_nns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">d_ij</span> <span class="o">+</span> <span class="p">[</span><span class="n">prim</span><span class="o">.</span><span class="n">lattice</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="n">prim</span><span class="o">.</span><span class="n">lattice</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">prim</span><span class="o">.</span><span class="n">lattice</span><span class="o">.</span><span class="n">c</span><span class="p">]))</span>
+    <span class="n">d_nn</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">d_nns</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;bits&quot;</span><span class="p">:</span> <span class="n">bits</span><span class="p">,</span>
+        <span class="s2">&quot;sublattice_sites&quot;</span><span class="p">:</span> <span class="n">sublattice_sites</span><span class="p">,</span>
+        <span class="s2">&quot;charge_decorated&quot;</span><span class="p">:</span> <span class="n">charge_decorated</span><span class="p">,</span>
+        <span class="s2">&quot;nn_distance&quot;</span><span class="p">:</span> <span class="n">d_nn</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<span class="c1"># Get cluster subspace.</span>
+<div class="viewcode-block" id="get_cluster_subspace">
+<a class="viewcode-back" href="../../api_reference/WFacer/preprocessing.html#WFacer.preprocessing.get_cluster_subspace">[docs]</a>
+<span class="k">def</span> <span class="nf">get_cluster_subspace</span><span class="p">(</span>
+    <span class="n">prim</span><span class="p">,</span>
+    <span class="n">charge_decorated</span><span class="p">,</span>
+    <span class="n">nn_distance</span><span class="p">,</span>
+    <span class="n">cutoffs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">use_ewald</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">ewald_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">other_terms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get cluster subspace from primitive structure and cutoffs.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        prim(Structure):</span>
+<span class="sd">            Reduced primitive cell.</span>
+<span class="sd">        charge_decorated(bool):</span>
+<span class="sd">            Whether to perform a charge decoration in CE.</span>
+<span class="sd">        nn_distance(float):</span>
+<span class="sd">            Nearest neighbor distance in structure, used to guess cluster cutoffs</span>
+<span class="sd">            if argument &quot;cutoffs&quot; is not given.</span>
+<span class="sd">        cutoffs(dict): optional</span>
+<span class="sd">            Cluster cutoff diameters in Angstrom.</span>
+<span class="sd">            If cutoff values not given, will guess based on the nearest neighbor</span>
+<span class="sd">            distance d, such as pair=3.5d, triplet=2d, quad=2d.</span>
+<span class="sd">            This guessing is formed based on empirical cutoffs in DRX, but not always</span>
+<span class="sd">            good for your system. Setting your own cutoffs is highly recommended.</span>
+<span class="sd">        use_ewald(bool): optional</span>
+<span class="sd">            Whether to use the EwaldTerm when CE is charge decorated. Default to True.</span>
+<span class="sd">        ewald_kwargs(dict): optional</span>
+<span class="sd">            Keyword arguments to initialize EwaldTerm. See docs in smol.cofe.extern.</span>
+<span class="sd">        other_terms(list of ExternalTerm): optional</span>
+<span class="sd">            List of other external terms to be added besides the EwaldTerm. (Reserved</span>
+<span class="sd">            for extensibility.)</span>
+<span class="sd">        **kwargs:</span>
+<span class="sd">            Other keyword arguments of :func:`ClusterSubspace.from_cutoffs`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ClusterSubspace:</span>
+<span class="sd">            A cluster subspace generated from cutoffs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">cutoffs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">d_nn</span> <span class="o">=</span> <span class="n">nn_distance</span>
+        <span class="n">cutoffs</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">:</span> <span class="mf">3.5</span> <span class="o">*</span> <span class="n">d_nn</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">d_nn</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">d_nn</span><span class="p">}</span>
+    <span class="n">space</span> <span class="o">=</span> <span class="n">ClusterSubspace</span><span class="o">.</span><span class="n">from_cutoffs</span><span class="p">(</span><span class="n">prim</span><span class="p">,</span> <span class="n">cutoffs</span><span class="o">=</span><span class="n">cutoffs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">externals</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">other_terms</span> <span class="o">=</span> <span class="n">other_terms</span> <span class="ow">or</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">use_ewald</span> <span class="ow">and</span> <span class="n">charge_decorated</span><span class="p">:</span>
+        <span class="n">ewald_kwargs</span> <span class="o">=</span> <span class="n">ewald_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">externals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">EwaldTerm</span><span class="p">(</span><span class="o">**</span><span class="n">ewald_kwargs</span><span class="p">))</span>
+    <span class="n">externals</span> <span class="o">=</span> <span class="n">externals</span> <span class="o">+</span> <span class="n">other_terms</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">externals</span><span class="p">:</span>
+        <span class="n">space</span><span class="o">.</span><span class="n">add_external_term</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">space</span></div>
+
+
+
+<span class="c1"># Parse options.</span>
+<div class="viewcode-block" id="process_supercell_options">
+<a class="viewcode-back" href="../../api_reference/WFacer/preprocessing.html#WFacer.preprocessing.process_supercell_options">[docs]</a>
+<span class="k">def</span> <span class="nf">process_supercell_options</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get options to enumerate supercell matrices.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d(dict):</span>
+<span class="sd">            An input dictionary containing various options in the input file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">            A dict containing supercell matrix options, including the following keys:</span>
+<span class="sd">             supercell_from_conventional(bool):</span>
+<span class="sd">                 Whether to find out primitive cell to conventional</span>
+<span class="sd">                 standard structure transformation matrix T, and enumerate</span>
+<span class="sd">                 super-cell matrices in the form of: M = M&#39;T.</span>
+<span class="sd">                 Default to true. If not, will set T to eye(3).</span>
+<span class="sd">             objective_num_sites(int):</span>
+<span class="sd">                 The Supercel sizes (in number of sites, both active and inactive)</span>
+<span class="sd">                 to approach.</span>
+<span class="sd">                 Default to 64. Enumerated super-cell size will be</span>
+<span class="sd">                 a multiple of det(T) but the closest one to this objective</span>
+<span class="sd">                 size.</span>
+
+<span class="sd">                 .. note:: Since super-cell matrices with too high a conditional</span>
+<span class="sd">                  number will be dropped, do not use a super-cell size that could only</span>
+<span class="sd">                  be decomposed into three factors largely different in scale.</span>
+<span class="sd">                  For example, 17 = 1 * 1 * 17 is the only possible three-factor</span>
+<span class="sd">                  decomposition for 17 with a large conditional number of 17.</span>
+
+<span class="sd">                 Currently, we only support enumerating super-cells with the</span>
+<span class="sd">                 same size.</span>
+<span class="sd">             spacegroup_kwargs(dict):</span>
+<span class="sd">                 Keyword arguments used to initialize a SpaceGroupAnalyzer.</span>
+<span class="sd">                 Will also be used in reducing the primitive cell.</span>
+<span class="sd">             max_sc_condition_number(float):</span>
+<span class="sd">                 Maximum conditional number of the supercell lattice matrix.</span>
+<span class="sd">                 Default to 8, prevent overly slender super-cells.</span>
+<span class="sd">             min_sc_angle(float):</span>
+<span class="sd">                 Minimum allowed angle of the supercell lattice.</span>
+<span class="sd">                 Default to 30, prevent overly skewed super-cells.</span>
+<span class="sd">             sc_matrices(list of 3*3 ArrayLike of int):</span>
+<span class="sd">                 Supercell matrices. Will not enumerate super-cells if this</span>
+<span class="sd">                 is given. Default to None. Note: if given, all supercell matrices</span>
+<span class="sd">                 must be of the same size!</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;supercell_from_conventional&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;supercell_from_conventional&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;objective_num_sites&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;objective_num_sites&quot;</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span>
+        <span class="s2">&quot;spacegroup_kwargs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;spacegroup_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="s2">&quot;max_sc_condition_number&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_sc_condition_number&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+        <span class="s2">&quot;min_sc_angle&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;min_sc_angle&quot;</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+        <span class="s2">&quot;sc_matrices&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sc_matrices&quot;</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="process_composition_options">
+<a class="viewcode-back" href="../../api_reference/WFacer/preprocessing.html#WFacer.preprocessing.process_composition_options">[docs]</a>
+<span class="k">def</span> <span class="nf">process_composition_options</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get options to enumerate compositions with CompositionSpace.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d(dict):</span>
+<span class="sd">            An input dictionary containing various options in the input file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">            A dict containing composition options, including the following keys:</span>
+<span class="sd">             charge_neutral (bool): optional</span>
+<span class="sd">                Whether to add charge balance constraint. Default to true.</span>
+<span class="sd">             other_constraints(list): optional</span>
+<span class="sd">                Other composition constraints to be applied to restrict the</span>
+<span class="sd">                enumerated compositions, each allowing two formats:</span>
+
+<span class="sd">                #. A string that encodes the constraint equation.</span>
+<span class="sd">                   For example, **&quot;2 Ag+(0) + Cl-(1) +3 H+(2) &lt;= 3 Mn2+ +4&quot;**.</span>
+<span class="sd">                   A string representation of constraint must satisfy the following</span>
+<span class="sd">                   rules:</span>
+
+<span class="sd">                   #. Contains a relation symbol (&quot;==&quot;, &quot;&lt;=&quot;, &quot;&gt;=&quot; or &quot;=&quot; are</span>
+<span class="sd">                      allowed). The relation symbol must have exactly one space before</span>
+<span class="sd">                      and one space after to separate the left and the right sides.</span>
+<span class="sd">                   #. Species strings must be readable by function :func:`get_species`</span>
+<span class="sd">                      in :mod:`smol.cofe .space.domain`.</span>
+<span class="sd">                      No space is allowed within a species string.</span>
+<span class="sd">                      For the requirements on a legal species string, refer to</span>
+<span class="sd">                      the documentation of :mod:`pymatgen.core.species`</span>
+<span class="sd">                      and :mod:`smol.cofe`.</span>
+<span class="sd">                   #. You can add a number in brackets following a species string</span>
+<span class="sd">                      to specify constraining the amount of species in a particular</span>
+<span class="sd">                      sub-lattice. If not given, will apply the constraint to this</span>
+<span class="sd">                      species on all sub-lattices.</span>
+<span class="sd">                      This sub-lattice index label must not be separated from</span>
+<span class="sd">                      the species string with space or any other character.</span>
+<span class="sd">                   #. Species strings along with any sub-lattice index label must</span>
+<span class="sd">                      be separated from other parts (such as operators and numbers)</span>
+<span class="sd">                      with at least one space.</span>
+<span class="sd">                   #. The intercept terms (a number with no species that follows)</span>
+<span class="sd">                      must always be written at the end on both side of the equation.</span>
+
+<span class="sd">                #. The equation expression, which is a tuple containing a list of</span>
+<span class="sd">                   floats of length self.n_dims to give the left-hand side coefficients</span>
+<span class="sd">                   of each component in the composition &quot;counts&quot; format, a float to</span>
+<span class="sd">                   give the right-hand side, and a string to specify the comparative</span>
+<span class="sd">                   relationship between the left- and right-hand sides. Constrained in</span>
+<span class="sd">                   the form of a_left @ n = (or &lt;= or &gt;=) b_right.</span>
+<span class="sd">                   The components in the left-hand side are in the same order as</span>
+<span class="sd">                   outlined by :func:`itertools.chain`.</span>
+
+<span class="sd">                .. note:: All numerical values in the constraints must be set as they are</span>
+<span class="sd">                 to be satisfied per primitive cell given the sublattice_sizes!</span>
+<span class="sd">                 For example, if each primitive cell contains 1 site in 1 sub-lattice</span>
+<span class="sd">                 specified as sublattice_sizes=[1], with the requirement that species</span>
+<span class="sd">                 A, B and C sum up to occupy less than 0.6 sites per sub-lattice, then</span>
+<span class="sd">                 you must write: &quot;A + B + C &lt;= 0.6&quot;.</span>
+<span class="sd">                 While if you specify sublattice_sizes=[2] in the same system per</span>
+<span class="sd">                 primitive cell, to specify the same constraint, write</span>
+<span class="sd">                 &quot;A + B + C &lt;= 1.2&quot; or &quot;0.5 A + 0.5 B + 0.5 C &lt;= 0.6&quot;, etc.</span>
+
+<span class="sd">                See documentation of :mod:`smol.moca.composition`.</span>
+<span class="sd">             comp_enumeration_step (int): optional</span>
+<span class="sd">                Skip step in returning the enumerated compositions.</span>
+<span class="sd">                If step &gt; 1, on each dimension of the composition space,</span>
+<span class="sd">                we will only yield one composition in every N compositions.</span>
+<span class="sd">                Default to 1.</span>
+<span class="sd">             compositions (2D ArrayLike of int): optional</span>
+<span class="sd">                Fixed compositions with which to enumerate the structures. If</span>
+<span class="sd">                given, will not enumerate other compositions.</span>
+<span class="sd">                Should be provided as the &quot;species count&quot; format,</span>
+<span class="sd">                see :mod:`smol.moca.composition`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;comp_enumeration_step&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;comp_enumeration_step&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="s2">&quot;charge_neutral&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;charge_neutral&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;other_constraints&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;other_constraints&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="s2">&quot;compositions&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;compositions&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="process_structure_options">
+<a class="viewcode-back" href="../../api_reference/WFacer/preprocessing.html#WFacer.preprocessing.process_structure_options">[docs]</a>
+<span class="k">def</span> <span class="nf">process_structure_options</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get options to enumerate structures.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d(dict):</span>
+<span class="sd">            An input dictionary containing various options in the input file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">            A dict containing structure options, including the following keys:</span>
+<span class="sd">             num_structs_per_iter_init (int):</span>
+<span class="sd">                 Number of new structures to enumerate in the first iteration.</span>
+<span class="sd">                 It is recommended that in each iteration, at least 2~3</span>
+<span class="sd">                 structures are added for each composition.</span>
+<span class="sd">                 Default is 60.</span>
+<span class="sd">             num_structs_per_iter_add (int):</span>
+<span class="sd">                 Number of new structures to enumerate in each followed iteration.</span>
+<span class="sd">                 Default is 40.</span>
+<span class="sd">             sample_generator_kwargs(dict):</span>
+<span class="sd">                 kwargs of CanonicalSampleGenerator.</span>
+<span class="sd">             init_method(str):</span>
+<span class="sd">                 Structure selection method in the first iteration.</span>
+<span class="sd">                 Default is &quot;leverage&quot;. Allowed options include: &quot;leverage&quot; and</span>
+<span class="sd">                 &quot;random&quot;.</span>
+<span class="sd">             add_method(str):</span>
+<span class="sd">                 Structure selection method in subsequent iterations.</span>
+<span class="sd">                 Default is &#39;leverage&#39;. Allowed options are: &#39;leverage&#39;</span>
+<span class="sd">                 and &#39;random&#39;.</span>
+<span class="sd">             duplicacy_criteria(str):</span>
+<span class="sd">                 The criteria when to consider two structures as the same and</span>
+<span class="sd">                 old to add one of them into the candidate training set.</span>
+<span class="sd">                 Default is &quot;correlations&quot;, which means to assert duplication</span>
+<span class="sd">                 if two structures have the same correlation vectors. While</span>
+<span class="sd">                 &quot;structure&quot; means two structures must be symmetrically equivalent</span>
+<span class="sd">                 after being reduced. No other option is allowed.</span>
+
+<span class="sd">                 .. note:: The Option &quot;structure&quot; might be significantly slower since</span>
+<span class="sd">                  it has to attempt reducing every structure to its primitive cell</span>
+<span class="sd">                  before matching. It should be used with caution.</span>
+
+<span class="sd">             n_parallel(int): optional</span>
+<span class="sd">                 Number of generators to run in parallel. Default is to use</span>
+<span class="sd">                 a quarter of cpu count.</span>
+<span class="sd">             keep_ground_states(bool):</span>
+<span class="sd">                 Whether always to add new ground states to the training set.</span>
+<span class="sd">                 Default to True.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;num_structs_per_iter_init&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;num_structs_per_iter_init&quot;</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
+        <span class="s2">&quot;num_structs_per_iter_add&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;num_structs_per_iter_add&quot;</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span>
+        <span class="s2">&quot;sample_generator_kwargs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sample_generator_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="s2">&quot;init_method&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;init_method&quot;</span><span class="p">,</span> <span class="s2">&quot;leverage&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;add_method&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;add_method&quot;</span><span class="p">,</span> <span class="s2">&quot;leverage&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;duplicacy_criteria&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;duplicacy_criteria&quot;</span><span class="p">,</span> <span class="s2">&quot;correlations&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;n_parallel&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_parallel&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;keep_ground_states&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;keep_ground_states&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="process_calculation_options">
+<a class="viewcode-back" href="../../api_reference/WFacer/preprocessing.html#WFacer.preprocessing.process_calculation_options">[docs]</a>
+<span class="k">def</span> <span class="nf">process_calculation_options</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get options to do vasp calculations in atomate2.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d(dict):</span>
+<span class="sd">            An input dictionary containing various options in the input file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">            A dict containing calculation options, including the following keys:</span>
+<span class="sd">             apply_strain(3*3 ArrayLike or 1D ArrayLike[float] of three numbers):</span>
+<span class="sd">                Strain matrix to apply to the structure before relaxation,</span>
+<span class="sd">                in order to break structural symmetry of forces.</span>
+<span class="sd">                Default is [1.03, 1.02, 1.01], which means to</span>
+<span class="sd">                stretch the structure by 3%, 2% and 1% along a, b, and c</span>
+<span class="sd">                directions, respectively.</span>
+<span class="sd">             relax_generator_kwargs(dict):</span>
+<span class="sd">                Additional arguments to pass into an :mod:`atomate2`</span>
+<span class="sd">                class :class:`VaspInputGenerator` that is used to specify</span>
+<span class="sd">                a :class:`RelaxMaker`.</span>
+<span class="sd">                This is where the :mod:`pymatgen` VASP set arguments should go.</span>
+<span class="sd">             relax_maker_kwargs(dict):</span>
+<span class="sd">                Additional arguments to initialize an :mod:`atomate2`</span>
+<span class="sd">                class :class:`RelaxMaker`. **Not frequently used**.</span>
+<span class="sd">             add_tight_relax(bool):</span>
+<span class="sd">                Whether to add a tight relaxation job after a coarse</span>
+<span class="sd">                relaxation. Default to True.</span>
+<span class="sd">                You may want to disable this if your system has</span>
+<span class="sd">                difficulty converging forces or energies.</span>
+<span class="sd">             tight_generator_kwargs(dict):</span>
+<span class="sd">                Additional arguments to pass into an :mod:`atomate2`</span>
+<span class="sd">                class :class:`VaspInputGenerator`</span>
+<span class="sd">                that is used to initialize a :class:`TightRelaxMaker`.</span>
+<span class="sd">                This is where the :mod:`pymatgen` VASP set arguments should go.</span>
+<span class="sd">             tight_maker_kwargs(dict):</span>
+<span class="sd">                Additional arguments to pass into an :mod:`atomate2`</span>
+<span class="sd">                class :class:`TightRelaxMaker`. A tight relax is performed after</span>
+<span class="sd">                relaxation, if add_tight_relax is True. **Not frequently used**.</span>
+<span class="sd">             static_generator_kwargs(dict):</span>
+<span class="sd">                Additional arguments to pass into an :mod:`atomate2`</span>
+<span class="sd">                class :class:`VaspInputGenerator` that is used to initialize</span>
+<span class="sd">                a :class:`StaticMaker`.</span>
+<span class="sd">                This is where the :mod:`pymatgen` VASP set arguments should go.</span>
+<span class="sd">             static_maker_kwargs(dict):</span>
+<span class="sd">                Additional arguments to pass into an :mod:`atomate2`</span>
+<span class="sd">                :class:`StaticMaker`. **Not frequently used**.</span>
+<span class="sd">             other_properties(list[(str, str)| str]): optional</span>
+<span class="sd">                Other property names beyond &quot;energy&quot; and &quot;uncorrected_energy&quot;</span>
+<span class="sd">                to be retrieved from :class:`TaskDoc` and recorded into the wrangler,</span>
+<span class="sd">                and the query string to retrieve them, paired in tuples.</span>
+<span class="sd">                If only strings are given, will also query with the given</span>
+<span class="sd">                string.</span>
+<span class="sd">                For the rules in writing the query string, refer</span>
+<span class="sd">                to :mod:`WFacer.utils.query`.</span>
+<span class="sd">                By default, will not record any other property beyond energy.</span>
+<span class="sd">            Refer to :mod:`atomate2` documentation for more information.</span>
+<span class="sd">             .. note:: the default VASP sets in :mod:`atomate2` are not specifically</span>
+<span class="sd">              chosen for specific systems. Using your own VASP input settings</span>
+<span class="sd">              is highly recommended!</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">strain_before_relax</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;apply_strain&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.03</span><span class="p">,</span> <span class="mf">1.02</span><span class="p">,</span> <span class="mf">1.01</span><span class="p">])</span>
+    <span class="n">strain_before_relax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">strain_before_relax</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">strain_before_relax</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">strain_before_relax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">strain_before_relax</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">strain_before_relax</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Provided strain format &quot;</span>
+            <span class="s2">&quot;must be either 3*3 arraylike or &quot;</span>
+            <span class="s2">&quot;an 1d arraylike of length 3!&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;apply_strain&quot;</span><span class="p">:</span> <span class="n">strain_before_relax</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="s2">&quot;relax_generator_kwargs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relax_generator_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="s2">&quot;relax_maker_kwargs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relax_maker_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="s2">&quot;add_tight_relax&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;add_tight_relax&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;tight_generator_kwargs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tight_generator_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="s2">&quot;tight_maker_kwargs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tight_maker_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="s2">&quot;static_generator_kwargs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;static_generator_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="s2">&quot;static_maker_kwargs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;static_maker_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="s2">&quot;other_properties&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;other_properties&quot;</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="process_decorator_options">
+<a class="viewcode-back" href="../../api_reference/WFacer/preprocessing.html#WFacer.preprocessing.process_decorator_options">[docs]</a>
+<span class="k">def</span> <span class="nf">process_decorator_options</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get options to decorate species with charge or other properties.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d(dict):</span>
+<span class="sd">            An input dictionary containing various options in the input file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">            A dict containing calculation options, including the following keys:</span>
+<span class="sd">             decorator_types(list(str)): optional</span>
+<span class="sd">                Name of decorators to use for each property. If None, will</span>
+<span class="sd">                choose the first one in all implemented decorators</span>
+<span class="sd">                (see :mod:`WFacer.specie_decorators`).</span>
+<span class="sd">             decorator_kwargs(list[dict]): optional</span>
+<span class="sd">                Arguments to pass into each decorator. See the documentation</span>
+<span class="sd">                of each specific decorator for its usage.</span>
+<span class="sd">             decorator_train_kwargs(list[dict]): optional</span>
+<span class="sd">                Arguments to pass into each decorator when calling</span>
+<span class="sd">                the function :func:`decorator.train`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Update these pre-processing rules when necessary,</span>
+    <span class="c1"># if you have new decorators implemented.</span>
+    <span class="n">decorator_types</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;decorator_types&quot;</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="n">decorator_kwargs</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;decorator_kwargs&quot;</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="n">decorator_train_kwargs</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;decorator_train_kwargs&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">decorator_kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">decorator_kwargs</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">decorator_types</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;If provided any, number of kwargs must match&quot;</span>
+            <span class="s2">&quot; the number of decorators exactly!&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">decorator_kwargs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">decorator_kwargs</span> <span class="o">=</span> <span class="p">[{}</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">decorator_types</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">decorator_train_kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">decorator_train_kwargs</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span>
+        <span class="n">decorator_types</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;If provided any, number of train kwargs must match&quot;</span>
+            <span class="s2">&quot; the number of decorators exactly!&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">decorator_train_kwargs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">decorator_train_kwargs</span> <span class="o">=</span> <span class="p">[{}</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">decorator_types</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;decorator_types&quot;</span><span class="p">:</span> <span class="n">decorator_types</span><span class="p">,</span>
+        <span class="s2">&quot;decorator_kwargs&quot;</span><span class="p">:</span> <span class="n">decorator_kwargs</span><span class="p">,</span>
+        <span class="s2">&quot;decorator_train_kwargs&quot;</span><span class="p">:</span> <span class="n">decorator_train_kwargs</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="process_subspace_options">
+<a class="viewcode-back" href="../../api_reference/WFacer/preprocessing.html#WFacer.preprocessing.process_subspace_options">[docs]</a>
+<span class="k">def</span> <span class="nf">process_subspace_options</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get options to create cluster subspace.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d(dict):</span>
+<span class="sd">            An input dictionary containing various options in the input file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">            A dict containing fit options, including the following keys:</span>
+<span class="sd">             cutoffs(dict{int: float}):</span>
+<span class="sd">                Cluster cutoff diameters of each type of clusters. If not given,</span>
+<span class="sd">                will guess with nearest neighbor distance in the structure.</span>
+<span class="sd">                Setting your own is highly recommended.</span>
+<span class="sd">             use_ewald(bool):</span>
+<span class="sd">                Whether to use the :class:`EwaldTerm` as an external term in the cluster</span>
+<span class="sd">                space. Only available when the expansion is charge decorated.</span>
+<span class="sd">                Default to True.</span>
+<span class="sd">             ewald_kwargs(dict):</span>
+<span class="sd">                Keyword arguments used to initialize EwaldTerm.</span>
+<span class="sd">                Note: Other external terms than ewald term not supported yet.</span>
+<span class="sd">             from_cutoffs_kwargs(dict):</span>
+<span class="sd">                Other keyword arguments to be used in</span>
+<span class="sd">                the function :func:`ClusterSubspace.from_cutoffs`.</span>
+<span class="sd">                For example, the cluster basis type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;cutoffs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cutoffs&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="s2">&quot;use_ewald&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_ewald&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;ewald_kwargs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ewald_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="s2">&quot;from_cutoffs_kwargs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;from_cutoffs_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="process_fit_options">
+<a class="viewcode-back" href="../../api_reference/WFacer/preprocessing.html#WFacer.preprocessing.process_fit_options">[docs]</a>
+<span class="k">def</span> <span class="nf">process_fit_options</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get options to fit ECIs with sparse-lm.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d(dict):</span>
+<span class="sd">            An input dictionary containing various options in the input file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">            A dict containing fit options, including the following keys:</span>
+<span class="sd">             estimator_type(str):</span>
+<span class="sd">                The name of an estimator class in :mod:`sparce-lm`. Default to</span>
+<span class="sd">                &#39;Lasso&#39;.</span>
+<span class="sd">             use_hierarchy(str):</span>
+<span class="sd">                Whether to use hierarchy in regularization fitting, when</span>
+<span class="sd">                estimator belongs to :class:`mixedL0`. Default to True.</span>
+<span class="sd">             center_point_external(bool): optional</span>
+<span class="sd">                Whether to fit the point and external terms with linear regression</span>
+<span class="sd">                first, then fit the residue with regressor. Default to None, which means</span>
+<span class="sd">                when the feature matrix is full rank, will not use centering, otherwise</span>
+<span class="sd">                centers.</span>
+<span class="sd">                If set to True, will force centering, but use at your own risk</span>
+<span class="sd">                because this may cause very large CV. If set to False, will never use</span>
+<span class="sd">                centering.</span>
+<span class="sd">             filter_unique_correlations(bool):</span>
+<span class="sd">                If the wrangler have structures with duplicated correlation vectors,</span>
+<span class="sd">                whether to fit with only the one with the lowest energy.</span>
+<span class="sd">                Default to True.</span>
+<span class="sd">             estimator_kwargs(dict):</span>
+<span class="sd">                Other keyword arguments to pass in when constructing an</span>
+<span class="sd">                estimator. See :mod:`sparselm.models`.</span>
+<span class="sd">             optimizer_type(str):</span>
+<span class="sd">                The name of optimizer class used to optimize model hyperparameters</span>
+<span class="sd">                over cross validation. Default is None. Supports :class:`GridSearch` and</span>
+<span class="sd">                :class:`LineSearch` optimizers. See :mod:`sparselm.model_selection`.</span>
+<span class="sd">             param_grid(dict|list(tuple)):</span>
+<span class="sd">                Parameters grid to search for estimator hyperparameters.</span>
+<span class="sd">                See :mod:`sparselm.model_selection`.</span>
+<span class="sd">             optimizer_kwargs(dict):</span>
+<span class="sd">                Keyword arguments when constructing GridSearch or LineSearch class.</span>
+<span class="sd">                See :mod:`sparselm.model_selection`.</span>
+<span class="sd">             fit_kwargs(dict):</span>
+<span class="sd">                Keyword arguments when calling :func:`Estimator.fit`.</span>
+<span class="sd">                Refer to the documentation of the specific estimator.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;estimator_type&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;estimator_type&quot;</span><span class="p">,</span> <span class="s2">&quot;lasso&quot;</span><span class="p">),</span>
+        <span class="c1"># Under Seko&#39;s iterative procedure, there is not much sense in weighting</span>
+        <span class="c1"># over energy, because low energy samples are always preferred.</span>
+        <span class="c1"># We will not include sample weighting scheme here. You can play with the</span>
+        <span class="c1"># final CeDataWangler if you want.</span>
+        <span class="s2">&quot;use_hierarchy&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_hierarchy&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;center_point_external&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;center_point_external&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;filter_unique_correlations&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;filter_unique_correlations&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;estimator_kwargs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;estimator_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="s2">&quot;optimizer_type&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optimizer_type&quot;</span><span class="p">,</span> <span class="s2">&quot;grid-search&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;param_grid&quot;</span><span class="p">:</span>
+        <span class="c1"># Use lasso as default as mixed l0 might get too aggressive.</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;param_grid&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">25</span><span class="p">))</span><span class="o">.</span><span class="n">tolist</span><span class="p">()}),</span>
+        <span class="s2">&quot;optimizer_kwargs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optimizer_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="s2">&quot;fit_kwargs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fit_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="process_convergence_options">
+<a class="viewcode-back" href="../../api_reference/WFacer/preprocessing.html#WFacer.preprocessing.process_convergence_options">[docs]</a>
+<span class="k">def</span> <span class="nf">process_convergence_options</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get convergence check options.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d(dict):</span>
+<span class="sd">            An input dictionary containing various options in the input file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">            A dict containing convergence options, including the following keys:</span>
+<span class="sd">             cv_tol(float): optional</span>
+<span class="sd">                 Maximum allowed CV value in meV per site (including vacancies).</span>
+<span class="sd">                 (not eV per atom because some CE may contain Vacancies.)</span>
+<span class="sd">                 Default to None, but better set it manually!</span>
+<span class="sd">             std_cv_rtol(float): optional</span>
+<span class="sd">                 Maximum standard deviation of CV allowed in cross validations,</span>
+<span class="sd">                 normalized by mean CV value.</span>
+<span class="sd">                 Dimensionless, default to None, which means this standard deviation</span>
+<span class="sd">                 of cv will not be checked.</span>
+<span class="sd">             delta_cv_rtol(float): optional</span>
+<span class="sd">                 Maximum difference of CV allowed between the last 2 iterations,</span>
+<span class="sd">                 divided by the standard deviation of CV in cross validation.</span>
+<span class="sd">                 Dimensionless, default to 0.5.</span>
+<span class="sd">             delta_eci_rtol(float): optional</span>
+<span class="sd">                 Maximum allowed mangnitude of change in ECIs, measured by:</span>
+
+<span class="sd">                 .. math::</span>
+<span class="sd">                     ||J&#39; - J||_1 | / || J&#39; ||_1.</span>
+
+<span class="sd">                 Dimensionless. If not given, will not check ECI values for</span>
+<span class="sd">                 convergence, because this may significantly increase the</span>
+<span class="sd">                 number of iterations required to converge.</span>
+<span class="sd">             delta_min_e_rtol(float): optional</span>
+<span class="sd">                 Maximum difference allowed to the predicted minimum CE and DFT energy</span>
+<span class="sd">                 at every composition between the last 2 iterations. Dimensionless,</span>
+<span class="sd">                 divided by the value of CV.</span>
+<span class="sd">                 Default set to 2.</span>
+<span class="sd">             continue_on_finding_new_gs(bool): optional</span>
+<span class="sd">                 If true, whenever a new ground-state structure is detected (</span>
+<span class="sd">                 symmetrically distinct), the CE iteration will</span>
+<span class="sd">                 continue even if all other criterion are satisfied.</span>
+<span class="sd">                 Default to False because this may also increase the</span>
+<span class="sd">                 number of iterations.</span>
+<span class="sd">             max_iter(int): optional</span>
+<span class="sd">                 Maximum number of iterations allowed. Will not limit number</span>
+<span class="sd">                 of iterations if set to None, but setting one limit is still</span>
+<span class="sd">                 recommended. Default to 10.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;cv_tol&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cv_tol&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;std_cv_rtol&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;std_cv_rtol&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;delta_cv_rtol&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;delta_cv_rtol&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
+        <span class="s2">&quot;delta_eci_rtol&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;delta_eci_rtol&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;delta_min_e_rtol&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;delta_min_e_rtol&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="s2">&quot;continue_on_finding_new_gs&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;continue_on_finding_new_gs&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="s2">&quot;max_iter&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_iter&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="get_initial_ce_coefficients">
+<a class="viewcode-back" href="../../api_reference/WFacer/preprocessing.html#WFacer.preprocessing.get_initial_ce_coefficients">[docs]</a>
+<span class="k">def</span> <span class="nf">get_initial_ce_coefficients</span><span class="p">(</span><span class="n">cluster_subspace</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize a set of null CE coefficients.</span>
+
+<span class="sd">    Any coefficient, except those for external terms, will be initialized as 0.</span>
+<span class="sd">    This guarantees that for ionic systems, structures with lower ewald energy</span>
+<span class="sd">    are always selected first.</span>
+<span class="sd">    External term coefficients are all initialized as 1.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cluster_subspace(ClusterSubspace):</span>
+<span class="sd">            The initial cluster subspace.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        1D np.ndarray of float:</span>
+<span class="sd">            Initialized CE coefficients.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cluster_subspace</span><span class="o">.</span><span class="n">num_corr_functions</span><span class="p">)]</span>
+        <span class="o">+</span> <span class="p">[</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cluster_subspace</span><span class="o">.</span><span class="n">external_terms</span><span class="p">))]</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2022-2023, Ceder Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

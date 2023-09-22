@@ -1,0 +1,889 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Charge decorators &#8212; WFacer 0.1.dev1+g4272e06 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+
+    <script src="../../_static/documentation_options.js?v=0c04da69"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api_reference/species_decorators/charge';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.14.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.1.dev1+g4272e06';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Miscellaneous utility functions" href="../utils/index.html" />
+    <link rel="prev" title="Generic decorators" href="base.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Sep 22, 2023"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">WFacer 0.1.dev1+g4272e06 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../contributing.html">
+                        Contributing Guidelines
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/blob/master/CHANGES.md">
+                    Changes
+                  </a>
+                </li>
+                
+
+                <li class="nav-item">
+                  <a class="nav-link nav-external" href="https://github.com/CederGroupHub/WFacer/issues">
+                    Issues
+                  </a>
+                </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/CederGroupHub/WFacer" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../sample_generators/index.html">Structure generators</a><input checked class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../sample_generators/mc_generators.html">Monte-Carlo sample generators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Species decorators</a><input checked class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="base.html">Generic decorators</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Charge decorators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../utils/index.html">Miscellaneous utility functions</a><input checked class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../utils/convex_hull.html">Convex hull</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/duplicacy.html">Duplicacy check</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/occu.html">Occupancy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/query.html">Data query</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/selection.html">Structure selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/sparselm.html">Sparse-lm estimator handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/supercells.html">Supercell matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/taskdoc.html">TaskDoc handling</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../WFacer/index.html">WFacer main functionalities</a><input checked class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/convergence.html">Cluster expansion convergence check</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/enumeration.html">Structure enumeration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/fit.html">Cluster expansion fitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/jobs.html">Cluster expansion jobs (Atomate2)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/maker.html">Cluster expansion workflow maker (Atomate2)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/preprocessing.html">Preprocess options and inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/schema.html">The CeOutputsDocument schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../WFacer/wrangling.html">CeDataWrangler (WFacer)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">API Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Species decorators</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Charge decorators</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="module-WFacer.specie_decorators.charge">
+<span id="charge-decorators"></span><h1>Charge decorators<a class="headerlink" href="#module-WFacer.specie_decorators.charge" title="Link to this heading">#</a></h1>
+<p>For charge assignment.</p>
+<p>Charges will be assigned by magnitudes of magnetic moments.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.ChargeDecorator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ChargeDecorator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_allowed_abs_charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/specie_decorators/charge.html#ChargeDecorator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.specie_decorators.charge.ChargeDecorator" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="base.html#WFacer.specie_decorators.base.BaseDecorator" title="WFacer.specie_decorators.base.BaseDecorator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDecorator</span></code></a></p>
+<p>Abstract decorators to assign charge.</p>
+<p>Initialize.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>labels</strong> (<em>dict</em><em> of </em><em>str</em><em> or </em><em>Species to list</em>) – optional
+A table of labels to decorate each element with.
+keys are species symbol, values are possible decorated property
+values, such as oxidation states, magnetic spin directions.
+Values are sorted such that the corresponding cluster centers of the
+required property is increasing. For example, in Mn(2, 3, 4)+
+(high spin), the magnetic moments is sorted as [Mn4+, Mn3+, Mn2+],
+thus you should provide labels as {Element(“Mn”):[4, 3, 2]}.
+Keys can be either Element and Species object, or their
+string representations. Currently, do not support decoration
+of Vacancy.
+If you have multiple required properties, or required properties
+have multiple dimensions, the labels order must match the sort
+in the order of self.required_properties. Properties are sorted
+lexicographically.
+This argument may not be necessary for some decorator, such as
+GuessChargeDecorator.
+Be sure to provide labels for all the species you wish to assign
+a property to, otherwise, you are responsible for your own error!</p></li>
+<li><p><strong>max_allowed_abs_charge</strong> (<em>float</em>) – optional
+Maximum allowed absolute value of charge in a decorated structure
+entry. If the absolute value of structure charge exceeds this value,
+the entry will be filtered and returned as a NoneType.
+Default to 0, which means we require absolute charge balance.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.ChargeDecorator.as_dict">
+<span class="sig-name descname"><span class="pre">as_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/specie_decorators/charge.html#ChargeDecorator.as_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.specie_decorators.charge.ChargeDecorator.as_dict" title="Link to this definition">#</a></dt>
+<dd><p>Serialize to dict.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.ChargeDecorator.decorated_prop_name">
+<span class="sig-name descname"><span class="pre">decorated_prop_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'oxi_state'</span></em><a class="headerlink" href="#WFacer.specie_decorators.charge.ChargeDecorator.decorated_prop_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.ChargeDecorator.from_dict">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/specie_decorators/charge.html#ChargeDecorator.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.specie_decorators.charge.ChargeDecorator.from_dict" title="Link to this definition">#</a></dt>
+<dd><p>De-serialize.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.ChargeDecorator.required_prop_names">
+<span class="sig-name descname"><span class="pre">required_prop_names</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#WFacer.specie_decorators.charge.ChargeDecorator.required_prop_names" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.FixedChargeDecorator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FixedChargeDecorator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_allowed_abs_charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/specie_decorators/charge.html#FixedChargeDecorator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.specie_decorators.charge.FixedChargeDecorator" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#WFacer.specie_decorators.charge.ChargeDecorator" title="WFacer.specie_decorators.charge.ChargeDecorator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ChargeDecorator</span></code></a>, <a class="reference internal" href="base.html#WFacer.specie_decorators.base.NoTrainDecorator" title="WFacer.specie_decorators.base.NoTrainDecorator"><code class="xref py py-class docutils literal notranslate"><span class="pre">NoTrainDecorator</span></code></a></p>
+<p>Assign fixed charge to each element from setting.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This Decorator should never be used on
+structures with multi-valent elements!</p>
+</div>
+<p>Initialize.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>labels</strong> (<em>dict</em><em> of </em><em>str</em><em> or </em><em>Species to list</em>) – optional
+A table of labels to decorate each element with.
+keys are species symbol, values are possible decorated property
+values, such as oxidation states, magnetic spin directions.
+Values are sorted such that the corresponding cluster centers of the
+required property is increasing. For example, in Mn(2, 3, 4)+
+(high spin), the magnetic moments is sorted as [Mn4+, Mn3+, Mn2+],
+thus you should provide labels as {Element(“Mn”):[4, 3, 2]}.
+Keys can be either Element and Species object, or their
+string representations. Currently, do not support decoration
+of Vacancy.
+If you have multiple required properties, or required properties
+have multiple dimensions, the labels order must match the sort
+in the order of self.required_properties. Properties are sorted
+lexicographically.
+This argument may not be necessary for some decorator, such as
+GuessChargeDecorator.
+Be sure to provide labels for all the species you wish to assign
+a property to, otherwise, you are responsible for your own error!</p></li>
+<li><p><strong>max_allowed_abs_charge</strong> (<em>float</em>) – optional
+Maximum allowed absolute value of charge in a decorated structure
+entry. If the absolute value of structure charge exceeds this value,
+the entry will be filtered and returned as a NoneType.
+Default to 0, which means we require absolute charge balance.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.FixedChargeDecorator.decorate">
+<span class="sig-name descname"><span class="pre">decorate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entries</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/specie_decorators/charge.html#FixedChargeDecorator.decorate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.specie_decorators.charge.FixedChargeDecorator.decorate" title="Link to this definition">#</a></dt>
+<dd><p>Decorate entries by guessed charges.</p>
+<p>Warning: Do not use this with multi-valent
+elements, unless you know what you want
+clearly!!!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>entries</strong> (<em>List</em><em>[</em><em>ComputedStructureEntry</em><em>]</em>) – Entries of computed structures.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Entries with decorated structures or failed structures.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of NoneType or ComputedStructureEntry</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.FixedChargeDecorator.decorated_prop_name">
+<span class="sig-name descname"><span class="pre">decorated_prop_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'oxi_state'</span></em><a class="headerlink" href="#WFacer.specie_decorators.charge.FixedChargeDecorator.decorated_prop_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.FixedChargeDecorator.required_prop_names">
+<span class="sig-name descname"><span class="pre">required_prop_names</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#WFacer.specie_decorators.charge.FixedChargeDecorator.required_prop_names" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.MagneticChargeDecorator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MagneticChargeDecorator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cuts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_allowed_abs_charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/specie_decorators/charge.html#MagneticChargeDecorator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.specie_decorators.charge.MagneticChargeDecorator" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="base.html#WFacer.specie_decorators.base.GpOptimizedDecorator" title="WFacer.specie_decorators.base.GpOptimizedDecorator"><code class="xref py py-class docutils literal notranslate"><span class="pre">GpOptimizedDecorator</span></code></a>, <a class="reference internal" href="#WFacer.specie_decorators.charge.ChargeDecorator" title="WFacer.specie_decorators.charge.ChargeDecorator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ChargeDecorator</span></code></a></p>
+<p>Assign charges from magnitudes of total magentic moments on sites.</p>
+<p>Uses Gaussian process to optimize charge assignment.</p>
+<p>Initialize.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>labels</strong> (<em>dict</em><em> of </em><em>str to list</em><em> of </em><em>int}</em>) – A table of species as key, and charges to decorate to the
+species in the key. Values of a key should be sorted as
+the decorated species should have increasing magnetic
+moment.
+For example, in Mn(2, 3, 4)+ all high spin, the magnetic
+moments is sorted as [Mn4+, Mn3+, Mn2+], therefore,
+you should provide labels as {Element(“Mn”):[4, 3, 2]}.
+Keys can be either Element|Species object, or their
+string representations. Currently, do not support decoration
+of Vacancy.
+This argument may not be necessary for some sub-classes, such as:
+GuessChargeDecorator.
+Be sure to provide labels for all the species you wish to assign
+a property to, otherwise, you are the cause of your own error!</p></li>
+<li><p><strong>cuts</strong> (<em>dict</em><em> of </em><em>str to list</em><em> of </em><em>int</em><em> or </em><em>float}</em>) – optional
+A table of species and cutting points of the magnetic moments,
+so that a magnetic moment is compared with each of these cutting
+values, and decided which charge label it should be assigned with.</p></li>
+<li><p><strong>max_allowed_abs_charge</strong> (<em>float</em>) – optional
+Maximum allowed absolute value of charge in a decorated structure
+entry. If the absolute value of structure charge exceeds this value,
+the entry will be filtered and returned as a NoneType.
+Default to 0, which means we require absolute charge balance.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.MagneticChargeDecorator.decorated_prop_name">
+<span class="sig-name descname"><span class="pre">decorated_prop_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'oxi_state'</span></em><a class="headerlink" href="#WFacer.specie_decorators.charge.MagneticChargeDecorator.decorated_prop_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.MagneticChargeDecorator.required_prop_names">
+<span class="sig-name descname"><span class="pre">required_prop_names</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[('magmom',</span> <span class="pre">'calcs_reversed.0-output.outcar.magnetization.^tot')]</span></em><a class="headerlink" href="#WFacer.specie_decorators.charge.MagneticChargeDecorator.required_prop_names" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.PmgGuessChargeDecorator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PmgGuessChargeDecorator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_allowed_abs_charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/specie_decorators/charge.html#PmgGuessChargeDecorator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.specie_decorators.charge.PmgGuessChargeDecorator" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#WFacer.specie_decorators.charge.ChargeDecorator" title="WFacer.specie_decorators.charge.ChargeDecorator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ChargeDecorator</span></code></a>, <a class="reference internal" href="base.html#WFacer.specie_decorators.base.NoTrainDecorator" title="WFacer.specie_decorators.base.NoTrainDecorator"><code class="xref py py-class docutils literal notranslate"><span class="pre">NoTrainDecorator</span></code></a></p>
+<p>Assign charges from <code class="xref py py-mod docutils literal notranslate"><span class="pre">pymatgen</span></code> automatic guesses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This class does not need labels.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This Decorator should never be used on
+structures with multi-valent elements!</p>
+</div>
+<p>Initialize.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>labels</strong> (<em>dict</em><em> of </em><em>str</em><em> or </em><em>Species to list</em>) – optional
+A table of labels to decorate each element with.
+keys are species symbol, values are possible decorated property
+values, such as oxidation states, magnetic spin directions.
+Values are sorted such that the corresponding cluster centers of the
+required property is increasing. For example, in Mn(2, 3, 4)+
+(high spin), the magnetic moments is sorted as [Mn4+, Mn3+, Mn2+],
+thus you should provide labels as {Element(“Mn”):[4, 3, 2]}.
+Keys can be either Element and Species object, or their
+string representations. Currently, do not support decoration
+of Vacancy.
+If you have multiple required properties, or required properties
+have multiple dimensions, the labels order must match the sort
+in the order of self.required_properties. Properties are sorted
+lexicographically.
+This argument may not be necessary for some decorator, such as
+GuessChargeDecorator.
+Be sure to provide labels for all the species you wish to assign
+a property to, otherwise, you are responsible for your own error!</p></li>
+<li><p><strong>max_allowed_abs_charge</strong> (<em>float</em>) – optional
+Maximum allowed absolute value of charge in a decorated structure
+entry. If the absolute value of structure charge exceeds this value,
+the entry will be filtered and returned as a NoneType.
+Default to 0, which means we require absolute charge balance.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.PmgGuessChargeDecorator.decorate">
+<span class="sig-name descname"><span class="pre">decorate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entries</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/specie_decorators/charge.html#PmgGuessChargeDecorator.decorate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.specie_decorators.charge.PmgGuessChargeDecorator.decorate" title="Link to this definition">#</a></dt>
+<dd><p>Decorate entries by guessed charges.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>entries</strong> (<em>list</em><em> of </em><em>ComputedStructureEntry</em>) – The entries of computed structures.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Entries with decorated structures or failed structures.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of NoneType or ComputedStructureEntry</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.PmgGuessChargeDecorator.decorated_prop_name">
+<span class="sig-name descname"><span class="pre">decorated_prop_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'oxi_state'</span></em><a class="headerlink" href="#WFacer.specie_decorators.charge.PmgGuessChargeDecorator.decorated_prop_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.PmgGuessChargeDecorator.is_trained">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_trained</span></span><a class="headerlink" href="#WFacer.specie_decorators.charge.PmgGuessChargeDecorator.is_trained" title="Link to this definition">#</a></dt>
+<dd><p>Always considered trained.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.PmgGuessChargeDecorator.required_prop_names">
+<span class="sig-name descname"><span class="pre">required_prop_names</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#WFacer.specie_decorators.charge.PmgGuessChargeDecorator.required_prop_names" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="WFacer.specie_decorators.charge.PmgGuessChargeDecorator.train">
+<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/WFacer/specie_decorators/charge.html#PmgGuessChargeDecorator.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#WFacer.specie_decorators.charge.PmgGuessChargeDecorator.train" title="Link to this definition">#</a></dt>
+<dd><p>Train the model.</p>
+<p>This decorator does not require training at all. Keep
+this method just for consistency.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="base.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Generic decorators</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../utils/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Miscellaneous utility functions</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.ChargeDecorator"><code class="docutils literal notranslate"><span class="pre">ChargeDecorator</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.ChargeDecorator.as_dict"><code class="docutils literal notranslate"><span class="pre">ChargeDecorator.as_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.ChargeDecorator.decorated_prop_name"><code class="docutils literal notranslate"><span class="pre">ChargeDecorator.decorated_prop_name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.ChargeDecorator.from_dict"><code class="docutils literal notranslate"><span class="pre">ChargeDecorator.from_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.ChargeDecorator.required_prop_names"><code class="docutils literal notranslate"><span class="pre">ChargeDecorator.required_prop_names</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.FixedChargeDecorator"><code class="docutils literal notranslate"><span class="pre">FixedChargeDecorator</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.FixedChargeDecorator.decorate"><code class="docutils literal notranslate"><span class="pre">FixedChargeDecorator.decorate()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.FixedChargeDecorator.decorated_prop_name"><code class="docutils literal notranslate"><span class="pre">FixedChargeDecorator.decorated_prop_name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.FixedChargeDecorator.required_prop_names"><code class="docutils literal notranslate"><span class="pre">FixedChargeDecorator.required_prop_names</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.MagneticChargeDecorator"><code class="docutils literal notranslate"><span class="pre">MagneticChargeDecorator</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.MagneticChargeDecorator.decorated_prop_name"><code class="docutils literal notranslate"><span class="pre">MagneticChargeDecorator.decorated_prop_name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.MagneticChargeDecorator.required_prop_names"><code class="docutils literal notranslate"><span class="pre">MagneticChargeDecorator.required_prop_names</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.PmgGuessChargeDecorator"><code class="docutils literal notranslate"><span class="pre">PmgGuessChargeDecorator</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.PmgGuessChargeDecorator.decorate"><code class="docutils literal notranslate"><span class="pre">PmgGuessChargeDecorator.decorate()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.PmgGuessChargeDecorator.decorated_prop_name"><code class="docutils literal notranslate"><span class="pre">PmgGuessChargeDecorator.decorated_prop_name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.PmgGuessChargeDecorator.is_trained"><code class="docutils literal notranslate"><span class="pre">PmgGuessChargeDecorator.is_trained</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.PmgGuessChargeDecorator.required_prop_names"><code class="docutils literal notranslate"><span class="pre">PmgGuessChargeDecorator.required_prop_names</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#WFacer.specie_decorators.charge.PmgGuessChargeDecorator.train"><code class="docutils literal notranslate"><span class="pre">PmgGuessChargeDecorator.train()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/CederGroupHub/WFacer/edit/main/docs/src/api_reference/species_decorators/charge.rst">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2022-2023, Ceder Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
