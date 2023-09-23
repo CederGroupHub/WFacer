@@ -60,8 +60,8 @@ jobs:
 
       # If using python 3.11, need to restrict PR codacy report to PR within the same repo,
       # so that PR across forks will not be reported. Otherwise, will fail to run the report action.
-      # Here we revert to python = 3.9.
-      - if: ${{ matrix.python_version == 3.9}}
+      # Here we revert to python = 3.11.
+      - if: ${{ matrix.python_version == 3.11}}
         name: codacy-coverage-reporter
         uses: codacy/codacy-coverage-reporter-action@v1
         with:
