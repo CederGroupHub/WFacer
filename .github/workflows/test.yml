@@ -58,8 +58,10 @@ jobs:
         run: |
           pytest tests --cov=WFacer --cov-report=xml
 
-      # Restricts PR codacy report to PR within the same repo. PR across forks will not be reported.
-      - if: matrix.python_version == '3.11' && github.repository == github.event.pull_request.head.repo.full_name
+      # If using python 3.11, need to restrict PR codacy report to PR within the same repo,
+      # so that PR across forks will not be reported. Otherwise, will fail to run the report action.
+      # Here we revert to python = 3.9.
+      - if: ${{ matrix.python_version == 3.9}}
         name: codacy-coverage-reporter
         uses: codacy/codacy-coverage-reporter-action@v1
         with:
