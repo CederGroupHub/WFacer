@@ -24,7 +24,7 @@ jobs:
       max-parallel: 10
       matrix:
         # '3.11' fails because h5py has to be built from source since prebuilt wheels are not provided yet
-        python_version: ['3.8', '3.9', '3.10']
+        python_version: ['3.9', '3.10', '3.11']
 
     steps:
       - uses: actions/checkout@v3
@@ -58,7 +58,10 @@ jobs:
         run: |
           pytest tests --cov=WFacer --cov-report=xml
 
-      - if: ${{ matrix.python_version == 3.9 && github.event_name == 'push' }}
+      # If using python 3.11, need to restrict PR codacy report to PR within the same repo,
+      # so that PR across forks will not be reported. Otherwise, will fail to run the report action.
+      # Here we revert to python = 3.11.
+      - if: ${{ matrix.python_version == 3.11 && github.event_name == 'push'}}
         name: codacy-coverage-reporter
         uses: codacy/codacy-coverage-reporter-action@v1
         with:

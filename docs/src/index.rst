@@ -37,7 +37,7 @@ WorkFlow for Automated Cluster Expansion Regression (WFacer)
 .. |pypi_version| image:: https://img.shields.io/pypi/v/WFacer?color=blue
    :target: https://pypi.org/project/WFacer
 
-.. |static_badge| image:: https://img.shields.io/badge/python-3.8%2B-blue
+.. |static_badge| image:: https://img.shields.io/badge/python-3.9%2B-blue
    :target: https://www.python.org/downloads/
 
 |test| |codacy_grade| |codacy_coverage| |precommit| |pypi_version| |static_badge|
