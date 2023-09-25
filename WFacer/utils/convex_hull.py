@@ -1,9 +1,4 @@
-"""Utilities related to min energies and convex hull.
-
-Notice: when generating and adding training structures, distinguish
-element oxidation states. But when generating hulls for comparing
-convergence, will not distinguish oxidation states.
-"""
+"""Utilities to obtain minimum energies per composition and the convex hull."""
 from collections import defaultdict
 
 import numpy as np
@@ -12,23 +7,25 @@ from smol.cofe.wrangling.tools import _energies_above_hull
 
 
 def get_min_energy_structures_by_composition(wrangler, max_iter_id=None):
-    """Get minimum energy and structure at each composition.
+    """Get the minimum energy and its corresponding structure at each composition.
 
     This function provides quick tools to compare minimum DFT energies.
-    Remember this is NOT hull!
-    Sublattice and oxidation state degrees of freedom in compositions
-    are not distinguished in generating hull.
+
+    .. note:: Oxidation states are not distinguished when computing minimum energies
+     for determining hull convergence.
 
     Args:
         wrangler(CeDataWrangler):
-            Datawangler object.
+            A :class:`CeDataWangler` object storing the structure data.
         max_iter_id(int): optional
             Maximum iteration index included in the energy comparison.
             If none given, will read existing maximum iteration number.
+
     Returns:
         defaultdict:
-            element compositions as keys, energy per site and structure
-            as values.
+            Elemental compositions (:class:`Composition` objects accounting for
+            only the amount of each element instead of species) as keys,
+            energy per site and structure as values.
     """
     min_e = defaultdict(lambda: (np.inf, None))
     prim_size = len(wrangler.cluster_subspace.structure)
@@ -51,22 +48,23 @@ def get_min_energy_structures_by_composition(wrangler, max_iter_id=None):
 
 
 def get_hull(wrangler, max_iter_id=None):
-    """Get the energies and compositions on the convex hull.
+    """Get the compositions convex hull at zero Kelvin.
 
-    Sublattice and oxidation state degrees of freedom in compositions
-    are not distinguished in generating hull.
+    .. note:: Oxidation states are not distinguished when computing hulls
+     for determining hull convergence.
 
     Args:
         wrangler(CeDataWrangler):
-            Datawangler object.
+            A :class:`CeDataWangler` object storing the structure data.
         max_iter_id(int): optional
             Maximum iteration index included in the energy comparison.
             If none given, will read existing maximum iteration number.
 
     Returns:
         dict:
-            element compositions as keys, energy per site and structure
-            as values.
+            Elemental compositions (:class:`Composition` objects accounting for
+            only the amount of each element instead of species) as keys,
+            energy per site and structure as values.
     """
     if max_iter_id is None:
         max_iter_id = wrangler.max_iter_id

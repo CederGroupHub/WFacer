@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import pytest
-from atomate2.vasp.schemas.task import TaskDocument
+from emmet.core.tasks import TaskDoc  # emmet-core >= 0.60.0.
 from monty.serialization import loadfn
 from pydantic import parse_file_as
 from smol.cofe import ClusterExpansion
@@ -182,4 +182,4 @@ def single_wrangler_sin(single_ensemble_sin):
 
 @pytest.fixture(scope="package", params=["zns_taskdoc.json"])
 def single_taskdoc(request):
-    return parse_file_as(TaskDocument, os.path.join(DATA_DIR, request.param))
+    return parse_file_as(TaskDoc, os.path.join(DATA_DIR, request.param))

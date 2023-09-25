@@ -1,4 +1,4 @@
-"""Provide structure selection methods."""
+"""Structure selection methods from feature matrices."""
 from warnings import warn
 
 import numpy as np
@@ -23,11 +23,14 @@ def select_initial_rows(
         num_external_terms(int): optional
             Number of external terms in cluster subspace. These
             terms should not be compared in a structure selection.
-        keep_indices(list[int]): optional
+        keep_indices(list of int): optional
             Indices of structures that must be selected. Usually
             those of important ground state structures.
+
     Returns:
-        List[int]: indices of selected structures.
+        list of int:
+            Indices of selected rows in the feature matrix,
+            corresponding to the selected structures.
     """
     # Leave out external terms.
     a = np.array(femat)[:, : len(femat[0]) - num_external_terms]
@@ -94,8 +97,9 @@ def select_added_rows(
 
     We select structures by minimizing the leverage score under a
     certain domain matrix, or fully at random.
-    Refer to: Phys. Rev. B 82, 184107 (2010).
-    Inputs:
+    Refer to `T. Mueller et al. <https://doi.org/10.1103/PhysRevB.82.184107>`_
+
+    Args:
         femat(2D arraylike):
             Correlation vectors of new structures.
         old_femat(2D arraylike):
@@ -106,7 +110,7 @@ def select_added_rows(
             The method used to select structures. Default is
             by maximizing leverage score reduction ("leverage").
             "random" is also supported.
-        keep_indices(List[int]): optional
+        keep_indices(list of int): optional
             Indices of structures that must be selected. Usually
             those of important ground state structures.
         num_external_terms(int): optional
@@ -116,8 +120,10 @@ def select_added_rows(
             The domain matrix used to compute leverage score. By
             default, we use an identity matrix.
 
-    Outputs:
-        List of ints. Indices of selected rows in femat.
+    Returns:
+        list of int:
+            Indices of selected rows in the feature matrix,
+            corresponding to the selected structures.
     """
     # Leave out external terms.
     a = np.array(femat)[:, : len(femat[0]) - num_external_terms]

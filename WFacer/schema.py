@@ -1,4 +1,4 @@
-"""Defines the data schema for WFacer jobs."""
+"""Defines the standard output schema for automated cluster expansion workflows."""
 from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel, Field
@@ -11,7 +11,7 @@ from .wrangling import CeDataWrangler
 
 
 class CeOutputsDocument(BaseModel):
-    """Summary of cluster expansion workflow as outputs."""
+    """Summary document of cluster expansion outputs."""
 
     project_name: str = Field(
         "ace-work", description="The name of cluster expansion" " project."
@@ -87,7 +87,7 @@ class CeOutputsDocument(BaseModel):
 
     # This is to make feature matrix validated correctly.
     class Config:
-        """Setting configuration for schema."""
+        """Setting configurations for the schema."""
 
         arbitrary_types_allowed = True
 
@@ -140,7 +140,7 @@ class CeOutputsDocument(BaseModel):
 
     @property
     def converged(self):
-        """Check convergence based on given output doc.
+        """Check convergence based on the current outputs.
 
         Returns:
             bool.

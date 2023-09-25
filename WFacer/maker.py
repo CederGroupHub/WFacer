@@ -1,4 +1,4 @@
-"""Automatic jobflow maker."""
+"""Automatic cluster expansion workflow maker."""
 from dataclasses import dataclass, field
 from warnings import warn
 
@@ -16,15 +16,16 @@ from .jobs import (
 
 @job
 def ce_step_trigger(last_ce_document):
-    """Trigger a step in CE iteration.
+    """Triggers a CE iteration.
 
     Args:
         last_ce_document(CeOutputsDocument):
             The cluster expansion outputs document from the
             latest step.
+
     Returns:
         Response:
-            Either a CeOutputsDocument if converged, or a
+            A :class:`CeOutputsDocument` if converged, or a
             response to replace with another step.
     """
     iter_id = last_ce_document.last_iter_id + 1
@@ -86,13 +87,16 @@ def ce_step_trigger(last_ce_document):
 
 @dataclass
 class AutoClusterExpansionMaker(Maker):
-    """The cluster expansion automatic workflow maker.
+    """Automatic cluster expansion workflow maker.
 
     Attributes:
         name(str):
-            Name of the cluster expansion project. Since the underscore
-            will be used to separate fields of job names, it should not
-            appear in the project name!
+            The name of the cluster expansion project.
+
+            .. note:: Since the underscore ("_") will be used to separate
+             the fields in job names, it should not appear in the project
+             name here!
+
         options(dict):
             A dictionary including all options to set up the automatic
             workflow.
@@ -120,9 +124,10 @@ class AutoClusterExpansionMaker(Maker):
                 number of iterations, add this many more iterations.
                 Default is None. When given None or 0, will simply double
                 max_iter in options.
+
         Returns:
             Flow:
-                The iterative cluster expansion workflow.
+                The iterative automatic cluster expansion workflow.
         """
         if last_document is None:
             initialize = initialize_document_job(

@@ -1,4 +1,6 @@
 """Test the fitting functions."""
+import os
+
 import cvxpy as cp
 import numpy as np
 import pytest
@@ -8,6 +10,8 @@ from smol.cofe.wrangling.tools import unique_corr_vector_indices
 from sparselm.stepwise import StepwiseEstimator
 
 from WFacer.fit import fit_ecis_from_wrangler
+
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 
 # Only test a single small-sized wrangler, because fitting can take long.
@@ -236,9 +240,9 @@ def test_fit_ecis_sinusoid(single_wrangler_sin):
     assert r2 >= 0.9
 
 
-@pytest.fixture
-def real_wrangler():
-    return loadfn("./data/agli_bcc_wrangler.json")
+@pytest.fixture(params=["agli_bcc_wrangler.json"])
+def real_wrangler(request):
+    return loadfn(os.path.join(DATA_DIR, request.param))
 
 
 def test_realistic_centered_fit(real_wrangler):

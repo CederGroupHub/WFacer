@@ -11,7 +11,7 @@ __author__ = "Fengyu Xie"
 
 
 class ChargeDecorator(BaseDecorator):
-    """A type of decorators to assign charge."""
+    """Abstract decorators to assign charge."""
 
     decorated_prop_name = "oxi_state"
     required_prop_names = None
@@ -20,7 +20,7 @@ class ChargeDecorator(BaseDecorator):
         """Initialize.
 
         Args:
-            labels(dict{str|Species:list}): optional
+            labels(dict of str or Species to list): optional
                A table of labels to decorate each element with.
                keys are species symbol, values are possible decorated property
                values, such as oxidation states, magnetic spin directions.
@@ -28,7 +28,7 @@ class ChargeDecorator(BaseDecorator):
                required property is increasing. For example, in Mn(2, 3, 4)+
                (high spin), the magnetic moments is sorted as [Mn4+, Mn3+, Mn2+],
                thus you should provide labels as {Element("Mn"):[4, 3, 2]}.
-               Keys can be either Element|Species object, or their
+               Keys can be either Element and Species object, or their
                string representations. Currently, do not support decoration
                of Vacancy.
                If you have multiple required properties, or required properties
@@ -41,8 +41,8 @@ class ChargeDecorator(BaseDecorator):
                a property to, otherwise, you are responsible for your own error!
             max_allowed_abs_charge(float): optional
                Maximum allowed absolute value of charge in a decorated structure
-               entry. If abs(structure.charge) exceeds this value, the entry
-               will be filtered and returned as a NoneType.
+               entry. If the absolute value of structure charge exceeds this value,
+               the entry will be filtered and returned as a NoneType.
                Default to 0, which means we require absolute charge balance.
         """
         super().__init__(labels=labels)
@@ -72,11 +72,12 @@ class ChargeDecorator(BaseDecorator):
 
 
 class PmgGuessChargeDecorator(ChargeDecorator, NoTrainDecorator):
-    """Assign charges from pymatgen auto guesses.
+    """Assign charges from :mod:`pymatgen` automatic guesses.
 
-    Notice: This class does not need labels at all.
-    Warning: This Decorator should not be used with
-    structures that include multi-valent elements!
+    .. note:: This class does not need labels.
+
+    .. warning:: This Decorator should never be used on
+     structures with multi-valent elements!
     """
 
     decorated_prop_name = "oxi_state"
@@ -98,14 +99,13 @@ class PmgGuessChargeDecorator(ChargeDecorator, NoTrainDecorator):
     def decorate(self, entries):
         """Decorate entries by guessed charges.
 
-        Warning: Do not use this with multi-valent
-        elements, unless you know what you want
-        clearly!!!
         Args:
-            entries(List[ComputedStructureEntry]):
-                Entries of computed structures.
+            entries(list of ComputedStructureEntry):
+                The entries of computed structures.
+
         Returns:
-            List[NoneType|ComputedStructureEntry]
+            list of NoneType or ComputedStructureEntry:
+                Entries with decorated structures or failed structures.
         """
         entries_decor = []
         for entry in entries:
@@ -130,8 +130,8 @@ class PmgGuessChargeDecorator(ChargeDecorator, NoTrainDecorator):
 class FixedChargeDecorator(ChargeDecorator, NoTrainDecorator):
     """Assign fixed charge to each element from setting.
 
-    Warning: This Decorator should not be used with
-    structures that include multi-valent elements!
+    .. warning:: This Decorator should never be used on
+     structures with multi-valent elements!
     """
 
     decorated_prop_name = "oxi_state"
@@ -143,11 +143,14 @@ class FixedChargeDecorator(ChargeDecorator, NoTrainDecorator):
         Warning: Do not use this with multi-valent
         elements, unless you know what you want
         clearly!!!
+
         Args:
             entries(List[ComputedStructureEntry]):
                 Entries of computed structures.
+
         Returns:
-            List[NoneType|ComputedStructureEntry]
+            list of NoneType or ComputedStructureEntry:
+                Entries with decorated structures or failed structures.
         """
         entries_decor = []
         for entry in entries:
@@ -173,12 +176,12 @@ class FixedChargeDecorator(ChargeDecorator, NoTrainDecorator):
 class MagneticChargeDecorator(GpOptimizedDecorator, ChargeDecorator):
     """Assign charges from magnitudes of total magentic moments on sites.
 
-    Is a sub-class of GPOptimizedDecorator.
+    Uses Gaussian process to optimize charge assignment.
     """
 
     decorated_prop_name = "oxi_state"
     # [(name of the site property to use in pymatgen.structure,
-    #  the string path used to query TaskDocument)]
+    #  the string path used to query TaskDoc)]
     required_prop_names = [
         ("magmom", "calcs_reversed.0-output" + ".outcar.magnetization.^tot")
     ]
@@ -187,7 +190,7 @@ class MagneticChargeDecorator(GpOptimizedDecorator, ChargeDecorator):
         """Initialize.
 
         Args:
-            labels(dict{str: List[int|float]...}):
+            labels(dict of str to list of int}):
                A table of species as key, and charges to decorate to the
                species in the key. Values of a key should be sorted as
                the decorated species should have increasing magnetic
@@ -202,14 +205,14 @@ class MagneticChargeDecorator(GpOptimizedDecorator, ChargeDecorator):
                GuessChargeDecorator.
                Be sure to provide labels for all the species you wish to assign
                a property to, otherwise, you are the cause of your own error!
-            cuts(dict{str: List[int|float]...}): optional
+            cuts(dict of str to list of int or float}): optional
                A table of species and cutting points of the magnetic moments,
                so that a magnetic moment is compared with each of these cutting
                values, and decided which charge label it should be assigned with.
             max_allowed_abs_charge(float): optional
                Maximum allowed absolute value of charge in a decorated structure
-               entry. If abs(structure.charge) exceeds this value, the entry
-               will be filtered and returned as a NoneType.
+               entry. If the absolute value of structure charge exceeds this value,
+               the entry will be filtered and returned as a NoneType.
                Default to 0, which means we require absolute charge balance.
         """
         super().__init__(
