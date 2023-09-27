@@ -34,7 +34,7 @@ def query_keypath(obj, keypath):
                 f" of the member to refer to is not specified with"
                 f" id-. Will query the first member in the list."
             )
-            return query_keypath(obj[0], keypath)
+            return query_keypath(obj[0], keypath[1:])
         elif "-" in k:
             if len(k.split("-")) != 2:
                 raise ValueError(
