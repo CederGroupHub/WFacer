@@ -115,7 +115,7 @@ def _get_structure_job_maker(maker_name, generator_kwargs=None, maker_kwargs=Non
     # Only cp2k, vasp and forcefields are supported.
     if "amset" in maker_module or "common" in maker_module or "lobster" in maker_module:
         raise NotImplementedError(
-            f"Makers in {maker_module} are not supported by WFACER!"
+            f"Makers in {maker_module} are not supported by WFacer!"
         )
 
     # Get maker from name. Note that only vasp supports tight relax (atomate2==0.0.10).
