@@ -12,7 +12,7 @@ be extracted.
 from atomate2.cp2k.schemas.task import TaskDocument
 from atomate2.forcefields.schemas import ForceFieldTaskDocument
 from emmet.core.tasks import TaskDoc
-from pymatgen.entries.computed_entries import ComputedStructureEntry
+from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 
 from ..specie_decorators.base import get_site_property_query_names_from_decorator
 from .query import get_property_from_object
@@ -42,11 +42,6 @@ def _merge_computed_structure_entry(entry, structure):
         entry.data,
         entry.entry_id,
     )
-
-
-# TODO: Finish this function and add test.
-def _get_computed_entry_from_forcefield_taskdoc(taskdoc):
-    return
 
 
 def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=None):
@@ -82,9 +77,14 @@ def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=N
     # The computed entry, not including the structure.
     if isinstance(taskdoc, (TaskDoc, TaskDocument)):
         computed_entry = taskdoc.entry
-    # Need to retrieve the entry from ionic steps.
+    # In ForcefieldTaskdocument, Need to retrieve the entry from ionic steps.
     else:
-        computed_entry = _get_computed_entry_from_forcefield_taskdoc(taskdoc)
+        computed_entry = ComputedEntry(
+            composition=taskdoc.structure.composition,
+            energy=taskdoc.output.energy,
+            correction=0.0,
+        )
+
     prop_dict = {}
     if property_and_queries is not None:
         for p in property_and_queries:
