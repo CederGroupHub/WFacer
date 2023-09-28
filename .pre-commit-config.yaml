@@ -18,12 +18,12 @@ repos:
     args: ['--maxkb=3000']
 
 - repo: https://github.com/psf/black
-  rev: 23.1.0
+  rev: 23.9.1
   hooks:
   - id: black
 
 - repo: https://github.com/asottile/blacken-docs
-  rev: 1.13.0
+  rev: 1.16.0
   hooks:
   - id: blacken-docs
     additional_dependencies: [black==23.1.0]
@@ -38,13 +38,13 @@ repos:
     - --profile=black
 
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.3.1
+  rev: v3.13.0
   hooks:
     - id: pyupgrade
       args: [--py38-plus]
 
 - repo: https://github.com/PyCQA/autoflake
-  rev: v2.0.1
+  rev: v2.2.1
   hooks:
     - id: autoflake
       args:
@@ -56,7 +56,7 @@ repos:
 
 # Temporarily downgrade flake8 because it gives 'str' is not callable error.
 - repo: https://github.com/PyCQA/flake8
-  rev: 5.0.4
+  rev: 6.1.0
   hooks:
   - id: flake8
     files: ^WFacer/
@@ -80,7 +80,7 @@ repos:
   - id: rst-inline-touching-normal
 
 - repo: https://github.com/codespell-project/codespell
-  rev: v2.2.2
+  rev: v2.2.5
   hooks:
     - id: codespell
       stages: [commit, commit-msg]
