@@ -51,7 +51,7 @@ def get_entry_from_taskdoc(taskdoc, property_and_queries=None, decorator_names=N
         taskdoc(StructureMetadata):
             A task document generated as vasp task output by emmet-core, CP2K
             or force fields.
-        property_and_queries(list of (str, str) or str): optional
+        property_and_queries(list of (str, str) or list of str): optional
             A list of property names to be retrieved from taskdoc,
             and the query string to retrieve them, paired in tuples.
             If only strings are given, will also query with the given
