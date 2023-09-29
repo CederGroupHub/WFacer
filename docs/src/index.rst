@@ -14,9 +14,9 @@
    api_reference/index
 
 
-============================================================
-WorkFlow for Automated Cluster Expansion Regression (WFacer)
-============================================================
+===================================================================================
+**W**\ork\ **F**\low for **A**\utomated **C**\luster **E**\xpansion **R**\egression
+===================================================================================
 
 *Modulated automation of cluster expansion model fitting based on atomate2 and Jobflow*
 
