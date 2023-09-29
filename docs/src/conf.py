@@ -75,29 +75,21 @@ html_theme = "pydata_sphinx_theme"
 # html_logo = "_static/logo.png"  # banner.svg needs text as paths to avoid font missing
 
 html_theme_options = {
-    # "logo": {
-    #     "image_light": "logo.png",
-    #     "image_dark": "logo.png",
-    # },
+    "logo": {
+        "text": "WFacer",
+    },
     "github_url": "https://github.com/CederGroupHub/WFacer",
     "use_edit_page_button": True,
     "show_toc_level": 2,
     # "navbar_align": "left",  # [left, content, right] For testing that the navbar
     # items align properly
-    # "navbar_start": ["navbar-logo", "navbar-version"],
+    "navbar_start": ["navbar-logo", "navbar-version"],
     # "navbar_center": ["navbar-nav", "navbar-version"],  # Just for testing
     "navigation_depth": 2,
     "show_nav_level": 2,
-    "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],  #
+    "navbar_end": ["theme-switcher", "navbar-icon-links"],  #
     # "left_sidebar_end": ["custom-template.html", "sidebar-ethical-ads.html"],
     # "footer_items": ["copyright", "sphinx-version", ""]
-    "switcher": {
-        # "json_url": "/_static/switcher.json",
-        "json_url": "https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/"
-        "switcher.json",
-        # "url_template": "https://pydata-sphinx-theme.readthedocs.io/en/v{version}/",
-        "version_match": version,
-    },
     "external_links": [
         {
             "name": "Changes",
