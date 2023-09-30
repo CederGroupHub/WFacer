@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import pytest
+from atomate2.forcefields.schemas import ForceFieldTaskDocument
 from emmet.core.tasks import TaskDoc  # emmet-core >= 0.60.0.
 from monty.serialization import loadfn
 from pydantic import parse_file_as
@@ -180,6 +181,11 @@ def single_wrangler_sin(single_ensemble_sin):
     return gen_random_wrangler(single_ensemble_sin, 30)
 
 
-@pytest.fixture(scope="package", params=["zns_taskdoc.json"])
+@pytest.fixture(scope="package", params=["zns_taskdoc.json", "zns_ff_taskdoc.json"])
 def single_taskdoc(request):
-    return parse_file_as(TaskDoc, os.path.join(DATA_DIR, request.param))
+    if "ff" not in request.param:
+        return parse_file_as(TaskDoc, os.path.join(DATA_DIR, request.param))
+    else:
+        return parse_file_as(
+            ForceFieldTaskDocument, os.path.join(DATA_DIR, request.param)
+        )

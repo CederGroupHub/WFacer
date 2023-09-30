@@ -1,20 +1,16 @@
 """Unitary jobs used by an atomate2 workflow."""
+import importlib
 import logging
 from copy import deepcopy
 from warnings import warn
 
 import numpy as np
-from atomate2.vasp.jobs.core import RelaxMaker, StaticMaker, TightRelaxMaker
-from atomate2.vasp.sets.core import (
-    RelaxSetGenerator,
-    StaticSetGenerator,
-    TightRelaxSetGenerator,
-)
 from emmet.core.vasp.task_valid import TaskState  # atomate2 >= 0.0.11
 from jobflow import Flow, OnMissing, Response, job
 from pymatgen.analysis.elasticity.strain import Deformation
 from smol.cofe import ClusterExpansion
 from smol.moca import CompositionSpace
+from smol.utils.class_utils import class_name_from_str
 
 from .enumeration import (
     enumerate_compositions_as_counts,
@@ -110,33 +106,90 @@ def _enumerate_structures(
     return new_structures, new_sc_matrices, new_features
 
 
-def _get_vasp_makers(options):
-    """Get the required VASP makers."""
-    relax_gen_kwargs = options["relax_generator_kwargs"]
-    relax_generator = RelaxSetGenerator(**relax_gen_kwargs)
-    relax_maker_kwargs = options["relax_maker_kwargs"]
-    # Force throwing out an error instead of defusing children, as parsing and
-    # fitting jobs are children of structure jobs and will be defused
-    # as well if not taken care of!
+def _get_structure_job_maker(maker_name, generator_kwargs=None, maker_kwargs=None):
+    """Get a single job maker from a structure job."""
+    # Format for a maker name: module:name-of-maker. module name must be in full path.
+    maker_module, maker_name = maker_name.split(":")[:2]
+    maker_module = maker_module.lower()
 
-    # Error handling will be taken care of by lost run detection and
-    # fixing functionalities in WFacer.fireworks_patches.
-    relax_maker_kwargs["stop_children_kwargs"] = {"handle_unsuccessful": "error"}
-    relax_maker = RelaxMaker(input_set_generator=relax_generator, **relax_maker_kwargs)
+    # Only cp2k, vasp and forcefields are supported.
+    if "amset" in maker_module or "common" in maker_module or "lobster" in maker_module:
+        raise NotImplementedError(
+            f"Makers in {maker_module} are not supported by WFacer!"
+        )
+
+    # Get maker from name. Note that only vasp supports tight relax (atomate2==0.0.10).
+    maker_name = class_name_from_str(maker_name)
+    try:
+        maker_class = getattr(importlib.import_module(maker_module), maker_name)
+    except AttributeError:
+        warn(
+            f"Maker {maker_name} is not supported by atomate module {maker_module}!"
+            f" Skipped."
+        )
+        return None
+    except ModuleNotFoundError:
+        warn(f"Atomate module {maker_module} not found! Skipped.")
+        return None
+
+    generator_kwargs = generator_kwargs or {}
+    maker_kwargs = maker_kwargs or {}
+
+    # vasp and cp2k makers require input set generators, and allows stopping children.
+    if "forcefield" not in maker_module:
+        # replace jobs.core with sets.core; replace Maker with SetGenerator
+        generator_module = ".".join(maker_module.split(".")[:-2]) + ".sets.core"
+        generator_name = maker_name[:-5] + "SetGenerator"
+        generator_class = getattr(
+            importlib.import_module(generator_module), generator_name
+        )
+        generator = generator_class(**generator_kwargs)
+
+        maker_kwargs["stop_children_kwargs"] = {"handle_unsuccessful": "error"}
+        return maker_class(input_set_generator=generator, **maker_kwargs)
+
+    # Force field makers does not require input set. Up to atomate2==0.0.10,
+    # they also won't support children kwargs as well as tight relaxation.
+    else:
+        return maker_class(**maker_kwargs)
+
+
+def _get_structure_calculation_makers(options):
+    """Get required calculation makers for a single structure."""
+    # Here, the maker names contain module specification.
+    relax_maker_name = options["relax_maker_name"]
+    relax_gen_kwargs = options["relax_generator_kwargs"]
+    relax_maker_kwargs = options["relax_maker_kwargs"]
+    relax_maker = _get_structure_job_maker(
+        relax_maker_name,
+        generator_kwargs=relax_gen_kwargs,
+        maker_kwargs=relax_maker_kwargs,
+    )
+
+    static_maker_name = options["static_maker_name"]
     static_gen_kwargs = options["static_generator_kwargs"]
-    static_generator = StaticSetGenerator(**static_gen_kwargs)
     static_maker_kwargs = options["static_maker_kwargs"]
-    static_maker_kwargs["stop_children_kwargs"] = {"handle_unsuccessful": "error"}
-    static_maker = StaticMaker(
-        input_set_generator=static_generator, **static_maker_kwargs
+    static_maker = _get_structure_job_maker(
+        static_maker_name,
+        generator_kwargs=static_gen_kwargs,
+        maker_kwargs=static_maker_kwargs,
     )
-    tight_gen_kwargs = options["tight_generator_kwargs"]
-    tight_generator = TightRelaxSetGenerator(**tight_gen_kwargs)
-    tight_maker_kwargs = options["tight_maker_kwargs"]
-    tight_maker_kwargs["stop_children_kwargs"] = {"handle_unsuccessful": "error"}
-    tight_maker = TightRelaxMaker(
-        input_set_generator=tight_generator, **tight_maker_kwargs
-    )
+
+    # Note that only vasp supports tight relax (atomate2==0.0.10).
+    # You can also specify tight_maker_name as None to avoid using it.
+    # No extra argument is needed in options to achieve that.
+    tight_maker_name = options["tight_maker_name"]
+    if tight_maker_name is not None:
+        tight_gen_kwargs = options["tight_generator_kwargs"]
+        tight_maker_kwargs = options["tight_maker_kwargs"]
+        tight_maker = _get_structure_job_maker(
+            tight_maker_name,
+            generator_kwargs=tight_gen_kwargs,
+            maker_kwargs=tight_maker_kwargs,
+        )
+    else:
+        tight_maker = None
+
     return relax_maker, static_maker, tight_maker
 
 
@@ -281,7 +334,7 @@ def get_structure_calculation_flows(enum_output, last_ce_document):
     else:
         struct_id = len(last_ce_document.enumerated_structures)
     options = last_ce_document.ce_options
-    relax_maker, static_maker, tight_maker = _get_vasp_makers(options)
+    relax_maker, static_maker, tight_maker = _get_structure_calculation_makers(options)
 
     log.info("Performing ab-initio calculations.")
     new_structures = enum_output["new_structures"]
@@ -298,7 +351,7 @@ def get_structure_calculation_flows(enum_output, last_ce_document):
 
         jobs = list()
         jobs.append(relax_maker.make(def_structure))
-        if options["add_tight_relax"]:
+        if tight_maker is not None:
             tight_job = tight_maker.make(
                 jobs[-1].output.structure, prev_vasp_dir=jobs[-1].output.dir_name
             )

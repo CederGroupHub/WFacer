@@ -17,11 +17,13 @@ duplicacy_criteria: "correlations"
 n_parallel: null
 keep_ground_states: true
 apply_strain: [[1.03, 0, 0], [0, 1.02, 0], [0, 0, 1.01]]
+relax_maker_name: "atomate2.vasp.jobs.core:RelaxMaker"
 relax_generator_kwargs: {}
 relax_maker_kwargs: {}
-add_tight_relax: true
+tight_maker_name: "atomate2.vasp.jobs.core:TightRelaxMaker"
 tight_generator_kwargs: {}
 tight_maker_kwargs: {}
+static_maker_name: "atomate2.vasp.jobs.core:StaticMaker"
 static_generator_kwargs: {}
 static_maker_kwargs: {}
 other_properties: null

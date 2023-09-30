@@ -7,14 +7,15 @@ import numpy.testing as npt
 import pytest
 from emmet.core.tasks import TaskDoc  # atomate2 >= 0.0.11.
 from emmet.core.vasp.calculation import Calculation  # atomate2 >= 0.0.11.
-from jobflow import Flow, Job, OnMissing, Response
+from jobflow import Flow, Job, Maker, OnMissing, Response
 from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.core import Element, Structure
+from pymatgen.core import Element, Lattice, Structure
 from pymatgen.entries.computed_entries import ComputedEntry
 from smol.cofe.space.domain import Vacancy
 
 from WFacer.jobs import (
     _get_iter_id_from_enum_id,
+    _get_structure_job_maker,
     calculate_structures_job,
     enumerate_structures,
     fit_calculations,
@@ -177,6 +178,62 @@ def test_enumerate_structures(initial_document, enum_output):
     #     [el.symbol for el in structures[0].composition.element_composition.keys()]
     # )
     # dumpfn(structures, f"./structures_{name}.json")
+
+
+def test_structure_single_job():
+    # CP2K is only supported after atomate2 >= 0.0.11.
+    valid_makers = [
+        "atomate2.vasp.jobs.core:relax-maker",
+        "atomate2.vasp.jobs.core:static-maker",
+        "atomate2.vasp.jobs.core:TightRelaxMaker",
+        # "atomate2.cp2k.jobs.core:relax-maker",
+        # "atomate2.cp2k.jobs.core:static-maker",
+    ]
+    # These should warn and return None.
+    wrong_makers = [
+        "atomate2.whatever.jobs.core:relax-maker",
+        "atomate2.vasp.jobs:relax-maker",
+        "atomate2.cp2k.jobs.core:tight-relax-maker",
+        "atomate2.forcefields.jobs:CHGNet-tight-relax-maker",
+    ]
+    # These should throw NonImplementedError.
+    unsupported_makers = [
+        "atomate2.amset.jobs:amset-maker",
+        "atomate2.lobster.jobs:lobster-maker",
+    ]
+
+    # TODO: test these after the next atomate2 release.
+    # force_makers = [
+    # "atomate2.forcefields.jobs:CHGNetRelaxMaker",
+    # "atomate2.forcefields.jobs:CHGNetStaticMaker",
+    # "atomate2.forcefields.jobs:M3GNetRelaxMaker",
+    # "atomate2.forcefields.jobs:M3GNetStaticMaker",
+    # ]
+
+    for maker_name in valid_makers:
+        maker = _get_structure_job_maker(maker_name)
+        assert isinstance(maker, Maker)
+        assert maker.stop_children_kwargs == {"handle_unsuccessful": "error"}
+        assert maker.input_set_generator is not None
+
+    for maker_name in unsupported_makers:
+        with pytest.raises(NotImplementedError):
+            _ = _get_structure_job_maker(maker_name)
+
+    # None is returned.
+    for maker_name in wrong_makers:
+        assert _get_structure_job_maker(maker_name) is None
+
+    # Test a specific case of input set generator.
+    maker = _get_structure_job_maker(
+        "atomate2.vasp.jobs.core:relax-maker",
+        generator_kwargs={
+            "user_incar_settings": {"ENCUT": 1000},
+        },
+    )
+    s = Structure(Lattice.cubic(3.0), ["Co2+", "O2-"], [[0, 0, 0], [0.5, 0.5, 0.5]])
+    incar = maker.input_set_generator.get_input_set(s, potcar_spec=True).incar
+    assert incar["ENCUT"] == 1000
 
 
 def test_calculate_structures(initial_document, enum_output):

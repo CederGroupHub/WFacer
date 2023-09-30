@@ -177,6 +177,8 @@ class MagneticChargeDecorator(GpOptimizedDecorator, ChargeDecorator):
     """Assign charges from magnitudes of total magentic moments on sites.
 
     Uses Gaussian process to optimize charge assignment.
+
+    .. note:: Does not support cp2k or force field!
     """
 
     decorated_prop_name = "oxi_state"
