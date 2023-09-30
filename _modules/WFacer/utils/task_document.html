@@ -38,17 +38,11 @@
     <script src="../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/WFacer/utils/task_document';</script>
-    <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.14.1';
-        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.0.0';
-        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
-        </script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Sep 22, 2023"/>
+    <meta name="docbuild:last-update" content="Sep 30, 2023"/>
   </head>
   
   
@@ -118,9 +112,25 @@
   
   
   
-    <p class="title logo__title">WFacer 0.0.0 documentation</p>
+    <p class="title logo__title">WFacer</p>
   
 </a></div>
+    
+      <div class="navbar-item"><ul class="navbar-nav">
+  <li class="version-switcher__container dropdown">
+    <button
+      type="button"
+      role="button"
+      class="version-switcher__button btn btn-sm navbar-btn"
+      data-bs-toggle="dropdown"
+      id="dLabelMore"
+      aria-haspopup="listbox"
+    >
+      v0.0.0
+      <span class="caret"></span>
+    </button>
+  </li>
+</ul></div>
     
   </div>
   
@@ -192,21 +202,6 @@
  </script>
         </div>
       
-      
-        <div class="navbar-item">
-<script>
-document.write(`
-  <div class="version-switcher__container dropdown">
-    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
-      Choose version  <!-- this text may get changed later by javascript -->
-      <span class="caret"></span>
-    </button>
-    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
-    <!-- dropdown will be populated by javascript on page load -->
-    </div>
-  </div>
-`);
-</script></div>
       
         <div class="navbar-item">
 <script>
@@ -325,21 +320,6 @@ document.write(`
           <div class="navbar-item">
 <script>
 document.write(`
-  <div class="version-switcher__container dropdown">
-    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
-      Choose version  <!-- this text may get changed later by javascript -->
-      <span class="caret"></span>
-    </button>
-    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
-    <!-- dropdown will be populated by javascript on page load -->
-    </div>
-  </div>
-`);
-</script></div>
-        
-          <div class="navbar-item">
-<script>
-document.write(`
   <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
     <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
@@ -421,13 +401,21 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <h1>Source code for WFacer.utils.task_document</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Handle atomate2 taskdocument output.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Handle atomate2 task document output.</span>
 
 <span class="sd">Extend the methods in this file if more site-wise properties other than magmom should</span>
 <span class="sd">be extracted.</span>
+
+<span class="sd">.. note:</span>
+<span class="sd"> Currently only supports reading from class :class:`emmet.core.tasks.TaskDoc`,</span>
+<span class="sd"> class :class:`atomate2.cp2k.schemas.task.TaskDocument` and</span>
+<span class="sd"> class :class:`atomate2.forcefields.schemas.ForceFieldTaskDocument`.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">pymatgen.entries.computed_entries</span> <span class="kn">import</span> <span class="n">ComputedStructureEntry</span>
+<span class="kn">from</span> <span class="nn">atomate2.cp2k.schemas.task</span> <span class="kn">import</span> <span class="n">TaskDocument</span>
+<span class="kn">from</span> <span class="nn">atomate2.forcefields.schemas</span> <span class="kn">import</span> <span class="n">ForceFieldTaskDocument</span>
+<span class="kn">from</span> <span class="nn">emmet.core.tasks</span> <span class="kn">import</span> <span class="n">TaskDoc</span>
+<span class="kn">from</span> <span class="nn">pymatgen.entries.computed_entries</span> <span class="kn">import</span> <span class="n">ComputedEntry</span><span class="p">,</span> <span class="n">ComputedStructureEntry</span>
 
 <span class="kn">from</span> <span class="nn">..specie_decorators.base</span> <span class="kn">import</span> <span class="n">get_site_property_query_names_from_decorator</span>
 <span class="kn">from</span> <span class="nn">.query</span> <span class="kn">import</span> <span class="n">get_property_from_object</span>
@@ -465,9 +453,10 @@ document.write(`
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the computed structure entry from :class:`TaskDoc`.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        taskdoc(TaskDoc):</span>
-<span class="sd">            A task document generated as vasp task output by emmet-core.</span>
-<span class="sd">        property_and_queries(list of (str, str) or str): optional</span>
+<span class="sd">        taskdoc(StructureMetadata):</span>
+<span class="sd">            A task document generated as vasp task output by emmet-core, CP2K</span>
+<span class="sd">            or force fields.</span>
+<span class="sd">        property_and_queries(list of (str, str) or list of str): optional</span>
 <span class="sd">            A list of property names to be retrieved from taskdoc,</span>
 <span class="sd">            and the query string to retrieve them, paired in tuples.</span>
 <span class="sd">            If only strings are given, will also query with the given</span>
@@ -486,10 +475,21 @@ document.write(`
 <span class="sd">            property required by decorator, and the properties</span>
 <span class="sd">            dict ready to be inserted into a :class:`CeDataWangler`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">taskdoc</span><span class="p">,</span> <span class="p">(</span><span class="n">TaskDoc</span><span class="p">,</span> <span class="n">TaskDocument</span><span class="p">,</span> <span class="n">ForceFieldTaskDocument</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Document type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">taskdoc</span><span class="p">)</span><span class="si">}</span><span class="s2"> not supported!&quot;</span><span class="p">)</span>
     <span class="c1"># Final optimized structure.</span>
     <span class="n">structure</span> <span class="o">=</span> <span class="n">taskdoc</span><span class="o">.</span><span class="n">structure</span>
     <span class="c1"># The computed entry, not including the structure.</span>
-    <span class="n">computed_entry</span> <span class="o">=</span> <span class="n">taskdoc</span><span class="o">.</span><span class="n">entry</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">taskdoc</span><span class="p">,</span> <span class="p">(</span><span class="n">TaskDoc</span><span class="p">,</span> <span class="n">TaskDocument</span><span class="p">)):</span>
+        <span class="n">computed_entry</span> <span class="o">=</span> <span class="n">taskdoc</span><span class="o">.</span><span class="n">entry</span>
+    <span class="c1"># In ForcefieldTaskdocument, Need to retrieve the entry from ionic steps.</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">computed_entry</span> <span class="o">=</span> <span class="n">ComputedEntry</span><span class="p">(</span>
+            <span class="n">composition</span><span class="o">=</span><span class="n">taskdoc</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">composition</span><span class="p">,</span>
+            <span class="n">energy</span><span class="o">=</span><span class="n">taskdoc</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">energy</span><span class="p">,</span>
+            <span class="n">correction</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="p">)</span>
+
     <span class="n">prop_dict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">if</span> <span class="n">property_and_queries</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">property_and_queries</span><span class="p">:</span>
@@ -509,7 +509,8 @@ document.write(`
             <span class="n">site_property_query_names</span> <span class="o">=</span> <span class="n">get_site_property_query_names_from_decorator</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">sp</span><span class="p">,</span> <span class="n">query</span> <span class="ow">in</span> <span class="n">site_property_query_names</span><span class="p">:</span>
                 <span class="c1"># Total magnetization on each site is already read and added to</span>
-                <span class="c1"># structure by atomate2. It should be overwritten.</span>
+                <span class="c1"># structure by atomate2 for all kinds of makers (VASP, CP2K, force fields).</span>
+                <span class="c1"># There is no need to do it again.</span>
                 <span class="k">if</span> <span class="n">sp</span> <span class="o">!=</span> <span class="s2">&quot;magmom&quot;</span><span class="p">:</span>
                     <span class="n">site_props</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_property_from_object</span><span class="p">(</span><span class="n">taskdoc</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">sp</span><span class="p">,</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">site_props</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>

@@ -40,19 +40,13 @@
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api_reference/WFacer/preprocessing';</script>
-    <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.14.1';
-        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.0.0';
-        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
-        </script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="The CeOutputsDocument schema" href="schema.html" />
     <link rel="prev" title="Cluster expansion workflow maker (Atomate2)" href="maker.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Sep 22, 2023"/>
+    <meta name="docbuild:last-update" content="Sep 30, 2023"/>
   </head>
   
   
@@ -122,9 +116,25 @@
   
   
   
-    <p class="title logo__title">WFacer 0.0.0 documentation</p>
+    <p class="title logo__title">WFacer</p>
   
 </a></div>
+    
+      <div class="navbar-item"><ul class="navbar-nav">
+  <li class="version-switcher__container dropdown">
+    <button
+      type="button"
+      role="button"
+      class="version-switcher__button btn btn-sm navbar-btn"
+      data-bs-toggle="dropdown"
+      id="dLabelMore"
+      aria-haspopup="listbox"
+    >
+      v0.0.0
+      <span class="caret"></span>
+    </button>
+  </li>
+</ul></div>
     
   </div>
   
@@ -196,21 +206,6 @@
  </script>
         </div>
       
-      
-        <div class="navbar-item">
-<script>
-document.write(`
-  <div class="version-switcher__container dropdown">
-    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
-      Choose version  <!-- this text may get changed later by javascript -->
-      <span class="caret"></span>
-    </button>
-    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
-    <!-- dropdown will be populated by javascript on page load -->
-    </div>
-  </div>
-`);
-</script></div>
       
         <div class="navbar-item">
 <script>
@@ -329,21 +324,6 @@ document.write(`
     
     
       <div class="sidebar-header-items__end">
-        
-          <div class="navbar-item">
-<script>
-document.write(`
-  <div class="version-switcher__container dropdown">
-    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
-      Choose version  <!-- this text may get changed later by javascript -->
-      <span class="caret"></span>
-    </button>
-    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
-    <!-- dropdown will be populated by javascript on page load -->
-    </div>
-  </div>
-`);
-</script></div>
         
           <div class="navbar-item">
 <script>
@@ -597,12 +577,19 @@ decoration and the nearest-neighbor distance.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><dl>
-<dt>A dict containing calculation options, including the following keys:</dt><dd><dl class="simple">
+<dt>A dict containing calculation options, including the following keys:</dt><dd><dl>
 <dt>apply_strain(3*3 ArrayLike or 1D ArrayLike[float] of three numbers):</dt><dd><p>Strain matrix to apply to the structure before relaxation,
 in order to break structural symmetry of forces.
 Default is [1.03, 1.02, 1.01], which means to
 stretch the structure by 3%, 2% and 1% along a, b, and c
 directions, respectively.</p>
+</dd>
+<dt>relax_maker_name(str):</dt><dd><p>Name of relax maker class.
+Default to “atomate2.vasp.jobs.core:RelaxMaker”,
+while <strong>cp2k</strong> and <strong>force field</strong> makers are also supported.
+The module to which the Maker belongs must be specified first,
+and separated from the maker class name with a quotation mark “:”.
+For example, write <em>atomate2.vasp.jobs.core:RelaxMaker</em>.</p>
 </dd>
 <dt>relax_generator_kwargs(dict):</dt><dd><p>Additional arguments to pass into an <code class="xref py py-mod docutils literal notranslate"><span class="pre">atomate2</span></code>
 class <code class="xref py py-class docutils literal notranslate"><span class="pre">VaspInputGenerator</span></code> that is used to specify
@@ -612,10 +599,13 @@ This is where the <code class="xref py py-mod docutils literal notranslate"><spa
 <dt>relax_maker_kwargs(dict):</dt><dd><p>Additional arguments to initialize an <code class="xref py py-mod docutils literal notranslate"><span class="pre">atomate2</span></code>
 class <code class="xref py py-class docutils literal notranslate"><span class="pre">RelaxMaker</span></code>. <strong>Not frequently used</strong>.</p>
 </dd>
-<dt>add_tight_relax(bool):</dt><dd><p>Whether to add a tight relaxation job after a coarse
-relaxation. Default to True.
-You may want to disable this if your system has
-difficulty converging forces or energies.</p>
+<dt>tight_maker_name(str or None):</dt><dd><p>Name of the tight relax maker class.
+Default to <code class="xref py py-class docutils literal notranslate"><span class="pre">atomate2.vasp.jobs.core:TightRelaxMaker</span></code>,
+setting to None will disable tight relaxation.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Tight relax can only be supported by VASP.</p>
+</div>
 </dd>
 <dt>tight_generator_kwargs(dict):</dt><dd><p>Additional arguments to pass into an <code class="xref py py-mod docutils literal notranslate"><span class="pre">atomate2</span></code>
 class <code class="xref py py-class docutils literal notranslate"><span class="pre">VaspInputGenerator</span></code>
@@ -625,6 +615,10 @@ This is where the <code class="xref py py-mod docutils literal notranslate"><spa
 <dt>tight_maker_kwargs(dict):</dt><dd><p>Additional arguments to pass into an <code class="xref py py-mod docutils literal notranslate"><span class="pre">atomate2</span></code>
 class <code class="xref py py-class docutils literal notranslate"><span class="pre">TightRelaxMaker</span></code>. A tight relax is performed after
 relaxation, if add_tight_relax is True. <strong>Not frequently used</strong>.</p>
+</dd>
+<dt>static_maker_name(str):</dt><dd><p>Name of static maker.
+Default to “atomate2.vasp.jobs.core:StaticMaker”,
+while <strong>cp2k</strong> and <strong>force fields</strong> are also supported.</p>
 </dd>
 <dt>static_generator_kwargs(dict):</dt><dd><p>Additional arguments to pass into an <code class="xref py py-mod docutils literal notranslate"><span class="pre">atomate2</span></code>
 class <code class="xref py py-class docutils literal notranslate"><span class="pre">VaspInputGenerator</span></code> that is used to initialize

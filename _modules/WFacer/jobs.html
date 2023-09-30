@@ -38,17 +38,11 @@
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/WFacer/jobs';</script>
-    <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.14.1';
-        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.0.0';
-        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
-        </script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Sep 22, 2023"/>
+    <meta name="docbuild:last-update" content="Sep 30, 2023"/>
   </head>
   
   
@@ -118,9 +112,25 @@
   
   
   
-    <p class="title logo__title">WFacer 0.0.0 documentation</p>
+    <p class="title logo__title">WFacer</p>
   
 </a></div>
+    
+      <div class="navbar-item"><ul class="navbar-nav">
+  <li class="version-switcher__container dropdown">
+    <button
+      type="button"
+      role="button"
+      class="version-switcher__button btn btn-sm navbar-btn"
+      data-bs-toggle="dropdown"
+      id="dLabelMore"
+      aria-haspopup="listbox"
+    >
+      v0.0.0
+      <span class="caret"></span>
+    </button>
+  </li>
+</ul></div>
     
   </div>
   
@@ -192,21 +202,6 @@
  </script>
         </div>
       
-      
-        <div class="navbar-item">
-<script>
-document.write(`
-  <div class="version-switcher__container dropdown">
-    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
-      Choose version  <!-- this text may get changed later by javascript -->
-      <span class="caret"></span>
-    </button>
-    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
-    <!-- dropdown will be populated by javascript on page load -->
-    </div>
-  </div>
-`);
-</script></div>
       
         <div class="navbar-item">
 <script>
@@ -325,21 +320,6 @@ document.write(`
           <div class="navbar-item">
 <script>
 document.write(`
-  <div class="version-switcher__container dropdown">
-    <button id="versionswitcherbutton" type="button" role="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="listbox" aria-controls="versionswitcherlist" aria-label="Version switcher list">
-      Choose version  <!-- this text may get changed later by javascript -->
-      <span class="caret"></span>
-    </button>
-    <div id="versionswitcherlist" class="version-switcher__menu dropdown-menu list-group-flush py-0" role="listbox" aria-labelledby="versionswitcherbutton">
-    <!-- dropdown will be populated by javascript on page load -->
-    </div>
-  </div>
-`);
-</script></div>
-        
-          <div class="navbar-item">
-<script>
-document.write(`
   <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
     <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
@@ -422,22 +402,18 @@ document.write(`
                   
   <h1>Source code for WFacer.jobs</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Unitary jobs used by an atomate2 workflow.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">importlib</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">atomate2.vasp.jobs.core</span> <span class="kn">import</span> <span class="n">RelaxMaker</span><span class="p">,</span> <span class="n">StaticMaker</span><span class="p">,</span> <span class="n">TightRelaxMaker</span>
-<span class="kn">from</span> <span class="nn">atomate2.vasp.sets.core</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">RelaxSetGenerator</span><span class="p">,</span>
-    <span class="n">StaticSetGenerator</span><span class="p">,</span>
-    <span class="n">TightRelaxSetGenerator</span><span class="p">,</span>
-<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">emmet.core.vasp.task_valid</span> <span class="kn">import</span> <span class="n">TaskState</span>  <span class="c1"># atomate2 &gt;= 0.0.11</span>
 <span class="kn">from</span> <span class="nn">jobflow</span> <span class="kn">import</span> <span class="n">Flow</span><span class="p">,</span> <span class="n">OnMissing</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">job</span>
 <span class="kn">from</span> <span class="nn">pymatgen.analysis.elasticity.strain</span> <span class="kn">import</span> <span class="n">Deformation</span>
 <span class="kn">from</span> <span class="nn">smol.cofe</span> <span class="kn">import</span> <span class="n">ClusterExpansion</span>
 <span class="kn">from</span> <span class="nn">smol.moca</span> <span class="kn">import</span> <span class="n">CompositionSpace</span>
+<span class="kn">from</span> <span class="nn">smol.utils.class_utils</span> <span class="kn">import</span> <span class="n">class_name_from_str</span>
 
 <span class="kn">from</span> <span class="nn">.enumeration</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">enumerate_compositions_as_counts</span><span class="p">,</span>
@@ -533,33 +509,90 @@ document.write(`
     <span class="k">return</span> <span class="n">new_structures</span><span class="p">,</span> <span class="n">new_sc_matrices</span><span class="p">,</span> <span class="n">new_features</span>
 
 
-<span class="k">def</span> <span class="nf">_get_vasp_makers</span><span class="p">(</span><span class="n">options</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the required VASP makers.&quot;&quot;&quot;</span>
-    <span class="n">relax_gen_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;relax_generator_kwargs&quot;</span><span class="p">]</span>
-    <span class="n">relax_generator</span> <span class="o">=</span> <span class="n">RelaxSetGenerator</span><span class="p">(</span><span class="o">**</span><span class="n">relax_gen_kwargs</span><span class="p">)</span>
-    <span class="n">relax_maker_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;relax_maker_kwargs&quot;</span><span class="p">]</span>
-    <span class="c1"># Force throwing out an error instead of defusing children, as parsing and</span>
-    <span class="c1"># fitting jobs are children of structure jobs and will be defused</span>
-    <span class="c1"># as well if not taken care of!</span>
+<span class="k">def</span> <span class="nf">_get_structure_job_maker</span><span class="p">(</span><span class="n">maker_name</span><span class="p">,</span> <span class="n">generator_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maker_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a single job maker from a structure job.&quot;&quot;&quot;</span>
+    <span class="c1"># Format for a maker name: module:name-of-maker. module name must be in full path.</span>
+    <span class="n">maker_module</span><span class="p">,</span> <span class="n">maker_name</span> <span class="o">=</span> <span class="n">maker_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">maker_module</span> <span class="o">=</span> <span class="n">maker_module</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
-    <span class="c1"># Error handling will be taken care of by lost run detection and</span>
-    <span class="c1"># fixing functionalities in WFacer.fireworks_patches.</span>
-    <span class="n">relax_maker_kwargs</span><span class="p">[</span><span class="s2">&quot;stop_children_kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;handle_unsuccessful&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">}</span>
-    <span class="n">relax_maker</span> <span class="o">=</span> <span class="n">RelaxMaker</span><span class="p">(</span><span class="n">input_set_generator</span><span class="o">=</span><span class="n">relax_generator</span><span class="p">,</span> <span class="o">**</span><span class="n">relax_maker_kwargs</span><span class="p">)</span>
+    <span class="c1"># Only cp2k, vasp and forcefields are supported.</span>
+    <span class="k">if</span> <span class="s2">&quot;amset&quot;</span> <span class="ow">in</span> <span class="n">maker_module</span> <span class="ow">or</span> <span class="s2">&quot;common&quot;</span> <span class="ow">in</span> <span class="n">maker_module</span> <span class="ow">or</span> <span class="s2">&quot;lobster&quot;</span> <span class="ow">in</span> <span class="n">maker_module</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Makers in </span><span class="si">{</span><span class="n">maker_module</span><span class="si">}</span><span class="s2"> are not supported by WFacer!&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Get maker from name. Note that only vasp supports tight relax (atomate2==0.0.10).</span>
+    <span class="n">maker_name</span> <span class="o">=</span> <span class="n">class_name_from_str</span><span class="p">(</span><span class="n">maker_name</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">maker_class</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">maker_module</span><span class="p">),</span> <span class="n">maker_name</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Maker </span><span class="si">{</span><span class="n">maker_name</span><span class="si">}</span><span class="s2"> is not supported by atomate module </span><span class="si">{</span><span class="n">maker_module</span><span class="si">}</span><span class="s2">!&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; Skipped.&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+        <span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Atomate module </span><span class="si">{</span><span class="n">maker_module</span><span class="si">}</span><span class="s2"> not found! Skipped.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">generator_kwargs</span> <span class="o">=</span> <span class="n">generator_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">maker_kwargs</span> <span class="o">=</span> <span class="n">maker_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+
+    <span class="c1"># vasp and cp2k makers require input set generators, and allows stopping children.</span>
+    <span class="k">if</span> <span class="s2">&quot;forcefield&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">maker_module</span><span class="p">:</span>
+        <span class="c1"># replace jobs.core with sets.core; replace Maker with SetGenerator</span>
+        <span class="n">generator_module</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">maker_module</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;.sets.core&quot;</span>
+        <span class="n">generator_name</span> <span class="o">=</span> <span class="n">maker_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;SetGenerator&quot;</span>
+        <span class="n">generator_class</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
+            <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">generator_module</span><span class="p">),</span> <span class="n">generator_name</span>
+        <span class="p">)</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="n">generator_class</span><span class="p">(</span><span class="o">**</span><span class="n">generator_kwargs</span><span class="p">)</span>
+
+        <span class="n">maker_kwargs</span><span class="p">[</span><span class="s2">&quot;stop_children_kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;handle_unsuccessful&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">maker_class</span><span class="p">(</span><span class="n">input_set_generator</span><span class="o">=</span><span class="n">generator</span><span class="p">,</span> <span class="o">**</span><span class="n">maker_kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Force field makers does not require input set. Up to atomate2==0.0.10,</span>
+    <span class="c1"># they also won&#39;t support children kwargs as well as tight relaxation.</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">maker_class</span><span class="p">(</span><span class="o">**</span><span class="n">maker_kwargs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_structure_calculation_makers</span><span class="p">(</span><span class="n">options</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get required calculation makers for a single structure.&quot;&quot;&quot;</span>
+    <span class="c1"># Here, the maker names contain module specification.</span>
+    <span class="n">relax_maker_name</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;relax_maker_name&quot;</span><span class="p">]</span>
+    <span class="n">relax_gen_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;relax_generator_kwargs&quot;</span><span class="p">]</span>
+    <span class="n">relax_maker_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;relax_maker_kwargs&quot;</span><span class="p">]</span>
+    <span class="n">relax_maker</span> <span class="o">=</span> <span class="n">_get_structure_job_maker</span><span class="p">(</span>
+        <span class="n">relax_maker_name</span><span class="p">,</span>
+        <span class="n">generator_kwargs</span><span class="o">=</span><span class="n">relax_gen_kwargs</span><span class="p">,</span>
+        <span class="n">maker_kwargs</span><span class="o">=</span><span class="n">relax_maker_kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">static_maker_name</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;static_maker_name&quot;</span><span class="p">]</span>
     <span class="n">static_gen_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;static_generator_kwargs&quot;</span><span class="p">]</span>
-    <span class="n">static_generator</span> <span class="o">=</span> <span class="n">StaticSetGenerator</span><span class="p">(</span><span class="o">**</span><span class="n">static_gen_kwargs</span><span class="p">)</span>
     <span class="n">static_maker_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;static_maker_kwargs&quot;</span><span class="p">]</span>
-    <span class="n">static_maker_kwargs</span><span class="p">[</span><span class="s2">&quot;stop_children_kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;handle_unsuccessful&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">}</span>
-    <span class="n">static_maker</span> <span class="o">=</span> <span class="n">StaticMaker</span><span class="p">(</span>
-        <span class="n">input_set_generator</span><span class="o">=</span><span class="n">static_generator</span><span class="p">,</span> <span class="o">**</span><span class="n">static_maker_kwargs</span>
+    <span class="n">static_maker</span> <span class="o">=</span> <span class="n">_get_structure_job_maker</span><span class="p">(</span>
+        <span class="n">static_maker_name</span><span class="p">,</span>
+        <span class="n">generator_kwargs</span><span class="o">=</span><span class="n">static_gen_kwargs</span><span class="p">,</span>
+        <span class="n">maker_kwargs</span><span class="o">=</span><span class="n">static_maker_kwargs</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">tight_gen_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;tight_generator_kwargs&quot;</span><span class="p">]</span>
-    <span class="n">tight_generator</span> <span class="o">=</span> <span class="n">TightRelaxSetGenerator</span><span class="p">(</span><span class="o">**</span><span class="n">tight_gen_kwargs</span><span class="p">)</span>
-    <span class="n">tight_maker_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;tight_maker_kwargs&quot;</span><span class="p">]</span>
-    <span class="n">tight_maker_kwargs</span><span class="p">[</span><span class="s2">&quot;stop_children_kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;handle_unsuccessful&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">}</span>
-    <span class="n">tight_maker</span> <span class="o">=</span> <span class="n">TightRelaxMaker</span><span class="p">(</span>
-        <span class="n">input_set_generator</span><span class="o">=</span><span class="n">tight_generator</span><span class="p">,</span> <span class="o">**</span><span class="n">tight_maker_kwargs</span>
-    <span class="p">)</span>
+
+    <span class="c1"># Note that only vasp supports tight relax (atomate2==0.0.10).</span>
+    <span class="c1"># You can also specify tight_maker_name as None to avoid using it.</span>
+    <span class="c1"># No extra argument is needed in options to achieve that.</span>
+    <span class="n">tight_maker_name</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;tight_maker_name&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">tight_maker_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tight_gen_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;tight_generator_kwargs&quot;</span><span class="p">]</span>
+        <span class="n">tight_maker_kwargs</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;tight_maker_kwargs&quot;</span><span class="p">]</span>
+        <span class="n">tight_maker</span> <span class="o">=</span> <span class="n">_get_structure_job_maker</span><span class="p">(</span>
+            <span class="n">tight_maker_name</span><span class="p">,</span>
+            <span class="n">generator_kwargs</span><span class="o">=</span><span class="n">tight_gen_kwargs</span><span class="p">,</span>
+            <span class="n">maker_kwargs</span><span class="o">=</span><span class="n">tight_maker_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tight_maker</span> <span class="o">=</span> <span class="kc">None</span>
+
     <span class="k">return</span> <span class="n">relax_maker</span><span class="p">,</span> <span class="n">static_maker</span><span class="p">,</span> <span class="n">tight_maker</span>
 
 
@@ -709,7 +742,7 @@ document.write(`
     <span class="k">else</span><span class="p">:</span>
         <span class="n">struct_id</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">last_ce_document</span><span class="o">.</span><span class="n">enumerated_structures</span><span class="p">)</span>
     <span class="n">options</span> <span class="o">=</span> <span class="n">last_ce_document</span><span class="o">.</span><span class="n">ce_options</span>
-    <span class="n">relax_maker</span><span class="p">,</span> <span class="n">static_maker</span><span class="p">,</span> <span class="n">tight_maker</span> <span class="o">=</span> <span class="n">_get_vasp_makers</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+    <span class="n">relax_maker</span><span class="p">,</span> <span class="n">static_maker</span><span class="p">,</span> <span class="n">tight_maker</span> <span class="o">=</span> <span class="n">_get_structure_calculation_makers</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
 
     <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Performing ab-initio calculations.&quot;</span><span class="p">)</span>
     <span class="n">new_structures</span> <span class="o">=</span> <span class="n">enum_output</span><span class="p">[</span><span class="s2">&quot;new_structures&quot;</span><span class="p">]</span>
@@ -726,7 +759,7 @@ document.write(`
 
         <span class="n">jobs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
         <span class="n">jobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">relax_maker</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="n">def_structure</span><span class="p">))</span>
-        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;add_tight_relax&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">tight_maker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tight_job</span> <span class="o">=</span> <span class="n">tight_maker</span><span class="o">.</span><span class="n">make</span><span class="p">(</span>
                 <span class="n">jobs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">structure</span><span class="p">,</span> <span class="n">prev_vasp_dir</span><span class="o">=</span><span class="n">jobs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">dir_name</span>
             <span class="p">)</span>
