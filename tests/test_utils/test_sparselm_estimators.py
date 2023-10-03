@@ -1,4 +1,4 @@
-"""Test sparselm estimator untilities."""
+"""Test sparselm estimator utilities."""
 from itertools import chain
 
 import numpy as np

@@ -56,7 +56,7 @@ repos:
 
 # Temporarily downgrade flake8 because it gives 'str' is not callable error.
 - repo: https://github.com/PyCQA/flake8
-  rev: 6.1.0
+  rev: 5.0.4
   hooks:
   - id: flake8
     files: ^WFacer/
@@ -85,4 +85,4 @@ repos:
     - id: codespell
       stages: [commit, commit-msg]
       exclude_types: [html]
-      args: [--ignore-words-list, 'nd, tread, mater, titel', --skip, "*.ipynb"]
+      args: [--ignore-words-list, 'nd, tread, mater, titel, atomate, Atomate', --skip, "*.ipynb"]
