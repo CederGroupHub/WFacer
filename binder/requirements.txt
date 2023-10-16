@@ -3,7 +3,7 @@ pyyaml>=6.0
 joblib==1.3.2
 monty==2023.9.25
 numpy==1.26.0
-pymatgen==2023.10.4
+pymatgen==2023.10.11
 smol>=0.3.0
 sparse-lm>=0.3.0
 sympy>=1.11.1
