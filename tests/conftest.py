@@ -5,7 +5,6 @@ import pytest
 from atomate2.forcefields.schemas import ForceFieldTaskDocument
 from emmet.core.tasks import TaskDoc  # emmet-core >= 0.60.0.
 from monty.serialization import loadfn
-from pydantic import parse_file_as
 from smol.cofe import ClusterExpansion
 from smol.moca import Ensemble
 
@@ -183,9 +182,10 @@ def single_wrangler_sin(single_ensemble_sin):
 
 @pytest.fixture(scope="package", params=["zns_taskdoc.json", "zns_ff_taskdoc.json"])
 def single_taskdoc(request):
+    with open(os.path.join(DATA_DIR, request.param)) as fin:
+        json_str = fin.read()
+    # In pydantic V2, we must change to using BaseModel.model_validate_json.
     if "ff" not in request.param:
-        return parse_file_as(TaskDoc, os.path.join(DATA_DIR, request.param))
+        return TaskDoc.model_validate_json(json_str)
     else:
-        return parse_file_as(
-            ForceFieldTaskDocument, os.path.join(DATA_DIR, request.param)
-        )
+        return ForceFieldTaskDocument.model_validate_json(json_str)
