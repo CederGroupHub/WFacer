@@ -4,14 +4,15 @@ from warnings import warn
 from fireworks import LaunchPad
 from jobflow.managers.fireworks import flow_to_workflow
 from monty.serialization import dumpfn
-from pydantic import parse_file_as
 
 from WFacer.jobs import enumerate_structures, get_structure_calculation_flows
 from WFacer.schema import CeOutputsDocument
 
 
 def __main__():
-    document = parse_file_as(CeOutputsDocument, "document.json")
+    with open("documents.json") as fin:
+        json_str = fin.read()
+    document = CeOutputsDocument.model_validate_json(json_str)
 
     iter_id = document.last_iter_id + 1
     max_iter = document.ce_options["max_iter"]

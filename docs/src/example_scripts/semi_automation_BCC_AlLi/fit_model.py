@@ -5,7 +5,7 @@ from emmet.core.tasks import TaskDoc  # emmet-core >= 0.60.0
 from jobflow import SETTINGS
 from monty.json import jsanitize
 from monty.serialization import loadfn
-from pydantic import parse_file_as, parse_obj_as
+from pydantic import parse_obj_as
 
 from WFacer.jobs import fit_calculations, parse_calculations, update_document
 from WFacer.schema import CeOutputsDocument
@@ -13,7 +13,9 @@ from WFacer.schema import CeOutputsDocument
 
 # Execute this once all queue tasks has been completed and no job is lost.
 def __main__():
-    document = parse_file_as(CeOutputsDocument, "document.json")
+    with open("documents.json") as fin:
+        json_str = fin.read()
+    document = CeOutputsDocument.model_validate_json(json_str)
 
     iter_id = document.last_iter_id + 1
     project_name = document.project_name
