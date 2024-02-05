@@ -1,4 +1,5 @@
 """Rules to query nested task documents and dictionaries."""
+
 import random
 from warnings import warn
 
