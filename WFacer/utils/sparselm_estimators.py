@@ -1,4 +1,5 @@
 """Utility functions to prepare sparse-lm estimators."""
+
 from warnings import warn
 
 import numpy as np
