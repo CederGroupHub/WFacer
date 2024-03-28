@@ -6,7 +6,7 @@ ci:
 
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.4.0
+  rev: v4.5.0
   hooks:
   - id: check-yaml
   - id: fix-encoding-pragma
@@ -18,7 +18,7 @@ repos:
     args: ['--maxkb=3000']
 
 - repo: https://github.com/psf/black
-  rev: 23.9.1
+  rev: 24.3.0
   hooks:
   - id: black
 
@@ -30,7 +30,7 @@ repos:
     exclude: README.md
 
 - repo: https://github.com/pycqa/isort
-  rev: 5.12.0
+  rev: 5.13.2
   hooks:
   - id: isort
     name: isort (python)
@@ -38,13 +38,13 @@ repos:
     - --profile=black
 
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.13.0
+  rev: v3.15.2
   hooks:
     - id: pyupgrade
       args: [--py38-plus]
 
 - repo: https://github.com/PyCQA/autoflake
-  rev: v2.2.1
+  rev: v2.3.1
   hooks:
     - id: autoflake
       args:
@@ -56,7 +56,7 @@ repos:
 
 # Temporarily downgrade flake8 because it gives 'str' is not callable error.
 - repo: https://github.com/PyCQA/flake8
-  rev: 5.0.4
+  rev: 7.0.0
   hooks:
   - id: flake8
     files: ^WFacer/
