@@ -1,4 +1,5 @@
 """Fit ECIs from Wrangler."""
+
 from warnings import warn
 
 import numpy as np
