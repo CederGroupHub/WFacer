@@ -1,4 +1,5 @@
 """Random occupancy generation."""
+
 import numpy as np
 
 

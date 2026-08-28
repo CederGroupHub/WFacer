@@ -1,4 +1,5 @@
 """Utilities to obtain minimum energies per composition and the convex hull."""
+
 from collections import defaultdict
 
 import numpy as np
