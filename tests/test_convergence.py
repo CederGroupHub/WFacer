@@ -1,4 +1,5 @@
 """Test convergence functions."""
+
 import numpy as np
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from smol.cofe import ClusterExpansion
