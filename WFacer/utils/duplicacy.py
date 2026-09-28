@@ -1,4 +1,5 @@
 """Check duplicacy between structures."""
+
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import DummySpecies, Element, Species, Structure
