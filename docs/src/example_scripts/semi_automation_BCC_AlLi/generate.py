@@ -1,4 +1,5 @@
 """Generate structures for a next iteration."""
+
 from warnings import warn
 
 from fireworks import LaunchPad

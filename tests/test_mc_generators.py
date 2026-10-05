@@ -1,4 +1,5 @@
 """Test sample generators."""
+
 import random
 from itertools import chain
 
