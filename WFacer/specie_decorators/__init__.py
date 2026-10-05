@@ -11,7 +11,7 @@ from .charge import (
     PmgGuessChargeDecorator,
 )
 
-allowed_decorators = defaultdict(lambda: [])
+allowed_decorators = defaultdict(list)
 for subclass in get_subclasses(BaseDecorator).values():
     prop = subclass.decorated_prop_name
     if subclass.required_prop_names is not None:

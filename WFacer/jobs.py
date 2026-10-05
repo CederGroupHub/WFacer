@@ -1,4 +1,5 @@
 """Unitary jobs used by an atomate2 workflow."""
+
 import importlib
 import logging
 from copy import deepcopy
