@@ -1,4 +1,5 @@
 """Test occupancy generation."""
+
 import numpy as np
 import numpy.testing as npt
 from smol.moca.occu_utils import get_dim_ids_table, occu_to_counts

@@ -1,4 +1,5 @@
 """Convergence checks."""
+
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from smol.cofe import ClusterExpansion
