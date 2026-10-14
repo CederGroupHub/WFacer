@@ -1,4 +1,5 @@
 """Test the trigger job and the flow maker."""
+
 import numpy as np
 import pytest
 from jobflow import Flow, Job, Response

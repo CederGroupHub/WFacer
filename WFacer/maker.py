@@ -1,4 +1,5 @@
 """Automatic cluster expansion workflow maker."""
+
 from dataclasses import dataclass, field
 from warnings import warn
 

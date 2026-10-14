@@ -116,7 +116,7 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
             defaultdict:
                (Entry index, site index) belonging to each species.
         """
-        groups_by_species = defaultdict(lambda: [])
+        groups_by_species = defaultdict(list)
 
         # These entries should not contain Vacancy.
         for e_id, entry in enumerate(entries):
@@ -249,7 +249,7 @@ class BaseDecorator(MSONable, metaclass=ABCMeta):
                     species_decor.append(sp)
 
             # Preserve all information.
-            site_properties = defaultdict(lambda: [])
+            site_properties = defaultdict(list)
             for site in s_undecor:
                 for p in site.properties:
                     site_properties[p].append(site.properties[p])
