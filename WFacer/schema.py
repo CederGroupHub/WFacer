@@ -1,4 +1,5 @@
 """Defines the standard output schema for automated cluster expansion workflows."""
+
 from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel, Field
