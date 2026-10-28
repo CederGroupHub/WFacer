@@ -1,4 +1,5 @@
 """Structure selection methods from feature matrices."""
+
 from warnings import warn
 
 import numpy as np
