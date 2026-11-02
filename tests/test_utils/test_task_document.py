@@ -1,4 +1,5 @@
 """Test single_taskdocument utilities."""
+
 import numpy as np
 import pytest
 from emmet.core.tasks import TaskDoc

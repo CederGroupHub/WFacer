@@ -1,4 +1,5 @@
 """Monte-carlo to estimate ground states and sample structures."""
+
 import itertools
 from abc import ABCMeta, abstractmethod
 from warnings import warn

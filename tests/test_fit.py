@@ -1,4 +1,5 @@
 """Test the fitting functions."""
+
 import os
 
 import cvxpy as cp
