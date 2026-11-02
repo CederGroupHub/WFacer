@@ -1,4 +1,5 @@
 """An example to semi-automate with fireworks. Generate initial document."""
+
 import json
 
 from monty.json import jsanitize

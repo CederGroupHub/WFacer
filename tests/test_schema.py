@@ -1,4 +1,5 @@
 """Test initialization of the CeOutputsDocument schema."""
+
 import numpy as np
 import pytest
 
