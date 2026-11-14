@@ -1,4 +1,5 @@
 """Parse and fit cluster expansion."""
+
 import json
 
 from emmet.core.tasks import TaskDoc  # emmet-core >= 0.60.0

@@ -1,4 +1,5 @@
 """Test running jobs."""
+
 from copy import deepcopy
 from itertools import chain
 
