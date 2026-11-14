@@ -1,4 +1,5 @@
 """Test enumerating functions."""
+
 from collections import defaultdict
 from itertools import chain
 from warnings import warn
@@ -170,7 +171,7 @@ def test_enumerate_structures(single_expansion):
         for occu, mid in zip(occus, mids)
     ]
     # When keeping the ground states, each composition must have at least 1 state.
-    count_occurences = defaultdict(lambda: 0)
+    count_occurences = defaultdict(int)
     for n in ns:
         count_occurences[n] += 1
 
